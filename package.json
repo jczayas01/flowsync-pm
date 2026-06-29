@@ -15,7 +15,7 @@
     "db:reset":     "prisma migrate reset --force && npm run db:seed",
     "db:migrate-all": "psql $DATABASE_URL < prisma/security-additions.sql && psql $DATABASE_URL < prisma/automation-schema.sql && psql $DATABASE_URL < prisma/portfolio-schema.sql && psql $DATABASE_URL < prisma/phase3-schema.sql",
     "setup":        "npm install && npm run db:push && npm run db:migrate-all && npm run db:seed",
-    "postinstall":  "prisma generate"
+    "postinstall":  ""
   },
   "dependencies": {
     "@auth/prisma-adapter":     "^2.0.0",
