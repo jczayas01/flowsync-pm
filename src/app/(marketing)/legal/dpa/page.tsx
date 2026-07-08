@@ -1,0 +1,16 @@
+import { Metadata } from 'next'
+import { LegalPage } from '@/components/marketing/LegalPage'
+export const metadata: Metadata = { title: 'Data Processing Agreement — FlowSync PM' }
+export default function DPA() {
+  return <LegalPage title="Data Processing Agreement (DPA)" lastUpdated="July 1, 2026" sections={[
+    { title:"Purpose", content:"This Data Processing Agreement ('DPA') forms part of the Terms of Service between FlowSync PM ('Processor') and the Customer ('Controller'). It governs the processing of personal data by FlowSync PM on behalf of the Customer in accordance with GDPR Article 28 and applicable data protection laws." },
+    { title:"Scope", content:"This DPA applies to all Enterprise plan customers and to any customer subject to data-protection or regulatory obligations that processes personal data through FlowSync PM. Starter and Professional customers may request a DPA by contacting legal@flowsyncpm.com." },
+    { title:"Data Processing Details", content:"Subject matter: Project management services. Duration: Term of the subscription. Nature: Storage, organization, retrieval, and display of project-related data. Purpose: Providing the FlowSync PM platform. Types of personal data: Names, email addresses, project assignments, task data, document contents. Categories of data subjects: Customer employees, contractors, project stakeholders." },
+    { title:"Processor Obligations", content:"FlowSync PM as Processor shall: (a) process personal data only on documented instructions from the Controller; (b) ensure persons authorized to process data are bound by confidentiality; (c) implement appropriate technical and organizational security measures; (d) assist the Controller in responding to data subject rights requests; (e) delete or return all personal data upon termination; (f) make available all information necessary to demonstrate compliance." },
+    { title:"Sub-Processors", content:"Current sub-processors: Supabase Inc. (database/storage — AWS US-East-1), Anthropic PBC (AI processing — when AI features are used), Stripe Inc. (payment processing). We will notify customers 30 days before adding new sub-processors." },
+    { title:"Security Measures", content:"FlowSync PM implements: AES-256 encryption at rest; TLS 1.3 in transit; role-based access controls; comprehensive audit logging; regular penetration testing; incident response procedures; SOC 2 Type II assessment (in progress)." },
+    { title:"Data Breach Notification", content:"In the event of a personal data breach, FlowSync PM will notify the Controller without undue delay and no later than 72 hours after becoming aware of the breach, providing information required under GDPR Article 33." },
+    { title:"Data Transfers", content:"Data is processed in the United States. For EU/EEA data, FlowSync PM relies on Standard Contractual Clauses (Module 2: Controller-to-Processor) as the legal transfer mechanism." },
+    { title:"Requesting a Signed DPA", content:"Enterprise customers requiring a signed DPA should contact legal@flowsyncpm.com with their organization name, jurisdiction, and regulatory requirements. We will provide a customized DPA within 5 business days." },
+  ]} />
+}

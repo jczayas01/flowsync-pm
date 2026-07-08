@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Type check & lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Build check
+        run: npm run build
+        env:
+          DATABASE_URL:                    ${{ secrets.DATABASE_URL }}
+          DIRECT_URL:                      ${{ secrets.DIRECT_URL }}
+          NEXTAUTH_URL:                    ${{ secrets.NEXTAUTH_URL }}
+          NEXTAUTH_SECRET:                 ${{ secrets.NEXTAUTH_SECRET }}
+          NEXT_PUBLIC_APP_URL:             ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_NAME:            "FloesyncPM"
+          GOOGLE_CLIENT_ID:               ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET:           ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID:            ${{ secrets.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET:        ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          MICROSOFT_TENANT_ID:            "common"
+          AZURE_OPENAI_ENDPOINT:          ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY:           ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT_GPT4O:  "gpt-4o"
+          AZURE_OPENAI_API_VERSION:       "2024-02-01"
+          STRIPE_SECRET_KEY:              ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          RESEND_API_KEY:                 ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL:              "FloesyncPM <no-reply@floesyncpm.com>"
+          ENCRYPTION_KEY:                 ${{ secrets.ENCRYPTION_KEY }}
+          WEBHOOK_SIGNING_SECRET:         ${{ secrets.WEBHOOK_SIGNING_SECRET }}
+          NEXT_PUBLIC_AI_ENABLED:         "true"
+          NEXT_PUBLIC_M365_ENABLED:       "true"
+          NEXT_PUBLIC_SHOW_WAITLIST:      "true"

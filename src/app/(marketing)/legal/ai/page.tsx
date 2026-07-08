@@ -1,0 +1,14 @@
+import { Metadata } from 'next'
+import { LegalPage } from '@/components/marketing/LegalPage'
+export const metadata: Metadata = { title: 'AI Disclaimer — FlowSync PM' }
+export default function AIDisclaimer() {
+  return <LegalPage title="AI Features Disclaimer" lastUpdated="July 1, 2026" sections={[
+    { title:"AI-Generated Content is a Draft", content:"FlowSync PM uses artificial intelligence (powered by Anthropic's Claude) to generate project reports, analyze content, and provide insights. All AI-generated content is a draft for human review. It is not professional advice of any kind — including, without limitation, legal, financial, or technical advice. Users are solely responsible for reviewing, validating, and approving AI-generated content before using it in any decision-making, distribution, or official documentation." },
+    { title:"Accuracy Limitations", content:"AI-generated reports are based on the data you have entered into FlowSync PM. If project data is incomplete, inaccurate, or missing, AI outputs will reflect those limitations. The AI may occasionally produce plausible-sounding but incorrect statements ('hallucinations'). Always verify specific figures, dates, names, and recommendations against your actual project data." },
+    { title:"Not a Substitute for Professional Judgment", content:"Project management decisions — including risk responses, budget approvals, scope changes, and phase gate decisions — require human judgment, organizational context, and professional expertise. AI-generated Phase Gate Review reports, EVM analyses, and Risk Summaries are starting points for human deliberation, not authoritative governance outputs." },
+    { title:"Data Sent to AI", content:"When you use AI features, relevant project data (task names, risk titles, budget figures, milestone dates) is sent to Anthropic's API. Do not input data that must not leave your organizational boundary (such as certain classified, highly sensitive personal data, or contractually restricted data) unless you have verified Anthropic's data handling meets your requirements. See our Privacy Policy for details." },
+    { title:"Regulated Industries", content:"Organizations subject to regulatory or compliance obligations must evaluate whether AI-assisted content meets their applicable requirements before use in official documentation. FlowSync PM does not warrant that AI outputs comply with any specific law, regulation, or industry standard." },
+    { title:"Continuous Improvement", content:"AI outputs improve as models are updated. We recommend regenerating reports periodically rather than relying on a single historical AI output. Report generation timestamps are included on all AI reports to indicate when the content was generated." },
+    { title:"Contact", content:"Questions about AI features: support@flowsyncpm.com" },
+  ]} />
+}
