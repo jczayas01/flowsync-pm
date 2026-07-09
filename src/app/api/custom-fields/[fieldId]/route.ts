@@ -3,7 +3,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, parseBody, ApiContext } from "@/lib/api"
-import { CF_ADMIN_ROLES, toView } from "../route"
+import { CF_ADMIN_ROLES, toView } from "@/lib/api/handlers/custom-fields"
 
 const updateSchema = z.object({
   name:        z.string().min(1).optional(),

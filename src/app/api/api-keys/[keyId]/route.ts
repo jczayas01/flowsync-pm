@@ -2,7 +2,7 @@
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, ApiContext } from "@/lib/api"
-import { KEY_ADMIN_ROLES } from "../route"
+import { KEY_ADMIN_ROLES } from "@/lib/api/handlers/api-keys"
 
 async function revokeKey(ctx: ApiContext, params?: Record<string, string>) {
   if (!KEY_ADMIN_ROLES.includes(ctx.userRole as any)) return forbidden()

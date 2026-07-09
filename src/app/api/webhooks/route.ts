@@ -6,17 +6,7 @@ import { randomBytes } from "crypto"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 
-export const WH_ADMIN_ROLES = ["SUPER_ADMIN", "OWNER", "ADMIN"]
-
-const iso = (d: any) => (d instanceof Date ? d.toISOString() : d) || undefined
-
-export const toView = (w: any, includeSecret = false) => ({
-  id: w.id, url: w.url, events: w.events, isActive: w.isActive,
-  secret: includeSecret ? w.secret : undefined,
-  createdAt: iso(w.createdAt),
-  lastTriggeredAt: w.lastTriggeredAt ? iso(w.lastTriggeredAt) : undefined,
-  successCount: w.successCount, errorCount: w.errorCount,
-})
+import { WH_ADMIN_ROLES, toView } from "@/lib/api/handlers/webhooks"
 
 const createSchema = z.object({
   url:    z.string().url(),

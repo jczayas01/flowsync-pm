@@ -4,7 +4,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, parseBody, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
-import { SECTION_IDS } from "../route"
+import { SECTION_IDS } from "@/lib/api/handlers/reports"
 
 const updateSchema = z.object({
   name:        z.string().min(1).optional(),

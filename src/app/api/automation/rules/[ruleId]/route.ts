@@ -3,7 +3,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, parseBody, ApiContext } from "@/lib/api"
-import { AUTO_ADMIN_ROLES, toView } from "../route"
+import { AUTO_ADMIN_ROLES, toView } from "@/lib/api/handlers/automation"
 
 const patchSchema = z.object({
   isActive:  z.boolean().optional(),

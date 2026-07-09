@@ -5,15 +5,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 
-export const AUTO_ADMIN_ROLES = ["SUPER_ADMIN", "OWNER", "ADMIN"]
-
-const iso = (d: any) => (d instanceof Date ? d.toISOString() : d) || undefined
-
-export const toView = (r: any) => ({
-  id: r.id, name: r.name, trigger: r.trigger, condition: r.condition || "",
-  action: r.action, isActive: r.isActive, runCount: r.runCount,
-  lastRunAt: r.lastRunAt ? iso(r.lastRunAt) : undefined, createdAt: iso(r.createdAt),
-})
+import { AUTO_ADMIN_ROLES, toView } from "@/lib/api/handlers/automation"
 
 const createSchema = z.object({
   name:      z.string().min(1),

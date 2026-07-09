@@ -9,7 +9,7 @@ import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
 
 // Available report section blocks (kept in sync with the builder UI).
-export const SECTION_IDS = ["text","kpi","tasks","risks","gantt","budget","milestones","health","chart"] as const
+import { SECTION_IDS } from "@/lib/api/handlers/reports"
 
 const createSchema = z.object({
   name:        z.string().min(1),

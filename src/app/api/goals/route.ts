@@ -6,7 +6,7 @@ import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 
 // Governance-management roles may create/edit goals. Executive is read-only, so it
 // can view Goals but not mutate them.
-export const GOAL_ROLES = ["SUPER_ADMIN", "OWNER", "ADMIN", "PMO_DIRECTOR", "PROGRAM_MANAGER"]
+import { GOAL_ROLES } from "@/lib/api/handlers/goals"
 
 const TYPES    = ["ANNUAL", "QUARTERLY", "MONTHLY"] as const
 const STATUSES = ["DRAFT", "ON_TRACK", "AT_RISK", "OFF_TRACK", "ACHIEVED", "MISSED"] as const

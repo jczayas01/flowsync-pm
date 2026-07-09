@@ -3,7 +3,7 @@ import { NextRequest } from "next/server"
 import { createHmac } from "crypto"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, ApiContext } from "@/lib/api"
-import { WH_ADMIN_ROLES } from "../../route"
+import { WH_ADMIN_ROLES } from "@/lib/api/handlers/webhooks"
 
 // Basic SSRF guard — refuse localhost / private ranges for server-side delivery.
 function isSafeUrl(u: string): boolean {

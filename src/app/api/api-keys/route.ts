@@ -3,19 +3,11 @@
 // Managed by workspace admins only.
 import { NextRequest } from "next/server"
 import { z } from "zod"
-import { createHash, randomBytes } from "crypto"
+import { randomBytes } from "crypto"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 
-export const KEY_ADMIN_ROLES = ["SUPER_ADMIN", "OWNER", "ADMIN"]
-
-export const sha = (s: string) => createHash("sha256").update(s).digest("hex")
-
-export const toView = (k: any) => ({
-  id: k.id, name: k.name, prefix: k.prefix, scopes: k.scopes,
-  isActive: !k.revokedAt,
-  createdAt: (k.createdAt instanceof Date ? k.createdAt.toISOString() : k.createdAt),
-})
+import { KEY_ADMIN_ROLES, sha, toView } from "@/lib/api/handlers/api-keys"
 
 const createSchema = z.object({
   name:   z.string().min(1),

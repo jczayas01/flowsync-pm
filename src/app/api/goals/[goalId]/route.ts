@@ -4,7 +4,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, parseBody, ApiContext } from "@/lib/api"
-import { GOAL_ROLES } from "../route"
+import { GOAL_ROLES } from "@/lib/api/handlers/goals"
 
 const TYPES    = ["ANNUAL", "QUARTERLY", "MONTHLY"] as const
 const STATUSES = ["DRAFT", "ON_TRACK", "AT_RISK", "OFF_TRACK", "ACHIEVED", "MISSED"] as const
