@@ -6,7 +6,8 @@ import { stripe } from "@/lib/stripe/client"
 import { handleWebhookEvent } from "@/lib/stripe/webhooks"
 
 // Disable body parsing — Stripe requires the raw body for signature verification
-export const config = { api: { bodyParser: false } }
+export const runtime = 'nodejs'
+   export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   const body      = await req.text()
