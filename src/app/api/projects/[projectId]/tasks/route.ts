@@ -484,7 +484,7 @@ async function detectCycle(taskId: string, precedingId: string): Promise<boolean
 // UPDATE PROJECT COMPLETION
 // ─────────────────────────────────────────────
 
-export async function updateProjectCompletion(projectId: string) {
+async function updateProjectCompletion(projectId: string) {
   const tasks = await prisma.task.findMany({
     where: { projectId, status: { notIn: ['CANCELLED'] } },
     select: { percentComplete: true, estimatedHours: true },
