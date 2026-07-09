@@ -204,7 +204,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     if (phaseName) {
       const key = phaseName.toLowerCase()
       if (phaseByName.has(key)) {
-        phaseId = phaseByName.get(key)!
+        phaseId = phaseByName.get(key) as string
       } else {
         const newPhase = await db.phase.create({
           data: { projectId: params.projectId, name: phaseName, order: phaseByName.size },
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
       // Try to assign by matching the Assignee name to a project member
       if (assignee) {
-        const member = memberByName.get(assignee.toLowerCase())
+        const member = memberByName.get(assignee.toLowerCase()) as any
         if (member) {
           await db.taskAssignee.create({
             data: { taskId: created.id, projectMemberId: member.id, userId: member.userId },

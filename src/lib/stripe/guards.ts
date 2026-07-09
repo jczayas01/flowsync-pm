@@ -50,7 +50,7 @@ export async function requirePlan(
     select: { plan: true },
   })
 
-  const ORDER: PlanId[] = ["FREE","PRO","CONSULTANT","BUSINESS","ENTERPRISE"]
+  const ORDER: PlanId[] = PLAN_ORDER
   const current = ORDER.indexOf((ws?.plan || "FREE") as PlanId)
   const required = ORDER.indexOf(minimumPlan)
 

@@ -87,7 +87,7 @@ export const authConfig: NextAuthConfig = {
     MicrosoftEntraID({
       clientId: process.env.MICROSOFT_CLIENT_ID!,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-      tenantId: 'common', // accepts personal + work accounts
+      issuer: 'https://login.microsoftonline.com/common/v2.0',
       authorization: {
         params: {
           scope: 'openid profile email offline_access',
@@ -102,7 +102,7 @@ export const authConfig: NextAuthConfig = {
       name: 'Azure AD SSO',
       clientId: process.env.AZURE_AD_CLIENT_ID!,
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      tenantId: process.env.AZURE_AD_TENANT_ID!, // org-specific tenant
+      issuer: `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}/v2.0`, // org-specific tenant
       authorization: {
         params: {
           scope: 'openid profile email offline_access User.Read',
@@ -222,7 +222,8 @@ export const authConfig: NextAuthConfig = {
       }
     },
 
-    async signOut({ token }) {
+    async signOut(message: any) {
+      const token = message?.token
       // Log the sign-out
       if ((token as any)?.userId) {
         await prisma.auditLog.create({

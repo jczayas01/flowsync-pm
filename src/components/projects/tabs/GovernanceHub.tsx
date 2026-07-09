@@ -346,7 +346,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
           </button>
           <input type="file" accept=".txt,.docx,.pdf,.doc"
             style={{ display:"none" }}
-            ref={el => (ingestRef.current = el)}
+            ref={el => { ingestRef.current = el }}
             onChange={ingestDocument} />
           <button onClick={() => ingestRef.current?.click()} disabled={ingesting}
             style={{ padding:"6px 12px", background:"var(--steel)", color:"#fff",

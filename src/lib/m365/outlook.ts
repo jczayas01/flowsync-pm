@@ -65,7 +65,7 @@ export async function detectProjectEmails(
     const fullText = `${email.subject} ${email.body?.content || email.bodyPreview}`
 
     // Match against project codes and names
-    let matchedProject = null
+    let matchedProject: any = null
     for (const proj of projects) {
       const codeMatch = text.includes(proj.code.toLowerCase())
       const nameMatch = text.includes(proj.name.toLowerCase().slice(0, 10))

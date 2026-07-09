@@ -618,7 +618,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                       onDragStartRow={() => { dragTaskId.current = t.id }}
                       onDropRow={() => handleRowDrop(t.id)}
                       onTouchDrop={(targetId) => handleRowDrop(targetId)}
-                      focusedCol={focusedCell?.taskId === t.id ? focusedCell.col : null}
+                      focusedCol={focusedCell && focusedCell.taskId === t.id ? focusedCell.col : null}
                       editNonce={focusedCell?.taskId === t.id ? editNonce : 0}
                       onFocusCell={(col) => setFocusedCell({ taskId: t.id, col })}
     />
@@ -1019,7 +1019,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                       onDragStartRow={() => { dragTaskId.current = t.id }}
                       onDropRow={() => handleRowDrop(t.id)}
                       onTouchDrop={(targetId) => handleRowDrop(targetId)}
-                      focusedCol={focusedCell?.taskId === t.id ? focusedCell.col : null}
+                      focusedCol={focusedCell && focusedCell.taskId === t.id ? focusedCell.col : null}
                       editNonce={focusedCell?.taskId === t.id ? editNonce : 0}
                       onFocusCell={(col) => setFocusedCell({ taskId: t.id, col })}
                     />
@@ -1062,7 +1062,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                       onDragStartRow={() => { dragTaskId.current = t.id }}
                       onDropRow={() => handleRowDrop(t.id)}
                       onTouchDrop={(targetId) => handleRowDrop(targetId)}
-                      focusedCol={focusedCell?.taskId === t.id ? focusedCell.col : null}
+                      focusedCol={focusedCell && focusedCell.taskId === t.id ? focusedCell.col : null}
                       editNonce={focusedCell?.taskId === t.id ? editNonce : 0}
                       onFocusCell={(col) => setFocusedCell({ taskId: t.id, col })}
                     />

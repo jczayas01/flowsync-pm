@@ -80,6 +80,7 @@ async function createProgram(ctx: ApiContext) {
   if ("error" in parsed) return parsed.error
 
   try {
+    if (!parsed.data.portfolioId) return err("A portfolio is required to create a program")
     const program = await db.program.create({
       data: {
         portfolioId:  parsed.data.portfolioId,

@@ -445,7 +445,7 @@ export const RECIPES: RecipeTemplate[] = [
     popular: false,
     methodology: "ALL",
     trigger:    { type: "task.created", params: {} },
-    conditions: [{ field: "project.m365Enabled", operator: "equals", value: true }],
+    conditions: [{ field: "project.m365Enabled", operator: "equals", value: true as any }],
     actions: [
       { type: "m365.create_planner_task", params: { syncTitle: true, syncDueDate: true, syncAssignee: true } },
     ],

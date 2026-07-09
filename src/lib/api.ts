@@ -4,7 +4,7 @@
 import { auth } from './auth'
 import { db } from './db'
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError, ZodSchema } from 'zod'
+import { ZodError, z } from 'zod'
 import type { UserRole } from '@prisma/client'
 
 // ─────────────────────────────────────────────
@@ -69,10 +69,10 @@ export function serverError(e: unknown): NextResponse {
 // VALIDATE REQUEST BODY
 // ─────────────────────────────────────────────
 
-export async function parseBody<T>(
+export async function parseBody<S extends z.ZodTypeAny>(
   req: NextRequest,
-  schema: ZodSchema<T>
-): Promise<{ data: T } | { error: NextResponse }> {
+  schema: S
+): Promise<{ data: z.output<S> } | { error: NextResponse }> {
   try {
     const raw = await req.json()
     const data = schema.parse(raw)

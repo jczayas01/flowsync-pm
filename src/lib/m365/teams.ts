@@ -48,7 +48,6 @@ export async function detectProjectMeetings(
       members: { some: { userId } },
     },
     select: { id: true, code: true, name: true },
-    include: { members: { include: { user: { select: { email: true } } }, take: 20 } } as any,
   }) as any[]
 
   const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString()
@@ -142,7 +141,7 @@ export async function detectProjectChatMentions(
         const content = msg.body?.content?.replace(/<[^>]+>/g, "") || ""
         const lower   = content.toLowerCase()
 
-        let matchedProject = null
+        let matchedProject: any = null
         for (const proj of projects) {
           if (lower.includes(proj.code.toLowerCase())) {
             matchedProject = proj; break

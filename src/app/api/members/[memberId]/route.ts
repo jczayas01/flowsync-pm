@@ -21,7 +21,7 @@ async function updateMember(ctx: ApiContext, params?: Record<string, string>) {
 
   const parsed = await parseBody(ctx.req, schema)
   if ("error" in parsed) return parsed.error
-  const skills = Array.from(new Set(parsed.data.skills.map(s => s.trim()).filter(Boolean)))
+  const skills = Array.from(new Set(parsed.data.skills.map((s: string) => s.trim()).filter(Boolean))) as string[]
   const updated = await db.workspaceMember.update({
     where: { id }, data: { skills }, select: { id: true, skills: true },
   })

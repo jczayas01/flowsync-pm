@@ -42,7 +42,6 @@ async function createCheckout(ctx: ApiContext) {
     userId:      ctx.userId,
     userEmail:   user.email,
     userName:    user.name,
-    seats:       planId === "BUSINESS" ? seats : 1,
     successUrl:  `${appUrl}/settings/billing`,
     cancelUrl:   `${appUrl}/settings/billing?cancelled=true`,
   })

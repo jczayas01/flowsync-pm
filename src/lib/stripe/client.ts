@@ -14,7 +14,7 @@ export function getStripe(): Stripe {
   }
   if (!_stripe) {
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-04-10",
+      apiVersion: "2024-04-10" as any,
       typescript:  true,
       appInfo: { name:"FlowSync PM", version:"1.0.0", url:"https://flowsyncpm.com" },
     })

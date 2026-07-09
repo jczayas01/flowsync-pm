@@ -25,8 +25,10 @@ export interface TemplateMilestone {
 }
 
 export interface TemplateRiskCategory {
-  name:     string
-  examples: string[]
+  name:        string
+  examples:    string[]
+  probability?: string
+  impact?:      string
 }
 
 export interface TemplateDefinition {
@@ -34,7 +36,7 @@ export interface TemplateDefinition {
   name:         string
   description:  string
   longDescription: string
-  methodology:  "WATERFALL"|"AGILE"|"SCRUM"
+  methodology:  "WATERFALL"|"AGILE"|"SCRUM"|"HYBRID"
   industry:     string
   category:     string
   icon:         string

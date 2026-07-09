@@ -17,7 +17,7 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
   if ("error" in parsed) return parsed.error
   const item = await db.qualityChecklist.update({
     where:{ id:params!.itemId },
-    data:{ ...parsed.data, inspectedAt: parsed.data.status && parsed.data.status!=="PENDING" ? new Date() : undefined },
+    data:{ ...parsed.data, reviewedAt: parsed.data.status && parsed.data.status!=="PENDING" ? new Date() : undefined },
   })
   return ok(item)
 }

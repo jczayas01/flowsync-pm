@@ -34,7 +34,7 @@ export function AuthShell({
       {/* Right panel — brand */}
       <div style={{ display:'none', flex:'0 0 420px', background:'rgba(27,108,168,.15)',
         borderLeft:'1px solid rgba(255,255,255,.06)', alignItems:'center', justifyContent:'center',
-        padding:40, '@media(min-width:900px)':{display:'flex'} as any }}>
+        padding:40, '@media(min-width:900px)':{display:'flex'} } as any}>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:48, marginBottom:16 }}>📊</div>
           <div style={{ fontSize:18, fontWeight:600, color:'#fff', marginBottom:8 }}>

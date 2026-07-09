@@ -7,7 +7,7 @@ import { requirePermission } from "@/lib/rbac/guards"
 
 const schema = z.object({
   type:            z.enum(["WEEKLY_STATUS","MONTHLY_STATUS","EXECUTIVE_BRIEF","MILESTONE"]).default("WEEKLY_STATUS"),
-  health:          z.enum(["GREEN","YELLOW","RED","ON_HOLD"]).default("GREEN"),
+  health:          z.enum(["GREEN","AMBER","RED"]).default("GREEN"),
   periodStart:     z.string().datetime(),
   periodEnd:       z.string().datetime(),
   percentComplete: z.number().int().min(0).max(100).optional(),

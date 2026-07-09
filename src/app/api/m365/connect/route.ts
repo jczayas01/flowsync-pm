@@ -35,7 +35,7 @@ async function getConnectionStatus(ctx: ApiContext) {
 
   return ok({
     connected:     !!token && !!userInfo,
-    provider:      "azure-ad",
+    provider:      "AZURE_AD",
     displayName:   userInfo?.displayName,
     email:         userInfo?.mail,
     expiresAt:     token.expiresAt,

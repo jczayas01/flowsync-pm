@@ -48,7 +48,7 @@ export async function resolveRole(
 // ─────────────────────────────────────────────
 
 function resolveRbacRole(ctx: PermissionContext): AnyRole {
-  return mapDbRoleToRbac((ctx.userRole || ctx.role || "") as string)
+  return mapDbRoleToRbac(((ctx as any).userRole || (ctx as any).role || "") as string)
 }
 
 // ─────────────────────────────────────────────
@@ -71,8 +71,8 @@ export async function requirePermission(
       code:       "FORBIDDEN",
       permission,
       role:       rbacRole,
-      userRole:   ctx.userRole || ctx.role,
-      message:    `Your role (${ctx.userRole || ctx.role}) does not have permission: ${permission}`,
+      userRole:   (ctx as any).userRole || (ctx as any).role,
+      message:    `Your role (${(ctx as any).userRole || (ctx as any).role}) does not have permission: ${permission}`,
     }, { status: 403 })
   }
 

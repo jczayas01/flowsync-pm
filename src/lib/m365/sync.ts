@@ -37,7 +37,7 @@ export async function runFullSync(userId: string): Promise<SyncPayload> {
 
   // Persist sync timestamp on user account
   await db.account.updateMany({
-    where: { userId, provider: { in: ["azure-ad","microsoft"] } },
+    where: { userId, provider: { in: ["AZURE_AD","MICROSOFT"] } },
     data:  { updatedAt: new Date() },
   }).catch(() => {})
 

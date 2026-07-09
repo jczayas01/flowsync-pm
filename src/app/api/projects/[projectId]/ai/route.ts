@@ -351,7 +351,7 @@ async function handleScheduleFix(projectId: string, ctx: AuthContext, action: an
     },
     include: {
       dependencies: { include: { precedingTask: { select: { title: true, status: true } } } },
-      dependents: { select: { id: true, title: true, dueDate: true } },
+      dependents: { include: { dependentTask: { select: { id: true, title: true, dueDate: true } } } },
     },
   })
 

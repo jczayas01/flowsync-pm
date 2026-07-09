@@ -102,7 +102,7 @@ function AssigneeDropdown({ members, selectedIds, onToggle }: {
                     display:"flex", alignItems:"center", justifyContent:"center" }}>
                     {checked && <span style={{ color:"#fff", fontSize:10, lineHeight:1 }}>✓</span>}
                   </div>
-                  <Avatar name={m.user?.name} src={m.user?.avatarUrl} size={22} />
+                  <Avatar name={m.user?.name} avatarUrl={m.user?.avatarUrl} size={22} />
                   <div>
                     <div style={{ fontSize:12, fontWeight:500, color:"var(--text)" }}>{m.user?.name}</div>
                     <div style={{ fontSize:10, color:"var(--text-4)" }}>

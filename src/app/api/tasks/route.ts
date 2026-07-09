@@ -128,7 +128,7 @@ async function createTask(ctx: ApiContext) {
         where: { projectId: data.projectId, userId: { in: data.assigneeIds } },
       })
       await tx.taskAssignee.createMany({
-        data: members.map(m => ({ taskId: t.id, projectMemberId: m.id })),
+        data: members.map(m => ({ taskId: t.id, projectMemberId: m.id, userId: m.userId })),
         skipDuplicates: true,
       })
     }

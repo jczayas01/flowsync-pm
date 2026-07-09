@@ -433,7 +433,7 @@ async function computeBurndown(sprint: any) {
   const totalPoints = sprint.tasks.reduce((s: number, t: any) => s + (t.storyPoints ?? 0), 0)
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000)
 
-  const burndown = []
+  const burndown: any[] = []
   for (let i = 0; i <= days; i++) {
     const date = new Date(startDate.getTime() + i * 86400000)
     const ideal = totalPoints - (totalPoints / days) * i

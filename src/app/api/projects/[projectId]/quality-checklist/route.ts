@@ -30,10 +30,14 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
     const item = await db.qualityChecklist.create({
       data: {
         projectId:    params!.projectId,
+        createdById:  ctx.userId,
         deliverable:  parsed.data.deliverable,
-        criteria:     parsed.data.criteria ?? null,
-        inspector:    parsed.data.inspector ?? null,
-        scheduledDate:parsed.data.scheduledDate ? new Date(parsed.data.scheduledDate) : null,
+        items:        [{
+          criterion:     parsed.data.criteria ?? "",
+          inspector:     parsed.data.inspector ?? null,
+          scheduledDate: parsed.data.scheduledDate ?? null,
+          passed:        false,
+        }] as any,
         status:       "PENDING",
       }
     })

@@ -75,13 +75,13 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext) => {
     }
 
     // Non-admins only see projects they're members of
-    if (!['OWNER', 'ADMIN', 'SUPER_ADMIN'].includes(ctx.userRole || ctx.role)) {
+    if (!['OWNER', 'ADMIN', 'SUPER_ADMIN'].includes((ctx as any).userRole || (ctx as any).role)) {
       where.members = { some: { userId: ctx.userId } }
     }
 
     // Confidential projects: only visible to members + admins
     // If user is not admin, exclude confidential projects they're not a member of
-    if (!['OWNER', 'ADMIN', 'SUPER_ADMIN', 'PMO_DIRECTOR'].includes(ctx.userRole || ctx.role)) {
+    if (!['OWNER', 'ADMIN', 'SUPER_ADMIN', 'PMO_DIRECTOR'].includes((ctx as any).userRole || (ctx as any).role)) {
       where.OR = [
         { isConfidential: false },
         { isConfidential: true, members: { some: { userId: ctx.userId } } },

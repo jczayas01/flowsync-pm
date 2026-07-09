@@ -41,7 +41,7 @@ export async function getGraphToken(userId: string): Promise<GraphToken | null> 
   const account = await db.account.findFirst({
     where: {
       userId,
-      provider: { in: ["azure-ad", "microsoft"] },
+      provider: { in: ["AZURE_AD", "MICROSOFT"] },
     },
     orderBy: { updatedAt: "desc" },
   })

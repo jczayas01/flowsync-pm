@@ -54,8 +54,10 @@ async function listTimeEntries(ctx: ApiContext) {
   // Totals
   const totals = await db.timeEntry.aggregate({
     where,
-    _sum: { hours: true, amount: true },
+    _sum: { hours: true },
   })
+  const _rows = await db.timeEntry.findMany({ where, select: { hours: true, hourlyRate: true } })
+  const _amount = _rows.reduce((sum: number, e: any) => sum + Number(e.hours) * Number(e.hourlyRate || 0), 0)
 
   return ok({
     entries,
@@ -64,7 +66,7 @@ async function listTimeEntries(ctx: ApiContext) {
     perPage,
     totals: {
       hours:  Number(totals._sum.hours  || 0),
-      amount: Number(totals._sum.amount || 0),
+      amount: _amount,
     },
   })
 }
@@ -75,20 +77,12 @@ async function logTimeEntry(ctx: ApiContext) {
   const { data } = parsed
 
   // Resolve hourly rate: entry override → user default → workspace default
-  let rate = data.hourlyRate || 0
-  if (!rate && data.billable) {
-    const ws = await db.workspace.findUnique({
-      where:  { id: ctx.workspaceId },
-      select: { defaultHourlyRate: true },
-    })
-    rate = Number(ws?.defaultHourlyRate || 0)
-  }
+  const rate = data.hourlyRate || 0
 
   const amount = data.billable ? data.hours * rate : 0
 
   const entry = await db.timeEntry.create({
     data: {
-      workspaceId:  ctx.workspaceId,
       userId:       ctx.userId,
       projectId:    data.projectId,
       taskId:       data.taskId || undefined,
@@ -97,7 +91,6 @@ async function logTimeEntry(ctx: ApiContext) {
       description:  data.description,
       billable:   data.billable,
       hourlyRate:   rate,
-      amount,
     },
     include: {
       project: { select: { id:true, code:true, name:true } },

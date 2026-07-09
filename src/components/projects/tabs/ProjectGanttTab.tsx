@@ -552,7 +552,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
               if (barX + barW < LEFT_W || barX > svgWidth) return null
 
               // Live drag feedback — move shifts the bar, resize changes one end
-              if (dragging?.taskId === task.id && dragDays !== 0) {
+              if (dragging && dragging.taskId === task.id && dragDays !== 0) {
                 const d = dragDays * dayW
                 if (dragging.mode === "move") barX += d
                 else if (dragging.mode === "resize-end") barW = Math.max(MIN_BAR, barW + d)
