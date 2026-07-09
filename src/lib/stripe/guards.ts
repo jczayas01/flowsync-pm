@@ -2,7 +2,8 @@
 // Plan feature guards — use in API routes to enforce plan limits
 
 import { NextResponse } from "next/server"
-import { checkPlanLimit, PLANS, type PlanId } from "./client"
+import { checkPlanLimit, PLANS, PLAN_ORDER, type PlanId } from "./client"
+import { db } from "@/lib/db"
 
 /**
  * requireFeature — returns an error response if the workspace
@@ -16,27 +17,23 @@ export async function requireFeature(
   workspaceId: string,
   feature:     keyof typeof PLANS["FREE"]["limits"]
 ): Promise<NextResponse | null> {
-  const check = await checkPlanLimit(workspaceId, feature)
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+  const planId = (ws?.plan ?? "FREE") as PlanId
+  const check  = checkPlanLimit(planId, feature, 0)
 
   if (!check.allowed) {
-    const plan    = PLANS[check.plan]
-    const upgrade = check.plan === "FREE" ? "PRO"
-                  : check.plan === "PRO"  ? "BUSINESS" : "ENTERPRISE"
-
+    const idx     = PLAN_ORDER.indexOf(planId)
+    const upgrade = PLAN_ORDER[Math.min(idx + 1, PLAN_ORDER.length - 1)]
     return NextResponse.json({
       error:   "Plan limit reached",
       code:    "PLAN_LIMIT",
       feature,
-      plan:    check.plan,
+      plan:    planId,
       upgrade,
       message: `This feature requires the ${upgrade} plan. Upgrade at /settings/billing`,
-      ...(typeof check.current !== "undefined" && {
-        current: check.current,
-        limit:   check.limit,
-      }),
-    }, { status: 402 }) // 402 Payment Required
+      limit:   check.limit,
+    }, { status: 402 })
   }
-
   return null
 }
 

@@ -39,8 +39,7 @@ export async function getWorkspaceAllowlist(workspaceId: string): Promise<string
 }
 
 export function parseAllowlist(input: string): { valid: string[]; errors: string[] } {
-  const lines  = input.split(/[
-,]/).map(l => l.trim()).filter(Boolean)
+  const lines  = input.split(/[\n,]/).map(l => l.trim()).filter(Boolean)
   const valid: string[]  = []
   const errors: string[] = []
 

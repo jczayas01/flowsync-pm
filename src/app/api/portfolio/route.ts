@@ -73,7 +73,7 @@ async function listPortfolios(ctx: ApiContext) {
 }
 
 async function createPortfolio(ctx: ApiContext) {
-  const guard = await requirePermission(ctx, "programs:create")
+  const guard = await requirePermission(ctx as any, "programs:create")
   if (guard) return guard
 
   const parsed = await parseBody(ctx.req, portfolioSchema)

@@ -22,7 +22,6 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
     format:"Status Report", frequency:"Weekly", method:"Email", ownerId:"", notes:"",
     engagementCurrent:"NEUTRAL", engagementTarget:"SUPPORTIVE",
     influence:"MEDIUM", interest:"MEDIUM",
-    format:"Status Report", frequency:"Weekly", method:"Email", ownerId:"", notes:"",
   })
 
   async function create() {

@@ -71,7 +71,7 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
   const isAssignee = task.assignees.length > 0
   // Allow: broad editors, or the person assigned to this task (their own work)
   if (!can(role, "tasks:edit_any") && !can(role, "tasks:edit_assigned") && !isAssignee) {
-    return forbidden("You don't have permission to edit this task")
+    return forbidden()
   }
 
   const access = await verifyProjectAccess(task.projectId, ctx.userId, ctx.workspaceId)

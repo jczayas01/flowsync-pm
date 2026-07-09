@@ -42,7 +42,6 @@ export default async function ProjectGanttPage({ params }: { params: { projectId
   return (
     <ProjectGanttTab
       projectId={params.projectId}
-      workspaceId={membership?.workspaceId || ''}
       tasks={serializedTasks as any}
       phases={phases as any}
       milestones={milestones as any}

@@ -21,7 +21,7 @@ async function updateUser(ctx: ApiContext, params?: Record<string, string>) {
   if (!targetUserId) return err("User ID required")
   if (targetUserId === ctx.userId) return err("You cannot modify your own role", 400)
 
-  const guard = await requirePermission(ctx, "users:assign_role")
+  const guard = await requirePermission(ctx as any, "users:assign_role")
   if (guard) return guard
 
   const parsed = await parseBody(ctx.req, updateSchema)
@@ -55,7 +55,7 @@ async function updateUser(ctx: ApiContext, params?: Record<string, string>) {
 
   // Deactivate user if requested (ADMIN+ only)
   if (parsed.data.isActive === false) {
-    const deactivateGuard = await requirePermission(ctx, "users:remove")
+    const deactivateGuard = await requirePermission(ctx as any, "users:remove")
     if (deactivateGuard) return deactivateGuard
     await db.user.update({ where: { id: targetUserId }, data: { isActive: false } })
   }
@@ -71,7 +71,7 @@ async function removeUser(ctx: ApiContext, params?: Record<string, string>) {
   if (!targetUserId) return err("User ID required")
   if (targetUserId === ctx.userId) return err("You cannot remove yourself", 400)
 
-  const guard = await requirePermission(ctx, "users:remove")
+  const guard = await requirePermission(ctx as any, "users:remove")
   if (guard) return guard
 
   // Check target role — cannot remove someone with equal/higher access

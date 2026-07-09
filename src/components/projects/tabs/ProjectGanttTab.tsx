@@ -89,7 +89,7 @@ function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; s
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function ProjectGanttTab({ project, projectId, tasks, phases, members, baselines, milestones=[] }: {
-  project:any; projectId:string; tasks:any[]; phases:any[]; members:any[]; baselines?:any[]; milestones?:any[]
+  project?:any; projectId:string; tasks:any[]; phases:any[]; members:any[]; baselines?:any[]; milestones?:any[]
 }) {
   const router  = useRouter()
   const taskCtx = useTaskContextSafe()

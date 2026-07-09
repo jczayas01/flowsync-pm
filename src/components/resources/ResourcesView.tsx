@@ -204,7 +204,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                         const heat = heatClass(pct)
                         return (
                           <div key={wi} title={`${hrs}h (${pct}%) — ${weekDates[wi].toLocaleDateString()}`}
-                            style={{background:heat.bg,borderLeft:"1px solid rgba(0,0,0,.05)",
+                            style={{borderLeft:"1px solid rgba(0,0,0,.05)",
                               display:"flex",alignItems:"center",justifyContent:"center",cursor:"default",
                               background:wi===todayIdx?heat.bg+"cc":heat.bg}}>
                             <div style={{textAlign:"center"}}>
@@ -241,7 +241,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
               const over   = pct>105
               const barColor = over?"var(--red)":pct>90?"var(--amber)":"var(--green)"
               return (
-                <div key={userId} style={{background:"#fff",border:`1px solid ${over?"rgba(220,38,38,.3)":"var(--border)"}`,
+                <div key={userId} style={{border:`1px solid ${over?"rgba(220,38,38,.3)":"var(--border)"}`,
                   borderRadius:"var(--radius)",padding:16,
                   background:over?"var(--red-pale,#FEF2F2)":"#fff"}}>
                   <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>

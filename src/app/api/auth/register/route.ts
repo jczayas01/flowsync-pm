@@ -26,7 +26,10 @@ export async function POST(req: NextRequest) {
 
     const hashed = await hash(password, 12)
     const user   = await db.user.create({
-      data: { name, email, password: hashed, isActive: true },
+      data: {
+        name, email, isActive: true,
+        accounts: { create: { provider: "EMAIL", providerAccountId: email, accessToken: hashed } },
+      },
       select: { id: true, email: true, name: true },
     })
 

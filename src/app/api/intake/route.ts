@@ -2,7 +2,7 @@
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { withWorkspace, ok, parseBody, ApiContext } from "@/lib/api"
+import { withWorkspace, ok, err, parseBody, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
 import { can, mapDbRoleToRbac } from "@/lib/rbac/roles"
 

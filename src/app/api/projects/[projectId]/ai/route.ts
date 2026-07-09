@@ -10,7 +10,7 @@ import {
   requireProjectAccess, validate,
   type AuthContext
 } from '@/lib/auth/middleware'
-import { computeEVM } from '../route'
+import { computeEVM } from '@/lib/projects/evm'
 
 // ─────────────────────────────────────────────
 // AZURE OPENAI CLIENT

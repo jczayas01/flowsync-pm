@@ -5,6 +5,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
+import { requirePermission } from '@/lib/rbac/guards'
 import {
   withWorkspace, ok, okList, err, serverError,
   parseBody, getSearchParams, audit, verifyProjectAccess, ApiContext,

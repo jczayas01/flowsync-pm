@@ -25,7 +25,7 @@ const inviteSchema = z.object({
 })
 
 async function listUsers(ctx: ApiContext) {
-  const guard = await requirePermission(ctx, "users:view")
+  const guard = await requirePermission(ctx as any, "users:view")
   if (guard) return guard
 
   const { page, perPage, skip, take, q } = getSearchParams(ctx.req)
@@ -74,7 +74,7 @@ async function listUsers(ctx: ApiContext) {
 }
 
 async function inviteUser(ctx: ApiContext) {
-  const guard = await requirePermission(ctx, "users:invite")
+  const guard = await requirePermission(ctx as any, "users:invite")
   if (guard) return guard
 
   const parsed = await parseBody(ctx.req, inviteSchema)

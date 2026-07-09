@@ -135,9 +135,9 @@ export class GraphClient {
         Authorization:  `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
         ConsistencyLevel: "eventual",
-        ...headers,
+        ...(headers || {}),
       },
-      ...(body && { body: JSON.stringify(body) }),
+      ...(body ? { body: JSON.stringify(body) } : {}),
     })
 
     if (!res.ok) {

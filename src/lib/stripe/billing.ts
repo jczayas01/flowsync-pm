@@ -81,7 +81,7 @@ export async function createCheckoutSession(opts: CheckoutOptions): Promise<stri
   })
 
   // For Business plan — per-seat quantity
-  const quantity = opts.planId === "BUSINESS" ? (opts.seats || 10) : 1
+  const quantity = (opts.planId as string) === "BUSINESS" ? (opts.seats || 10) : 1
 
   const session = await stripe.checkout.sessions.create({
     customer:    customerId,
@@ -93,7 +93,7 @@ export async function createCheckoutSession(opts: CheckoutOptions): Promise<stri
     // Collect tax automatically
     automatic_tax: { enabled: true },
     // Allow customer to adjust seats for Business plan
-    ...(opts.planId === "BUSINESS" && {
+    ...((opts.planId as string) === "BUSINESS" && {
       subscription_data: {
         metadata: { workspaceId: opts.workspaceId, planId: opts.planId },
       },

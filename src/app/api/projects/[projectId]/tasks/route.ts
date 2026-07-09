@@ -259,7 +259,7 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext, params) 
       })
       for (const pm of projectMembers) {
         await prisma.taskAssignee.create({
-          data: { taskId: task.id, projectMemberId: pm.id },
+          data: { taskId: task.id, projectMemberId: pm.id, userId: pm.userId },
         }).catch(() => {})
       }
     }

@@ -299,7 +299,7 @@ export async function getMeetingTranscript(
     // Strip VTT formatting to plain text
     return content
       .toString()
-      .replace(/WEBVTT.*?\n\n/s, '')
+      .replace(/WEBVTT[\s\S]*?\n\n/, '')
       .replace(/\d{2}:\d{2}:\d{2}\.\d{3} --> .+\n/g, '')
       .replace(/<[^>]+>/g, '')
       .trim()

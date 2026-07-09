@@ -91,8 +91,7 @@ export function watermarkCsv(csv: string, ctx: WatermarkContext): string {
     `# Export ID: ${watermarkId}`,
     `# CONFIDENTIAL — Internal use only`,
     ``,
-  ].join("
-")
+  ].join("\n")
 
   return header + csv
 }

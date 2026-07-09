@@ -534,7 +534,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                         <div key={dep.id} style={{ display:"flex", alignItems:"center", gap:8,
                           padding:"10px 12px", background:"var(--surface)", borderRadius:"var(--radius)",
                           border:"1px solid var(--border)" }}>
-                          <span style={{ fontSize:10, color:"var(--text-4)",
+                          <span style={{ fontSize:10,
                             padding:"2px 6px", background:"#FEF3C7", borderRadius:3,
                             fontWeight:600, color:"#92400E" }}>blocked by</span>
                           <span style={{ fontSize:11, fontFamily:"monospace",

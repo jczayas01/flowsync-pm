@@ -196,3 +196,15 @@ export function checkPlanLimit(
   if (l === -1)               return { allowed:true, limit:-1 }
   return { allowed:current < l, limit:l }
 }
+
+export function formatPrice(cents: number): string {
+  if (!cents) return "Free"
+  return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+
+export function getPlanByStripePrice(priceId: string): Plan | null {
+  for (const plan of Object.values(PLANS)) {
+    if (plan.stripePriceId === priceId || plan.stripePriceIdAnnual === priceId) return plan
+  }
+  return null
+}

@@ -92,8 +92,7 @@ export async function checkPasswordBreach(password: string): Promise<{
     if (!res.ok) return { breached: false, count: 0 }
 
     const text = await res.text()
-    const line = text.split("
-").find(l => l.startsWith(suffix))
+    const line = text.split("\n").find(l => l.startsWith(suffix))
 
     if (!line) return { breached: false, count: 0 }
 

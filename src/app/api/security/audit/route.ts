@@ -7,7 +7,7 @@ import { requirePermission } from "@/lib/rbac/guards"
 import { queryAuditLog } from "@/lib/security/audit"
 
 async function getAuditLogs(ctx: ApiContext) {
-  const guard = await requirePermission(ctx, "workspace:view_audit_log")
+  const guard = await requirePermission(ctx as any, "workspace:view_audit_log")
   if (guard) return guard
 
   const url       = new URL(ctx.req.url)
