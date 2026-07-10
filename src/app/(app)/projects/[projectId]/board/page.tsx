@@ -1,6 +1,6 @@
 // src/app/(app)/projects/[projectId]/board/page.tsx
-import { db } from '@/lib/db'
-import { ProjectBoardTab } from '@/components/projects/tabs/ProjectBoardTab'
+import { db } from '@/lib//db'
+import { ProjectBoardTab } from '@/components//projects/tabs/ProjectBoardTab'
 
 export default async function ProjectBoardPage({ params }: { params: { projectId: string } }) {
   const tasks = await db.task.findMany({

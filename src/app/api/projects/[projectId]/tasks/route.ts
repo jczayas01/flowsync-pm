@@ -4,13 +4,13 @@
 
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db/prisma'
+import { prisma } from '@/lib//db/prisma'
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import {
   withAuth, ok, handleApiError,
   requireProjectAccess, validate,
   type AuthContext
-} from '@/lib/auth/middleware'
+} from '@/lib//auth/middleware'
 
 // ─────────────────────────────────────────────
 // SCHEMAS

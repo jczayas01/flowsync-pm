@@ -1,7 +1,7 @@
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { ProjectRisksTab } from '@/components/projects/tabs/ProjectRisksTab'
+import { ProjectRisksTab } from '@/components//projects/tabs/ProjectRisksTab'
 
 export default async function ProjectRisksPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

@@ -4,13 +4,13 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { AzureOpenAI } from 'openai'
-import { prisma } from '@/lib/db/prisma'
+import { prisma } from '@/lib//db/prisma'
 import {
   withAuth, ok, err, handleApiError,
   requireProjectAccess, validate,
   type AuthContext
-} from '@/lib/auth/middleware'
-import { computeEVM } from '@/lib/projects/evm'
+} from '@/lib//auth/middleware'
+import { computeEVM } from '@/lib//projects/evm'
 
 // ─────────────────────────────────────────────
 // AZURE OPENAI CLIENT

@@ -7,7 +7,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import Google from 'next-auth/providers/google'
 import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id'
 import Credentials from 'next-auth/providers/credentials'
-import { db } from './db'
+import { db } from '@/lib/db'
 import { compare } from 'bcryptjs'
 import { z } from 'zod'
 

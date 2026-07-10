@@ -1,7 +1,7 @@
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { RequirementsTab } from '@/components/projects/tabs/RequirementsTab'
+import { RequirementsTab } from '@/components//projects/tabs/RequirementsTab'
 
 export default async function RequirementsPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

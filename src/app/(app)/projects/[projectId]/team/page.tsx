@@ -1,6 +1,6 @@
 // src/app/(app)/projects/[projectId]/team/page.tsx
-import { db } from '@/lib/db'
-import { ProjectTeamTab } from '@/components/projects/tabs/ProjectTeamTab'
+import { db } from '@/lib//db'
+import { ProjectTeamTab } from '@/components//projects/tabs/ProjectTeamTab'
 
 export default async function ProjectTeamPage({ params }: { params: { projectId: string } }) {
   const [members, project] = await Promise.all([

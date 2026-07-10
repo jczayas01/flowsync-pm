@@ -1,7 +1,7 @@
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { MeetingsTab } from '@/components/projects/tabs/MeetingsTab'
+import { MeetingsTab } from '@/components//projects/tabs/MeetingsTab'
 
 export default async function MeetingsPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

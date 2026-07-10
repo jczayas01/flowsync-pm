@@ -6,12 +6,12 @@
 import { requirePermission } from "@/lib/rbac/guards"
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { db } from '@/lib/db'
+import { db } from '@/lib//db'
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import {
   withWorkspace, ok, err, notFound, forbidden, serverError,
   parseBody, audit, verifyProjectAccess, ApiContext,
-} from '@/lib/api'
+} from '@/lib//api'
 
 const updateSchema = z.object({
   name:            z.string().min(1).max(200).optional(),

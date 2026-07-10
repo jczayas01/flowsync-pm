@@ -1,7 +1,7 @@
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { QualityTab } from '@/components/projects/tabs/QualityTab'
+import { QualityTab } from '@/components//projects/tabs/QualityTab'
 
 export default async function QualityPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

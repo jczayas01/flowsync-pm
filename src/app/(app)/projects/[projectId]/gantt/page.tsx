@@ -1,8 +1,8 @@
 // src/app/(app)/projects/[projectId]/gantt/page.tsx
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { ProjectGanttTab } from '@/components/projects/tabs/ProjectGanttTab'
+import { ProjectGanttTab } from '@/components//projects/tabs/ProjectGanttTab'
 
 export default async function ProjectGanttPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

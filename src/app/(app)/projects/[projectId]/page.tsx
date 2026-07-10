@@ -1,7 +1,7 @@
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { ProjectDashboardTab } from '@/components/projects/tabs/ProjectDashboardTab'
+import { ProjectDashboardTab } from '@/components//projects/tabs/ProjectDashboardTab'
 
 export default async function ProjectDashboardPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

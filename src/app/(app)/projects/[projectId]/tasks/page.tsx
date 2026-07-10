@@ -1,8 +1,8 @@
 // src/app/(app)/projects/[projectId]/tasks/page.tsx
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { ProjectTasksTab } from '@/components/projects/tabs/ProjectTasksTab'
+import { ProjectTasksTab } from '@/components//projects/tabs/ProjectTasksTab'
 
 export default async function ProjectTasksPage({
   params, searchParams,

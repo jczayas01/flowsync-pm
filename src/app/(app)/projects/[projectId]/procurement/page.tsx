@@ -1,7 +1,7 @@
-import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
-import { ProjectProcurementTab } from '@/components/projects/tabs/ProjectProcurementTab'
+import { ProjectProcurementTab } from '@/components//projects/tabs/ProjectProcurementTab'
 
 export default async function ProcurementPage({ params }: { params: { projectId: string } }) {
   const session = await auth()

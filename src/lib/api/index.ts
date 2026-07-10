@@ -1,8 +1,8 @@
 // src/lib/api.ts
 // Shared API utilities — used by all route handlers
 
-import { auth } from './auth'
-import { db } from './db'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodError, z } from 'zod'
 import type { UserRole } from '@prisma/client'

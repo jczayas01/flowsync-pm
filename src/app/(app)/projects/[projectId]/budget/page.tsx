@@ -1,6 +1,6 @@
 // src/app/(app)/projects/[projectId]/budget/page.tsx
-import { db } from '@/lib/db'
-import { ProjectBudgetTab } from '@/components/projects/tabs/ProjectBudgetTab'
+import { db } from '@/lib//db'
+import { ProjectBudgetTab } from '@/components//projects/tabs/ProjectBudgetTab'
 
 export default async function ProjectBudgetPage({ params }: { params: { projectId: string } }) {
   const [project, budgetItems, timeEntries] = await Promise.all([
