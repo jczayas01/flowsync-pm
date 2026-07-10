@@ -93,7 +93,6 @@ export const authConfig: NextAuthConfig = {
     MicrosoftEntraID({
       clientId:     process.env.MICROSOFT_CLIENT_ID!,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-      issuer:       'https://login.microsoftonline.com/consumers/v2.0',
       allowDangerousEmailAccountLinking: true,
     }),
 
@@ -104,7 +103,6 @@ export const authConfig: NextAuthConfig = {
       name:         'Azure AD (SSO)',
       clientId:     process.env.AZURE_AD_CLIENT_ID!,
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      issuer:       `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID || 'common'}/v2.0`,
       authorization: {
         params: {
           scope: 'openid profile email offline_access User.Read',
@@ -227,3 +225,4 @@ export const authConfig: NextAuthConfig = {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)
+
