@@ -1,10 +1,12 @@
-// src/app/api/cron/due-reminders/route.ts
+  // src/app/api/cron/due-reminders/route.ts
 // Call once per day from a scheduler (e.g. Vercel Cron or an external cron) to
 // notify assignees of tasks due within the next 2 days.
 // If CRON_SECRET is set, requests must include ?secret=... (or Authorization: Bearer ...).
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { notifyMany } from "@/lib/notify"
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs" 
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
