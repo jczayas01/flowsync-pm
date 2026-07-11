@@ -44,6 +44,51 @@ export async function POST(
       const { extractText } = await import("unpdf")
       const result = await extractText(new Uint8Array(buffer), { mergePages: true })
       text = (result?.text as string) || ""
+    } else if (name.endsWith(".xlsx")) {
+      const ExcelJSmod: any = await import("exceljs")
+      const ExcelJS = ExcelJSmod.default || ExcelJSmod
+      const wb = new ExcelJS.Workbook()
+      await wb.xlsx.load(buffer)
+      const out: string[] = []
+      wb.eachSheet((ws: any) => {
+        out.push(`## Sheet: ${ws.name}`)
+        ws.eachRow((row: any) => {
+          const vals = (row.values || []).slice(1).map((v: any) => {
+            if (v == null) return ""
+            if (v instanceof Date) return v.toISOString().slice(0, 10)
+            if (typeof v === "object") {
+              return v.text || v.result ||
+                (v.richText ? v.richText.map((r: any) => r.text).join("") : "") || ""
+            }
+            return String(v)
+          })
+          out.push(vals.join("\t"))
+        })
+      })
+      text = out.join("\n")
+    } else if (name.endsWith(".pptx")) {
+      const JSZip = ((await import("jszip")) as any).default
+      const zip = await JSZip.loadAsync(buffer)
+      const num = (n: string) => parseInt(n.match(/slide(\d+)/)?.[1] || "0")
+      const slides = Object.keys(zip.files)
+        .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+        .sort((a, b) => num(a) - num(b))
+      const dec = (s: string) => s
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      const out: string[] = []
+      for (const sf of slides) {
+        const xml = await zip.files[sf].async("string")
+        const texts = [...xml.matchAll(/<a:t[^>]*>([^<]*)<\/a:t>/g)]
+          .map(m => dec(m[1])).filter(Boolean)
+        out.push(`## Slide ${num(sf)}\n${texts.join(" ")}`)
+      }
+      text = out.join("\n")
+    } else if (name.endsWith(".xls") || name.endsWith(".ppt")) {
+      return NextResponse.json(
+        { error: "Legacy .xls/.ppt formats aren't supported — save the file as .xlsx or .pptx and try again" },
+        { status: 415 },
+      )
     } else {
       // Plain-text formats
       text = buffer.toString("utf-8")

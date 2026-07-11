@@ -154,7 +154,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
     setAiUploading(true); setAiError("")
     try {
       const lower = file.name.toLowerCase()
-      const needsServer = lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".pdf")
+      const needsServer = /\.(docx?|pdf|xlsx|pptx)$/.test(lower)
 
       let text = ""
       if (needsServer) {
@@ -559,11 +559,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                   </select>
                   {/* Upload document button */}
                   <input ref={aiFileRef} type="file"
-                    accept=".txt,.md,.csv,.json,.xml,.log,.text,.docx,.doc,.pdf"
+                    accept=".txt,.md,.csv,.json,.xml,.log,.text,.docx,.doc,.pdf,.xlsx,.pptx"
                     style={{ display:"none" }}
                     onChange={handleAiFileUpload} />
                   <button onClick={() => aiFileRef.current?.click()} disabled={aiUploading}
-                    title="Upload a document (.docx, .pdf, .txt, .md, .csv) to analyze"
+                    title="Upload a document (.docx, .pdf, .xlsx, .pptx, .txt, .md, .csv) to analyze"
                     style={{ padding:"7px 14px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)", whiteSpace:"nowrap",
