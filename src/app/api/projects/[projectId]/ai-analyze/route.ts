@@ -41,7 +41,7 @@ Project context:
 - Health: ${project.health}
 - % Complete: ${project.percentComplete}%
 
-Analyze this content and extract structured information. Respond ONLY with valid JSON matching this schema exactly:
+Analyze this content and extract structured information. Include at most the 8 most important suggestions, and keep every string value under 30 words. Respond ONLY with valid JSON matching this schema exactly:
 {
   "summary": "2-3 sentence summary of what this content is about",
   "suggestions": [
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [{ role: "user", content: prompt }],
       }),
     })
@@ -163,6 +163,12 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     }
 
     const data = await response.json()
+    if (data.stop_reason === "max_tokens") {
+      return NextResponse.json(
+        { error: "The analysis was too long and got cut off — try a shorter section of the document" },
+        { status: 502 },
+      )
+    }
     const text = data.content?.map((b: any) => b.text || "").join("") || ""
 
     // Parse JSON from AI response

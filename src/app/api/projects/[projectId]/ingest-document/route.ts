@@ -142,7 +142,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01" },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 2000,
+      max_tokens: 4000,
       messages: [{
         role: "user",
         content: `${systemPrompt}\n\nDOCUMENT CONTENT:\n${textContent}\n\nReturn ONLY valid JSON, no markdown, no explanation.`

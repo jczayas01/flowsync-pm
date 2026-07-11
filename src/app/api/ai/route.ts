@@ -32,7 +32,7 @@ async function callAzureOpenAI(
       },
       body: JSON.stringify({
         messages,
-        max_tokens:      2000,
+        max_tokens:      4000,
         temperature:     0.3,
         ...(jsonMode && { response_format: { type: "json_object" } }),
       }),
