@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, ApiContext } from "@/lib/api"
 import { can, mapDbRoleToRbac } from "@/lib/rbac/roles"
 import { notify } from "@/lib/notify"
+import { signRef } from "@/lib/storage"
 
 const patchSchema = z.object({
   action:     z.enum(["review","approve","reject","convert"]),
@@ -100,7 +101,9 @@ async function enrichProjectFromIntake(projectId: string, item: any, files: any[
   const content: any[] = []
   for (const f of (files || []).slice(0, 3)) {
     try {
-      const r = await fetch(f.fileUrl)
+      const signed = await signRef(f.fileUrl)
+      if (!signed) continue
+      const r = await fetch(signed)
       if (!r.ok) continue
       const buf = Buffer.from(await r.arrayBuffer())
       const nm = String(f.name || "").toLowerCase()

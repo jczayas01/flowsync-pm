@@ -104,11 +104,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Document not found" }, { status: 404 })
   }
 
-  // Delete from Supabase Storage (extract path from URL)
+  // Delete from Supabase Storage (fileUrl holds a path; legacy rows hold a URL)
   try {
-    const url    = new URL(doc.fileUrl)
-    const path   = url.pathname.split(`/${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace("https://","").split(".")[0]}/storage/v1/object/public/project-documents/`).pop() || ""
-    if (path) await deleteFile(path)
+    await deleteFile(doc.fileUrl)
   } catch { /* storage delete failure is non-fatal */ }
 
   await db.document.delete({ where: { id: params.documentId } })

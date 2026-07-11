@@ -4,7 +4,7 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
-import { uploadFile } from "@/lib/storage"
+import { uploadFile, signRef } from "@/lib/storage"
 import { mapDbRoleToRbac } from "@/lib/rbac/roles"
 
 // POST /api/intake/:id/files — attach a file to an intake idea
@@ -34,11 +34,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (file.size > 25 * 1024 * 1024) return NextResponse.json({ error: "File too large (max 25MB)" }, { status: 400 })
 
   const path = `intake/${params.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`
-  const { url, error } = await uploadFile(file, path, file.type)
-  if (error || !url) return NextResponse.json({ error: "Upload failed" }, { status: 500 })
+  const { path: storedPath, error } = await uploadFile(file, path, file.type)
+  if (error || !storedPath) return NextResponse.json({ error: "Upload failed" }, { status: 500 })
 
   const rec = await db.intakeFile.create({
-    data: { intakeId: params.id, name: file.name, fileUrl: url, fileType: file.type, fileSize: file.size },
+    data: { intakeId: params.id, name: file.name, fileUrl: storedPath, fileType: file.type, fileSize: file.size },
   })
-  return NextResponse.json({ file: rec })
+  return NextResponse.json({ file: { ...rec, fileUrl: await signRef(rec.fileUrl) } })
 }

@@ -99,7 +99,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [uploadError, setUploadError]   = useState("")
   const [uploadSuccess, setUploadSuccess] = useState("")
   const [deletingId, setDeletingId]     = useState<string|null>(null)
-  const [viewingPdf, setViewingPdf]     = useState<{name:string;url:string}|null>(null)
+  const [viewingPdf, setViewingPdf]     = useState<{name:string;url:string;kind:"pdf"|"docx";html?:string;loading?:boolean;error?:string}|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -349,11 +349,27 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       style={{ fontSize:12, color:"var(--text-3)", background:"none", border:"none",
                         cursor:"pointer", fontFamily:"var(--font)" }}>✕ Close</button>
                   </div>
-                  <iframe
-                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewingPdf.url)}&embedded=true`}
-                    style={{ width:"100%", height:600, border:"none" }}
-                    title={viewingPdf.name}
-                  />
+                  {viewingPdf.kind === "pdf" ? (
+                    <iframe
+                      src={viewingPdf.url}
+                      style={{ width:"100%", height:600, border:"none" }}
+                      title={viewingPdf.name}
+                    />
+                  ) : (
+                    <div style={{ height:600, overflow:"auto", padding:"24px 28px",
+                      background:"#fff", color:"#111", lineHeight:1.6, fontSize:14 }}>
+                      {viewingPdf.loading ? (
+                        <div style={{ color:"#666", fontSize:13 }}>Rendering preview…</div>
+                      ) : viewingPdf.error ? (
+                        <div style={{ color:"#666", fontSize:13 }}>
+                          {viewingPdf.error} — use ↓ Download to open the file.
+                        </div>
+                      ) : (
+                        <div className="docx-preview"
+                          dangerouslySetInnerHTML={{ __html: viewingPdf.html || "" }} />
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
@@ -386,17 +402,27 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       <span>{fmtSize(doc.fileSize || 0)}</span>
                     </div>
                     <div style={{ display:"flex", gap:8, marginTop:4 }}>
-                      <button onClick={() => {
+                      <button onClick={async () => {
                         const type = doc.fileType || ""
                         const url  = doc.fileUrl
+                        const name = String(doc.name || "").toLowerCase()
+                        const isDocx = type.includes("wordprocessingml") || type === "application/msword" || name.endsWith(".docx")
                         if (type === "application/pdf") {
-                          setViewingPdf({ name:doc.name, url })
+                          setViewingPdf({ name:doc.name, url, kind:"pdf" })
                         } else if (type.startsWith("image/")) {
                           window.open(url, "_blank")
-                        } else if (url.startsWith("data:")) {
-                          window.open(url, "_blank")
+                        } else if (isDocx) {
+                          setViewingPdf({ name:doc.name, url, kind:"docx", loading:true })
+                          try {
+                            const res = await fetch(`/api/projects/${projectId}/documents/${doc.id}/preview?workspaceId=${workspaceId}`)
+                            const data = await res.json()
+                            if (!res.ok) throw new Error(data?.error || "Preview unavailable")
+                            setViewingPdf({ name:doc.name, url, kind:"docx", html:data.html })
+                          } catch (e:any) {
+                            setViewingPdf({ name:doc.name, url, kind:"docx", error:e?.message || "Preview unavailable" })
+                          }
                         } else {
-                          window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, "_blank")
+                          window.open(url, "_blank")
                         }
                       }}
                         style={{ flex:1, padding:"6px 0", textAlign:"center", background:"var(--surface)",

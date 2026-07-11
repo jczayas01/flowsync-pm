@@ -8,7 +8,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess, audit, ok, err } from "@/lib/api"
 import { can, mapDbRoleToRbac } from "@/lib/rbac/roles"
-import { uploadFile, BUCKET } from "@/lib/storage"
+import { uploadFile, signRef, BUCKET } from "@/lib/storage"
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 const ALLOWED_TYPES = [
@@ -46,7 +46,12 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     include: { uploadedBy: { select: { id:true, name:true, avatarUrl:true } } },
   })
 
-  return NextResponse.json({ data: documents })
+  // Private bucket: fileUrl stores a path — sign it fresh for each response.
+  const signed = await Promise.all(
+    documents.map(async (d) => ({ ...d, fileUrl: await signRef(d.fileUrl) })),
+  )
+
+  return NextResponse.json({ data: signed })
 }
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
@@ -85,7 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const ext  = file.name.split(".").pop() || "bin"
   const path = `${params.projectId}/${Date.now()}-${file.name.replace(/[^a-z0-9._-]/gi, "_")}`
 
-  const { url, error: uploadError } = await uploadFile(file, path, file.type)
+  const { path: storedPath, error: uploadError } = await uploadFile(file, path, file.type)
   if (uploadError) {
     console.error("[Documents] Storage upload failed:", uploadError)
     return NextResponse.json({ error: `Upload failed: ${uploadError}` }, { status: 500 })
@@ -98,7 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         projectId:    params.projectId,
         name:         file.name,
         description:  description || null,
-        fileUrl:      url,
+        fileUrl:      storedPath,
         fileType:     file.type,
         fileSize:     file.size,
         uploadedById: session.user.id,
@@ -109,7 +114,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     await audit(workspaceId, session.user.id, "document.uploaded", "project", params.projectId,
       undefined, { fileName: file.name, fileSize: file.size })
 
-    return NextResponse.json({ data: document }, { status: 201 })
+    return NextResponse.json(
+      { data: { ...document, fileUrl: await signRef(document.fileUrl) } },
+      { status: 201 },
+    )
   } catch (dbErr: any) {
     console.error("[Documents] DB insert failed:", dbErr?.message)
     return NextResponse.json({ error: `Database error: ${dbErr?.message}` }, { status: 500 })
