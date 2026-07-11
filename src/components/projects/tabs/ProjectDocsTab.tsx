@@ -176,12 +176,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
         })
       }
       setAiContent(text.slice(0, 12000)) // limit to 12k chars
-      // Auto-detect content type from filename
+      // Auto-detect content type from filename (values must match CONTENT_TYPES)
       const name = file.name.toLowerCase()
-      if (name.includes("minute") || name.includes("meeting")) setAiContentType("meeting_notes")
+      if (name.includes("minute") || name.includes("meeting")) setAiContentType("notes")
       else if (name.includes("email") || name.includes("mail"))  setAiContentType("email")
-      else if (name.includes("report") || name.includes("status")) setAiContentType("status_report")
-      else setAiContentType("notes")
+      else setAiContentType("document")
     } catch (err: any) {
       setAiError(err?.message || "Could not read file — try a .txt, .docx, or .pdf, or paste the content manually")
     } finally {
@@ -582,7 +581,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                   </div>
                 )}
 
-                <textarea value={aiContent} onChange={e => setAiContent(e.target.value)}
+                <textarea value={aiContent} maxLength={20000} onChange={e => setAiContent(e.target.value)}
                   rows={8} placeholder={
                     aiContentType === "email"
                       ? "Paste your email here...\n\nFrom: john@example.com\nSubject: Project Status Update\n\nHi team, I wanted to update you on..."

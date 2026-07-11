@@ -11,7 +11,7 @@ import { verifyProjectAccess } from "@/lib/api"
 const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("analyze_content"),
-    content: z.string().min(10).max(10000),
+    content: z.string().min(10).max(20000),
     contentType: z.enum(["email","teams_meeting","teams_chat","document","notes"]).default("email"),
   }),
   z.object({
