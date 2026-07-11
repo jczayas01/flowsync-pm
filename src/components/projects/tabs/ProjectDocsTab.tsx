@@ -153,13 +153,28 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
     if (!file) return
     setAiUploading(true); setAiError("")
     try {
-      // Read file as text
-      const text = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload  = () => resolve(reader.result as string)
-        reader.onerror = () => reject(new Error("Failed to read file"))
-        reader.readAsText(file)
-      })
+      const lower = file.name.toLowerCase()
+      const needsServer = lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".pdf")
+
+      let text = ""
+      if (needsServer) {
+        // Word/PDF can't be read in the browser — extract text server-side
+        const fd = new FormData()
+        fd.append("file", file)
+        const res = await fetch(`/api/projects/${projectId}/ai-analyze/extract?workspaceId=${workspaceId}`, {
+          method: "POST", body: fd,
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || "Could not read file")
+        text = data.text || ""
+      } else {
+        text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload  = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error("Failed to read file"))
+          reader.readAsText(file)
+        })
+      }
       setAiContent(text.slice(0, 12000)) // limit to 12k chars
       // Auto-detect content type from filename
       const name = file.name.toLowerCase()
@@ -167,8 +182,8 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       else if (name.includes("email") || name.includes("mail"))  setAiContentType("email")
       else if (name.includes("report") || name.includes("status")) setAiContentType("status_report")
       else setAiContentType("notes")
-    } catch {
-      setAiError("Could not read file — try a .txt or .md file, or paste the content manually")
+    } catch (err: any) {
+      setAiError(err?.message || "Could not read file — try a .txt, .docx, or .pdf, or paste the content manually")
     } finally {
       setAiUploading(false)
       if (aiFileRef.current) aiFileRef.current.value = ""
@@ -544,11 +559,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                   </select>
                   {/* Upload document button */}
                   <input ref={aiFileRef} type="file"
-                    accept=".txt,.md,.csv,.json,.xml,.log,.text"
+                    accept=".txt,.md,.csv,.json,.xml,.log,.text,.docx,.doc,.pdf"
                     style={{ display:"none" }}
                     onChange={handleAiFileUpload} />
                   <button onClick={() => aiFileRef.current?.click()} disabled={aiUploading}
-                    title="Upload a text document (.txt, .md, .csv) to analyze"
+                    title="Upload a document (.docx, .pdf, .txt, .md, .csv) to analyze"
                     style={{ padding:"7px 14px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)", whiteSpace:"nowrap",
