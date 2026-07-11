@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { ProjectDocsTab } from "@/components/projects/tabs/ProjectDocsTab"
+import { signRef } from "@/lib/storage"
 import { mapDbRoleToRbac } from "@/lib/rbac/roles"
 
 export default async function ProjectDocsPage({ params }: { params: { projectId: string } }) {
@@ -50,6 +51,10 @@ export default async function ProjectDocsPage({ params }: { params: { projectId:
   if (isClient) {
     documents = documents.filter(d => d.sharedWithClient || d.shares.some((s:any) => s.userId === session.user.id))
   }
+  // Private bucket: fileUrl stores a path — sign for initial render (API refreshes after)
+  documents = await Promise.all(
+    documents.map(async d => ({ ...d, fileUrl: await signRef(d.fileUrl) }))
+  )
 
   return (
     <ProjectDocsTab

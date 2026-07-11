@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { mapDbRoleToRbac, can } from "@/lib/rbac/roles"
 import { IntakeView } from "@/components/intake/IntakeView"
+import { signRef } from "@/lib/storage"
 
 export const metadata: Metadata = { title: "Project Intake" }
 
@@ -40,7 +41,10 @@ export default async function IntakePage() {
       where:  { intakeId: { in: items.map(i => i.id) } },
       select: { id:true, name:true, fileUrl:true, fileType:true, intakeId:true },
     })
-    for (const f of fileRows) (filesByIntake[f.intakeId] ||= []).push(f)
+    for (const f of fileRows) {
+      const signed = { ...f, fileUrl: await signRef(f.fileUrl) }
+      ;(filesByIntake[f.intakeId] ||= []).push(signed)
+    }
   } catch { /* table not migrated yet — list still shows */ }
 
   const plain = items.map(i => ({

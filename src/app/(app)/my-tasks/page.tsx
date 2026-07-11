@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { MyTasksView } from "@/components/mytasks/MyTasksView"
 import { mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
+import { signRef } from "@/lib/storage"
 
 export const metadata: Metadata = { title: "My Tasks" }
 
@@ -87,10 +88,10 @@ export default async function MyTasksPage() {
     })
   } catch { sharedDocs = [] }
 
-  const docs = sharedDocs.map(d => ({
-    id: d.id, name: d.name, fileUrl: d.fileUrl, fileType: d.fileType,
+  const docs = await Promise.all(sharedDocs.map(async d => ({
+    id: d.id, name: d.name, fileUrl: await signRef(d.fileUrl), fileType: d.fileType,
     createdAt: d.createdAt, projectCode: d.project?.code, projectName: d.project?.name,
-  }))
+  })))
 
   return <MyTasksView tasks={plain} userName={session.user.name || "You"}
     userId={session.user.id} userLevel={ROLE_LEVEL[rbacRole] ?? 30} canOpenProject={!restricted} sharedDocs={docs} />
