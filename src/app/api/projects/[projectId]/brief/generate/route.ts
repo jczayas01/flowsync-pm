@@ -17,7 +17,7 @@ const PER_DOC_CHARS = 6000
 const TOTAL_CHARS   = 15000
 
 const FIELDS = [
-  "background", "objective", "scope", "outOfScope",
+  "description", "background", "objective", "scope", "outOfScope",
   "economicImpact", "assumptions", "constraints",
 ] as const
 
@@ -84,6 +84,7 @@ Write in the SAME LANGUAGE as the source documents.
 
 Respond ONLY with valid JSON, no markdown, exactly this shape (use null for any field the documents don't support):
 {
+  "description": "short summary of what this project is (max 100 words)",
   "background": "business context and why this project exists (max 120 words)",
   "objective": "what the project must achieve, measurable outcomes (max 120 words)",
   "scope": "deliverables and work included (max 120 words)",

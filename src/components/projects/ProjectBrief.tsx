@@ -26,6 +26,8 @@ function fmtCurrency(n: number, currency = "USD") {
 }
 
 const SECTIONS = [
+  { key:"description",   label:"Project Description",  icon:"📝",
+    hint:"A short summary of what this project is, in one or two paragraphs." },
   { key:"background",    label:"Background",           icon:"📋",
     hint:"Describe the business context, problem being solved, and why this project was initiated." },
   { key:"objective",     label:"Project Objective",    icon:"🎯",
