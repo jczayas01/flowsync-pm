@@ -899,6 +899,7 @@ model Document {
   uploadedById     String
   createdAt        DateTime        @default(now())
   sharedWithClient Boolean         @default(false)
+  weekOf           DateTime?
   shares           DocumentShare[]
   project          Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   uploadedBy       User            @relation("UploadedDocuments", fields: [uploadedById], references: [id])

@@ -41,7 +41,10 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}))
   const updated = await db.document.update({
     where: { id: params.documentId },
-    data:  "sharedWithClient" in body ? { sharedWithClient: Boolean(body.sharedWithClient) } : {},
+    data:  {
+      ...("sharedWithClient" in body ? { sharedWithClient: Boolean(body.sharedWithClient) } : {}),
+      ...("weekOf" in body ? { weekOf: body.weekOf ? new Date(body.weekOf) : null } : {}),
+    },
   })
 
   // Explicit per-member sharing: body.shareUserIds = array of userIds who may see this doc

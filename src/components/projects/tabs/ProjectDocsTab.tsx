@@ -146,12 +146,12 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [aiResult, setAiResult] = useState<any>(null)
   const [aiError, setAiError] = useState("")
   const [aiUploading, setAiUploading] = useState(false)
-  const aiFileRef = useRef<HTMLInputElement>(null)
 
   // ── Analyze stored project documents (multi-select) ──
   const [aiDocPickerOpen, setAiDocPickerOpen] = useState(false)
   const [aiSelectedDocs, setAiSelectedDocs]   = useState<Set<string>>(new Set())
   const [aiLoadedFrom, setAiLoadedFrom]       = useState("")
+  const [aiOpenWeeks, setAiOpenWeeks]         = useState<Set<string>>(new Set())
 
   function toggleAiDoc(id: string) {
     setAiSelectedDocs(prev => {
@@ -159,6 +159,53 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+  }
+
+  // ── Week helpers (grouping + reassignment) ──
+  const weekStartOf = (d: any) => {
+    const dt = new Date(d); const day = dt.getDay()
+    dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1)); dt.setHours(0,0,0,0)
+    return dt
+  }
+  const effWeek = (doc: any) => weekStartOf(doc.weekOf || doc.createdAt)
+  const thisWeekTs = weekStartOf(new Date()).getTime()
+  const weekLabel = (s: Date) => {
+    if (s.getTime() === thisWeekTs) return "This week"
+    const end = new Date(s); end.setDate(s.getDate() + 6)
+    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+    return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
+  }
+  function groupByWeek(list: any[]) {
+    const groups: { start: Date; docs: any[] }[] = []
+    for (const doc of list) {
+      const start = effWeek(doc)
+      const g = groups.find(x => x.start.getTime() === start.getTime())
+      if (g) g.docs.push(doc); else groups.push({ start, docs: [doc] })
+    }
+    groups.sort((a, b) => b.start.getTime() - a.start.getTime())
+    return groups
+  }
+  // Recent Mondays for the "move to week" menu
+  const weekOptions = (() => {
+    const opts: Date[] = []
+    const base = weekStartOf(new Date())
+    for (let i = 0; i < 12; i++) { const d = new Date(base); d.setDate(base.getDate() - i * 7); opts.push(d) }
+    return opts
+  })()
+  const [movingWeekDocId, setMovingWeekDocId] = useState<string | null>(null)
+
+  async function moveDocToWeek(doc: any, weekIso: string | null) {
+    const prev = doc.weekOf || null
+    setFiles(fs => fs.map((d: any) => d.id === doc.id ? { ...d, weekOf: weekIso } : d))  // optimistic
+    setMovingWeekDocId(null)
+    try {
+      await fetch(`/api/projects/${projectId}/documents/${doc.id}?workspaceId=${workspaceId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekOf: weekIso }),
+      })
+    } catch {
+      setFiles(fs => fs.map((d: any) => d.id === doc.id ? { ...d, weekOf: prev } : d))  // revert
+    }
   }
 
   async function loadSelectedDocs() {
@@ -180,48 +227,6 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
     } finally { setAiUploading(false) }
   }
 
-  async function handleAiFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setAiUploading(true); setAiError("")
-    try {
-      const lower = file.name.toLowerCase()
-      const needsServer = /\.(docx?|pdf|xlsx|pptx|msg)$/.test(lower)
-
-      let text = ""
-      if (needsServer) {
-        // Word/PDF can't be read in the browser — extract text server-side
-        const fd = new FormData()
-        fd.append("file", file)
-        const res = await fetch(`/api/projects/${projectId}/ai-analyze/extract?workspaceId=${workspaceId}`, {
-          method: "POST", body: fd,
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data?.error || "Could not read file")
-        text = data.text || ""
-      } else {
-        text = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload  = () => resolve(reader.result as string)
-          reader.onerror = () => reject(new Error("Failed to read file"))
-          reader.readAsText(file)
-        })
-      }
-      setAiContent(text.slice(0, 12000)) // limit to 12k chars
-      // Auto-detect content type from filename (values must match CONTENT_TYPES)
-      const name = file.name.toLowerCase()
-      if (name.endsWith(".msg")) setAiContentType("email")
-      else if (name.endsWith(".vtt")) setAiContentType("teams_meeting")
-      else if (name.includes("minute") || name.includes("meeting")) setAiContentType("notes")
-      else if (name.includes("email") || name.includes("mail"))  setAiContentType("email")
-      else setAiContentType("document")
-    } catch (err: any) {
-      setAiError(err?.message || "Could not read file — try a .txt, .docx, or .pdf, or paste the content manually")
-    } finally {
-      setAiUploading(false)
-      if (aiFileRef.current) aiFileRef.current.value = ""
-    }
-  }
 
   // Report generator
   const weekStart = new Date()
@@ -353,7 +358,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
             )}
             <div style={{ marginLeft:"auto" }}>
               <input ref={fileRef} type="file" style={{ display:"none" }} onChange={handleUpload}
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp" />
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.msg,.vtt,.json,.xml,.log,.jpg,.jpeg,.png,.gif,.webp" />
               <button onClick={() => fileRef.current?.click()} disabled={uploading}
                 style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
@@ -423,26 +428,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                 </div>
               )}
               {(() => {
-                // Group files by the Monday of their upload week
-                const weekStartOf = (d: any) => {
-                  const dt = new Date(d); const day = dt.getDay()
-                  dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1)); dt.setHours(0,0,0,0)
-                  return dt
-                }
-                const groups: { start: Date; docs: any[] }[] = []
-                for (const doc of files) {
-                  const start = weekStartOf(doc.createdAt)
-                  const g = groups.find(x => x.start.getTime() === start.getTime())
-                  if (g) g.docs.push(doc); else groups.push({ start, docs: [doc] })
-                }
-                groups.sort((a, b) => b.start.getTime() - a.start.getTime())
-                const thisWeek = weekStartOf(new Date()).getTime()
-                const weekLabel = (s: Date) => {
-                  if (s.getTime() === thisWeek) return "This week"
-                  const end = new Date(s); end.setDate(s.getDate() + 6)
-                  const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
-                  return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
-                }
+                const groups = groupByWeek(files)
                 return groups.map(g => (
                   <div key={g.start.toISOString()} style={{ marginBottom: 18 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:10, margin:"4px 0 10px" }}>
@@ -568,6 +554,47 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                           )}
                         </div>
                       )}
+                      <div style={{ position:"relative" }}>
+                        <button onClick={() => setMovingWeekDocId(movingWeekDocId===doc.id ? null : doc.id)}
+                          title="Move this document to another week"
+                          style={{ padding:"6px 10px", background:"#fff", border:"1px solid var(--border)",
+                            borderRadius:"var(--radius)", fontSize:12, color:"var(--text-2)",
+                            cursor:"pointer", fontFamily:"var(--font)" }}>
+                          📅
+                        </button>
+                        {movingWeekDocId === doc.id && (
+                          <div style={{ position:"absolute", right:0, top:"110%", zIndex:20,
+                            background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)",
+                            boxShadow:"var(--shadow-md)", padding:6, width:230, maxHeight:220, overflowY:"auto" }}>
+                            <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
+                              letterSpacing:".05em", color:"var(--text-3)", padding:"4px 6px" }}>
+                              Move to week
+                            </div>
+                            {doc.weekOf && (
+                              <button onClick={() => moveDocToWeek(doc, null)}
+                                style={{ display:"block", width:"100%", textAlign:"left", padding:"6px 8px",
+                                  background:"none", border:"none", fontSize:12, color:"var(--text-2)",
+                                  cursor:"pointer", fontFamily:"var(--font)" }}>
+                                ↩ Reset to upload week
+                              </button>
+                            )}
+                            {weekOptions.map(w => {
+                              const active = effWeek(doc).getTime() === w.getTime()
+                              return (
+                                <button key={w.toISOString()} disabled={active}
+                                  onClick={() => moveDocToWeek(doc, w.toISOString())}
+                                  style={{ display:"block", width:"100%", textAlign:"left", padding:"6px 8px",
+                                    background: active ? "var(--surface)" : "none", border:"none",
+                                    fontSize:12, color: active ? "var(--text-4)" : "var(--text)",
+                                    cursor: active ? "default" : "pointer", fontFamily:"var(--font)",
+                                    borderRadius:6 }}>
+                                  {active ? "✓ " : ""}{weekLabel(w)}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
                       {can("projects:edit") && (
                       <button onClick={() => handleDelete(doc.id, doc.name)}
                         disabled={deletingId === doc.id}
@@ -629,11 +656,6 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                     style={{ ...inp, width:"auto", flex:1 }}>
                     {CONTENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
-                  {/* Upload document button */}
-                  <input ref={aiFileRef} type="file"
-                    accept=".txt,.md,.csv,.json,.xml,.log,.text,.vtt,.docx,.doc,.pdf,.xlsx,.pptx,.msg"
-                    style={{ display:"none" }}
-                    onChange={handleAiFileUpload} />
                   <button onClick={() => setAiDocPickerOpen(o => !o)} disabled={aiUploading || files.length === 0}
                     title={files.length ? "Analyze documents already uploaded to this project" : "No documents in this project yet"}
                     style={{ padding:"7px 14px", background:"var(--steel)", border:"none",
@@ -644,29 +666,64 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       opacity: files.length ? 1 : 0.5 }}>
                     📂 From documents
                   </button>
-                  <button onClick={() => aiFileRef.current?.click()} disabled={aiUploading}
-                    title="Upload a document or email (.docx, .pdf, .xlsx, .pptx, .msg, .vtt, .txt) to analyze"
-                    style={{ padding:"7px 14px", background:"#fff", border:"1px solid var(--border)",
-                      borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                      fontFamily:"var(--font)", color:"var(--text-2)", whiteSpace:"nowrap",
-                      display:"flex", alignItems:"center", gap:5, flexShrink:0 }}>
-                    {aiUploading ? "⏳ Reading…" : "📎 Upload file"}
-                  </button>
                 </div>
                 {aiDocPickerOpen && (
                   <div style={{ border:"1px solid var(--border)", borderRadius:"var(--radius)",
                     padding:12, marginBottom:12, background:"var(--surface)" }}>
                     <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:8 }}>
-                      Select one or more project documents to analyze together.
+                      Pick a week to open its documents. Checking a week selects all its documents.
                     </div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:180, overflowY:"auto" }}>
-                      {files.map((f: any) => (
-                        <label key={f.id} style={{ display:"flex", alignItems:"center", gap:8,
-                          fontSize:13, color:"var(--text)", cursor:"pointer" }}>
-                          <input type="checkbox" checked={aiSelectedDocs.has(f.id)} onChange={() => toggleAiDoc(f.id)} />
-                          <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</span>
-                        </label>
-                      ))}
+                    <div style={{ display:"flex", flexDirection:"column", gap:4, maxHeight:240, overflowY:"auto" }}>
+                      {groupByWeek(files).map((g, gi) => {
+                        const key = g.start.toISOString()
+                        const open = aiOpenWeeks.has(key) || (aiOpenWeeks.size === 0 && gi === 0)
+                        const allChecked = g.docs.every((d: any) => aiSelectedDocs.has(d.id))
+                        const someChecked = g.docs.some((d: any) => aiSelectedDocs.has(d.id))
+                        return (
+                          <div key={key}>
+                            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 4px",
+                              background:"#fff", border:"1px solid var(--border)", borderRadius:6 }}>
+                              <input type="checkbox" checked={allChecked}
+                                ref={el => { if (el) el.indeterminate = !allChecked && someChecked }}
+                                onChange={() => {
+                                  setAiSelectedDocs(prev => {
+                                    const next = new Set(prev)
+                                    if (allChecked) g.docs.forEach((d: any) => next.delete(d.id))
+                                    else g.docs.forEach((d: any) => next.add(d.id))
+                                    return next
+                                  })
+                                }} />
+                              <button onClick={() => {
+                                setAiOpenWeeks(prev => {
+                                  const next = new Set(prev.size === 0 ? [groupByWeek(files)[0]?.start.toISOString()].filter(Boolean) as string[] : [...prev])
+                                  next.has(key) ? next.delete(key) : next.add(key)
+                                  return next
+                                })
+                              }}
+                                style={{ flex:1, display:"flex", alignItems:"center", gap:6, background:"none",
+                                  border:"none", cursor:"pointer", fontFamily:"var(--font)",
+                                  fontSize:12, fontWeight:700, color:"var(--text-2)", textAlign:"left" }}>
+                                <span style={{ fontSize:10 }}>{open ? "▼" : "▶"}</span>
+                                {weekLabel(g.start)}
+                                <span style={{ marginLeft:"auto", fontWeight:400, color:"var(--text-3)" }}>
+                                  {g.docs.length} file{g.docs.length !== 1 ? "s" : ""}
+                                </span>
+                              </button>
+                            </div>
+                            {open && (
+                              <div style={{ display:"flex", flexDirection:"column", gap:4, padding:"6px 4px 8px 26px" }}>
+                                {g.docs.map((f: any) => (
+                                  <label key={f.id} style={{ display:"flex", alignItems:"center", gap:8,
+                                    fontSize:13, color:"var(--text)", cursor:"pointer" }}>
+                                    <input type="checkbox" checked={aiSelectedDocs.has(f.id)} onChange={() => toggleAiDoc(f.id)} />
+                                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                     <button onClick={loadSelectedDocs} disabled={aiUploading || aiSelectedDocs.size === 0}
                       style={{ marginTop:10, padding:"7px 16px", background:"var(--steel)", color:"#fff",
