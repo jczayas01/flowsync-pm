@@ -148,6 +148,38 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [aiUploading, setAiUploading] = useState(false)
   const aiFileRef = useRef<HTMLInputElement>(null)
 
+  // ── Analyze stored project documents (multi-select) ──
+  const [aiDocPickerOpen, setAiDocPickerOpen] = useState(false)
+  const [aiSelectedDocs, setAiSelectedDocs]   = useState<Set<string>>(new Set())
+  const [aiLoadedFrom, setAiLoadedFrom]       = useState("")
+
+  function toggleAiDoc(id: string) {
+    setAiSelectedDocs(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function loadSelectedDocs() {
+    if (!aiSelectedDocs.size) return
+    setAiUploading(true); setAiError(""); setAiLoadedFrom("")
+    try {
+      const res = await fetch(`/api/projects/${projectId}/ai-analyze/extract?workspaceId=${workspaceId}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentIds: [...aiSelectedDocs] }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`)
+      setAiContent((data.text || "").slice(0, 12000))
+      setAiContentType("document")
+      setAiLoadedFrom((data.usedDocuments || []).join(", "))
+      setAiDocPickerOpen(false)
+    } catch (err: any) {
+      setAiError(err?.message || "Could not read the selected documents")
+    } finally { setAiUploading(false) }
+  }
+
   async function handleAiFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -390,8 +422,41 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                   )}
                 </div>
               )}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
-                {files.map(doc => (
+              {(() => {
+                // Group files by the Monday of their upload week
+                const weekStartOf = (d: any) => {
+                  const dt = new Date(d); const day = dt.getDay()
+                  dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1)); dt.setHours(0,0,0,0)
+                  return dt
+                }
+                const groups: { start: Date; docs: any[] }[] = []
+                for (const doc of files) {
+                  const start = weekStartOf(doc.createdAt)
+                  const g = groups.find(x => x.start.getTime() === start.getTime())
+                  if (g) g.docs.push(doc); else groups.push({ start, docs: [doc] })
+                }
+                groups.sort((a, b) => b.start.getTime() - a.start.getTime())
+                const thisWeek = weekStartOf(new Date()).getTime()
+                const weekLabel = (s: Date) => {
+                  if (s.getTime() === thisWeek) return "This week"
+                  const end = new Date(s); end.setDate(s.getDate() + 6)
+                  const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+                  return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
+                }
+                return groups.map(g => (
+                  <div key={g.start.toISOString()} style={{ marginBottom: 18 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, margin:"4px 0 10px" }}>
+                      <span style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+                        letterSpacing:".06em", color:"var(--text-3)", flexShrink:0 }}>
+                        {weekLabel(g.start)}
+                      </span>
+                      <div style={{ flex:1, height:1, background:"var(--border)" }} />
+                      <span style={{ fontSize:11, color:"var(--text-3)", flexShrink:0 }}>
+                        {g.docs.length} file{g.docs.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
+                      {g.docs.map(doc => (
                   <div key={doc.id} style={{ background:"#fff", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", padding:14, display:"flex", flexDirection:"column",
                     gap:8, transition:"box-shadow .15s" }}
@@ -514,8 +579,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()}
               </>
             )}
           </div>
@@ -566,6 +634,16 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                     accept=".txt,.md,.csv,.json,.xml,.log,.text,.vtt,.docx,.doc,.pdf,.xlsx,.pptx,.msg"
                     style={{ display:"none" }}
                     onChange={handleAiFileUpload} />
+                  <button onClick={() => setAiDocPickerOpen(o => !o)} disabled={aiUploading || files.length === 0}
+                    title={files.length ? "Analyze documents already uploaded to this project" : "No documents in this project yet"}
+                    style={{ padding:"7px 14px", background:"var(--steel)", border:"none",
+                      borderRadius:"var(--radius)", fontSize:12,
+                      cursor: files.length ? "pointer" : "not-allowed",
+                      fontFamily:"var(--font)", color:"#fff", fontWeight:500, whiteSpace:"nowrap",
+                      display:"flex", alignItems:"center", gap:5, flexShrink:0,
+                      opacity: files.length ? 1 : 0.5 }}>
+                    📂 From documents
+                  </button>
                   <button onClick={() => aiFileRef.current?.click()} disabled={aiUploading}
                     title="Upload a document or email (.docx, .pdf, .xlsx, .pptx, .msg, .vtt, .txt) to analyze"
                     style={{ padding:"7px 14px", background:"#fff", border:"1px solid var(--border)",
@@ -575,10 +653,35 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                     {aiUploading ? "⏳ Reading…" : "📎 Upload file"}
                   </button>
                 </div>
+                {aiDocPickerOpen && (
+                  <div style={{ border:"1px solid var(--border)", borderRadius:"var(--radius)",
+                    padding:12, marginBottom:12, background:"var(--surface)" }}>
+                    <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:8 }}>
+                      Select one or more project documents to analyze together.
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:180, overflowY:"auto" }}>
+                      {files.map((f: any) => (
+                        <label key={f.id} style={{ display:"flex", alignItems:"center", gap:8,
+                          fontSize:13, color:"var(--text)", cursor:"pointer" }}>
+                          <input type="checkbox" checked={aiSelectedDocs.has(f.id)} onChange={() => toggleAiDoc(f.id)} />
+                          <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <button onClick={loadSelectedDocs} disabled={aiUploading || aiSelectedDocs.size === 0}
+                      style={{ marginTop:10, padding:"7px 16px", background:"var(--steel)", color:"#fff",
+                        border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
+                        fontFamily:"var(--font)",
+                        cursor: aiUploading || aiSelectedDocs.size === 0 ? "not-allowed" : "pointer",
+                        opacity: aiUploading || aiSelectedDocs.size === 0 ? 0.6 : 1 }}>
+                      {aiUploading ? "⏳ Reading…" : `Load ${aiSelectedDocs.size || ""} selected →`}
+                    </button>
+                  </div>
+                )}
                 {aiContent && (
                   <div style={{ fontSize:11, color:"var(--text-4)", marginBottom:6 }}>
-                    {aiContent.length.toLocaleString()} characters loaded
-                    <button onClick={()=>{setAiContent("");setAiResult(null)}}
+                    {aiContent.length.toLocaleString()} characters loaded{aiLoadedFrom ? ` from: ${aiLoadedFrom}` : ""}
+                    <button onClick={()=>{setAiContent("");setAiResult(null);setAiLoadedFrom("")}}
                       style={{ marginLeft:10, fontSize:11, color:"var(--red)", background:"none",
                         border:"none", cursor:"pointer", fontFamily:"var(--font)" }}>
                       × Clear
