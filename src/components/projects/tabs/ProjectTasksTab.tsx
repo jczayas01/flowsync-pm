@@ -536,7 +536,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
     if (!confirm(`Delete ${selected.size} tasks?`)) return
     const ids = new Set(selected)
     setLocalTasks(prev => prev.filter(t => !ids.has(t.id)))   // optimistic removal
-    for (const id of ids) await fetch(`/api/tasks/${id}`, { method:"DELETE" })
+    await Promise.all([...ids].map(id => fetch(`/api/tasks/${id}`, { method:"DELETE" })))
     clearSelection(); debouncedRefresh()
   }
 

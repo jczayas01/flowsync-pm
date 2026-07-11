@@ -41,10 +41,10 @@ export default async function IntakePage() {
       where:  { intakeId: { in: items.map(i => i.id) } },
       select: { id:true, name:true, fileUrl:true, fileType:true, intakeId:true },
     })
-    for (const f of fileRows) {
-      const signed = { ...f, fileUrl: await signRef(f.fileUrl) }
-      ;(filesByIntake[f.intakeId] ||= []).push(signed)
-    }
+    const signedRows = await Promise.all(
+      fileRows.map(async f => ({ ...f, fileUrl: await signRef(f.fileUrl) }))
+    )
+    for (const f of signedRows) (filesByIntake[f.intakeId] ||= []).push(f)
   } catch { /* table not migrated yet — list still shows */ }
 
   const plain = items.map(i => ({

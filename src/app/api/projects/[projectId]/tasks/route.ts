@@ -260,11 +260,11 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext, params) 
       const projectMembers = await prisma.projectMember.findMany({
         where: { projectId, userId: { in: data.assigneeIds } },
       })
-      for (const pm of projectMembers) {
-        await prisma.taskAssignee.create({
+      await Promise.all(projectMembers.map(pm =>
+        prisma.taskAssignee.create({
           data: { taskId: task.id, projectMemberId: pm.id, userId: pm.userId },
         }).catch(() => {})
-      }
+      ))
       // Notify the assignees (self is skipped inside notify)
       await notifyMany(projectMembers.map(pm => pm.userId), {
         workspaceId: ctx.workspaceId,
