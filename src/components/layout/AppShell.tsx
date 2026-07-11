@@ -19,7 +19,6 @@ const NAV = [
   // Executive — strategic oversight
   { href:"/executive",  icon:"👔",  label:"Executive",  perm:"projects:view_all", section:"Executive" },
   { href:"/goals",      icon:"🎯",  label:"Goals",     minLevel:50, section:"Executive" },
-  { href:"/reports",    icon:"📈",  label:"Reports",    perm:"reports:view", minLevel:30, section:"Executive" },
 
   // Portfolio — high-level project structure (the hierarchy)
   { href:"/portfolio",  icon:"📊",  label:"Portfolio",  perm:"programs:view", section:"Portfolio", children:[

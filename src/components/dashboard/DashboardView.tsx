@@ -49,7 +49,6 @@ export function DashboardView({ projects, milestones, risks, activity,
     { href:'/projects',  label:'New Project',    icon:'＋', show:can('projects:create') },
     { href:'/intake',    label:'Submit an Idea', icon:'💡', show:lvl > 5 },
     { href:'/executive', label:'Executive View', icon:'👔', show:can('projects:view_all') },
-    { href:'/reports',   label:'Reports',        icon:'📈', show:can('reports:view') && lvl >= 30 },
   ].filter(a => a.show)
 
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
