@@ -42,17 +42,63 @@ const SECTIONS = [
     hint:"Known limitations: budget ceiling, regulatory requirements, technology choices, deadlines." },
 ]
 
-export function ProjectBrief({ projectId, project, members, workspaceName }: {
+export function ProjectBrief({ projectId, project, members, workspaceName, documents = [] }: {
   projectId: string
   project: any
   members: any[]
   workspaceName?: string
+  documents?: { id: string; name: string }[]
 }) {
   const router = useRouter()
   const [editingKey, setEditingKey] = useState<string|null>(null)
   const [editValue, setEditValue]   = useState("")
   const [saving, setSaving]         = useState(false)
   const [localProject, setLocalProject] = useState(project)
+
+  // ── AI Brief generator state ──
+  const [genOpen, setGenOpen]         = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(documents.map(d => d.id)))
+  const [generating, setGenerating]   = useState(false)
+  const [genError, setGenError]       = useState("")
+  const [drafts, setDrafts]           = useState<Record<string,string>|null>(null)
+  const [applying, setApplying]       = useState<string|null>(null)
+
+  function toggleDoc(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function generateBrief() {
+    setGenerating(true); setGenError(""); setDrafts(null)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/brief/generate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentIds: [...selectedIds] }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setGenError(data?.error || `Request failed (${res.status})`); return }
+      const d = data?.data?.drafts || {}
+      if (!Object.keys(d).length) { setGenError("The documents didn't contain enough information to draft the brief"); return }
+      setDrafts(d)
+    } catch { setGenError("Connection lost — check your internet and try again") }
+    finally { setGenerating(false) }
+  }
+
+  async function applyDraft(key: string) {
+    if (!drafts?.[key]) return
+    setApplying(key)
+    try {
+      await save(key, drafts[key])
+      setDrafts(prev => {
+        if (!prev) return prev
+        const next = { ...prev }; delete next[key]
+        return Object.keys(next).length ? next : null
+      })
+    } finally { setApplying(null) }
+  }
 
   async function save(key: string, value: string) {
     setSaving(true)
@@ -106,8 +152,16 @@ export function ProjectBrief({ projectId, project, members, workspaceName }: {
     <div style={{ flex:1, overflowY:"auto", padding:24, background:"var(--surface)" }}>
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
 
-        {/* Print button */}
-        <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:16 }}>
+        {/* Print + Generate buttons */}
+        <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginBottom:16 }}>
+          {documents.length > 0 && (
+            <button onClick={() => setGenOpen(o => !o)}
+              style={{ padding:"7px 14px", background:"var(--steel)", border:"none",
+                borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                fontFamily:"var(--font)", color:"#fff", fontWeight:500 }}>
+              ✨ Generate from documents
+            </button>
+          )}
           <button onClick={() => window.print()}
             style={{ padding:"7px 14px", background:"#fff", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
@@ -115,6 +169,67 @@ export function ProjectBrief({ projectId, project, members, workspaceName }: {
             🖨 Print / Export PDF
           </button>
         </div>
+
+        {/* AI generator panel */}
+        {genOpen && (
+          <div className="no-print" style={{ background:"#fff", border:"1px solid var(--border)",
+            borderRadius:"var(--radius)", padding:16, marginBottom:16 }}>
+            <div style={{ fontSize:12, fontWeight:600, color:"var(--text-2)", marginBottom:10 }}>
+              AI reads the selected documents and drafts the brief sections. Nothing is saved until you apply a draft.
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:12 }}>
+              {documents.map(d => (
+                <label key={d.id} style={{ display:"flex", alignItems:"center", gap:8,
+                  fontSize:13, color:"var(--text)", cursor:"pointer" }}>
+                  <input type="checkbox" checked={selectedIds.has(d.id)} onChange={() => toggleDoc(d.id)} />
+                  {d.name}
+                </label>
+              ))}
+            </div>
+            <button onClick={generateBrief} disabled={generating || selectedIds.size === 0}
+              style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff", border:"none",
+                borderRadius:"var(--radius)", fontSize:13, fontWeight:500, fontFamily:"var(--font)",
+                cursor: generating || selectedIds.size === 0 ? "not-allowed" : "pointer",
+                opacity: generating || selectedIds.size === 0 ? 0.6 : 1 }}>
+              {generating ? "Reading documents and drafting… (up to a minute)" : "Generate drafts →"}
+            </button>
+            {genError && (
+              <div style={{ marginTop:10, padding:"8px 12px", background:"#FEF2F2",
+                border:"1px solid #FECACA", borderRadius:"var(--radius)", fontSize:12, color:"#B91C1C" }}>
+                ✗ {genError}
+              </div>
+            )}
+            {drafts && (
+              <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:12 }}>
+                {SECTIONS.filter(s => drafts[s.key]).map(s => {
+                  const hasExisting = !!(localProject?.[s.key] || "").trim()
+                  return (
+                    <div key={s.key} style={{ border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", padding:12, background:"var(--surface)" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                        <span style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+                          letterSpacing:".05em", color:"var(--text-3)" }}>{s.icon} {s.label}</span>
+                        {hasExisting && (
+                          <span style={{ fontSize:11, color:"#B45309" }}>· will replace current text</span>
+                        )}
+                        <button onClick={() => applyDraft(s.key)} disabled={applying === s.key}
+                          style={{ marginLeft:"auto", padding:"4px 12px", background:"var(--steel)",
+                            color:"#fff", border:"none", borderRadius:"var(--radius)", fontSize:11,
+                            fontWeight:500, fontFamily:"var(--font)",
+                            cursor: applying === s.key ? "wait" : "pointer" }}>
+                          {applying === s.key ? "Applying…" : "Apply"}
+                        </button>
+                      </div>
+                      <div style={{ fontSize:13, lineHeight:1.6, color:"var(--text)", whiteSpace:"pre-wrap" }}>
+                        {drafts[s.key]}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Brief document */}
         <div style={{ background:"#fff", border:"1px solid var(--border)",

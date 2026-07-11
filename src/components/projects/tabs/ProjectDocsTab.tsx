@@ -529,6 +529,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
           project={project}
           members={members}
           workspaceName={workspaceName}
+          documents={files.map((f: any) => ({ id: f.id, name: f.name }))}
         />
       )}
 
