@@ -311,6 +311,95 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   const [generating, setGenerating] = useState(false)
   const [genError, setGenError]     = useState("")
   const [generatedReport, setGeneratedReport] = useState<any>(null)
+
+  // ── Report edit mode ──
+  const [editingReport, setEditingReport] = useState(false)
+  const [editDraft, setEditDraft] = useState<Record<string, string>>({})
+  const [editKinds, setEditKinds] = useState<Record<string, "string" | "lines" | "health">>({})
+
+  function labelFor(key: string) {
+    return key.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()).trim()
+  }
+
+  function enterEditMode() {
+    if (!generatedReport) return
+    const draft: Record<string, string> = {}
+    const kinds: Record<string, "string" | "lines" | "health"> = {}
+    for (const [k, v] of Object.entries(generatedReport)) {
+      if (k === "keyMetrics") continue // computed — not editable
+      if (k === "overallHealth" && typeof v === "string") { draft[k] = v; kinds[k] = "health"; continue }
+      if (typeof v === "string") { draft[k] = v; kinds[k] = "string"; continue }
+      if (Array.isArray(v) && v.every(x => typeof x === "string")) {
+        draft[k] = (v as string[]).join("\n"); kinds[k] = "lines"; continue
+      }
+      // objects / other shapes stay untouched
+    }
+    setEditDraft(draft); setEditKinds(kinds); setEditingReport(true)
+  }
+
+  function saveReportEdits() {
+    const next = { ...generatedReport }
+    for (const [k, kind] of Object.entries(editKinds)) {
+      if (kind === "lines") next[k] = (editDraft[k] || "").split("\n").map(s => s.trim()).filter(Boolean)
+      else next[k] = editDraft[k] ?? next[k]
+    }
+    setGeneratedReport(next)
+    setEditingReport(false)
+  }
+
+  // ── Save generated report to History ──
+  const [savingToHistory, setSavingToHistory] = useState(false)
+  const [savedToHistory, setSavedToHistory]   = useState(false)
+  const [historyError, setHistoryError]       = useState("")
+
+  async function saveReportToHistory() {
+    if (!generatedReport || savingToHistory || savedToHistory) return
+    setSavingToHistory(true); setHistoryError("")
+    try {
+      const r = generatedReport
+      const typeMap: Record<string,string> = {
+        STATUS: "WEEKLY_STATUS", EXECUTIVE: "EXECUTIVE_BRIEF",
+        GATE: "MILESTONE", EVM: "WEEKLY_STATUS", RISK: "WEEKLY_STATUS",
+      }
+      const healthMap: Record<string,string> = { GREEN:"GREEN", YELLOW:"AMBER", RED:"RED", ON_HOLD:"AMBER" }
+      const lines = (v: any) => Array.isArray(v) ? v.join("\n") : (typeof v === "string" ? v : "")
+
+      // Period: current week for status reports, today for one-off reports
+      const now = new Date()
+      let start = new Date(now), end = new Date(now)
+      if (reportType === "STATUS") {
+        start.setDate(now.getDate() - now.getDay() + 1); end = new Date(start); end.setDate(start.getDate() + 6)
+      }
+      start.setHours(0,0,0,0); end.setHours(23,59,59,0)
+
+      const summaryBase = r.executiveSummary || r.summary || ""
+      const summary = reportType !== "STATUS" && r.reportTitle
+        ? `${r.reportTitle}\n\n${summaryBase}` : summaryBase
+
+      const res = await fetch(`/api/projects/${projectId}/status-updates`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: typeMap[reportType] || "WEEKLY_STATUS",
+          health: healthMap[r.overallHealth] || "GREEN",
+          periodStart: start.toISOString(),
+          periodEnd:   end.toISOString(),
+          summary: (summary || "Generated report").slice(0, 5000),
+          accomplishments: lines(r.accomplishmentsThisWeek || r.strategicHighlights).slice(0, 5000) || null,
+          nextSteps:       lines(r.plannedNextWeek || r.recommendations).slice(0, 5000) || null,
+          risks:           (typeof r.risksAndIssues === "string" ? r.risksAndIssues : lines(r.criticalIssues)).slice(0, 5000) || null,
+          issues:          lines(r.decisionsNeeded).slice(0, 5000) || null,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setHistoryError(d?.error || `Save failed (${res.status})`)
+        return
+      }
+      setSavedToHistory(true)
+      router.refresh()
+    } catch { setHistoryError("Connection lost — try again") }
+    finally { setSavingToHistory(false) }
+  }
   const [generatedAt, setGeneratedAt]         = useState("")
   const [downloading, setDownloading]         = useState(false)
   const [showStatusForm, setShowStatusForm]   = useState(false)
@@ -349,7 +438,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
       })
       const d = await res.json()
       if (!res.ok || !d.success) { setGenError(d.error||"Generation failed"); return }
-      setGeneratedReport(d.report)
+      setGeneratedReport(d.report); setSavedToHistory(false); setHistoryError("")
       setGeneratedAt(d.generatedAt)
       setView("result")
     } catch { setGenError("Network error") }
@@ -523,13 +612,96 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         {view==="result" && generatedReport && (
           <div style={{ maxWidth:800, margin:"0 auto" }}>
             <div style={{ display:"flex", gap:10, marginBottom:14 }}>
-              <button onClick={()=>setView("generate")}
+              <button onClick={()=>{ setEditingReport(false); setView("generate") }}
                 style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                   fontFamily:"var(--font)", color:"var(--text-2)" }}>
                 ← Back
               </button>
+              {!editingReport ? (
+                <>
+                <button onClick={enterEditMode}
+                  style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
+                    borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                    fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                  ✏️ Edit report
+                </button>
+                <button onClick={saveReportToHistory} disabled={savingToHistory || savedToHistory}
+                  style={{ padding:"6px 12px",
+                    background: savedToHistory ? "#ECFDF5" : "var(--steel)",
+                    color: savedToHistory ? "#059669" : "#fff",
+                    border: savedToHistory ? "1px solid #A7F3D0" : "none",
+                    borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
+                    cursor: savingToHistory || savedToHistory ? "default" : "pointer",
+                    fontFamily:"var(--font)" }}>
+                  {savedToHistory ? "✓ Saved to History" : savingToHistory ? "Saving…" : "📌 Save to History"}
+                </button>
+                {historyError && (
+                  <span style={{ alignSelf:"center", fontSize:11, color:"#B91C1C" }}>✗ {historyError}</span>
+                )}
+                </>
+              ) : (
+                <>
+                  <button onClick={saveReportEdits}
+                    style={{ padding:"6px 14px", background:"var(--steel)", color:"#fff",
+                      border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
+                      cursor:"pointer", fontFamily:"var(--font)" }}>
+                    💾 Save
+                  </button>
+                  <button onClick={()=>setEditingReport(false)}
+                    style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    Cancel
+                  </button>
+                </>
+              )}
             </div>
+            {editingReport ? (
+              <div style={{ background:"#fff", border:"1px solid var(--border)",
+                borderRadius:8, padding:20, display:"flex", flexDirection:"column", gap:14 }}>
+                <div style={{ fontSize:11, color:"var(--text-3)" }}>
+                  Edit the report content below. For list sections, put one bullet per line. Save applies your changes to the report and to the Word download.
+                </div>
+                {Object.keys(editDraft).map(k => (
+                  <div key={k}>
+                    <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+                      letterSpacing:".05em", color:"var(--text-3)", marginBottom:5 }}>
+                      {labelFor(k)}{editKinds[k]==="lines" ? " (one per line)" : ""}
+                    </div>
+                    {editKinds[k]==="health" ? (
+                      <select value={editDraft[k]}
+                        onChange={e=>setEditDraft(d=>({ ...d, [k]: e.target.value }))}
+                        style={{ padding:"8px 12px", border:"1px solid var(--border)",
+                          borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)", color:"var(--text)" }}>
+                        {["GREEN","YELLOW","RED","ON_HOLD"].map(h=><option key={h} value={h}>{h}</option>)}
+                      </select>
+                    ) : (
+                      <textarea value={editDraft[k]}
+                        onChange={e=>setEditDraft(d=>({ ...d, [k]: e.target.value }))}
+                        rows={editKinds[k]==="lines" ? 5 : (editDraft[k]||"").length > 200 ? 5 : 2}
+                        style={{ width:"100%", padding:"10px 12px", border:"1px solid var(--border)",
+                          borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
+                          lineHeight:1.6, resize:"vertical", outline:"none", color:"var(--text)" }} />
+                    )}
+                  </div>
+                ))}
+                <div style={{ display:"flex", gap:10 }}>
+                  <button onClick={saveReportEdits}
+                    style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff",
+                      border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
+                      cursor:"pointer", fontFamily:"var(--font)" }}>
+                    💾 Save changes
+                  </button>
+                  <button onClick={()=>setEditingReport(false)}
+                    style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
             <ReportView
               report={generatedReport}
               reportType={reportType}
@@ -541,6 +713,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               onDownload={downloadDocx}
               downloading={downloading}
             />
+            )}
           </div>
         )}
 
