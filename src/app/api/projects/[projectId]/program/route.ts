@@ -4,6 +4,8 @@
 // NOT project membership (unlike the general project PATCH). That lets PMO Directors,
 // Portfolio/Program Managers, Admins and Owners assign any workspace project without
 // having to be a member of it, while read-only roles (e.g. Executive) are denied.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

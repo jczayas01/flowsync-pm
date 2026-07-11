@@ -1,6 +1,8 @@
 // src/app/api/invite/[token]/route.ts
 // POST /api/invite/:token  — accept workspace invitation
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { ok, err } from "@/lib/api"

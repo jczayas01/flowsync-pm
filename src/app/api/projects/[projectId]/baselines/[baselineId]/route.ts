@@ -2,6 +2,8 @@
 // PATCH — approve a baseline (formal PM Standard sign-off)
 // DELETE — delete a baseline
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

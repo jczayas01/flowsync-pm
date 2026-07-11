@@ -1,6 +1,8 @@
 // src/app/api/tasks/[taskId]/dependencies/route.ts
 // POST /api/tasks/:taskId/dependencies — add a dependency
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

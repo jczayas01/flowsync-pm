@@ -1,5 +1,7 @@
 // src/app/api/goals/[goalId]/route.ts — update (scalars, key results, linked
 // projects, progress rollup) and delete a goal.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

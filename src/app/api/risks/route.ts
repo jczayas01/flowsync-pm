@@ -2,6 +2,8 @@
 // GET  /api/risks?projectId=  — list risks
 // POST /api/risks              — create risk
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

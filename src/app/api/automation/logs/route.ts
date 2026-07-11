@@ -1,6 +1,8 @@
 // src/app/api/automation/logs/route.ts
 // GET /api/automation/logs  — execution history
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, okList, getSearchParams, ApiContext } from "@/lib/api"

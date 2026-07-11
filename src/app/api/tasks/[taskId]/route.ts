@@ -2,6 +2,8 @@
 // GET   /api/tasks/:id  — get task
 // PATCH /api/tasks/:id  — update task (including % complete)
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

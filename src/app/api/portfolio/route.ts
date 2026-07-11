@@ -2,6 +2,8 @@
 // GET  /api/portfolio  — list portfolios with rollup metrics
 // POST /api/portfolio  — create portfolio
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

@@ -1,6 +1,8 @@
 // src/app/api/stripe/plans/route.ts
 // GET /api/stripe/plans  — return plan list + current workspace billing status
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { withWorkspace, ok, ApiContext } from "@/lib/api"
 import { PLANS, formatPrice } from "@/lib/stripe/client"

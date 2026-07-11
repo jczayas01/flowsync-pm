@@ -1,4 +1,6 @@
 // src/app/api/webhooks/[webhookId]/route.ts — toggle/update or delete a webhook.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

@@ -1,4 +1,6 @@
 // src/app/api/reports/[templateId]/route.ts — update / delete a report template.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

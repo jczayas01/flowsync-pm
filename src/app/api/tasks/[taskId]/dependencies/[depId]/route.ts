@@ -1,6 +1,8 @@
 // src/app/api/tasks/[taskId]/dependencies/[depId]/route.ts
 // DELETE /api/tasks/:taskId/dependencies/:depId — remove a dependency
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { db } from "@/lib/db"

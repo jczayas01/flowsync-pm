@@ -1,6 +1,8 @@
 // src/app/api/projects/[projectId]/ai-report/route.ts
 // POST — generate PM Standard AI reports from live project data
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

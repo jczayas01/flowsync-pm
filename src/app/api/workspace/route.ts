@@ -3,6 +3,8 @@
 // POST /api/workspace — create workspace (called from onboarding)
 // PATCH /api/workspace — update workspace settings
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'

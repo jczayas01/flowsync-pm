@@ -2,6 +2,8 @@
 // GET   — get a single change request
 // PATCH — update status (approve, reject, implement) or edit fields
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

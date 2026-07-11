@@ -2,6 +2,8 @@
 // GET    /api/security/sessions     — list active sessions
 // DELETE /api/security/sessions/:id — revoke a session
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { listUserSessions, revokeSession, revokeAllSessions } from "@/lib/security/sessions"

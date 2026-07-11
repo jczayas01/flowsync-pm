@@ -1,6 +1,8 @@
 // src/app/api/m365/outlook/route.ts
 // GET /api/m365/outlook?projectId=  — emails detected for a project
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
 import { detectProjectEmails } from "@/lib/m365/outlook"

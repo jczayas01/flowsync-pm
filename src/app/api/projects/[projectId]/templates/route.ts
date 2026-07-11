@@ -2,6 +2,8 @@
 // GET /api/projects/:id/templates?type=TEAM_CHARTER|WBS|REQUIREMENTS|QUALITY_PLAN|MEETING_MINUTES|HANDOVER_PLAN
 // Downloads a pre-filled Word template for the given document type
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"

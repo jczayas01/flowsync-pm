@@ -1,5 +1,7 @@
 // src/app/api/tasks/[taskId]/comments/route.ts
 // Contributions / notes on a task (reuses the Comment model).
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"

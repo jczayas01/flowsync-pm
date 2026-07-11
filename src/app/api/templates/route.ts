@@ -2,6 +2,8 @@
 // GET  /api/templates          — browse marketplace
 // POST /api/templates/install  — install template into project
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

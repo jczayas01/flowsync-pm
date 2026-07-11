@@ -2,6 +2,8 @@
 // POST /api/m365/sync  — trigger M365 sync for current user
 // GET  /api/m365/sync  — get latest sync results (smart inbox)
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"

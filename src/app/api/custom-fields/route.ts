@@ -1,5 +1,7 @@
 // src/app/api/custom-fields/route.ts — workspace custom fields (list + create).
 // Mutations require a workspace-admin role; listing is open to workspace members.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

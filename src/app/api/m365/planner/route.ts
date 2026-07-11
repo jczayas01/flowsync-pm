@@ -3,6 +3,8 @@
 // POST /api/m365/planner/sync      — sync a Planner plan → FlowSync PM project
 // POST /api/m365/planner/push      — push a FlowSync PM task → Planner
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

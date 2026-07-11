@@ -2,6 +2,8 @@
 // PATCH — update milestone (including sign-off acceptance)
 // DELETE — delete milestone
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

@@ -1,4 +1,6 @@
 // src/app/api/intake/route.ts
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

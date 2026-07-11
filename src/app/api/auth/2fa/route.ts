@@ -5,6 +5,8 @@
 // POST /api/auth/2fa/verify  — verify token during login
 // POST /api/auth/2fa/disable — disable 2FA (requires valid token)
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limiter"

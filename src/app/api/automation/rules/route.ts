@@ -1,5 +1,7 @@
 // src/app/api/automation/rules/route.ts — list + create automation rules.
 // Managed by workspace admins (matches the manage-integrations nav gate).
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

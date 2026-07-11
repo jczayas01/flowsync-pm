@@ -2,6 +2,8 @@
 // GET  /api/m365/connect         — check M365 connection status
 // POST /api/m365/connect/webhook — register Graph webhook subscription
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"

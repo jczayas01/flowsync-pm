@@ -2,6 +2,8 @@
 // GET  — list lessons learned for a project
 // POST — create a new lesson learned entry
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

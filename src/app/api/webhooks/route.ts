@@ -1,5 +1,7 @@
 // src/app/api/webhooks/route.ts — list + create outbound webhooks.
 // The signing secret is returned once on create; managed by workspace admins.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { randomBytes } from "crypto"

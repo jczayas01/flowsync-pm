@@ -3,6 +3,8 @@
 // POST — upload a file to Supabase Storage, record metadata in DB
 // PUT  — update wiki blocks (existing doc editor behavior)
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"

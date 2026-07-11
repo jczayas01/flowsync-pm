@@ -3,6 +3,8 @@
 // PATCH  /api/projects/:id  — update project
 // DELETE /api/projects/:id  — delete project
 
+export const dynamic = "force-dynamic"
+
 import { requirePermission } from "@/lib/rbac/guards"
 import { NextRequest } from 'next/server'
 import { z } from 'zod'

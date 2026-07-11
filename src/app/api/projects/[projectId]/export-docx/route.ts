@@ -2,6 +2,8 @@
 // POST — generate Word document for Project Brief or Status Report
 // Uses docx npm package per SKILL.md
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"

@@ -1,4 +1,6 @@
 // src/app/api/webhooks/[webhookId]/test/route.ts — send a signed test ping.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { createHmac } from "crypto"
 import { db } from "@/lib/db"

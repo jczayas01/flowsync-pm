@@ -2,6 +2,8 @@
 // GET  /api/projects/:id/tasks  — list tasks (with Gantt mode)
 // POST /api/projects/:id/tasks  — create task
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib//db/prisma'

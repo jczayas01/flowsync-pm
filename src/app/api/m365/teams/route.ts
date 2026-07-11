@@ -1,6 +1,8 @@
 // src/app/api/m365/teams/route.ts
 // GET /api/m365/teams  — meetings and chats detected for projects
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { withWorkspace, ok, ApiContext } from "@/lib/api"
 import { detectProjectMeetings, detectProjectChatMentions } from "@/lib/m365/teams"

@@ -2,6 +2,8 @@
 // Body: { updates: [{ id, sortOrder, parentId?, phaseId? }] }
 // Used by Tasks tab and Gantt to persist move-up/move-down and indent/outdent
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

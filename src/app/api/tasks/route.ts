@@ -2,6 +2,8 @@
 // GET  /api/tasks  — list tasks (filtered)
 // POST /api/tasks  — create task
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'

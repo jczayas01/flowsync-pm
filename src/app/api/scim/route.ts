@@ -2,6 +2,8 @@
 // SCIM 2.0 provisioning endpoint for Azure AD automatic user sync
 // When HR deactivates an employee in Azure AD → access revoked automatically
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { revokeAllSessions } from "@/lib/security/sessions"

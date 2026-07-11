@@ -1,6 +1,8 @@
 // src/app/api/projects/[projectId]/ai/route.ts
 // POST /api/projects/:id/ai  — AI co-pilot actions
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { AzureOpenAI } from 'openai'

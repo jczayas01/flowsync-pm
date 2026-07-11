@@ -2,6 +2,8 @@
 // GET /api/projects/:projectId/export — download all tasks as an Excel file
 // Columns are designed to round-trip: edit dates/status in Excel, re-import via /import
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import ExcelJS from "exceljs"
 import { db } from "@/lib/db"

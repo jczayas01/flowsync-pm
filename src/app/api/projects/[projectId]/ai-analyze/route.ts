@@ -2,6 +2,8 @@
 // POST — analyze pasted email/meeting text and suggest project placement
 // POST — generate status report from project data
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

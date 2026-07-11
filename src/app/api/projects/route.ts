@@ -2,6 +2,8 @@
 // GET /api/projects   — list workspace projects
 // POST /api/projects  — create new project
 
+export const dynamic = "force-dynamic"
+
 import { requirePermission } from "@/lib/rbac/guards"
 import { NextRequest } from 'next/server'
 import { z } from 'zod'

@@ -1,6 +1,8 @@
 // src/app/api/stripe/portal/route.ts
 // POST /api/stripe/portal  — redirect to Stripe Customer Portal
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"

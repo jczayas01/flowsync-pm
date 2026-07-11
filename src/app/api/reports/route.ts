@@ -2,6 +2,8 @@
 // Managed by admin-level roles via the reports:manage_templates permission (Owner,
 // Admin, PMO Director) — NOT tied to the literal "Admin" role, so a PMO Director can
 // manage templates without being made a workspace administrator.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

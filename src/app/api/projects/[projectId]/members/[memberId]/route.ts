@@ -2,6 +2,8 @@
 // PATCH  /api/projects/:projectId/members/:memberId — update role/projectRole/allocation
 // DELETE /api/projects/:projectId/members/:memberId — remove member from project
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

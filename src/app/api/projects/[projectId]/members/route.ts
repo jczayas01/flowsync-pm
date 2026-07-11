@@ -2,6 +2,8 @@
 // GET  /api/projects/:projectId/members — list members with roles
 // POST /api/projects/:projectId/members — add a member to the project
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

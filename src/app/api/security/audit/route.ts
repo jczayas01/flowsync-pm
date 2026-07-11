@@ -1,6 +1,8 @@
 // src/app/api/security/audit/route.ts
 // GET /api/security/audit  — query audit logs (ADMIN+ only)
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"

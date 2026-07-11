@@ -1,6 +1,8 @@
 // src/app/api/templates/publish/route.ts
 // POST /api/templates/publish — publish a project as a template
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

@@ -1,6 +1,8 @@
 // src/app/api/members/[memberId]/route.ts — update a workspace member's skills.
 // Editable by resource-management roles (Owner/Admin/PMO Director) or by the member
 // themselves editing their own skills.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

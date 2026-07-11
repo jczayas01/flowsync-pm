@@ -2,6 +2,8 @@
 // POST — Upload a completed PM Standard template, AI reads it and updates project data
 // Accepts: PDF or text content + document type
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"

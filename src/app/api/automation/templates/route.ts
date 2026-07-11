@@ -1,6 +1,8 @@
 // src/app/api/automation/templates/route.ts
 // GET /api/automation/templates  — list recipe templates
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { withWorkspace, ok, ApiContext } from "@/lib/api"
 import { RECIPES, RECIPE_CATEGORIES } from "@/lib/automation/recipes"

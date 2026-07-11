@@ -2,6 +2,8 @@
 // GET  /api/users  — list workspace members with roles
 // POST /api/users  — invite user to workspace
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

@@ -3,6 +3,8 @@
 //   Rows WITH a Task ID  -> update that existing task
 //   Rows WITHOUT a Task ID (blank, but have a Title) -> create a new task
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import ExcelJS from "exceljs"
 import { db } from "@/lib/db"

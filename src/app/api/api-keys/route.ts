@@ -1,6 +1,8 @@
 // src/app/api/api-keys/route.ts — list + create API keys.
 // Keys are hashed at rest (sha-256); the full key is returned exactly once, on create.
 // Managed by workspace admins only.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { randomBytes } from "crypto"

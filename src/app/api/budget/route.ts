@@ -2,6 +2,8 @@
 // GET  /api/budget?projectId=  — get budget items + EVM metrics
 // POST /api/budget              — create budget item
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

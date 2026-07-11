@@ -2,6 +2,8 @@
 // PATCH  /api/users/:id  — update role, deactivate
 // DELETE /api/users/:id  — remove from workspace
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

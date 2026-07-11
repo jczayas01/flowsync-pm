@@ -1,6 +1,8 @@
 // src/app/api/stripe/checkout/route.ts
 // POST /api/stripe/checkout  — create a Checkout session URL
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"

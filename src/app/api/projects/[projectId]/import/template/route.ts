@@ -4,6 +4,8 @@
 // and the same column layout/validation as a real export, so users can see
 // the format before they have any tasks to export.
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import ExcelJS from "exceljs"
 import { db } from "@/lib/db"

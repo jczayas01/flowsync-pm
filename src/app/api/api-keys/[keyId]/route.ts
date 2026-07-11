@@ -1,4 +1,6 @@
 // src/app/api/api-keys/[keyId]/route.ts — revoke an API key.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, ApiContext } from "@/lib/api"

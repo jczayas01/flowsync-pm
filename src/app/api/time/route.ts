@@ -2,6 +2,8 @@
 // GET  /api/time  — list time entries
 // POST /api/time  — log a time entry
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

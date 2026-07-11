@@ -2,6 +2,8 @@
 // POST /api/automation/execute — fire a trigger event
 // Called internally by other API routes when events happen
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { processTrigger } from "@/lib/automation/engine"
 import type { TriggerEvent } from "@/lib/automation/types"

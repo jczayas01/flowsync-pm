@@ -2,6 +2,8 @@
 // Receives push notifications from Microsoft Graph
 // Called by Graph when new mail/events arrive matching our subscriptions
 
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { detectProjectEmails } from "@/lib/m365/outlook"

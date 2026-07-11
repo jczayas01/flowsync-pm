@@ -1,4 +1,6 @@
 // src/app/api/custom-fields/[fieldId]/route.ts — update / delete a custom field.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

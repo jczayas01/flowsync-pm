@@ -1,4 +1,6 @@
 // src/app/api/automation/rules/[ruleId]/route.ts — toggle/update or delete a rule.
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"

@@ -1,4 +1,6 @@
 // src/app/api/projects/[projectId]/procurement/route.ts
+export const dynamic = "force-dynamic"
+
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
