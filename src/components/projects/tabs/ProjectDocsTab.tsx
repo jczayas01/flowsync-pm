@@ -154,7 +154,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
     setAiUploading(true); setAiError("")
     try {
       const lower = file.name.toLowerCase()
-      const needsServer = /\.(docx?|pdf|xlsx|pptx)$/.test(lower)
+      const needsServer = /\.(docx?|pdf|xlsx|pptx|msg)$/.test(lower)
 
       let text = ""
       if (needsServer) {
@@ -178,7 +178,9 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       setAiContent(text.slice(0, 12000)) // limit to 12k chars
       // Auto-detect content type from filename (values must match CONTENT_TYPES)
       const name = file.name.toLowerCase()
-      if (name.includes("minute") || name.includes("meeting")) setAiContentType("notes")
+      if (name.endsWith(".msg")) setAiContentType("email")
+      else if (name.endsWith(".vtt")) setAiContentType("teams_meeting")
+      else if (name.includes("minute") || name.includes("meeting")) setAiContentType("notes")
       else if (name.includes("email") || name.includes("mail"))  setAiContentType("email")
       else setAiContentType("document")
     } catch (err: any) {
@@ -560,11 +562,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                   </select>
                   {/* Upload document button */}
                   <input ref={aiFileRef} type="file"
-                    accept=".txt,.md,.csv,.json,.xml,.log,.text,.docx,.doc,.pdf,.xlsx,.pptx"
+                    accept=".txt,.md,.csv,.json,.xml,.log,.text,.vtt,.docx,.doc,.pdf,.xlsx,.pptx,.msg"
                     style={{ display:"none" }}
                     onChange={handleAiFileUpload} />
                   <button onClick={() => aiFileRef.current?.click()} disabled={aiUploading}
-                    title="Upload a document (.docx, .pdf, .xlsx, .pptx, .txt, .md, .csv) to analyze"
+                    title="Upload a document or email (.docx, .pdf, .xlsx, .pptx, .msg, .vtt, .txt) to analyze"
                     style={{ padding:"7px 14px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)", whiteSpace:"nowrap",
