@@ -432,6 +432,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
     setEditingReport(false)
     setSavedToHistory(true) // already in history — disarm the save button
     setHistoryError("")
+    setResultOrigin("list")
     setView("result")
   }
 
@@ -454,6 +455,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
     } finally { setHistoryDownloadingId(null) }
   }
   const [generatedAt, setGeneratedAt]         = useState("")
+  const [resultOrigin, setResultOrigin]       = useState<"generate"|"list">("generate")
   const [downloading, setDownloading]         = useState(false)
   const [showStatusForm, setShowStatusForm]   = useState(false)
   const [savingStatus, setSavingStatus]       = useState(false)
@@ -491,7 +493,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
       })
       const d = await res.json()
       if (!res.ok || !d.success) { setGenError(d.error||"Generation failed"); return }
-      setGeneratedReport(d.report); setSavedToHistory(false); setHistoryError("")
+      setGeneratedReport(d.report); setSavedToHistory(false); setHistoryError(""); setResultOrigin("generate")
       setGeneratedAt(d.generatedAt)
       setView("result")
     } catch { setGenError("Network error") }
@@ -684,7 +686,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         {view==="result" && generatedReport && (
           <div style={{ maxWidth:800, margin:"0 auto" }}>
             <div style={{ display:"flex", gap:10, marginBottom:14 }}>
-              <button onClick={()=>{ setEditingReport(false); setView("generate") }}
+              <button onClick={()=>{ setEditingReport(false); setView(resultOrigin) }}
                 style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                   fontFamily:"var(--font)", color:"var(--text-2)" }}>
