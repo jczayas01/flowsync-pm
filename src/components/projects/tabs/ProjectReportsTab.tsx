@@ -388,6 +388,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
           nextSteps:       lines(r.plannedNextWeek || r.recommendations).slice(0, 5000) || null,
           risks:           (typeof r.risksAndIssues === "string" ? r.risksAndIssues : lines(r.criticalIssues)).slice(0, 5000) || null,
           issues:          lines(r.decisionsNeeded).slice(0, 5000) || null,
+          reportData:      { reportType, audience, report: r },
         }),
       })
       if (!res.ok) {
@@ -399,6 +400,58 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
       router.refresh()
     } catch { setHistoryError("Connection lost — try again") }
     finally { setSavingToHistory(false) }
+  }
+
+  // ── View / download a saved history entry ──
+  const [historyDownloadingId, setHistoryDownloadingId] = useState<string | null>(null)
+
+  function reportFromEntry(su: any) {
+    if (su.reportData?.report) {
+      return { report: su.reportData.report, type: su.reportData.reportType || "STATUS", aud: su.reportData.audience || audience }
+    }
+    // Older / manual entries: rebuild a status-shaped report from the stored fields
+    return {
+      type: "STATUS", aud: audience,
+      report: {
+        reportTitle: `${(su.type || "Status update").replace(/_/g, " ")} — ${fmtDate(su.createdAt)}`,
+        executiveSummary: su.summary || "",
+        accomplishmentsThisWeek: splitLines(su.accomplishments),
+        plannedNextWeek: splitLines(su.nextSteps),
+        risksAndIssues: su.risks || "",
+        decisionsNeeded: splitLines(su.issues),
+        overallHealth: su.health === "AMBER" ? "YELLOW" : (su.health || "GREEN"),
+      },
+    }
+  }
+
+  function viewHistoryEntry(su: any) {
+    const { report, type, aud } = reportFromEntry(su)
+    setReportType(type); setAudience(aud)
+    setGeneratedReport(report)
+    setGeneratedAt(su.createdAt)
+    setEditingReport(false)
+    setSavedToHistory(true) // already in history — disarm the save button
+    setHistoryError("")
+    setView("result")
+  }
+
+  async function downloadHistoryEntry(su: any) {
+    setHistoryDownloadingId(su.id)
+    try {
+      const { report } = reportFromEntry(su)
+      const res = await fetch(`/api/projects/${projectId}/export-docx`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ docType: "STATUS_REPORT", reportData: toDocxShape(report) }),
+      })
+      if (!res.ok) { alert("Download failed"); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${project?.code}_Report_${new Date(su.createdAt).toISOString().split("T")[0]}.docx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally { setHistoryDownloadingId(null) }
   }
   const [generatedAt, setGeneratedAt]         = useState("")
   const [downloading, setDownloading]         = useState(false)
@@ -445,12 +498,31 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
     finally { setGenerating(false) }
   }
 
+  // Map any report type into the fields the Word status-report layout renders
+  function toDocxShape(r: any) {
+    if (!r) return r
+    const join = (v: any) => Array.isArray(v) ? v : (typeof v === "string" && v ? [v] : [])
+    return {
+      reportTitle: r.reportTitle || "Report",
+      executiveSummary: r.executiveSummary || r.summary || "",
+      accomplishmentsThisWeek: join(r.accomplishmentsThisWeek?.length ? r.accomplishmentsThisWeek : r.strategicHighlights),
+      plannedNextWeek: join(r.plannedNextWeek?.length ? r.plannedNextWeek : r.recommendations),
+      budgetStatus: r.budgetStatus || "",
+      scheduleStatus: r.scheduleStatus || "",
+      risksAndIssues: typeof r.risksAndIssues === "string" && r.risksAndIssues
+        ? r.risksAndIssues : join(r.criticalIssues).join("\n"),
+      decisionsNeeded: join(r.decisionsNeeded),
+    }
+  }
+  const splitLines = (s?: string | null) =>
+    (s || "").split("\n").map(t => t.trim()).filter(Boolean)
+
   async function downloadDocx() {
     setDownloading(true)
     try {
       const res = await fetch(`/api/projects/${projectId}/export-docx`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ docType:reportType==="STATUS"?"STATUS_REPORT":"PROJECT_BRIEF", reportData:generatedReport }),
+        body: JSON.stringify({ docType:"STATUS_REPORT", reportData: toDocxShape(generatedReport) }),
       })
       if (!res.ok) { alert("Download failed"); return }
       const blob = await res.blob()
@@ -813,6 +885,21 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                     {HEALTH_LABEL[su.health]||su.health}
                   </span>
                   <span style={{ fontSize:11, color:"var(--text-3)" }}>{fmtDate(su.createdAt)}</span>
+                  <div style={{ marginLeft:"auto", display:"flex", gap:6 }}>
+                    <button onClick={()=>viewHistoryEntry(su)}
+                      style={{ padding:"4px 10px", background:"#fff", border:"1px solid var(--border)",
+                        borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
+                        fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                      👁 View
+                    </button>
+                    <button onClick={()=>downloadHistoryEntry(su)} disabled={historyDownloadingId===su.id}
+                      style={{ padding:"4px 10px", background:"#fff", border:"1px solid var(--border)",
+                        borderRadius:"var(--radius)", fontSize:11,
+                        cursor: historyDownloadingId===su.id ? "wait" : "pointer",
+                        fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                      {historyDownloadingId===su.id ? "…" : "📄 Word"}
+                    </button>
+                  </div>
                 </div>
                 {su.summary && (
                   <p style={{ fontSize:13, color:"var(--text-2)", margin:0, lineHeight:1.6 }}>{su.summary}</p>

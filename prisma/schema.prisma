@@ -861,6 +861,7 @@ model StatusUpdate {
   forecastEnd     DateTime?
   aiGenerated     Boolean       @default(false)
   aiPrompt        String?
+  reportData      Json?
   createdById     String
   publishedAt     DateTime?
   createdAt       DateTime      @default(now())

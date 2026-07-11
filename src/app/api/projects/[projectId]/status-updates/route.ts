@@ -18,6 +18,7 @@ const schema = z.object({
   nextSteps:       z.string().max(5000).optional().nullable(),
   risks:           z.string().max(5000).optional().nullable(),
   issues:          z.string().max(5000).optional().nullable(),
+  reportData:      z.any().optional().nullable(),
 })
 
 async function createStatusUpdate(ctx: ApiContext, params?: Record<string,string>) {
@@ -30,7 +31,7 @@ async function createStatusUpdate(ctx: ApiContext, params?: Record<string,string
 
   const parsed = await parseBody(ctx.req, schema)
   if ("error" in parsed) return parsed.error
-  const { type, health, periodStart, periodEnd, percentComplete, summary, accomplishments, nextSteps, risks, issues } = parsed.data
+  const { type, health, periodStart, periodEnd, percentComplete, summary, accomplishments, nextSteps, risks, issues, reportData } = parsed.data
 
   const statusUpdate = await db.statusUpdate.create({
     data: {
@@ -45,6 +46,7 @@ async function createStatusUpdate(ctx: ApiContext, params?: Record<string,string
       nextSteps,
       risks,
       issues,
+      reportData: reportData ?? undefined,
       createdById: ctx.userId,
       aiGenerated: false,
     },
