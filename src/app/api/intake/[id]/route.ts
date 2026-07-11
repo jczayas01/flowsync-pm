@@ -1,5 +1,6 @@
 // src/app/api/intake/[id]/route.ts
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 import { NextRequest } from "next/server"
 import { z } from "zod"

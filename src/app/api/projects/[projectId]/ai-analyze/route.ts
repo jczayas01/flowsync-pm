@@ -3,6 +3,7 @@
 // POST — generate status report from project data
 
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"

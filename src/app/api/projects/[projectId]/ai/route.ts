@@ -2,6 +2,7 @@
 // POST /api/projects/:id/ai  — AI co-pilot actions
 
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 import { NextRequest } from 'next/server'
 import { z } from 'zod'

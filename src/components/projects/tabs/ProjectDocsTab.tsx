@@ -211,10 +211,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ action:"analyze_content", content:aiContent, contentType:aiContentType }),
       })
-      const data = await res.json()
-      if (!res.ok) { setAiError(data.error || "Analysis failed"); return }
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setAiError(data?.error || `Request failed (${res.status}) — try again`); return }
+      if (!data)   { setAiError("Empty response from server — try again"); return }
       setAiResult(data.data)
-    } catch { setAiError("Network error") }
+    } catch { setAiError("Connection lost — check your internet and try again") }
     finally { setAiAnalyzing(false) }
   }
 
@@ -229,10 +230,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
           periodStart:reportPeriodStart, periodEnd:reportPeriodEnd,
         }),
       })
-      const data = await res.json()
-      if (!res.ok) { setReportError(data.error || "Generation failed"); return }
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setReportError(data?.error || `Request failed (${res.status}) — try again`); return }
+      if (!data)   { setReportError("Empty response from server — try again"); return }
       setReportResult(data.data)
-    } catch { setReportError("Network error") }
+    } catch { setReportError("Connection lost — check your internet and try again") }
     finally { setReportGenerating(false) }
   }
 

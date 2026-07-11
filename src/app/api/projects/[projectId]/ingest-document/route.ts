@@ -3,6 +3,7 @@
 // Accepts: PDF or text content + document type
 
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
