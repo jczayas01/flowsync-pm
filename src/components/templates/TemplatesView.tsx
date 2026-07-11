@@ -181,23 +181,23 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
             </span>
           </div>
 
-          {/* Featured row */}
-          {cat==="all"&&!search&&!loading&&(
+          {/* Featured row — hidden while any filter narrows the list */}
+          {cat==="all"&&!search&&method==="all"&&!loading&&(
             <div style={{marginBottom:24}}>
               <div style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:12}}>
                 🌟 Featured templates
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
-                {templates.filter(t=>t.featured).map(t=><TemplateCard key={t.id} t={t} onSelect={setSelected}/>)}
+                {filtered.filter(t=>t.featured).map(t=><TemplateCard key={t.id} t={t} onSelect={setSelected}/>)}
               </div>
             </div>
           )}
 
           {/* All results */}
           <div>
-            {cat!=="all"||search?(
+            {cat!=="all"||search||method!=="all"?(
               <div style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:12}}>
-                {search?`Results for "${search}"`:CATS.find(c=>c.id===cat)?.label+" templates"}
+                {search?`Results for "${search}"`:method!=="all"&&cat==="all"?`${method} templates`:CATS.find(c=>c.id===cat)?.label+" templates"}
               </div>
             ):(
               <div style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:12}}>
