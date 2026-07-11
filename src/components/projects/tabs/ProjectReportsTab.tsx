@@ -368,7 +368,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
       const now = new Date()
       let start = new Date(now), end = new Date(now)
       if (reportType === "STATUS") {
-        start.setDate(now.getDate() - now.getDay() + 1); end = new Date(start); end.setDate(start.getDate() + 6)
+        start = new Date(reportWeek); end = reportWeekEnd(reportWeek)
       }
       start.setHours(0,0,0,0); end.setHours(23,59,59,0)
 
@@ -456,6 +456,31 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   }
   const [generatedAt, setGeneratedAt]         = useState("")
   const [resultOrigin, setResultOrigin]       = useState<"generate"|"list">("generate")
+
+  // ── Weekly report scoping ──
+  const rWeekStartOf = (d: Date) => {
+    const dt = new Date(d); const day = dt.getDay()
+    dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1)); dt.setHours(0,0,0,0)
+    return dt
+  }
+  const rWeekOptions = (() => {
+    const base = rWeekStartOf(new Date()); const opts: Date[] = []
+    for (let i = 0; i < 12; i++) { const d = new Date(base); d.setDate(base.getDate() - i * 7); opts.push(d) }
+    return opts
+  })()
+  const rWeekLabel = (st: Date) => {
+    const isThis = st.getTime() === rWeekStartOf(new Date()).getTime()
+    const end = new Date(st); end.setDate(st.getDate() + 6)
+    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+    return `${isThis ? "This week — " : ""}${f(st)} – ${f(end)}, ${end.getFullYear()}`
+  }
+  const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())
+  const [includeWeekDocs, setIncludeWeekDocs] = useState(true)
+  const reportWeekEnd = (startIso: string) => {
+    const st = new Date(startIso); const en = new Date(st)
+    en.setDate(st.getDate() + 6); en.setHours(23,59,59,0)
+    return en
+  }
   const [downloading, setDownloading]         = useState(false)
   const [showStatusForm, setShowStatusForm]   = useState(false)
   const [savingStatus, setSavingStatus]       = useState(false)
@@ -489,7 +514,14 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
     try {
       const res = await fetch(`/api/projects/${projectId}/ai-report`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ reportType, audience, additionalNotes:notes||undefined }),
+        body: JSON.stringify({
+          reportType, audience, additionalNotes: notes || undefined,
+          ...(reportType === "STATUS" ? {
+            periodStart: new Date(reportWeek).toISOString(),
+            periodEnd: reportWeekEnd(reportWeek).toISOString(),
+            includeWeekDocs,
+          } : {}),
+        }),
       })
       const d = await res.json()
       if (!res.ok || !d.success) { setGenError(d.error||"Generation failed"); return }
@@ -654,6 +686,29 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                   ))}
                 </div>
               </div>
+
+              {reportType === "STATUS" && (
+                <div style={{ marginBottom:18 }}>
+                  <label style={{ display:"block", fontSize:10, fontWeight:700, color:"var(--text-3)",
+                    textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>Report week</label>
+                  <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
+                    <select value={reportWeek} onChange={e => setReportWeek(e.target.value)}
+                      style={{ padding:"8px 12px", border:"1px solid var(--border)",
+                        borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
+                        color:"var(--text)", background:"#fff" }}>
+                      {rWeekOptions.map(w => (
+                        <option key={w.toISOString()} value={w.toISOString()}>{rWeekLabel(w)}</option>
+                      ))}
+                    </select>
+                    <label style={{ display:"flex", alignItems:"center", gap:7, fontSize:12,
+                      color:"var(--text-2)", cursor:"pointer" }}>
+                      <input type="checkbox" checked={includeWeekDocs}
+                        onChange={e => setIncludeWeekDocs(e.target.checked)} />
+                      Use this week's documents as context
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {/* Notes */}
               <div style={{ marginBottom:20 }}>
