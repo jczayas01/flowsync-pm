@@ -8,6 +8,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib//db/prisma'
 import { dispatchEvent } from "@/lib/automation/dispatch"
+import { notifyMany } from "@/lib/notify"
 import {
   withAuth, ok, handleApiError,
   requireProjectAccess, validate,
@@ -264,6 +265,15 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext, params) 
           data: { taskId: task.id, projectMemberId: pm.id, userId: pm.userId },
         }).catch(() => {})
       }
+      // Notify the assignees (self is skipped inside notify)
+      await notifyMany(projectMembers.map(pm => pm.userId), {
+        workspaceId: ctx.workspaceId,
+        actorId: ctx.userId,
+        type: "TASK_ASSIGNED",
+        title: `You were assigned: ${task.title}`,
+        body: `Task ${code} in this project`,
+        link: `/projects/${projectId}/tasks`,
+      }).catch(() => {})
     }
 
     // Add dependencies (validate no circular deps)
