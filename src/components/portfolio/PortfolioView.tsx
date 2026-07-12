@@ -39,6 +39,37 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
   const [creating,  setCreating]  = useState(false)
   const canCreate = !["VIEWER","CLIENT","MEMBER"].includes(userRole)
 
+  const [editingPort, setEditingPort] = useState<any|null>(null)
+  const [editForm, setEditForm]       = useState({ name:"", description:"" })
+  const [savingPort, setSavingPort]   = useState(false)
+
+  async function savePortfolio() {
+    if (!editForm.name.trim() || savingPort) return
+    setSavingPort(true)
+    try {
+      const res = await fetch(`/api/portfolio/${editingPort.id}`, {
+        method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+        body: JSON.stringify({ name: editForm.name.trim(), description: editForm.description || null }),
+      })
+      if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Update failed (${res.status})`); return }
+      setEditingPort(null)
+      router.refresh()
+    } finally { setSavingPort(false) }
+  }
+
+  async function deletePortfolio(port: any) {
+    if (port.programs?.length > 0) {
+      alert(`"${port.name}" still contains ${port.programs.length} program(s).\n\nDelete or move its programs first — nothing is removed implicitly.`)
+      return
+    }
+    if (!confirm(`Delete portfolio "${port.name}"?`)) return
+    const res = await fetch(`/api/portfolio/${port.id}`, {
+      method:"DELETE", headers:{"x-workspace-id":workspaceId},
+    })
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Delete failed (${res.status})`); return }
+    router.refresh()
+  }
+
   // Global stats
   const allProjects = portfolios.flatMap(p=>p.programs.flatMap((pr:any)=>pr.projects)).concat(unassigned)
   const global = rollup(allProjects)
@@ -227,6 +258,33 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
               const isOpen = openPorts[port.id]!==false
               return (
                 <div key={port.id} style={{...card,overflow:"hidden"}}>
+                  {editingPort?.id === port.id && (
+                    <div style={{padding:"12px 18px",borderBottom:"1px solid var(--border)",
+                      background:"var(--surface)",display:"flex",flexDirection:"column",gap:8}}
+                      onClick={e=>e.stopPropagation()}>
+                      <input value={editForm.name} placeholder="Portfolio name"
+                        onChange={e=>setEditForm(f=>({...f,name:e.target.value}))}
+                        style={{padding:"8px 10px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
+                          fontSize:13,fontFamily:"var(--font)"}} />
+                      <textarea value={editForm.description} placeholder="Description (optional)" rows={2}
+                        onChange={e=>setEditForm(f=>({...f,description:e.target.value}))}
+                        style={{padding:"8px 10px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
+                          fontSize:12,fontFamily:"var(--font)",resize:"vertical"}} />
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={savePortfolio} disabled={savingPort||!editForm.name.trim()}
+                          style={{padding:"7px 16px",background:"var(--steel)",color:"#fff",border:"none",
+                            borderRadius:"var(--radius)",fontSize:12,fontWeight:600,fontFamily:"var(--font)",
+                            cursor:savingPort?"wait":"pointer"}}>
+                          {savingPort?"Saving…":"💾 Save"}
+                        </button>
+                        <button onClick={()=>setEditingPort(null)}
+                          style={{padding:"7px 12px",background:"#fff",border:"1px solid var(--border)",
+                            borderRadius:"var(--radius)",fontSize:12,cursor:"pointer",
+                            fontFamily:"var(--font)",color:"var(--text-2)"}}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Portfolio header */}
                   <div onClick={()=>togglePort(port.id)}
                     style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",
@@ -252,6 +310,20 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                         </span>
                       </div>
                     </div>
+                    {canCreate && (
+                      <div style={{display:"flex",gap:6,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                        <button title="Edit portfolio"
+                          onClick={()=>{ setEditingPort(port); setEditForm({ name:port.name, description:port.description||"" }) }}
+                          style={{padding:"4px 9px",background:"#fff",border:"1px solid var(--border)",
+                            borderRadius:"var(--radius)",fontSize:11,cursor:"pointer",
+                            fontFamily:"var(--font)",color:"var(--text-2)"}}>✏️</button>
+                        <button title="Delete portfolio"
+                          onClick={()=>deletePortfolio(port)}
+                          style={{padding:"4px 9px",background:"#fff",border:"1px solid #FECACA",
+                            borderRadius:"var(--radius)",fontSize:11,cursor:"pointer",
+                            fontFamily:"var(--font)",color:"#DC2626"}}>🗑</button>
+                      </div>
+                    )}
                     {port.owner && <Avatar name={port.owner.name} avatarUrl={port.owner.avatarUrl} size={28}/>}
                     <span style={{fontSize:12,color:"var(--text-4)",transition:"transform .2s",
                       transform:isOpen?"rotate(180deg)":"none"}}>▾</span>
