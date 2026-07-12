@@ -21,11 +21,14 @@ async function syncProjectBudget(projectId: string) {
   try {
     const agg = await db.budgetItem.aggregate({
       where: { projectId },
-      _sum: { plannedCost: true },
+      _sum: { plannedCost: true, actualCost: true },
     })
     await db.project.update({
       where: { id: projectId },
-      data: { budgetTotal: agg._sum.plannedCost ?? 0 },
+      data: {
+        budgetTotal: agg._sum.plannedCost ?? 0,
+        budgetSpent: agg._sum.actualCost ?? 0,
+      },
     })
   } catch { /* rollup is best-effort */ }
 }
