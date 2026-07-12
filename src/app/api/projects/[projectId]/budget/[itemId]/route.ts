@@ -8,6 +8,21 @@ import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, parseBody, verifyProjectAccess, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
 
+// Keep the project's top-line budget in sync with its line items
+async function syncProjectBudget(projectId: string) {
+  try {
+    const agg = await db.budgetItem.aggregate({
+      where: { projectId },
+      _sum: { plannedCost: true },
+    })
+    await db.project.update({
+      where: { id: projectId },
+      data: { budgetTotal: agg._sum.plannedCost ?? 0 },
+    })
+  } catch { /* rollup is best-effort */ }
+}
+
+
 const schema = z.object({
   description:   z.string().min(1).max(300).optional(),
   category:      z.string().optional(),
@@ -35,6 +50,7 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
         ...(parsed.data.notes         !== undefined && { notes:parsed.data.notes }),
       },
     })
+    await syncProjectBudget(params!.projectId)
     return ok({ ...item, plannedAmount:Number(item.plannedCost), actualAmount:Number(item.actualCost) })
   } catch(e:any) {
     return err(e?.message||"Failed to update budget item", 500)
@@ -49,6 +65,7 @@ async function remove(ctx: ApiContext, params?: Record<string,string>) {
   if (!access.ok) return notFound("Project")
   try {
     await db.budgetItem.delete({ where:{ id:itemId } })
+    await syncProjectBudget(params!.projectId)
     return ok({ deleted:true })
   } catch(e:any) {
     return err(e?.message||"Failed to delete budget item", 500)

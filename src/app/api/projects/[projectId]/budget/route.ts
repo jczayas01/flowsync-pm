@@ -15,6 +15,21 @@ const schema = z.object({
   notes:         z.string().optional().nullable(),
 })
 
+
+// Keep the project's top-line budget in sync with its line items
+async function syncProjectBudget(projectId: string) {
+  try {
+    const agg = await db.budgetItem.aggregate({
+      where: { projectId },
+      _sum: { plannedCost: true },
+    })
+    await db.project.update({
+      where: { id: projectId },
+      data: { budgetTotal: agg._sum.plannedCost ?? 0 },
+    })
+  } catch { /* rollup is best-effort */ }
+}
+
 async function create(ctx: ApiContext, params?: Record<string,string>) {
     { const _g = await requirePermission(ctx as any, "budget:edit" as any); if (_g) return _g }
   const projectId = params?.projectId
@@ -37,6 +52,7 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
         notes:       parsed.data.notes ?? null,
       },
     })
+    await syncProjectBudget(projectId)
     return ok(item, 201)
   } catch(e:any) {
     return err(e?.message||"Failed to create budget item", 500)
