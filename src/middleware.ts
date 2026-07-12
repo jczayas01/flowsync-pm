@@ -10,7 +10,7 @@ import { isIPAllowed } from "@/lib/security/ip-allowlist"
 
 const PUBLIC_PREFIXES = [
   "/_next", "/favicon", "/images", "/fonts",
-  "/api/auth", "/intake/", "/api/health",
+  "/api/auth", "/intake/", "/api/health", "/invite/",
 ]
 
 const PUBLIC_ROUTES = new Set([
