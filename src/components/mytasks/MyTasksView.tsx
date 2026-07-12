@@ -136,6 +136,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
   )
 
   return (
+    <div style={{ flex:1, overflowY:"auto" }}>
     <div style={{ padding:"28px 32px", maxWidth:1100, margin:"0 auto", fontFamily:"var(--font)" }}>
       <h1 style={{ fontSize:24, fontWeight:700, color:"var(--text-1)", margin:"0 0 4px" }}>My Tasks</h1>
       <p style={{ fontSize:13, color:"var(--text-3)", margin:"0 0 20px" }}>
@@ -370,6 +371,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
           </div>
         </div>
       )}
+    </div>
     </div>
   )
 }

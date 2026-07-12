@@ -87,6 +87,7 @@ export function IntakeView({ items, currentUserId, canSubmit, canReview, canAppr
   )
 
   return (
+    <div style={{ flex:1, overflowY:"auto" }}>
     <div style={{ padding:"28px 32px", maxWidth:960, margin:"0 auto", fontFamily:"var(--font)" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
         <h1 style={{ fontSize:24, fontWeight:700, color:"var(--text-1)", margin:0 }}>Project Intake</h1>
@@ -246,6 +247,7 @@ export function IntakeView({ items, currentUserId, canSubmit, canReview, canAppr
           })}
         </div>
       )}
+    </div>
     </div>
   )
 }
