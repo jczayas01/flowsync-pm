@@ -6,6 +6,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { DocScanPicker } from "@/components/shared/DocScanPicker"
 import { Avatar } from "@/components/ui"
 
 const PROB_SCORES: Record<string,number> = {
@@ -78,6 +79,60 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   projectId: string; risks: any[]; members: any[]; workspaceId: string
 }) {
   const router = useRouter()
+
+  // ── AI document scan → risk candidates ──
+  const [scanOpen, setScanOpen]         = useState(false)
+  const [scanning, setScanning]         = useState(false)
+  const [scanError, setScanError]       = useState("")
+  const [candidates, setCandidates]     = useState<any[]|null>(null)
+  const [pickedCands, setPickedCands]   = useState<Set<number>>(new Set())
+  const [committing, setCommitting]     = useState(false)
+
+  async function runScan(documentIds: string[]) {
+    setScanning(true); setScanError(""); setCandidates(null)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/risks-scan?workspaceId=${workspaceId}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentIds }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) { setScanError(d?.error || `Scan failed (${res.status})`); return }
+      const c = d?.data?.candidates || []
+      setCandidates(c)
+      setPickedCands(new Set(c.map((_: any, i: number) => i)))
+    } catch { setScanError("Connection lost — try again") }
+    finally { setScanning(false) }
+  }
+
+  async function commitCandidates() {
+    if (!candidates || committing) return
+    const chosen = candidates.filter((_, i) => pickedCands.has(i))
+    if (!chosen.length) return
+    setCommitting(true); setScanError("")
+    try {
+      const results = await Promise.all(chosen.map(c =>
+        fetch(`/api/risks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-workspace-id": workspaceId },
+          body: JSON.stringify({
+            projectId,
+            title: String(c.title || "").slice(0, 500),
+            description: [c.description, c.evidence ? `Source: ${c.sourceDoc} — "${c.evidence}"` : ""].filter(Boolean).join("\n\n").slice(0, 3000),
+            category: c.category ? String(c.category).slice(0, 100) : undefined,
+            probability: ["VERY_LOW","LOW","MEDIUM","HIGH","VERY_HIGH"].includes(c.probability) ? c.probability : "MEDIUM",
+            impact: ["NEGLIGIBLE","MINOR","MODERATE","MAJOR","CRITICAL"].includes(c.impact) ? c.impact : "MODERATE",
+            isOpportunity: !!c.isOpportunity,
+            responseType: ["AVOID","TRANSFER","MITIGATE","ACCEPT","ESCALATE","EXPLOIT","ENHANCE","SHARE"].includes(c.responseType) ? c.responseType : null,
+          }),
+        })
+      ))
+      const failed = results.filter(r => !r.ok).length
+      if (failed) setScanError(`${failed} item(s) could not be added`)
+      setCandidates(null); setScanOpen(false)
+      router.refresh()
+    } catch { setScanError("Connection lost — try again") }
+    finally { setCommitting(false) }
+  }
   const { can } = usePermissions()
   const [view, setView] = useState<"matrix"|"register">("matrix")
   const [showOpp, setShowOpp] = useState(false)
@@ -197,7 +252,16 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
           {displayed.length} {showOpp ? "opportunit" : "risk"}{displayed.length!==1 ? (showOpp?"ies":"s") : (showOpp?"y":"")}
         </span>
 
-        <div style={{ marginLeft:"auto" }}>
+        <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
+          {can("risks:create") && (
+          <button onClick={() => { setScanOpen(o => !o); setCandidates(null); setScanError("") }}
+            title="AI-scan project documents for risks and opportunities"
+            style={{ padding:"7px 14px", background:"#fff", color:"var(--text-2)",
+              border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:12,
+              fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
+            🤖 Scan documents
+          </button>
+          )}
           {can("risks:create") && (
           <button onClick={() => { setCreating(true); setForm({...emptyForm, isOpportunity:showOpp}) }}
             style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
@@ -208,6 +272,71 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
           )}
         </div>
       </div>
+
+      {scanOpen && (
+        <div style={{ margin:"0 0 12px", padding:14, border:"1px solid var(--border)",
+          borderRadius:"var(--radius)", background:"var(--surface)" }}>
+          {!candidates ? (
+            <DocScanPicker projectId={projectId} workspaceId={workspaceId}
+              scanning={scanning} onScan={runScan} />
+          ) : (
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:"var(--text)", marginBottom:8 }}>
+                {candidates.length ? `Found ${candidates.length} candidate${candidates.length===1?"":"s"} — review and add:` : "No risks found in the selected documents."}
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:320, overflowY:"auto" }}>
+                {candidates.map((c: any, i: number) => (
+                  <label key={i} style={{ display:"flex", gap:10, alignItems:"flex-start",
+                    padding:"10px 12px", background:"#fff", border:"1px solid var(--border)",
+                    borderRadius:"var(--radius)", cursor:"pointer" }}>
+                    <input type="checkbox" checked={pickedCands.has(i)} style={{ marginTop:3 }}
+                      onChange={() => setPickedCands(prev => {
+                        const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n
+                      })} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:2, flexWrap:"wrap" }}>
+                        <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:4,
+                          background: c.isOpportunity ? "#ECFDF5" : "#FEF2F2",
+                          color: c.isOpportunity ? "#059669" : "#B91C1C" }}>
+                          {c.isOpportunity ? "OPPORTUNITY" : "THREAT"}
+                        </span>
+                        <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</span>
+                        <span style={{ fontSize:10, color:"var(--text-3)" }}>
+                          {c.probability} × {c.impact}{c.category ? ` · ${c.category}` : ""}
+                        </span>
+                      </div>
+                      {c.description && <div style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{c.description}</div>}
+                      {c.evidence && (
+                        <div style={{ fontSize:11, color:"var(--text-3)", fontStyle:"italic", marginTop:3 }}>
+                          "{c.evidence}" — {c.sourceDoc}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div style={{ display:"flex", gap:8, marginTop:10, alignItems:"center" }}>
+                {candidates.length > 0 && (
+                <button onClick={commitCandidates} disabled={committing || pickedCands.size === 0}
+                  style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                    borderRadius:"var(--radius)", fontSize:12, fontWeight:500, fontFamily:"var(--font)",
+                    cursor: committing || pickedCands.size === 0 ? "not-allowed" : "pointer",
+                    opacity: committing || pickedCands.size === 0 ? 0.6 : 1 }}>
+                  {committing ? "Adding…" : `＋ Add ${pickedCands.size} to register`}
+                </button>
+                )}
+                <button onClick={() => setCandidates(null)}
+                  style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
+                    borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                    fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                  ← Pick different documents
+                </button>
+              </div>
+            </div>
+          )}
+          {scanError && <div style={{ fontSize:12, color:"#B91C1C", marginTop:8 }}>✗ {scanError}</div>}
+        </div>
+      )}
 
       <div style={{ flex:1, overflowY:"auto" }}>
 

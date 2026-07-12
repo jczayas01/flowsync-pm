@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { DocScanPicker } from "@/components/shared/DocScanPicker"
 import { Badge } from "@/components/ui"
 
 function fmt(n: number, currency = "USD") {
@@ -16,6 +17,56 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
 }) {
   const { can } = usePermissions()
   const router = useRouter()
+
+  // ── AI document scan → budget item candidates ──
+  const [scanOpen, setScanOpen]       = useState(false)
+  const [scanning, setScanning]       = useState(false)
+  const [scanError, setScanError]     = useState("")
+  const [candidates, setCandidates]   = useState<any[]|null>(null)
+  const [pickedCands, setPickedCands] = useState<Set<number>>(new Set())
+  const [committing, setCommitting]   = useState(false)
+
+  async function runScan(documentIds: string[]) {
+    setScanning(true); setScanError(""); setCandidates(null)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/budget/scan?workspaceId=${workspaceId}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentIds }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) { setScanError(d?.error || `Scan failed (${res.status})`); return }
+      const c = d?.data?.candidates || []
+      setCandidates(c)
+      setPickedCands(new Set(c.map((_: any, i: number) => i)))
+    } catch { setScanError("Connection lost — try again") }
+    finally { setScanning(false) }
+  }
+
+  async function commitCandidates() {
+    if (!candidates || committing) return
+    const chosen = candidates.filter((_, i) => pickedCands.has(i))
+    if (!chosen.length) return
+    setCommitting(true); setScanError("")
+    try {
+      const CATS = ["LABOR","MATERIALS","EQUIPMENT","SOFTWARE","CONSULTING","TRAVEL","CONTINGENCY","OTHER"]
+      const results = await Promise.all(chosen.map(c =>
+        fetch(`/api/projects/${projectId}/budget`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: String(c.description || "").slice(0, 200),
+            category: CATS.includes(c.category) ? c.category : "OTHER",
+            plannedAmount: Math.max(0, Number(c.plannedAmount) || 0),
+            actualAmount: 0,
+          }),
+        })
+      ))
+      const failed = results.filter(r => !r.ok).length
+      if (failed) setScanError(`${failed} item(s) could not be added`)
+      setCandidates(null); setScanOpen(false)
+      router.refresh()
+    } catch { setScanError("Connection lost — try again") }
+    finally { setCommitting(false) }
+  }
   const [editId,   setEditId]   = useState<string|null>(null)
   const [editForm, setEditForm] = useState<any>({})
   const [saving,   setSaving]   = useState(false)
@@ -253,6 +304,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
             Budget line items ({budgetItems.length})
           </span>
           {can("budget:edit") && (
+          <div style={{ display:"flex", gap:8 }}>
+          <button
+            title="AI-scan project documents for cost line items"
+            style={{ padding:"6px 12px", background:"#fff", color:"var(--text-2)",
+              border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:11,
+              fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}
+            onClick={() => { setScanOpen(o => !o); setCandidates(null); setScanError("") }}>
+            🤖 Scan documents
+          </button>
           <button
             style={{ padding:"6px 12px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:11, fontWeight:500, cursor:"pointer",
@@ -260,8 +320,71 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
             onClick={() => setAddingItem(true)}>
             + Add item
           </button>
+          </div>
           )}
         </div>
+        {scanOpen && (
+          <div style={{ margin:"12px 16px", padding:14, border:"1px solid var(--border)",
+            borderRadius:"var(--radius)", background:"var(--surface)" }}>
+            {!candidates ? (
+              <DocScanPicker projectId={projectId} workspaceId={workspaceId}
+                scanning={scanning} onScan={runScan} />
+            ) : (
+              <div>
+                <div style={{ fontSize:12, fontWeight:700, color:"var(--text)", marginBottom:8 }}>
+                  {candidates.length ? `Found ${candidates.length} cost item${candidates.length===1?"":"s"} — review and add:` : "No cost items with amounts found in the selected documents."}
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:300, overflowY:"auto" }}>
+                  {candidates.map((c: any, i: number) => (
+                    <label key={i} style={{ display:"flex", gap:10, alignItems:"flex-start",
+                      padding:"10px 12px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", cursor:"pointer" }}>
+                      <input type="checkbox" checked={pickedCands.has(i)} style={{ marginTop:3 }}
+                        onChange={() => setPickedCands(prev => {
+                          const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n
+                        })} />
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:2, flexWrap:"wrap" }}>
+                          <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.description}</span>
+                          <span style={{ fontSize:10, fontWeight:700, padding:"2px 6px", borderRadius:4,
+                            background:"var(--surface)", color:"var(--text-3)", border:"1px solid var(--border)" }}>
+                            {c.category || "OTHER"}
+                          </span>
+                          <span style={{ fontSize:12, fontWeight:700, color:"var(--steel)" }}>
+                            {fmt(Number(c.plannedAmount)||0, currency)}
+                          </span>
+                        </div>
+                        {c.evidence && (
+                          <div style={{ fontSize:11, color:"var(--text-3)", fontStyle:"italic" }}>
+                            "{c.evidence}" — {c.sourceDoc}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div style={{ display:"flex", gap:8, marginTop:10, alignItems:"center" }}>
+                  {candidates.length > 0 && (
+                  <button onClick={commitCandidates} disabled={committing || pickedCands.size === 0}
+                    style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                      borderRadius:"var(--radius)", fontSize:12, fontWeight:500, fontFamily:"var(--font)",
+                      cursor: committing || pickedCands.size === 0 ? "not-allowed" : "pointer",
+                      opacity: committing || pickedCands.size === 0 ? 0.6 : 1 }}>
+                    {committing ? "Adding…" : `＋ Add ${pickedCands.size} to budget`}
+                  </button>
+                  )}
+                  <button onClick={() => setCandidates(null)}
+                    style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    ← Pick different documents
+                  </button>
+                </div>
+              </div>
+            )}
+            {scanError && <div style={{ fontSize:12, color:"#B91C1C", marginTop:8 }}>✗ {scanError}</div>}
+          </div>
+        )}
         {budgetItems.length === 0 && !addingItem ? (
           <div style={{ padding:"24px 16px", textAlign:"center", fontSize:13, color:"var(--text-3)" }}>
             No budget line items yet
