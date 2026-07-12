@@ -43,6 +43,33 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
   const [error, setError]             = useState("")
   const [collapsed, setCollapsed]     = useState<Set<string>>(new Set())
   const [assigning, setAssigning]     = useState<string|null>(null)
+  const [editingProg, setEditingProg] = useState<any|null>(null)
+  const [editForm, setEditForm]       = useState({ name:"", description:"" })
+  const [savingProg, setSavingProg]   = useState(false)
+
+  async function saveProgram() {
+    if (!editForm.name.trim() || savingProg) return
+    setSavingProg(true)
+    try {
+      const res = await fetch(`/api/programs/${editingProg.id}`, {
+        method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+        body: JSON.stringify({ name: editForm.name.trim(), description: editForm.description || null }),
+      })
+      if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Update failed (${res.status})`); return }
+      setEditingProg(null)
+      router.refresh()
+    } finally { setSavingProg(false) }
+  }
+
+  async function deleteProgram(prog: any) {
+    if (!confirm(`Delete program "${prog.name}"?\n\nIts ${prog.projects.length} project(s) will NOT be deleted — they return to Unassigned.`)) return
+    const res = await fetch(`/api/programs/${prog.id}`, {
+      method:"DELETE", headers:{"x-workspace-id":workspaceId},
+    })
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Delete failed (${res.status})`); return }
+    router.refresh()
+  }
+
   const [form, setForm]               = useState({
     name:"", description:"", portfolioId:"", color:"#1B6CA8"
   })
@@ -254,6 +281,33 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                 <div key={prog.id} style={{ background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", overflow:"hidden" }}>
 
+                  {editingProg?.id === prog.id && (
+                    <div style={{ padding:"12px 18px", borderBottom:"1px solid var(--border)",
+                      background:"var(--surface)", display:"flex", flexDirection:"column", gap:8 }}
+                      onClick={e=>e.stopPropagation()}>
+                      <input value={editForm.name} placeholder="Program name"
+                        onChange={e=>setEditForm(f=>({...f, name:e.target.value}))}
+                        style={{ padding:"8px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
+                          fontSize:13, fontFamily:"var(--font)" }} />
+                      <textarea value={editForm.description} placeholder="Description (optional)" rows={2}
+                        onChange={e=>setEditForm(f=>({...f, description:e.target.value}))}
+                        style={{ padding:"8px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
+                          fontSize:12, fontFamily:"var(--font)", resize:"vertical" }} />
+                      <div style={{ display:"flex", gap:8 }}>
+                        <button onClick={saveProgram} disabled={savingProg || !editForm.name.trim()}
+                          style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                            borderRadius:"var(--radius)", fontSize:12, fontWeight:600, fontFamily:"var(--font)",
+                            cursor: savingProg ? "wait" : "pointer" }}>
+                          {savingProg ? "Saving…" : "💾 Save"}
+                        </button>
+                        <button onClick={() => setEditingProg(null)}
+                          style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
+                            borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                            fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Program header */}
                   <div style={{ padding:"14px 18px", borderBottom: isCollapsed?"none":"1px solid var(--border)",
                     display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}
@@ -297,6 +351,20 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                       </div>
                     </div>
 
+                    {canAssign && (
+                      <div style={{ display:"flex", gap:6, flexShrink:0 }} onClick={e=>e.stopPropagation()}>
+                        <button title="Edit program"
+                          onClick={() => { setEditingProg(prog); setEditForm({ name:prog.name, description:prog.description||"" }) }}
+                          style={{ padding:"4px 9px", background:"#fff", border:"1px solid var(--border)",
+                            borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
+                            fontFamily:"var(--font)", color:"var(--text-2)" }}>✏️</button>
+                        <button title="Delete program"
+                          onClick={() => deleteProgram(prog)}
+                          style={{ padding:"4px 9px", background:"#fff", border:"1px solid #FECACA",
+                            borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
+                            fontFamily:"var(--font)", color:"#DC2626" }}>🗑</button>
+                      </div>
+                    )}
                     <span style={{ fontSize:12, color:"var(--text-4)",
                       transform:isCollapsed?"rotate(-90deg)":"rotate(0)",
                       display:"inline-block", transition:"transform .15s" }}>▼</span>
