@@ -17,7 +17,7 @@ import { getRoleDef } from "@/lib/roles"
 
 function fmtDate(d: string | Date | null | undefined) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" })
+  return new Date(d).toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n: number, currency = "USD") {
   if (n >= 1_000_000) return `${currency} ${(n/1_000_000).toFixed(2)}M`
@@ -64,6 +64,25 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
   const [genError, setGenError]       = useState("")
   const [drafts, setDrafts]           = useState<Record<string,string>|null>(null)
   const [applying, setApplying]       = useState<string|null>(null)
+
+  // ── Inline project date editing ──
+  const [editingDate, setEditingDate] = useState<"startDate"|"endDate"|null>(null)
+
+  async function saveDate(key: "startDate"|"endDate", value: string) {
+    setEditingDate(null)
+    if (!value) return
+    const iso = new Date(value + "T00:00:00Z").toISOString()
+    const prev = localProject?.[key]
+    setLocalProject((p: any) => ({ ...p, [key]: iso }))  // optimistic
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: iso }),
+      })
+      if (!res.ok) setLocalProject((p: any) => ({ ...p, [key]: prev }))
+      else router.refresh()
+    } catch { setLocalProject((p: any) => ({ ...p, [key]: prev })) }
+  }
 
   function toggleDoc(id: string) {
     setSelectedIds(prev => {
@@ -255,14 +274,39 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
           {/* Project vitals strip */}
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
             borderBottom:"1px solid var(--border)", background:"var(--surface)" }}>
+            {/* Editable date cells */}
+            {(["startDate","endDate"] as const).map((dk, i) => (
+              <div key={dk} style={{ padding:"12px 18px", borderRight:"1px solid var(--border)" }}>
+                <div style={{ fontSize:10, fontWeight:600, color:"var(--text-3)",
+                  textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }}>
+                  {dk === "startDate" ? "Start date" : "End date"}
+                </div>
+                {editingDate === dk ? (
+                  <input type="date" autoFocus
+                    defaultValue={localProject?.[dk] ? String(localProject[dk]).slice(0,10) : ""}
+                    onBlur={e => saveDate(dk, e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+                      if (e.key === "Escape") setEditingDate(null)
+                    }}
+                    style={{ fontSize:13, fontWeight:600, color:"var(--text)", padding:"2px 4px",
+                      border:"1px solid var(--steel)", borderRadius:6, fontFamily:"var(--font)",
+                      background:"#fff", width:"100%" }} />
+                ) : (
+                  <div title="Click to change" onClick={() => setEditingDate(dk)}
+                    style={{ fontSize:13, fontWeight:600, color:"var(--text)", cursor:"pointer",
+                      borderBottom:"1px dashed var(--border)", display:"inline-block" }}>
+                    {fmtDate(localProject?.[dk]) || "Set date…"}
+                  </div>
+                )}
+              </div>
+            ))}
             {[
-              { label:"Start date",  value: fmtDate(localProject?.startDate) },
-              { label:"End date",    value: fmtDate(localProject?.endDate) },
               { label:"Budget",      value: fmtCurrency(localProject?.budgetTotal || 0, localProject?.currency) },
               { label:"Status",      value: localProject?.status || "—" },
             ].map((item, i) => (
               <div key={item.label} style={{ padding:"12px 18px",
-                borderRight: i < 3 ? "1px solid var(--border)" : "none" }}>
+                borderRight: i < 1 ? "1px solid var(--border)" : "none" }}>
                 <div style={{ fontSize:10, fontWeight:600, color:"var(--text-3)",
                   textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }}>
                   {item.label}
