@@ -481,21 +481,27 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                 ? Math.round(allPhaseTasks.reduce((s,t)=>s+(t.percentComplete||0),0)/allPhaseTasks.length)
                 : 0
               const pctColor = phasePct === 100 ? "#059669" : phasePct >= 50 ? "#1B6CA8" : "#60A5FA"
+              // Classic summary bracket — solid bar centered in the phase row,
+              // with downward end caps (reads as "summarizes the rows below").
+              const by = py + ROW_H/2 - 4   // bracket top (8px tall, centered)
+              const cap = 7                  // end-cap drop below the bracket
+              const fmtD = (d: Date) => d.toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })
               return (
                 <g key={`ps-${phase.id}`}>
-                  {/* Phase bar track */}
-                  <rect x={px} y={py + ROW_H - 6} width={pw} height={4} rx={2}
-                    fill="#1B6CA8" opacity={0.5} />
+                  <title>{`${phase.name} — ${fmtD(phaseStart)} → ${fmtD(phaseEnd)} · ${phasePct}% complete`}</title>
+                  {/* Bracket body */}
+                  <rect x={px} y={by} width={pw} height={8} rx={2}
+                    fill="#1B6CA8" opacity={0.85} />
                   {/* Completion fill */}
-                  <rect x={px} y={py + ROW_H - 6} width={Math.max(0, pw * phasePct/100)} height={4} rx={2}
-                    fill={pctColor} opacity={0.95} />
-                  {/* Phase start/end diamonds */}
-                  <polygon points={`${px},${py+ROW_H-4} ${px+4},${py+ROW_H} ${px},${py+ROW_H+4} ${px-4},${py+ROW_H}`}
-                    fill="#1B6CA8" opacity={0.7} />
-                  <polygon points={`${px+pw},${py+ROW_H-4} ${px+pw+4},${py+ROW_H} ${px+pw},${py+ROW_H+4} ${px+pw-4},${py+ROW_H}`}
-                    fill="#1B6CA8" opacity={0.7} />
+                  {phasePct > 0 && (
+                    <rect x={px} y={by} width={Math.max(0, pw * phasePct/100)} height={8} rx={2}
+                      fill={pctColor} />
+                  )}
+                  {/* Downward end caps */}
+                  <polygon points={`${px},${by} ${px+6},${by} ${px},${by+8+cap}`} fill="#1B6CA8" opacity={0.85} />
+                  <polygon points={`${px+pw},${by} ${px+pw-6},${by} ${px+pw},${by+8+cap}`} fill="#1B6CA8" opacity={0.85} />
                   {/* Completion % label */}
-                  <text x={px+pw+8} y={py+ROW_H+2} fontSize={9} fontWeight={700} fill={pctColor}>{phasePct}%</text>
+                  <text x={px+pw+10} y={by+8} fontSize={9} fontWeight={700} fill={pctColor}>{phasePct}%</text>
                 </g>
               )
             })}
@@ -635,6 +641,18 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                   {/* Critical path ⚡ badge */}
                   {isCrit && (
                     <text x={barX + barW + 4} y={barY + barH/2 + 4} fontSize={10} fill="#DC2626">⚡</text>
+                  )}
+
+                  {/* Live drag delta chip */}
+                  {dragging && dragging.taskId === task.id && dragDays !== 0 && (
+                    <g style={{ pointerEvents:"none" }}>
+                      <rect x={barX + barW/2 - 16} y={barY - 16} width={32} height={14} rx={7}
+                        fill="#0D1B2A" opacity={0.9} />
+                      <text x={barX + barW/2} y={barY - 6} fontSize={9} fontWeight={700}
+                        fill="#fff" textAnchor="middle">
+                        {dragDays > 0 ? `+${dragDays}d` : `${dragDays}d`}
+                      </text>
+                    </g>
                   )}
 
                   {/* Resize handles — drag an edge to change Start / Finish */}
