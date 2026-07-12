@@ -41,7 +41,7 @@ export default async function DashboardPage() {
 
     db.milestone.findMany({
       where: {
-        project: { workspaceId },
+        project: { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] } },
         status:  { in: ['UPCOMING','AT_RISK'] },
         dueDate: { gte: new Date(), lte: new Date(Date.now() + 30*86400000) },
       },
@@ -51,7 +51,7 @@ export default async function DashboardPage() {
     }),
 
     db.risk.findMany({
-      where:  { project: { workspaceId }, status: 'OPEN', score: { gte: 9 } },
+      where:  { project: { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] } }, status: 'OPEN', score: { gte: 9 } },
       include:{ project: { select: { id:true, code:true, name:true } } },
       orderBy:{ score: 'desc' },
       take: 8,
