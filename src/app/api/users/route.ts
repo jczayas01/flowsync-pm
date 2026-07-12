@@ -161,7 +161,8 @@ async function inviteUser(ctx: ApiContext) {
   await audit(ctx.workspaceId, ctx.userId, "user.invited", "invitation", invitation.id,
     undefined, { email, role })
 
-  return ok({ invitation: { id: invitation.id, email, role, expiresAt } }, 201)
+  const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/invite/${invitation.token}`
+  return ok({ invitation: { id: invitation.id, email, role, expiresAt, acceptUrl } }, 201)
 }
 
 export async function GET(req: NextRequest) {

@@ -24,6 +24,8 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
   const [inviteRole,  setInviteRole]  = useState("MEMBER")
   const [inviting, setInviting]       = useState(false)
   const [inviteMsg, setInviteMsg]     = useState("")
+  const [inviteLink, setInviteLink]   = useState("")
+  const [linkCopied, setLinkCopied]   = useState(false)
   const [search, setSearch]           = useState("")
   const router = useRouter()
   const [mem, setMem] = useState<any[]>(members)
@@ -43,7 +45,10 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
         body: JSON.stringify({ email:inviteEmail, role:inviteRole })
       })
       if (!res.ok) throw new Error((await res.json()).error || "Invite failed")
-      setInviteMsg(`✓ Invitation sent to ${inviteEmail}`)
+      const d = await res.json().catch(() => null)
+      const url = d?.data?.invitation?.acceptUrl || ""
+      setInviteLink(url)
+      setInviteMsg(`✓ Invitation created for ${inviteEmail}`)
       setInviteEmail("")
     } catch(e:any) { setInviteMsg(`✗ ${e.message}`) }
     finally { setInviting(false) }
@@ -128,6 +133,21 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
               {inviteMsg}
             </div>
           )}
+              {inviteLink && (
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:8,
+                  padding:"8px 10px", background:"var(--surface)", border:"1px solid var(--border)",
+                  borderRadius:"var(--radius)" }}>
+                  <span style={{ fontSize:11, color:"var(--text-3)", flexShrink:0 }}>Invite link:</span>
+                  <span style={{ fontSize:12, color:"var(--text-2)", overflow:"hidden",
+                    textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{inviteLink}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(inviteLink); setLinkCopied(true); setTimeout(()=>setLinkCopied(false), 2000) }}
+                    style={{ padding:"4px 10px", background:"var(--steel)", color:"#fff", border:"none",
+                      borderRadius:"var(--radius)", fontSize:11, fontWeight:500, cursor:"pointer",
+                      fontFamily:"var(--font)", flexShrink:0 }}>
+                    {linkCopied ? "✓ Copied" : "Copy"}
+                  </button>
+                </div>
+              )}
         </div>
       )}
 
