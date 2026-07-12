@@ -6,7 +6,7 @@ export default async function ProjectBudgetPage({ params }: { params: { projectI
   const [project, budgetItems, timeEntries] = await Promise.all([
     db.project.findUnique({
       where:  { id: params.projectId },
-      select: { budgetTotal:true, budgetSpent:true, currency:true, startDate:true, endDate:true },
+      select: { budgetTotal:true, budgetSpent:true, currency:true, startDate:true, endDate:true, percentComplete:true },
     }),
     db.budgetItem.findMany({
       where:   { projectId: params.projectId },

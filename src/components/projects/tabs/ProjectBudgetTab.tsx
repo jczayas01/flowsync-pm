@@ -82,10 +82,21 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
 
   // ── Full PM Standard EVM calculations ──────────────────────────────
   const pctComplete = (project?.percentComplete || 0) / 100
+
+  // Planned % — time-phased from the schedule (start → end vs today).
+  // Falls back to actual % when dates are missing, keeping SPI neutral.
+  const plannedPct = (() => {
+    const st = project?.startDate ? new Date(project.startDate).getTime() : null
+    const en = project?.endDate   ? new Date(project.endDate).getTime()   : null
+    if (!st || !en || en <= st) return pctComplete
+    const now = Date.now()
+    return Math.min(1, Math.max(0, (now - st) / (en - st)))
+  })()
+
   const BAC = budgetTotal                       // Budget At Completion
   const AC  = budgetSpent                       // Actual Cost
-  const EV  = BAC * pctComplete                 // Earned Value
-  const PV  = BAC * pctComplete                 // Planned Value (simplified — same as EV without schedule baseline)
+  const EV  = BAC * pctComplete                 // Earned Value = BAC × actual % complete
+  const PV  = BAC * plannedPct                  // Planned Value = BAC × scheduled % to date
   const CV  = EV - AC                           // Cost Variance (+ = under budget)
   const SV  = EV - PV                           // Schedule Variance (simplified)
   const CPI = AC > 0 ? EV / AC : 1             // Cost Performance Index
@@ -131,7 +142,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
               color:"var(--steel)", tip:"Value of work actually performed" },
             { label:"Actual Cost (AC)", value:fmt(AC,currency), sub:"Spent to date",
               color:AC>EV?"var(--red)":"var(--text)", tip:"Total costs incurred for work performed" },
-            { label:"Planned Value (PV)", value:fmt(PV,currency), sub:"Budgeted work to date",
+            { label:"Planned Value (PV)", value:fmt(PV,currency), sub:"Scheduled work to date",
               color:"var(--text-2)", tip:"Authorized budget assigned to scheduled work" },
           ].map((k,i) => (
             <div key={k.label} style={{ padding:"14px 16px",
