@@ -32,7 +32,7 @@ function fmtCurrency(n:number|null|undefined, currency="USD") {
   if (!n) return "—"
   if (n>=1_000_000) return `${currency} ${(n/1_000_000).toFixed(1)}M`
   if (n>=1_000)     return `${currency} ${(n/1_000).toFixed(0)}K`
-  return `${currency} ${n.toLocaleString()}`
+  return `${currency} ${n.toLocaleString("en-US")}`
 }
 
 export function ProjectProcurementTab({ projectId, items, members, workspaceId }: {

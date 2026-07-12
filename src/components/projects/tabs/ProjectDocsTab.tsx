@@ -737,7 +737,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                 )}
                 {aiContent && (
                   <div style={{ fontSize:11, color:"var(--text-4)", marginBottom:6 }}>
-                    {aiContent.length.toLocaleString()} characters loaded{aiLoadedFrom ? ` from: ${aiLoadedFrom}` : ""}
+                    {aiContent.length.toLocaleString("en-US")} characters loaded{aiLoadedFrom ? ` from: ${aiLoadedFrom}` : ""}
                     <button onClick={()=>{setAiContent("");setAiResult(null);setAiLoadedFrom("")}}
                       style={{ marginLeft:10, fontSize:11, color:"var(--red)", background:"none",
                         border:"none", cursor:"pointer", fontFamily:"var(--font)" }}>

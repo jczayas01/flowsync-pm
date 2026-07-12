@@ -878,7 +878,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                 <polygon key={`msf-${m.id}`}
                   points={`${mx},${my-s} ${mx+s},${my} ${mx},${my+s} ${mx-s},${my}`}
                   fill={col} stroke="#fff" strokeWidth={1} style={{ cursor:"default" }}>
-                  <title>{`◆ ${m.name}${m.dueDate ? " — due " + new Date(m.dueDate).toLocaleDateString() : ""}${m.status ? " · " + String(m.status).replace(/_/g," ").toLowerCase() : ""}`}</title>
+                  <title>{`◆ ${m.name}${m.dueDate ? " — due " + new Date(m.dueDate).toLocaleDateString("en-US", { timeZone:"UTC" }) : ""}${m.status ? " · " + String(m.status).replace(/_/g," ").toLowerCase() : ""}`}</title>
                 </polygon>
               )
             })}

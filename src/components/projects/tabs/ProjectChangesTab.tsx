@@ -382,7 +382,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               {[
                 { icon:"📅", label:"Schedule impact", value:cr.scheduleImpact },
                 { icon:"💰", label:"Budget impact",   value:cr.budgetImpact != null
-                  ? `${cr.budgetImpact >= 0 ? "+" : ""}$${Math.abs(cr.budgetImpact).toLocaleString()}` : null },
+                  ? `${cr.budgetImpact >= 0 ? "+" : ""}$${Math.abs(cr.budgetImpact).toLocaleString("en-US")}` : null },
                 { icon:"📐", label:"Scope impact",    value:cr.scopeImpact },
                 { icon:"⭐", label:"Quality impact",  value:cr.qualityImpact },
               ].map(item => item.value && (

@@ -98,7 +98,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             </div>
             <div style={{ fontSize:18, fontWeight:700, marginBottom:4 }}>{report.reportTitle}</div>
             <div style={{ fontSize:11, opacity:.7 }}>
-              {project?.name} ({project?.code}) · Generated {new Date(generatedAt).toLocaleString()} ·
+              {project?.name} ({project?.code}) · Generated {new Date(generatedAt).toLocaleString("en-US")} ·
               Audience: {AUDIENCES.find(a=>a.value===audience)?.label}
             </div>
           </div>
@@ -216,12 +216,12 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             {report.metrics && (
               <ReportSection title="Key EVM Metrics">
                 <div style={{ display:"flex",gap:8,flexWrap:"wrap",marginBottom:12 }}>
-                  <ReportMetric label="BAC" value={`$${Number(report.metrics.bac||0).toLocaleString()}`} />
-                  <ReportMetric label="EV"  value={`$${Number(report.metrics.ev||0).toLocaleString()}`} />
-                  <ReportMetric label="AC"  value={`$${Number(report.metrics.ac||0).toLocaleString()}`} />
+                  <ReportMetric label="BAC" value={`$${Number(report.metrics.bac||0).toLocaleString("en-US")}`} />
+                  <ReportMetric label="EV"  value={`$${Number(report.metrics.ev||0).toLocaleString("en-US")}`} />
+                  <ReportMetric label="AC"  value={`$${Number(report.metrics.ac||0).toLocaleString("en-US")}`} />
                   <ReportMetric label="CPI" value={String(report.metrics.cpi||"—")} color={Number(report.metrics.cpi)<1?"#DC2626":"#059669"} />
                   <ReportMetric label="SPI" value={String(report.metrics.spi||"—")} color={Number(report.metrics.spi)<1?"#D97706":"#059669"} />
-                  <ReportMetric label="EAC" value={`$${Number(report.metrics.eac||0).toLocaleString()}`} />
+                  <ReportMetric label="EAC" value={`$${Number(report.metrics.eac||0).toLocaleString("en-US")}`} />
                 </div>
               </ReportSection>
             )}

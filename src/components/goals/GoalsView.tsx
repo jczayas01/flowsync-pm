@@ -350,10 +350,10 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                                     <input type="number" defaultValue={kr.current}
                                       onBlur={e=>{ const v=Number(e.target.value); if(v!==Number(kr.current)) saveKeyResults(goal.id,(goal.keyResults||[]).map((k:any)=>k.id===kr.id?{...k,current:v}:k)) }}
                                       style={{width:72,fontSize:10,padding:"2px 4px",border:"1px solid var(--border)",borderRadius:4,fontFamily:"var(--font)"}}/>
-                                    <span>{kr.baseline!=null?`from ${kr.baseline} → `:"of "}{kr.unit==="$"?`$${Number(kr.target).toLocaleString()}`:`${kr.target}${kr.unit?" "+kr.unit:""}`}</span>
+                                    <span>{kr.baseline!=null?`from ${kr.baseline} → `:"of "}{kr.unit==="$"?`$${Number(kr.target).toLocaleString("en-US")}`:`${kr.target}${kr.unit?" "+kr.unit:""}`}</span>
                                   </>
                                 ):(
-                                  <span>{kr.unit==="$"?`$${Number(kr.current).toLocaleString()} → $${Number(kr.target).toLocaleString()}`:`${kr.current}${kr.unit||""} of ${kr.target}${kr.unit||""}`}</span>
+                                  <span>{kr.unit==="$"?`$${Number(kr.current).toLocaleString("en-US")} → $${Number(kr.target).toLocaleString("en-US")}`:`${kr.current}${kr.unit||""} of ${kr.target}${kr.unit||""}`}</span>
                                 )}
                               </div>
                             </div>

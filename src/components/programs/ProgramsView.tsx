@@ -24,7 +24,7 @@ function fmtDate(d:any) {
 function fmtCurrency(n:number) {
   if (n>=1_000_000) return `$${(n/1_000_000).toFixed(1)}M`
   if (n>=1_000)     return `$${(n/1_000).toFixed(0)}K`
-  return `$${Math.round(n).toLocaleString()}`
+  return `$${Math.round(n).toLocaleString("en-US")}`
 }
 
 export function ProgramsView({ programs: programsProp, portfolios, unassignedProjects: unassignedProp, workspaceId, userRole }: {

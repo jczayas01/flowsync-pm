@@ -203,7 +203,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                         const pct  = Math.round(hrs/CAPACITY_HRS*100)
                         const heat = heatClass(pct)
                         return (
-                          <div key={wi} title={`${hrs}h (${pct}%) — ${weekDates[wi].toLocaleDateString()}`}
+                          <div key={wi} title={`${hrs}h (${pct}%) — ${weekDates[wi].toLocaleDateString("en-US", { timeZone:"UTC" })}`}
                             style={{borderLeft:"1px solid rgba(0,0,0,.05)",
                               display:"flex",alignItems:"center",justifyContent:"center",cursor:"default",
                               background:wi===todayIdx?heat.bg+"cc":heat.bg}}>

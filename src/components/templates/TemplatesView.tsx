@@ -361,7 +361,7 @@ function TemplateCard({ t, onSelect }:{t:TplCard; onSelect:(t:TplCard)=>void}) {
         <div style={{fontSize:11,color:"var(--text-3)",display:"flex",gap:10}}>
           <span>⏱ {t.weeks}w</span>
           <span>⭐ {t.rating}</span>
-          <span>📥 {t.uses.toLocaleString()}</span>
+          <span>📥 {t.uses.toLocaleString("en-US")}</span>
         </div>
         <button onClick={()=>onSelect(t)}
           style={{padding:"5px 12px",background:t.isPremium?"var(--amber)":"var(--steel)",

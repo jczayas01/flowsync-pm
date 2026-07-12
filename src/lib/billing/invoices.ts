@@ -268,7 +268,7 @@ export async function sendInvoice(invoiceId: string, workspaceId: string): Promi
   await resend.emails.send({
     from:    process.env.RESEND_FROM_EMAIL!,
     to:      invoice.client_email,
-    subject: `Invoice ${invoice.number} from ${workspace?.name} — ${new Intl.NumberFormat("en-US", { style: "currency", currency: invoice.currency }).format(invoice.total)} due ${new Date(invoice.due_date).toLocaleDateString()}`,
+    subject: `Invoice ${invoice.number} from ${workspace?.name} — ${new Intl.NumberFormat("en-US", { style: "currency", currency: invoice.currency }).format(invoice.total)} due ${new Date(invoice.due_date).toLocaleDateString("en-US", { timeZone:"UTC" })}`,
     html,
   })
 

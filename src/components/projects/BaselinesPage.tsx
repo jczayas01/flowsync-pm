@@ -238,7 +238,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
                 <span style={{ color:"#78350F", marginLeft:6 }}>{cr.title}</span>
                 <button onClick={() => {
                   setLinkedCr(cr.id)
-                  setNewName(`Re-baseline after ${cr.code} — ${new Date().toLocaleDateString()}`)
+                  setNewName(`Re-baseline after ${cr.code} — ${new Date().toLocaleDateString("en-US", { timeZone:"UTC" })}`)
                   setShowSaveForm(true)
                 }} style={{ marginLeft:10, fontSize:11, color:"var(--steel)",
                   background:"none", border:"none", cursor:"pointer",
@@ -517,7 +517,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
           {/* Three baselines summary */}
           <div style={{ display:"flex", gap:16, fontSize:11, color:"var(--text-3)", flexWrap:"wrap" }}>
             <span>📅 {new Date(b.startDate).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })} → {new Date(b.endDate).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
-            <span>💰 {b.budgetTotal ? `$${Number(b.budgetTotal).toLocaleString()}` : "—"}</span>
+            <span>💰 {b.budgetTotal ? `$${Number(b.budgetTotal).toLocaleString("en-US")}` : "—"}</span>
             <span>📋 {taskCount} tasks</span>
             <span>📐 Scope {b.scopeSnapshot ? "✓" : "—"}</span>
             <span>Saved {new Date(b.createdAt).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>

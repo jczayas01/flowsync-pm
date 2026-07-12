@@ -22,7 +22,7 @@ function fmtDate(d: string | Date | null | undefined) {
 function fmtCurrency(n: number, currency = "USD") {
   if (n >= 1_000_000) return `${currency} ${(n/1_000_000).toFixed(2)}M`
   if (n >= 1_000)     return `${currency} ${(n/1_000).toFixed(0)}K`
-  return `${currency} ${n.toLocaleString()}`
+  return `${currency} ${n.toLocaleString("en-US")}`
 }
 
 const SECTIONS = [
