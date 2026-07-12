@@ -251,7 +251,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
           </button>
           )}
         </div>
-        {budgetItems.length === 0 ? (
+        {budgetItems.length === 0 && !addingItem ? (
           <div style={{ padding:"24px 16px", textAlign:"center", fontSize:13, color:"var(--text-3)" }}>
             No budget line items yet
           </div>
