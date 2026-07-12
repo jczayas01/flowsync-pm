@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib//db/prisma'
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import { notifyMany } from "@/lib/notify"
+import { attachUnread } from "@/lib/tasks-unread"
 import {
   withAuth, ok, handleApiError,
   requireProjectAccess, validate,
@@ -55,6 +56,7 @@ const listTasksSchema = z.object({
 // ─────────────────────────────────────────────
 // GET — List / Gantt tasks
 // ─────────────────────────────────────────────
+
 
 export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) => {
   try {
@@ -113,6 +115,7 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
       ])
 
       // Build Gantt rows — phases with nested tasks + milestones
+      tasks = await attachUnread(tasks as any[], ctx.userId) as any
       const ganttRows = buildGanttRows(phases, tasks, milestones)
       const criticalPath = computeCriticalPath(tasks)
 
@@ -121,7 +124,7 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
 
     // ── Board mode — grouped by status ──
     if (query.mode === 'board') {
-      const tasks = await prisma.task.findMany({
+      let tasks = await prisma.task.findMany({
         where: { ...where, parentId: null },
         orderBy: { createdAt: 'asc' },
         include: {
@@ -198,7 +201,7 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
       prisma.task.count({ where }),
     ])
 
-    return ok(tasks, {
+    return ok(await attachUnread(tasks as any[], ctx.userId), {
       total,
       page: query.page,
       perPage: query.perPage,

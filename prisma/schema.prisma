@@ -67,6 +67,8 @@ model User {
   wbsEntriesCreated    WbsEntry[]              @relation("WbsEntryCreator")
   memberships          WorkspaceMember[]
 
+  commentReads    CommentRead[]
+
   @@map("users")
 }
 
@@ -180,6 +182,8 @@ model Project {
   description       String?
   methodology       Methodology
   status            ProjectStatus          @default(DRAFT)
+  approvalRequestedAt   DateTime?
+  approvalRequestedById String?
   health            ProjectHealth          @default(GREEN)
   startDate         DateTime?
   endDate           DateTime?
@@ -317,6 +321,7 @@ model Task {
   isMilestone     Boolean          @default(false)
   attachments     Attachment[]
   comments        Comment[]
+  commentReads    CommentRead[]
   assignees       TaskAssignee[]
   dependencies    TaskDependency[] @relation("DependentTask")
   dependents      TaskDependency[] @relation("PrecedingTask")
@@ -921,6 +926,18 @@ model Attachment {
   @@map("attachments")
 }
 
+model CommentRead {
+  id         String   @id @default(cuid())
+  taskId     String
+  userId     String
+  lastReadAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@map("comment_reads")
+}
+
 model Comment {
   id              String         @id @default(cuid())
   content         String
@@ -1324,6 +1341,7 @@ enum Methodology {
 
 enum ProjectStatus {
   DRAFT
+  PENDING_APPROVAL
   ACTIVE
   ON_HOLD
   COMPLETED

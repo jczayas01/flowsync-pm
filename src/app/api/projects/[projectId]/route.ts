@@ -6,6 +6,7 @@
 export const dynamic = "force-dynamic"
 
 import { requirePermission } from "@/lib/rbac/guards"
+import { mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib//db'
@@ -77,6 +78,15 @@ async function updateProject(ctx: ApiContext, params?: Record<string,string>) {
   if ('error' in parsed) return parsed.error
 
   const before = await db.project.findUnique({ where: { id } })
+
+  // Status transitions are governance: only PMO Director and above may change
+  // status directly. (Draft → Active goes through the approval workflow.)
+  if (parsed.data.status !== undefined && parsed.data.status !== before?.status) {
+    const level = ROLE_LEVEL[mapDbRoleToRbac(ctx.userRole as any)] ?? 0
+    if (level < 68) {
+      return err("Only PMO and above can change the project status", 403)
+    }
+  }
 
   const updated = await db.project.update({
     where: { id },

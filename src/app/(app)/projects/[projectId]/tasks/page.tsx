@@ -1,5 +1,6 @@
 // src/app/(app)/projects/[projectId]/tasks/page.tsx
 import { db } from '@/lib//db'
+import { attachUnread } from '@/lib/tasks-unread'
 import { auth } from '@/lib//auth'
 import { redirect } from 'next/navigation'
 import { ProjectTasksTab } from '@/components//projects/tabs/ProjectTasksTab'
@@ -17,7 +18,7 @@ export default async function ProjectTasksPage({
     where: { userId: session.user.id }, select: { workspaceId:true }
   })
 
-  const [tasks, phases, members] = await Promise.all([
+  let [tasks, phases, members] = await Promise.all([
     db.task.findMany({
       where: { projectId: params.projectId },
       orderBy: [{ phaseId:'asc' }, { sortOrder:'asc' }, { createdAt:'asc' }],
@@ -40,6 +41,7 @@ export default async function ProjectTasksPage({
       include: { user: { select:{ id:true, name:true, avatarUrl:true } } },
     }),
   ])
+  tasks = await attachUnread(tasks as any[], session.user.id) as any
 
   return (
     <ProjectTasksTab

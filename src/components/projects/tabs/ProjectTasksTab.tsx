@@ -1106,6 +1106,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           members={members}
           phases={phases}
           onClose={() => { setOpenTaskId(null); router.refresh() }}
+                  onCommentsRead={(id: string) => setLocalTasks(prev => prev.map((t: any) => t.id === id ? { ...t, unreadComments: 0 } : t))}
         />
       )}
     </div>
@@ -1539,10 +1540,18 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
               <span style={{ fontSize:11, color:"var(--text-4)", fontStyle:"italic" }}>Unassigned</span>
             )}
             {t._count?.comments > 0 && (
-              <span title={`${t._count.comments} contribution(s)`}
-                style={{ fontSize:10, color:"#64748B", marginLeft:2 }}>
-                💬 {t._count.comments}
-              </span>
+              (t.unreadComments || 0) > 0 ? (
+                <span title={`${t.unreadComments} new — ${t._count.comments} total`}
+                  style={{ fontSize:10, fontWeight:700, marginLeft:2, padding:"1px 6px",
+                    borderRadius:8, background:"#FEF3C7", color:"#B45309" }}>
+                  💬 {t.unreadComments} new
+                </span>
+              ) : (
+                <span title={`${t._count.comments} contribution(s) — all read`}
+                  style={{ fontSize:10, color:"#64748B", marginLeft:2 }}>
+                  💬 {t._count.comments}
+                </span>
+              )
             )}
           </div>
         )}

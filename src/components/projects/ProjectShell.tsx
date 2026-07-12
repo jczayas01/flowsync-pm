@@ -1,7 +1,7 @@
 "use client"
 // src/components/projects/ProjectShell.tsx — Phase 3: includes docs tab
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { HealthBadge } from "@/components/ui"
 import { mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
@@ -45,6 +45,7 @@ const METHOD_COLORS: Record<string,string> = {
 
 const STATUS_META: Record<string,{label:string;bg:string;fg:string}> = {
   DRAFT:     { label:"Draft",     bg:"#F1F5F9", fg:"#64748B" },
+  PENDING_APPROVAL: { label:"Pending approval", bg:"#FFFBEB", fg:"#B45309" },
   ACTIVE:    { label:"Active",    bg:"#ECFDF5", fg:"#059669" },
   ON_HOLD:   { label:"On hold",   bg:"#FFFBEB", fg:"#B45309" },
   COMPLETED: { label:"Completed", bg:"#EFF6FF", fg:"#1B6CA8" },
@@ -63,7 +64,7 @@ export function ProjectShell({ project, userRole, children }:{
   // ── Project status (lifecycle) ──
   const [status, setStatus]       = useState<string>(project.status || "DRAFT")
   const [statusBusy, setStatusBusy] = useState(false)
-  const canChangeStatus = myLevel >= 50 // PM and above
+  const canChangeStatus = myLevel >= 68 // PMO Director and above
 
   async function changeStatus(next: string) {
     if (next === status || statusBusy) return
@@ -79,6 +80,47 @@ export function ProjectShell({ project, userRole, children }:{
     } catch { setStatus(prev) }
     finally { setStatusBusy(false) }
   }
+
+  // ── Approval workflow ──
+  const [approval, setApproval] = useState<{canApprove:boolean;canSubmit:boolean;requestedByMe:boolean}|null>(null)
+  useEffect(() => {
+    let live = true
+    fetch(`/api/projects/${project.id}/approval`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (live && d?.data) setApproval(d.data) })
+      .catch(() => {})
+    return () => { live = false }
+  }, [project.id, status])
+
+  async function approvalAction(action: "submit"|"approve"|"reject") {
+    if (statusBusy) return
+    let reason = ""
+    if (action === "reject") reason = window.prompt("Reason for sending back to Draft (optional):") || ""
+    setStatusBusy(true)
+    try {
+      const res = await fetch(`/api/projects/${project.id}/approval`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, reason }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) { window.alert(d?.error || `Failed (${res.status})`); return }
+      if (d?.data?.status) setStatus(d.data.status)
+      router.refresh()
+    } catch { window.alert("Connection lost — try again") }
+    finally { setStatusBusy(false) }
+  }
+
+  const approvalBtn = (label:string, onClick:()=>void, solid=false, danger=false): React.ReactNode => (
+    <button onClick={onClick} disabled={statusBusy}
+      style={{ fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:4,
+        border: solid ? "none" : "1px solid var(--border)",
+        background: solid ? (danger ? "#B91C1C" : "var(--steel)") : "#fff",
+        color: solid ? "#fff" : "var(--text-2)",
+        cursor: statusBusy ? "wait" : "pointer", fontFamily:"var(--font)",
+        textTransform:"uppercase", letterSpacing:".03em", whiteSpace:"nowrap" }}>
+      {label}
+    </button>
+  )
   const tabs     = TABS.filter(t => {
     if (TAB_METHODOLOGY[t.slug] && !TAB_METHODOLOGY[t.slug].includes(project.methodology)) return false
     // Clients (external) are limited to Tasks + Docs within a project
@@ -101,25 +143,43 @@ export function ProjectShell({ project, userRole, children }:{
             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
             {project.name}
           </h1>
-          {canChangeStatus ? (
+          {/* Status pill + governance actions */}
+          <span style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4,
+            background:STATUS_META[status]?.bg||"#F1F5F9", color:STATUS_META[status]?.fg||"#64748B",
+            textTransform:"uppercase", letterSpacing:".03em", whiteSpace:"nowrap" }}>
+            {STATUS_META[status]?.label||status}
+          </span>
+          {status === "DRAFT" && approval?.canSubmit &&
+            approvalBtn("Submit for approval", () => approvalAction("submit"), true)}
+          {status === "PENDING_APPROVAL" && approval?.canApprove && (
+            <>
+              {approvalBtn("✓ Approve", () => approvalAction("approve"), true)}
+              {approvalBtn("✗ Reject", () => approvalAction("reject"), true, true)}
+            </>
+          )}
+          {status !== "DRAFT" && status !== "PENDING_APPROVAL" && canChangeStatus && (
             <select value={status} onChange={e => changeStatus(e.target.value)} disabled={statusBusy}
-              title="Project status — Active projects count on the dashboard"
-              style={{ fontSize:10, fontWeight:700, padding:"3px 6px", borderRadius:4,
-                border:"1px solid "+(STATUS_META[status]?.fg||"#64748B")+"33",
-                background:STATUS_META[status]?.bg||"#F1F5F9",
-                color:STATUS_META[status]?.fg||"#64748B",
-                cursor: statusBusy ? "wait" : "pointer", fontFamily:"var(--font)",
-                textTransform:"uppercase", letterSpacing:".03em" }}>
-              {Object.entries(STATUS_META).map(([v,m]) => (
-                <option key={v} value={v}>{m.label}</option>
+              title="Change project status"
+              style={{ fontSize:10, fontWeight:600, padding:"3px 6px", borderRadius:4,
+                border:"1px solid var(--border)", background:"#fff", color:"var(--text-2)",
+                cursor: statusBusy ? "wait" : "pointer", fontFamily:"var(--font)" }}>
+              {["ACTIVE","ON_HOLD","COMPLETED","CANCELLED","ARCHIVED"].map(v => (
+                <option key={v} value={v}>{STATUS_META[v]?.label||v}</option>
               ))}
             </select>
-          ) : (
-            <span style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4,
-              background:STATUS_META[status]?.bg||"#F1F5F9", color:STATUS_META[status]?.fg||"#64748B",
-              textTransform:"uppercase", letterSpacing:".03em" }}>
-              {STATUS_META[status]?.label||status}
-            </span>
+          )}
+          {/* Admin override while in approval states */}
+          {(status === "DRAFT" || status === "PENDING_APPROVAL") && myLevel >= 68 && (
+            <select value="" onChange={e => e.target.value && changeStatus(e.target.value)} disabled={statusBusy}
+              title="Admin override — set status directly"
+              style={{ fontSize:10, padding:"3px 4px", borderRadius:4,
+                border:"1px solid var(--border)", background:"#fff", color:"var(--text-3)",
+                cursor:"pointer", fontFamily:"var(--font)", width:26 }}>
+              <option value="">⋮</option>
+              {["ACTIVE","ON_HOLD","CANCELLED","ARCHIVED"].map(v => (
+                <option key={v} value={v}>{STATUS_META[v]?.label||v}</option>
+              ))}
+            </select>
           )}
           <HealthBadge health={project.health}/>
           <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,

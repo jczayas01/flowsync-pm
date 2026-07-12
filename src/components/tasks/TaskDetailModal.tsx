@@ -126,13 +126,14 @@ function AssigneeDropdown({ members, selectedIds, onToggle }: {
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, onClose }: {
+export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, onClose, onCommentsRead }: {
   taskId: string
   projectId: string
   allTasks: any[]
   members: any[]
   phases?: any[]
   onClose: () => void
+  onCommentsRead?: (taskId: string) => void
 }) {
   const router = useRouter()
   const phaseList = (phases && phases.length)
@@ -257,6 +258,10 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
     fetch(`/api/tasks/${taskId}/comments`)
       .then(r => r.ok ? r.json() : { comments: [] })
       .then(d => setComments(d.comments || []))
+    // Opening the activity log marks it as read for this user
+    fetch(`/api/tasks/${taskId}/comments/read`, { method: "POST" })
+      .then(() => onCommentsRead?.(taskId))
+      .catch(() => {})
       .catch(() => setComments([]))
   }, [taskId])
 

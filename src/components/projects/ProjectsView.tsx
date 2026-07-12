@@ -59,7 +59,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
         <select style={sel} defaultValue={filters.status || ""}
           onChange={e => applyFilter("status", e.target.value)}>
           <option value="">All statuses</option>
-          {["ACTIVE","ON_HOLD","DRAFT","COMPLETED","CANCELLED"].map(s =>
+          {["ACTIVE","PENDING_APPROVAL","ON_HOLD","DRAFT","COMPLETED","CANCELLED"].map(s =>
             <option key={s} value={s}>{s.replace("_"," ")}</option>
           )}
         </select>
