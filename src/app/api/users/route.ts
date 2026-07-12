@@ -12,7 +12,7 @@ import {
   getSearchParams, audit, ApiContext,
 } from "@/lib/api"
 import {
-  requirePermission, requireCanAssignRole,
+  requirePermission, requireCanAssignRole, mapDbRoleToRbac,
   resolveRole,
 } from "@/lib/rbac/guards"
 import { assignableRoles, type WorkspaceRole } from "@/lib/rbac/roles"
@@ -84,9 +84,9 @@ async function inviteUser(ctx: ApiContext) {
 
   const { email, name, role, projectId, message } = parsed.data
 
-  // Check actor can assign this role
-  const actorRole = ctx.userRole as any
-  const roleGuard = requireCanAssignRole(actorRole, role as WorkspaceRole)
+  // Check actor can assign this role (map DB roles → RBAC for level comparison)
+  const actorRole = mapDbRoleToRbac(ctx.userRole as any)
+  const roleGuard = requireCanAssignRole(actorRole, mapDbRoleToRbac(role) as WorkspaceRole)
   if (roleGuard) return roleGuard
 
   // Check if user already in workspace

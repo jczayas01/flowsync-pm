@@ -79,7 +79,7 @@ async function removeUser(ctx: ApiContext, params?: Record<string, string>) {
   // Check target role — cannot remove someone with equal/higher access
   const targetRole = await resolveRole(targetUserId, ctx.workspaceId)
   if (targetRole) {
-    const escalationGuard = requireCanAssignRole(ctx.userRole as any, targetRole)
+    const escalationGuard = requireCanAssignRole(mapDbRoleToRbac(ctx.userRole as any), mapDbRoleToRbac(targetRole as any) as WorkspaceRole)
     if (escalationGuard) return err("Cannot remove a user with equal or higher access level", 403)
   }
 
