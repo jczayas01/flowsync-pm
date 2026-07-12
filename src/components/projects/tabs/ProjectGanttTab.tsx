@@ -38,6 +38,18 @@ const STATUS_LIGHT: Record<string,string> = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function workdaysBetween(a: Date, b: Date) {
+  // Count of non-weekend days in [a, b) — negative if b < a
+  if (b < a) return -workdaysBetween(b, a)
+  let n = 0; const cur = new Date(a)
+  while (cur < b) { const dow = cur.getDay(); if (dow !== 0 && dow !== 6) n++; cur.setDate(cur.getDate()+1) }
+  return n
+}
+function addWorkdays(d: Date, n: number) {
+  const cur = new Date(d); const step = n >= 0 ? 1 : -1; let left = Math.abs(n)
+  while (left > 0) { cur.setDate(cur.getDate()+step); const dow = cur.getDay(); if (dow !== 0 && dow !== 6) left-- }
+  return cur
+}
 function addDays(d: Date, n: number) {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
 }
@@ -104,7 +116,9 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   const [showDeps,       setShowDeps]       = useState(true)
   const [showBaseline,   setShowBaseline]   = useState(false)
   const [showCritical,   setShowCritical]   = useState(true)
-  const [showWeekends,   setShowWeekends]   = useState(true)
+  const [weekendMode,    setWeekendMode]    = useState<"highlight"|"hide">("highlight")
+  const showWeekends = weekendMode === "highlight"
+  const hideWeekends = weekendMode === "hide"
   const [hoveredTask,    setHoveredTask]    = useState<any>(null)
   const [hoverXY,        setHoverXY]        = useState({ x:0, y:0 })
   const [dragging,       setDragging]       = useState<{taskId:string;startX:number;origStart:Date;origEnd:Date;mode:"move"|"resize-start"|"resize-end"}|null>(null)
@@ -152,10 +166,14 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
 
   const baseWindowDays = zoom==="day" ? 14 : zoom==="week" ? 56 : 120
   const windowDays = Math.max(7, Math.round(baseWindowDays * zoomFactor))
-  const dayW = (svgWidth - LEFT_W) / windowDays
+  const visibleDays = hideWeekends
+    ? Math.max(5, workdaysBetween(viewStart, addDays(viewStart, windowDays)))
+    : windowDays
+  const dayW = (svgWidth - LEFT_W) / visibleDays
 
   function dayX(d: Date) {
-    return LEFT_W + daysBetween(viewStart, d) * dayW
+    const n = hideWeekends ? workdaysBetween(viewStart, d) : daysBetween(viewStart, d)
+    return LEFT_W + n * dayW
   }
 
   // ── Headers ───────────────────────────────────────────────────────────────
@@ -167,7 +185,8 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   while (cur <= addDays(viewStart, windowDays + 1)) {
     const x = dayX(cur)
     if (x >= LEFT_W - dayW && x <= svgWidth + dayW) {
-      dayMarks.push({ d:new Date(cur), x, isWeekend:isWeekend(cur) })
+      if (!(hideWeekends && isWeekend(cur)))
+        dayMarks.push({ d:new Date(cur), x, isWeekend:isWeekend(cur) })
     }
     // Month break
     if (cur.getDate() === 1 || cur.getTime() === viewStart.getTime()) {
@@ -250,14 +269,15 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
       if (Math.abs(days) >= 1) {
         let newStart = dragging!.origStart
         let newEnd   = dragging!.origEnd
+        const shift = hideWeekends ? addWorkdays : addDays
         if (dragging!.mode === "move") {
-          newStart = addDays(dragging!.origStart, days)
-          newEnd   = addDays(dragging!.origEnd,   days)
+          newStart = shift(dragging!.origStart, days)
+          newEnd   = shift(dragging!.origEnd,   days)
         } else if (dragging!.mode === "resize-end") {
-          newEnd = addDays(dragging!.origEnd, days)
+          newEnd = shift(dragging!.origEnd, days)
           if (newEnd <= newStart) newEnd = addDays(newStart, 1)
         } else if (dragging!.mode === "resize-start") {
-          newStart = addDays(dragging!.origStart, days)
+          newStart = shift(dragging!.origStart, days)
           if (newStart >= newEnd) newStart = addDays(newEnd, -1)
         }
         setSaving(true)
@@ -353,7 +373,14 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           color:showCritical?"#DC2626":"#374151",
           borderColor:showCritical?"#FECACA":"#E2E8F0" }}
           onClick={() => setShowCritical(c=>!c)}>⚡ Critical path</button>
-        <button style={TBA(showWeekends)} onClick={() => setShowWeekends(w=>!w)}>Weekends</button>
+        <div style={{ display:"inline-flex", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
+          <button style={{ ...TBA(weekendMode==="highlight"), border:"none", borderRadius:0 }}
+            title="Shade Saturdays and Sundays"
+            onClick={() => setWeekendMode("highlight")}>Weekends</button>
+          <button style={{ ...TBA(weekendMode==="hide"), border:"none", borderRadius:0, borderLeft:"1px solid var(--border)" }}
+            title="Working days only — weekend columns removed"
+            onClick={() => setWeekendMode("hide")}>Hide wknd</button>
+        </div>
 
         {saving && (
           <span style={{ fontSize:11, color:"#1B6CA8", marginLeft:8 }}>Saving…</span>
