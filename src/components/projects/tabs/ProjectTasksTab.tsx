@@ -1441,8 +1441,9 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", ...ring("status") }} onClick={() => { onFocusCell?.("status"); !editingCell && startEdit("status", t.status) }}>
         {editingCell==="status" ? (
           <select autoFocus style={cellSel} value={cellValue}
-            onChange={e=>setCellValue(e.target.value)}
-            onBlur={()=>saveCell("status",cellValue)}
+            ref={el => { try { (el as any)?.showPicker?.() } catch {} }}
+            onChange={e=>saveCell("status", e.target.value)}
+            onBlur={cancelEdit}
             onKeyDown={e=>e.key==="Escape"&&cancelEdit()}>
             {["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","BLOCKED","CANCELLED"].map(s=>(
               <option key={s} value={s}>{s.replace(/_/g," ")}</option>
@@ -1461,8 +1462,9 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", ...ring("priority") }} onClick={() => { onFocusCell?.("priority"); !editingCell && startEdit("priority", t.priority) }}>
         {editingCell==="priority" ? (
           <select autoFocus style={cellSel} value={cellValue}
-            onChange={e=>setCellValue(e.target.value)}
-            onBlur={()=>saveCell("priority",cellValue)}
+            ref={el => { try { (el as any)?.showPicker?.() } catch {} }}
+            onChange={e=>saveCell("priority", e.target.value)}
+            onBlur={cancelEdit}
             onKeyDown={e=>e.key==="Escape"&&cancelEdit()}>
             {["CRITICAL","HIGH","MEDIUM","LOW"].map(p=>(
               <option key={p} value={p}>{p}</option>
