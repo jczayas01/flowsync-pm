@@ -457,7 +457,8 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             })}
 
             {/* Phase summary bars — span full phase duration */}
-            {rows.filter(r=>r.type==="phase").map((row, ri) => {
+            {rows.map((row, ri) => {
+              if (row.type !== "phase") return null
               const phase = row.data
               if (phase.id === "__unphased__") return null
               const phaseTasks = liveTasks.filter(t => t.phaseId === phase.id && (t.startDate || t.dueDate))
