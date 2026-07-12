@@ -8,6 +8,7 @@ export const maxDuration = 60
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { extractTextFromBuffer } from "@/lib/extract"
 
 const TYPE_PROMPTS: Record<string, string> = {
   TEAM_CHARTER: `You are extracting structured data from a Team Charter document.
@@ -114,12 +115,13 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     docType = (formData.get("docType") as string) || "TEAM_CHARTER"
     const file = formData.get("file") as File | null
     if (file) {
-      // Read file content — works for text files and basic docs
-      const buf = await file.arrayBuffer()
-      const text = new TextDecoder().decode(buf)
-      // Strip obvious binary content, keep text
-      textContent = text.replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ").trim()
-      textContent = textContent.slice(0, 8000) // limit to 8k chars
+      // Proper extraction — handles .docx/.pdf/.xlsx/.pptx/.msg/.vtt and text formats
+      const buf = Buffer.from(await file.arrayBuffer())
+      try {
+        textContent = (await extractTextFromBuffer(file.name || "upload", buf)).slice(0, 12000)
+      } catch {
+        textContent = ""
+      }
     }
   } else {
     const body = await req.json().catch(() => ({}))
@@ -139,7 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   // Call AI to extract structured data
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
-    headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01" },
+    headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01", "x-api-key": process.env.ANTHROPIC_API_KEY || "" },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 4000,
