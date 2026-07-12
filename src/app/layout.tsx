@@ -10,6 +10,7 @@ const SITE = process.env.NEXT_PUBLIC_APP_URL || 'https://flowsyncpm.com'
 const DESC = 'FlowSync PM is an enterprise project management platform for PMOs and multi-project organizations — plan with Gantt and WBS, track budgets and EVM, manage risks, and generate AI-powered status reports.'
 
 export const metadata: Metadata = {
+  other: { google: "notranslate" },
   title: { default: 'FlowSync PM — Enterprise Project & PMO Management', template: '%s · FlowSync PM' },
   description: DESC,
   metadataBase: new URL(SITE),
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" translate="no" className={inter.variable}>
       <body>
         <Providers>{children}</Providers>
       </body>
