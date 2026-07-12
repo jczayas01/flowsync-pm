@@ -186,13 +186,66 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   }
 
   async function updateRisk(riskId: string, patch: any) {
-    await fetch(`/api/risks/${riskId}`, {
+    const res = await fetch(`/api/risks/${riskId}`, {
       method:"PATCH",
       headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
       body: JSON.stringify(patch),
     })
+    if (!res.ok) {
+      const d = await res.json().catch(()=>({}))
+      alert(d?.error || `Update failed (${res.status})`)
+      return
+    }
     router.refresh()
     setSelected(null)
+  }
+
+  // ── Full edit mode for the detail drawer ──
+  const [editRisk, setEditRisk]     = useState<any|null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  function openEdit() {
+    if (!selected) return
+    setEditRisk({
+      title: selected.title || "",
+      category: selected.category || "",
+      probability: selected.probability || "MEDIUM",
+      impact: selected.impact || "MODERATE",
+      responseType: selected.responseType || "",
+      ownerId: selected.ownerId || selected.owner?.id || "",
+      description: selected.description || "",
+      mitigationPlan: selected.mitigationPlan || "",
+      contingencyPlan: selected.contingencyPlan || "",
+    })
+  }
+
+  async function saveEdit() {
+    if (!editRisk?.title?.trim() || savingEdit) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/risks/${selected.id}`, {
+        method:"PATCH",
+        headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+        body: JSON.stringify({
+          title: editRisk.title.trim(),
+          category: editRisk.category || null,
+          probability: editRisk.probability,
+          impact: editRisk.impact,
+          responseType: editRisk.responseType || null,
+          ownerId: editRisk.ownerId || null,
+          description: editRisk.description || null,
+          mitigationPlan: editRisk.mitigationPlan || null,
+          contingencyPlan: editRisk.contingencyPlan || null,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(()=>({}))
+        alert(d?.error || `Update failed (${res.status})`)
+        return
+      }
+      setEditRisk(null); setSelected(null)
+      router.refresh()
+    } finally { setSavingEdit(false) }
   }
 
   const inp: React.CSSProperties = {
@@ -677,10 +730,101 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   {selected.title}
                 </h2>
               </div>
-              <button onClick={() => setSelected(null)}
-                style={{ background:"none", border:"none", fontSize:18, cursor:"pointer",
-                  color:"var(--text-3)", lineHeight:1 }}>✕</button>
+              <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+                {can("risks:create") && !editRisk && (
+                  <button onClick={openEdit}
+                    style={{ padding:"5px 12px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:11, fontWeight:600, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    ✏️ Edit
+                  </button>
+                )}
+                <button onClick={() => { setEditRisk(null); setSelected(null) }}
+                  style={{ background:"none", border:"none", fontSize:18, cursor:"pointer",
+                    color:"var(--text-3)", lineHeight:1 }}>✕</button>
+              </div>
             </div>
+
+            {editRisk && (
+              <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+                borderRadius:8, padding:14, display:"flex", flexDirection:"column", gap:10 }}>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                    letterSpacing:".05em", marginBottom:4 }}>Title</div>
+                  <input style={inp} value={editRisk.title}
+                    onChange={e=>setEditRisk((f:any)=>({...f, title:e.target.value}))} />
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Probability</div>
+                    <select style={{...inp, cursor:"pointer"}} value={editRisk.probability}
+                      onChange={e=>setEditRisk((f:any)=>({...f, probability:e.target.value}))}>
+                      {["VERY_LOW","LOW","MEDIUM","HIGH","VERY_HIGH"].map(v=>
+                        <option key={v} value={v}>{PROB_LABEL[v]||v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Impact</div>
+                    <select style={{...inp, cursor:"pointer"}} value={editRisk.impact}
+                      onChange={e=>setEditRisk((f:any)=>({...f, impact:e.target.value}))}>
+                      {["NEGLIGIBLE","MINOR","MODERATE","MAJOR","CRITICAL"].map(v=>
+                        <option key={v} value={v}>{IMPACT_LABEL[v]||v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Owner</div>
+                    <select style={{...inp, cursor:"pointer"}} value={editRisk.ownerId}
+                      onChange={e=>setEditRisk((f:any)=>({...f, ownerId:e.target.value}))}>
+                      <option value="">Unassigned</option>
+                      {members.map((m:any) => <option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Response</div>
+                    <select style={{...inp, cursor:"pointer"}} value={editRisk.responseType}
+                      onChange={e=>setEditRisk((f:any)=>({...f, responseType:e.target.value}))}>
+                      <option value="">—</option>
+                      {(selected.isOpportunity
+                        ? ["EXPLOIT","ENHANCE","SHARE","ACCEPT"]
+                        : ["AVOID","TRANSFER","MITIGATE","ACCEPT","ESCALATE"]
+                      ).map(v => <option key={v} value={v}>{RESPONSE_LABEL[v]||v}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                    letterSpacing:".05em", marginBottom:4 }}>Description</div>
+                  <textarea style={{...inp, resize:"vertical"}} rows={2} value={editRisk.description}
+                    onChange={e=>setEditRisk((f:any)=>({...f, description:e.target.value}))} />
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                    letterSpacing:".05em", marginBottom:4 }}>
+                    {selected.isOpportunity ? "Enhancement plan" : "Mitigation plan"}
+                  </div>
+                  <textarea style={{...inp, resize:"vertical"}} rows={2} value={editRisk.mitigationPlan}
+                    onChange={e=>setEditRisk((f:any)=>({...f, mitigationPlan:e.target.value}))} />
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={saveEdit} disabled={savingEdit || !editRisk.title.trim()}
+                    style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff", border:"none",
+                      borderRadius:"var(--radius)", fontSize:12, fontWeight:600, fontFamily:"var(--font)",
+                      cursor: savingEdit ? "wait" : "pointer" }}>
+                    {savingEdit ? "Saving…" : "💾 Save changes"}
+                  </button>
+                  <button onClick={() => setEditRisk(null)}
+                    style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Score badge */}
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
