@@ -1,8 +1,15 @@
 // src/app/(app)/projects/[projectId]/budget/page.tsx
 import { db } from '@/lib//db'
+import { auth } from '@/lib//auth'
+import { redirect } from 'next/navigation'
 import { ProjectBudgetTab } from '@/components//projects/tabs/ProjectBudgetTab'
 
 export default async function ProjectBudgetPage({ params }: { params: { projectId: string } }) {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/auth/signin')
+  const membership = await db.workspaceMember.findFirst({
+    where: { userId: session.user.id }, select: { workspaceId: true },
+  })
   const [project, budgetItems, timeEntries] = await Promise.all([
     db.project.findUnique({
       where:  { id: params.projectId },
@@ -44,6 +51,7 @@ export default async function ProjectBudgetPage({ params }: { params: { projectI
       project={serializedProject as any}
       budgetItems={serializedBudgetItems as any}
       timeEntries={serializedTimeEntries as any}
+      workspaceId={membership?.workspaceId || ''}
     />
   )
 }

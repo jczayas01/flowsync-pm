@@ -12,8 +12,8 @@ function fmt(n: number, currency = "USD") {
   return new Intl.NumberFormat("en-US",{style:"currency",currency,maximumFractionDigits:0}).format(n)
 }
 
-export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries }: {
-  projectId:string; project:any; budgetItems:any[]; timeEntries:any[]
+export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries, workspaceId }: {
+  projectId:string; project:any; budgetItems:any[]; timeEntries:any[]; workspaceId?:string
 }) {
   const { can } = usePermissions()
   const router = useRouter()
