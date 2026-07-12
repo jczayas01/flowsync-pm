@@ -1571,8 +1571,8 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", ...ring("startDate") }} onClick={() => onFocusCell?.("startDate")}>
         {editingCell==="startDate" ? (
           <input autoFocus type="date" style={cellInp} value={cellValue}
-            onChange={e=>setCellValue(e.target.value)}
-            onBlur={()=>saveCell("startDate",cellValue)}
+            onChange={e=>{ const v=e.target.value; setCellValue(v); if(v) saveCell("startDate",v) }}
+            onBlur={()=>cellValue ? saveCell("startDate",cellValue) : cancelEdit()}
             onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("startDate",cellValue) }} />
         ) : (
           <span onClick={() => !editingCell && startEdit("startDate", toDateInput(t.startDate))}
@@ -1587,8 +1587,8 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", ...ring("finishDate") }} onClick={() => onFocusCell?.("finishDate")}>
         {editingCell==="finishDate" ? (
           <input autoFocus type="date" style={cellInp} value={cellValue}
-            onChange={e=>setCellValue(e.target.value)}
-            onBlur={()=>saveCell("dueDate",cellValue)}
+            onChange={e=>{ const v=e.target.value; setCellValue(v); if(v) saveCell("dueDate",v) }}
+            onBlur={()=>cellValue ? saveCell("dueDate",cellValue) : cancelEdit()}
             onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("dueDate",cellValue) }} />
         ) : (
           <span onClick={() => !editingCell && startEdit("finishDate", toDateInput(t.dueDate))}

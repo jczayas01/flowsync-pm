@@ -240,7 +240,8 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
     const getX = (e: any) => (e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX ?? e.clientX)
     function onMove(e: any) {
       if (e.cancelable) e.preventDefault()
-      setDragDays(Math.round((getX(e) - dragging!.startX) / dayW))
+      const nd = Math.round((getX(e) - dragging!.startX) / dayW)
+      setDragDays(prev => prev === nd ? prev : nd)
     }
     function onEnd(e: any) {
       const dx   = getX(e) - dragging!.startX
@@ -855,7 +856,15 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           <rect x={LEFT_W} y={26} width={svgWidth-LEFT_W} height={30} fill="#F8FAFC" />
           <line x1={LEFT_W} y1={26} x2={svgWidth} y2={26} stroke="#E2E8F0" />
           <g clipPath="url(#header-clip)">
-            {weeks.map((w,i) => (
+            {zoom === "day"
+              ? dayMarks.map((d: any, i: number) => (
+                  <g key={i}>
+                    <line x1={d.x} y1={26} x2={d.x} y2={HDR_H} stroke="#E2E8F0" />
+                    <text x={d.x + dayW/2} y={44} fontSize={9} fill={d.isWeekend ? "#CBD5E1" : "#94A3B8"}
+                      textAnchor="middle">{d.d.getDate()}</text>
+                  </g>
+                ))
+              : weeks.map((w,i) => (
               <g key={i}>
                 <line x1={w.x} y1={26} x2={w.x} y2={HDR_H} stroke="#E2E8F0" />
                 <text x={w.x+4} y={44} fontSize={9} fill="#94A3B8">{w.label}</text>
