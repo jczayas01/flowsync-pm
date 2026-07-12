@@ -8,7 +8,7 @@ import { useMemo, useState } from "react"
 
 function toDate(d: any): Date | null { return d ? new Date(d) : null }
 function fmtD(d: any): string {
-  return d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"
+  return d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone:"UTC" }) : "—"
 }
 function dayVar(orig: any, cur: any): number | null {
   const a = toDate(orig), b = toDate(cur)

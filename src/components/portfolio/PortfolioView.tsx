@@ -354,7 +354,7 @@ function ProjectRow({project:p}:{project:any}) {
         </Badge>
       </div>
       <div style={{fontSize:10,color:"var(--text-3)",textAlign:"right"}}>
-        {p.endDate?new Date(p.endDate).toLocaleDateString("en-US",{month:"short",year:"2-digit"}):"—"}
+        {p.endDate?new Date(p.endDate).toLocaleDateString("en-US", {month:"short",year:"2-digit", timeZone:"UTC" }):"—"}
       </div>
     </Link>
   )

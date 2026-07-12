@@ -51,7 +51,7 @@ export function ProjectBoardTab({ projectId, tasks, members }: {
           {task.dueDate && (
             <span style={{ fontSize:10, color:
               new Date(task.dueDate)<new Date()&&task.status!=="DONE"?"var(--red)":"var(--text-3)" }}>
-              📅 {new Date(task.dueDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+              📅 {new Date(task.dueDate).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
             </span>
           )}
           {task._count?.comments > 0 && (

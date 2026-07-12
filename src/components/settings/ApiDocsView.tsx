@@ -297,8 +297,8 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
                       ))}
                     </div>
                     <div style={{fontSize:11,color:"var(--text-3)"}}>
-                      Created {new Date(key.createdAt).toLocaleDateString("en-US",{dateStyle:"medium"})}
-                      {key.lastUsedAt&&` · Last used ${new Date(key.lastUsedAt).toLocaleDateString("en-US",{dateStyle:"medium"})}`}
+                      Created {new Date(key.createdAt).toLocaleDateString("en-US", {dateStyle:"medium", timeZone:"UTC" })}
+                      {key.lastUsedAt&&` · Last used ${new Date(key.lastUsedAt).toLocaleDateString("en-US", {dateStyle:"medium", timeZone:"UTC" })}`}
                     </div>
                   </div>
                   {canManage&&key.isActive&&(

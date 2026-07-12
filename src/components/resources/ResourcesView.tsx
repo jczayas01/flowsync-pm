@@ -159,7 +159,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                       fontWeight:600,color:i===todayIdx?"var(--steel)":"var(--text-3)",
                       borderLeft:"1px solid var(--border)",
                       background:i===todayIdx?"var(--steel-pale,#EFF6FF)":"transparent"}}>
-                      {d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+                      {d.toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
                     </div>
                   ))}
                   <div style={{padding:"6px 4px",textAlign:"center",fontSize:10,

@@ -208,8 +208,8 @@ export function buildInvoiceHTML(invoice: any, workspace: any, lineItems: any[])
   </div>
 
   <div class="dates">
-    <div class="date-item"><div class="date-label">Invoice date</div><div class="date-val">${new Date(invoice.created_at).toLocaleDateString("en-US", { dateStyle: "long" })}</div></div>
-    <div class="date-item"><div class="date-label">Due date</div><div class="date-val" style="color:${new Date(invoice.due_date) < new Date() && invoice.status !== "PAID" ? "#DC2626" : "#0F172A"}">${new Date(invoice.due_date).toLocaleDateString("en-US", { dateStyle: "long" })}</div></div>
+    <div class="date-item"><div class="date-label">Invoice date</div><div class="date-val">${new Date(invoice.created_at).toLocaleDateString("en-US", { dateStyle: "long", timeZone:"UTC" })}</div></div>
+    <div class="date-item"><div class="date-label">Due date</div><div class="date-val" style="color:${new Date(invoice.due_date) < new Date() && invoice.status !== "PAID" ? "#DC2626" : "#0F172A"}">${new Date(invoice.due_date).toLocaleDateString("en-US", { dateStyle: "long", timeZone:"UTC" })}</div></div>
   </div>
 
   <table>

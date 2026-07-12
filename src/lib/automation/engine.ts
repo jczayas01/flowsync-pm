@@ -45,7 +45,7 @@ function evaluateConditions(conditions: Condition[], context: Record<string, unk
 function interpolate(template: string, context: Record<string, unknown>): string {
   return template.replace(/\{\{([^}]+)\}\}/g, (_, path) => {
     const val = resolveValue(path.trim(), context)
-    if (val instanceof Date) return val.toLocaleDateString("en-US", { dateStyle: "medium" })
+    if (val instanceof Date) return val.toLocaleDateString("en-US", { dateStyle: "medium", timeZone:"UTC" })
     return val !== undefined && val !== null ? String(val) : `{{${path}}}`
   })
 }
@@ -359,7 +359,7 @@ async function buildContext(
   entityId:   string,
   projectId?: string
 ): Promise<Record<string, unknown>> {
-  const ctx: Record<string, unknown> = { date: new Date().toLocaleDateString("en-US", { dateStyle: "long" }) }
+  const ctx: Record<string, unknown> = { date: new Date().toLocaleDateString("en-US", { dateStyle: "long", timeZone:"UTC" }) }
 
   if (projectId) {
     const project = await db.project.findUnique({

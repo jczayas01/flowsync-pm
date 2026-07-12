@@ -12,7 +12,7 @@ import { BaselineComparison } from "@/components/projects/BaselineComparison"
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n: number, currency="USD") {
   if (n>=1_000_000) return `${currency} ${(n/1_000_000).toFixed(2)}M`
@@ -516,11 +516,11 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
 
           {/* Three baselines summary */}
           <div style={{ display:"flex", gap:16, fontSize:11, color:"var(--text-3)", flexWrap:"wrap" }}>
-            <span>📅 {new Date(b.startDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})} → {new Date(b.endDate).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
+            <span>📅 {new Date(b.startDate).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })} → {new Date(b.endDate).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
             <span>💰 {b.budgetTotal ? `$${Number(b.budgetTotal).toLocaleString()}` : "—"}</span>
             <span>📋 {taskCount} tasks</span>
             <span>📐 Scope {b.scopeSnapshot ? "✓" : "—"}</span>
-            <span>Saved {new Date(b.createdAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
+            <span>Saved {new Date(b.createdAt).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
           </div>
 
           {b.description && (
@@ -534,7 +534,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
             <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8,
               fontSize:11, color:"var(--green)" }}>
               <Avatar name={b.approvedBy.name} size={16} />
-              Approved by {b.approvedBy.name} · {new Date(b.approvedAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}
+              Approved by {b.approvedBy.name} · {new Date(b.approvedAt).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}
               {b.approvalNotes && <span style={{ color:"var(--text-3)" }}> · {b.approvalNotes}</span>}
             </div>
           )}

@@ -12,7 +12,7 @@ import { Avatar } from "@/components/ui"
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n: number) {
   if (n>=1_000_000) return `$${(n/1_000_000).toFixed(1)}M`
@@ -151,9 +151,8 @@ export function ExecutiveDashboard({ projects, risks, milestones,
     }
   }
 
-  const now = new Date().toLocaleDateString("en-US",{
-    weekday:"long", year:"numeric", month:"long", day:"numeric"
-  })
+  const now = new Date().toLocaleDateString("en-US", {
+    weekday:"long", year:"numeric", month:"long", day:"numeric" })
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflowY:"auto",
@@ -171,7 +170,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             <h1 style={{ fontSize:26, fontWeight:800, margin:"0 0 4px", color:"#fff" }}>
               Portfolio Overview
             </h1>
-            <div style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>{now}</div>
+            <div suppressHydrationWarning style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>{now}</div>
           </div>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", marginBottom:4 }}>

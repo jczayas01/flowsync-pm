@@ -141,7 +141,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
           {[
             ["Workspace ID",   workspace.id],
             ["Plan",           workspace.plan],
-            ["Created",        new Date(workspace.createdAt).toLocaleDateString("en-US",{dateStyle:"long"})],
+            ["Created",        new Date(workspace.createdAt).toLocaleDateString("en-US", {dateStyle:"long", timeZone:"UTC" })],
             ["Slug",           workspace.slug],
           ].map(([k, v]) => (
             <div key={k}>

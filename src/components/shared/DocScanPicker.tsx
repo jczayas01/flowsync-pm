@@ -32,7 +32,7 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
   const weekLabel = (s: Date) => {
     if (s.getTime() === thisWeekTs) return "This week"
     const end = new Date(s); end.setDate(s.getDate() + 6)
-    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
     return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
   }
   const groups = (() => {

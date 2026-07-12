@@ -45,10 +45,10 @@ function daysBetween(a: Date, b: Date) {
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
 function fmtShort(d: Date) {
-  return d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+  return d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
 }
 function fmtMon(d: Date) {
-  return d.toLocaleDateString("en-US", { month:"short", year:"2-digit" })
+  return d.toLocaleDateString("en-US", { month:"short", year:"2-digit", timeZone:"UTC" })
 }
 function isWeekend(d: Date) {
   return d.getDay() === 0 || d.getDay() === 6

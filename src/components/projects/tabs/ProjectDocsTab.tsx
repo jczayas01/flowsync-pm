@@ -35,7 +35,7 @@ function fmtSize(bytes: number) {
 }
 
 function fmtDate(d: string | Date) {
-  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 
 const CONTENT_TYPES = [
@@ -172,7 +172,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const weekLabel = (s: Date) => {
     if (s.getTime() === thisWeekTs) return "This week"
     const end = new Date(s); end.setDate(s.getDate() + 6)
-    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
     return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
   }
   function groupByWeek(list: any[]) {

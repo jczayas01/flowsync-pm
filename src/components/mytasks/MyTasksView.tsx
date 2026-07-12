@@ -23,7 +23,7 @@ const STATUS_OPTIONS = ["TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE"]
 
 function fmt(d:string|null) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{ month:"short", day:"numeric" })
+  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
 }
 function timeAgo(d:string) {
   const s = Math.floor((Date.now() - new Date(d).getTime())/1000)
@@ -31,7 +31,7 @@ function timeAgo(d:string) {
   const m = Math.floor(s/60); if (m < 60) return `${m}m ago`
   const h = Math.floor(m/60); if (h < 24) return `${h}h ago`
   const days = Math.floor(h/24); if (days < 7) return `${days}d ago`
-  return new Date(d).toLocaleDateString("en-US",{ month:"short", day:"numeric" })
+  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
 }
 function isOverdue(t:Task) {
   return t.dueDate && new Date(t.dueDate) < new Date() && !["DONE","CANCELLED"].includes(t.status)

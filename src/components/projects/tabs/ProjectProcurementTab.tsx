@@ -26,7 +26,7 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n:number|null|undefined, currency="USD") {
   if (!n) return "—"

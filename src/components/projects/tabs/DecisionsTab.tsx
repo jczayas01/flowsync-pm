@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui"
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 export function DecisionsTab({ projectId, workspaceId, decisions }: {

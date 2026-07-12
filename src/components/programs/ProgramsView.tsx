@@ -19,7 +19,7 @@ const METHOD: Record<string,{color:string;bg:string}> = {
 }
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n:number) {
   if (n>=1_000_000) return `$${(n/1_000_000).toFixed(1)}M`

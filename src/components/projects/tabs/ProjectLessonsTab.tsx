@@ -29,7 +29,7 @@ const CAT_BG: Record<string,string> = {
 }
 
 function fmtDate(d: string | Date) {
-  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 
 export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {

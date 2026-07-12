@@ -33,7 +33,7 @@ const HEALTH_LABEL: Record<string,string> = {
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // ── Report section helpers (top-level, not nested) ──────────────────────────
@@ -471,7 +471,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   const rWeekLabel = (st: Date) => {
     const isThis = st.getTime() === rWeekStartOf(new Date()).getTime()
     const end = new Date(st); end.setDate(st.getDate() + 6)
-    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric" })
+    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
     return `${isThis ? "This week — " : ""}${f(st)} – ${f(end)}, ${end.getFullYear()}`
   }
   const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())

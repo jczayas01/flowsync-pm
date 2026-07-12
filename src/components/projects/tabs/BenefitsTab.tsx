@@ -17,7 +17,7 @@ const CATS = ["Financial","Operational","Strategic","Customer","Employee","Compl
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 export function BenefitsTab({ projectId, workspaceId, benefits, members }: {

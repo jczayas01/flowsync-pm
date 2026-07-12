@@ -170,7 +170,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:500, color:"var(--text)" }}>{inv.email}</div>
                 <div style={{ fontSize:11, color:"var(--text-3)" }}>
-                  Invited · Expires {new Date(inv.expiresAt).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+                  Invited · Expires {new Date(inv.expiresAt).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
                 </div>
               </div>
               <Badge variant="amber">{ROLE_LABELS[inv.role] || inv.role}</Badge>

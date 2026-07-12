@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
   if (!project) return new NextResponse("Not found", { status:404 })
 
   const color = (project.workspace?.primaryColor||"#1B6CA8").replace("#","")
-  const today = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})
+  const today = new Date().toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric", timeZone:"UTC" })
   const org = project.workspace?.name || "Organization"
 
   const TEMPLATES: Record<string,{title:string;filename:string;sections:Array<{h:string;content:string}>}> = {

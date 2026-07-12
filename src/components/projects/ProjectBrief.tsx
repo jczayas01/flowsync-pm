@@ -420,8 +420,7 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
             display:"flex", justifyContent:"space-between",
             fontSize:10, color:"var(--text-4)" }}>
             <span>{workspaceName || "FlowSync PM"}</span>
-            <span>Generated {new Date().toLocaleDateString("en-US",
-              { month:"long", day:"numeric", year:"numeric" })}</span>
+            <span>Generated {new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric", timeZone:"UTC" })}</span>
           </div>
         </div>
 

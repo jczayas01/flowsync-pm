@@ -570,7 +570,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               {timeEntries.slice(0,10).map(te => (
                 <tr key={te.id} style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)" }}>
                   <td style={{ padding:"8px 14px", fontSize:12, color:"var(--text-3)" }}>
-                    {new Date(te.date).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+                    {new Date(te.date).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
                   </td>
                   <td style={{ padding:"8px 14px", fontSize:12, color:"var(--text-2)" }}>
                     {te.user?.name || "—"}

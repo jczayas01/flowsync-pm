@@ -55,9 +55,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const currency = project.currency || "USD"
   const primaryColor = (project.workspace?.primaryColor || "#1B6CA8").replace("#", "")
   const wsName = project.workspace?.name || "FlowSync PM"
-  const todayLong = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+  const todayLong = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone:"UTC" })
 
-  const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "TBD"
+  const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone:"UTC" }) : "TBD"
   const fmtCurrency = (n: number) => `${currency} ${n.toLocaleString()}`
 
   // ── shared building blocks ──

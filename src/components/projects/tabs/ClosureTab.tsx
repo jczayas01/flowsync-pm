@@ -182,8 +182,7 @@ export function ClosureTab({ projectId, workspaceId, closure, project }: {
           <div style={{ background:"#ECFDF5", border:"1px solid var(--green)",
             borderRadius:"var(--radius)", padding:14, textAlign:"center",
             fontSize:13, color:"#065F46", fontWeight:600 }}>
-            ✓ Project formally closed on {new Date(closure.closureDate).toLocaleDateString("en-US",
-              {month:"long",day:"numeric",year:"numeric"})}
+            ✓ Project formally closed on {new Date(closure.closureDate).toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric", timeZone:"UTC" })}
           </div>
         )}
       </div>

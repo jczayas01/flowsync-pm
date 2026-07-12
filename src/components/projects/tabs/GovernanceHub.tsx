@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // Meeting-minutes fields may be a string OR a JSON array of objects — normalize to text.

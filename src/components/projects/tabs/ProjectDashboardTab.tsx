@@ -33,7 +33,7 @@ function fmt(n: number) {
 }
 function fmtDate(d: string | Date | null | undefined) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" })
+  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 function startOfWeek(d: Date) {
   const c = new Date(d)
@@ -301,7 +301,7 @@ export function ProjectDashboardTab({
   const weekStart = new Date(baseWeek)
   weekStart.setDate(weekStart.getDate() + weekOffset * 7)
   const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6)
-  const weekLabel = `${weekStart.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${weekEnd.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`
+  const weekLabel = `${weekStart.toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })} – ${weekEnd.toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}`
 
   const weekStatus = statusUpdates.find(s => {
     const ps = new Date(s.periodStart), pe = new Date(s.periodEnd)

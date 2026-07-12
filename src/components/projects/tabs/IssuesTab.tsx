@@ -23,7 +23,7 @@ const CATS = ["Scope","Schedule","Budget","Technical","Resource","Stakeholder","
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 export function IssuesTab({ projectId, workspaceId, issues, members }: {

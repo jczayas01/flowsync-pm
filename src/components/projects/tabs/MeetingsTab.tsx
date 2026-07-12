@@ -16,7 +16,7 @@ const TYPE_COLORS: Record<string,string> = {
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})
+  return new Date(d).toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // Meeting-minutes fields (attendees/decisions/actionItems) may be a plain string
