@@ -115,11 +115,11 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
       ])
 
       // Build Gantt rows — phases with nested tasks + milestones
-      tasks = await attachUnread(tasks as any[], ctx.userId) as any
-      const ganttRows = buildGanttRows(phases, tasks, milestones)
-      const criticalPath = computeCriticalPath(tasks)
+      const tasksWithUnread = await attachUnread(tasks as any[], ctx.userId) as any
+      const ganttRows = buildGanttRows(phases, tasksWithUnread, milestones)
+      const criticalPath = computeCriticalPath(tasksWithUnread)
 
-      return ok({ phases, tasks, milestones, ganttRows, criticalPath })
+      return ok({ phases, tasks: tasksWithUnread, milestones, ganttRows, criticalPath })
     }
 
     // ── Board mode — grouped by status ──
