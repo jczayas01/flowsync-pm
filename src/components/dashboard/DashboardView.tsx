@@ -22,7 +22,7 @@ function daysUntil(date: string | Date) {
   return Math.ceil((d.getTime() - now.getTime()) / 86400000)
 }
 function fmtDate(date: string | Date) {
-  return new Date(date).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+  return new Date(date).toLocaleDateString('en-US', { month:'short', day:'numeric', timeZone:'UTC' })
 }
 function fmtCurrency(n: number, currency = 'USD') {
   if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(1)}M`
@@ -390,7 +390,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                     <strong>{a.user?.name || 'System'}</strong>{' '}
                     {a.action.replace('.',' ').replace('_',' ')}
                   </div>
-                  <div style={{ fontSize:11, color:'var(--text-3)', marginTop:2 }}>
+                  <div suppressHydrationWarning style={{ fontSize:11, color:'var(--text-3)', marginTop:2 }}>
                     {new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
                   </div>
                 </div>

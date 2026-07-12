@@ -407,7 +407,7 @@ export function AutomationView({ rules, recentLogs, workspaceId, userRole }:{
                   <Badge variant={log.status==="SUCCESS"?"green":log.status==="FAILED"?"red":"amber"}>
                     {log.status||"PENDING"}
                   </Badge>
-                  <span style={{fontSize:11,color:"var(--text-3)",flexShrink:0}}>
+                  <span suppressHydrationWarning style={{fontSize:11,color:"var(--text-3)",flexShrink:0}}>
                     {log.created_at?new Date(log.created_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—"}
                   </span>
                 </div>

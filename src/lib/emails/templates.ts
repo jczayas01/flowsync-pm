@@ -120,7 +120,7 @@ export function taskAssignedEmail({ recipientName, taskTitle, taskCode, projectN
       ${infoBox(`
         <p style="margin:0 0 6px;font-size:12px;color:#64748B">${taskCode} · ${projectName}</p>
         <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#0F172A">${taskTitle}</p>
-        ${dueDate ? `<p style="margin:0;font-size:13px;color:#DC2626;font-weight:500">Due ${new Date(dueDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>` : ''}
+        ${dueDate ? `<p style="margin:0;font-size:13px;color:#DC2626;font-weight:500">Due ${new Date(dueDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'})}</p>` : ''}
       `)}
       ${btn('View task →', taskUrl)}
     `, `New task: ${taskTitle}`)
@@ -209,7 +209,7 @@ export function milestoneApproachingEmail({ recipientName, milestoneName, projec
         <p style="margin:0 0 4px;font-size:12px;color:#64748B">${projectName}</p>
         <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#0F172A">◇ ${milestoneName}</p>
         <p style="margin:0;font-size:13px;font-weight:600;color:${daysUntil <= 3 ? '#DC2626' : '#D97706'}">
-          Due ${new Date(dueDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})} 
+          Due ${new Date(dueDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'})} 
           (${daysUntil} day${daysUntil !== 1 ? 's' : ''} away)
         </p>
       `, daysUntil <= 3 ? '#FEF2F2' : '#FFFBEB', daysUntil <= 3 ? '#FECACA' : '#FDE68A')}
@@ -241,7 +241,7 @@ export function trialEndingSoonEmail({ recipientName, workspaceName, trialEndDat
     subject: `⚡ Your FlowSync PM trial ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`,
     html: layout(`
       ${h1(`Trial ending soon`)}
-      ${p(`Your 14-day free trial of FlowSync PM for <strong>${workspaceName}</strong> ends on <strong>${new Date(trialEndDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</strong>.`)}
+      ${p(`Your 14-day free trial of FlowSync PM for <strong>${workspaceName}</strong> ends on <strong>${new Date(trialEndDate).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'})}</strong>.`)}
       ${infoBox(`
         <p style="margin:0 0 8px;font-size:13px;color:#0F172A;font-weight:600">${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining</p>
         <p style="margin:0;font-size:13px;color:#475569">Add a payment method to keep your access and lock in your current plan rate.</p>
