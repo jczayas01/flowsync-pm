@@ -20,7 +20,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
   const [editForm, setEditForm] = useState<any>({})
   const [saving,   setSaving]   = useState(false)
   const [addingItem, setAddingItem] = useState(false)
-  const [newItem,  setNewItem]  = useState({ description:"", category:"PERSONNEL", plannedAmount:"", notes:"" })
+  const [newItem,  setNewItem]  = useState({ description:"", category:"LABOR", plannedAmount:"", notes:"" })
 
   async function saveEdit(itemId: string) {
     setSaving(true)
@@ -43,7 +43,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
     if (!newItem.description.trim()) return
     setSaving(true)
     try {
-      await fetch(`/api/projects/${projectId}/budget`, {
+      const res = await fetch(`/api/projects/${projectId}/budget`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           description:   newItem.description,
@@ -52,8 +52,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
           actualAmount:  0,
         }),
       })
+      if (!res.ok) {
+        const d = await res.json().catch(()=>({}))
+        alert(d?.error || `Could not add item (${res.status})`)
+        return
+      }
       setAddingItem(false)
-      setNewItem({ description:"", category:"PERSONNEL", plannedAmount:"", notes:"" })
+      setNewItem({ description:"", category:"LABOR", plannedAmount:"", notes:"" })
       router.refresh()
     } finally { setSaving(false) }
   }
@@ -69,7 +74,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries 
     borderRadius:4, fontFamily:"var(--font)", color:"var(--text)",
     background:"#fff", outline:"none", width:"100%",
   }
-  const CATEGORIES = ["PERSONNEL","SOFTWARE","HARDWARE","CONSULTING","TRAVEL","TRAINING","INFRASTRUCTURE","OTHER"]
+  const CATEGORIES = ["LABOR","MATERIALS","EQUIPMENT","SOFTWARE","CONSULTING","TRAVEL","CONTINGENCY","OTHER"]
 
   const budgetTotal = Number(project?.budgetTotal || 0)
   const budgetSpent = Number(project?.budgetSpent || 0)
