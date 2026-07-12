@@ -59,12 +59,60 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
   }
 
   async function updateStatus(issueId: string, status: string, extra?: any) {
-    await fetch(`/api/projects/${projectId}/issues/${issueId}`, {
+    const res = await fetch(`/api/projects/${projectId}/issues/${issueId}`, {
       method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
       body: JSON.stringify({ status, ...extra }),
     })
+    if (!res.ok) {
+      const d = await res.json().catch(()=>({}))
+      alert(d?.error || `Update failed (${res.status})`)
+      return
+    }
     router.refresh()
     setSelected(null)
+  }
+
+  // ── Full edit mode for the detail panel ──
+  const [editIssue, setEditIssue]   = useState<any|null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  function openEdit() {
+    if (!selected) return
+    setEditIssue({
+      title: selected.title || "",
+      category: selected.category || "",
+      priority: selected.priority || "MEDIUM",
+      ownerId: selected.ownerId || selected.owner?.id || "",
+      dueDate: selected.dueDate ? String(selected.dueDate).slice(0,10) : "",
+      description: selected.description || "",
+      impact: selected.impact || "",
+    })
+  }
+
+  async function saveEdit() {
+    if (!editIssue?.title?.trim() || savingEdit) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/issues/${selected.id}`, {
+        method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+        body: JSON.stringify({
+          title: editIssue.title.trim(),
+          category: editIssue.category || null,
+          priority: editIssue.priority,
+          ownerId: editIssue.ownerId || null,
+          dueDate: editIssue.dueDate ? new Date(editIssue.dueDate + "T00:00:00.000Z").toISOString() : null,
+          description: editIssue.description || null,
+          impact: editIssue.impact || null,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(()=>({}))
+        alert(d?.error || `Update failed (${res.status})`)
+        return
+      }
+      setEditIssue(null); setSelected(null)
+      router.refresh()
+    } finally { setSavingEdit(false) }
   }
 
   const inp: React.CSSProperties = {
@@ -242,7 +290,17 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                 <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", marginBottom:4 }}>{selected.code}</div>
                 <h2 style={{ fontSize:17, fontWeight:700, color:"var(--text)", margin:0 }}>{selected.title}</h2>
               </div>
-              <button onClick={()=>setSelected(null)} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"var(--text-3)" }}>✕</button>
+              <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+                {can("projects:edit") && !editIssue && (
+                  <button onClick={openEdit}
+                    style={{ padding:"5px 12px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:11, fontWeight:600, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    ✏️ Edit
+                  </button>
+                )}
+                <button onClick={()=>{ setEditIssue(null); setSelected(null) }} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"var(--text-3)" }}>✕</button>
+              </div>
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:16 }}>
               {Object.entries(STATUS_CFG).map(([v,c]) => (
@@ -255,6 +313,69 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                 </button>
               ))}
             </div>
+
+            {editIssue && (
+              <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+                borderRadius:8, padding:14, display:"flex", flexDirection:"column", gap:10, marginBottom:16 }}>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                    letterSpacing:".05em", marginBottom:4 }}>Title</div>
+                  <input style={inp} value={editIssue.title}
+                    onChange={e=>setEditIssue((f:any)=>({...f, title:e.target.value}))} />
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Priority</div>
+                    <select style={{...inp, cursor:"pointer"}} value={editIssue.priority}
+                      onChange={e=>setEditIssue((f:any)=>({...f, priority:e.target.value}))}>
+                      {["CRITICAL","HIGH","MEDIUM","LOW"].map(v=><option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Owner</div>
+                    <select style={{...inp, cursor:"pointer"}} value={editIssue.ownerId}
+                      onChange={e=>setEditIssue((f:any)=>({...f, ownerId:e.target.value}))}>
+                      <option value="">Unassigned</option>
+                      {members.map((m:any) => <option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Category</div>
+                    <input style={inp} value={editIssue.category}
+                      onChange={e=>setEditIssue((f:any)=>({...f, category:e.target.value}))} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                      letterSpacing:".05em", marginBottom:4 }}>Due date</div>
+                    <input type="date" style={inp} value={editIssue.dueDate}
+                      onChange={e=>setEditIssue((f:any)=>({...f, dueDate:e.target.value}))} />
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                    letterSpacing:".05em", marginBottom:4 }}>Description</div>
+                  <textarea style={{...inp, resize:"vertical"}} rows={2} value={editIssue.description}
+                    onChange={e=>setEditIssue((f:any)=>({...f, description:e.target.value}))} />
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={saveEdit} disabled={savingEdit || !editIssue.title.trim()}
+                    style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff", border:"none",
+                      borderRadius:"var(--radius)", fontSize:12, fontWeight:600, fontFamily:"var(--font)",
+                      cursor: savingEdit ? "wait" : "pointer" }}>
+                    {savingEdit ? "Saving…" : "💾 Save changes"}
+                  </button>
+                  <button onClick={() => setEditIssue(null)}
+                    style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             {selected.description && <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.7, marginBottom:12 }}>{selected.description}</p>}
             {selected.impact && (
               <div style={{ background:"#FEF2F2", borderRadius:"var(--radius)", padding:12, marginBottom:12 }}>
