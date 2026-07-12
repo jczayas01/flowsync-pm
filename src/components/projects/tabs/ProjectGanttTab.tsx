@@ -107,7 +107,17 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   const taskCtx = useTaskContextSafe()
   const svgRef  = useRef<SVGSVGElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const [scr, setScr] = useState({ x: 0, y: 0 })   // scroll offsets for sticky header/panel
+  const leftG   = useRef<SVGGElement>(null)   // sticky task panel
+  const headerG = useRef<SVGGElement>(null)   // sticky date header
+  const cornerG = useRef<SVGGElement>(null)   // sticky corner (both axes)
+  const syncSticky = () => {
+    const t = wrapRef.current; if (!t) return
+    const x = t.scrollLeft, y = t.scrollTop
+    leftG.current?.setAttribute("transform", `translate(${x},0)`)
+    headerG.current?.setAttribute("transform", `translate(0,${y})`)
+    cornerG.current?.setAttribute("transform", `translate(${x},${y})`)
+  }
+  useEffect(() => { syncSticky() })   // re-sync after every render (zoom, data, drag)
   const [openTaskId, setOpenTaskId] = useState<string|null>(null)
   const [svgWidth,       setSvgWidth]       = useState(1100)
   const [zoom,           setZoom]           = useState<"day"|"week"|"month">("month")
@@ -435,7 +445,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
 
       {/* ── SVG Chart ── */}
       <div ref={wrapRef} style={{ flex:1, overflow:"auto", position:"relative" }}
-        onScroll={e => { const t = e.currentTarget; setScr({ x: t.scrollLeft, y: t.scrollTop }) }}>
+        onScroll={syncSticky}>
         <svg ref={svgRef} width={svgWidth} height={totalH}
           style={{ display:"block", userSelect:"none", fontFamily:"var(--font)" }}>
 
@@ -742,7 +752,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           </g>
 
           {/* ══ LEFT PANEL (sticks horizontally) ══ */}
-          <g transform={`translate(${scr.x},0)`}>
+          <g ref={leftG}>
 
           {/* Left panel background */}
           <rect x={0} y={0} width={LEFT_W} height={totalH} fill="#fff" />
@@ -870,7 +880,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           </g>{/* end left panel */}
 
           {/* ══ HEADER (sticks vertically) ══ */}
-          <g transform={`translate(0,${scr.y})`}>
+          <g ref={headerG}>
           <clipPath id="header-clip">
             <rect x={LEFT_W} y={0} width={svgWidth-LEFT_W} height={HDR_H} />
           </clipPath>
@@ -929,7 +939,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           </g>{/* end sticky header */}
 
           {/* ══ CORNER: left column headers (stick both ways, topmost) ══ */}
-          <g transform={`translate(${scr.x},${scr.y})`}>
+          <g ref={cornerG}>
             <rect x={0} y={0} width={LEFT_W} height={HDR_H} fill="#1a3a5c" />
             <line x1={LEFT_W} y1={0} x2={LEFT_W} y2={HDR_H} stroke="#E2E8F0" strokeWidth={1.5} />
             <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">TASK NAME</text>
