@@ -1563,7 +1563,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", fontSize:12, color:"var(--text-3)",
         textAlign:"right", whiteSpace:"nowrap" }}>
         {t.startDate && t.dueDate
-          ? Math.ceil((new Date(t.dueDate).getTime()-new Date(t.startDate).getTime())/86400000)
+          ? Math.max(1, Math.ceil((new Date(t.dueDate).getTime()-new Date(t.startDate).getTime())/86400000) + 1)
           : "—"}
       </td>
 

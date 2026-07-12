@@ -95,6 +95,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   const taskCtx = useTaskContextSafe()
   const svgRef  = useRef<SVGSVGElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const [scr, setScr] = useState({ x: 0, y: 0 })   // scroll offsets for sticky header/panel
   const [openTaskId, setOpenTaskId] = useState<string|null>(null)
   const [svgWidth,       setSvgWidth]       = useState(1100)
   const [zoom,           setZoom]           = useState<"day"|"week"|"month">("month")
@@ -406,7 +407,8 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
       </div>
 
       {/* ── SVG Chart ── */}
-      <div ref={wrapRef} style={{ flex:1, overflow:"auto", position:"relative" }}>
+      <div ref={wrapRef} style={{ flex:1, overflow:"auto", position:"relative" }}
+        onScroll={e => { const t = e.currentTarget; setScr({ x: t.scrollLeft, y: t.scrollTop }) }}>
         <svg ref={svgRef} width={svgWidth} height={totalH}
           style={{ display:"block", userSelect:"none", fontFamily:"var(--font)" }}>
 
@@ -552,7 +554,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
               let barX = -999, barW = 0
               if (start && due) {
                 barX = dayX(start)
-                barW = Math.max(MIN_BAR, dayX(due) - barX)
+                barW = Math.max(MIN_BAR, dayX(due) - barX + dayW)   // finish date inclusive
               } else if (start) {
                 barX = dayX(start); barW = dayW * 3
               } else { return null }
@@ -712,7 +714,8 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             )}
           </g>
 
-          {/* ══ LEFT PANEL (always visible, unclipped) ══ */}
+          {/* ══ LEFT PANEL (sticks horizontally) ══ */}
+          <g transform={`translate(${scr.x},0)`}>
 
           {/* Left panel background */}
           <rect x={0} y={0} width={LEFT_W} height={totalH} fill="#fff" />
@@ -771,7 +774,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             const indent = 10 + row.depth * 14
             const start  = task.startDate ? new Date(task.startDate) : null
             const due    = task.dueDate   ? new Date(task.dueDate)   : null
-            const dur    = start && due ? Math.ceil(daysBetween(start, due)) : null
+            const dur    = start && due ? Math.max(1, Math.ceil(daysBetween(start, due)) + 1) : null   // inclusive
             const isCrit = showCritical && criticalPath.has(task.id)
             const barColor = STATUS_COLOR[task.status] || "#64748B"
 
@@ -837,7 +840,10 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             )
           })}
 
-          {/* ══ HEADER: Month row (on top of everything) ══ */}
+          </g>{/* end left panel */}
+
+          {/* ══ HEADER (sticks vertically) ══ */}
+          <g transform={`translate(0,${scr.y})`}>
           <clipPath id="header-clip">
             <rect x={LEFT_W} y={0} width={svgWidth-LEFT_W} height={HDR_H} />
           </clipPath>
@@ -871,6 +877,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
               </g>
             ))}
           </g>
+
           <line x1={LEFT_W} y1={HDR_H} x2={svgWidth} y2={HDR_H} stroke="#CBD5E1" strokeWidth={1.5} />
 
           {/* Project milestone flags — pinned in the timeline header (above the grid) */}
@@ -891,6 +898,20 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                 </polygon>
               )
             })}
+          </g>
+          </g>{/* end sticky header */}
+
+          {/* ══ CORNER: left column headers (stick both ways, topmost) ══ */}
+          <g transform={`translate(${scr.x},${scr.y})`}>
+            <rect x={0} y={0} width={LEFT_W} height={HDR_H} fill="#1a3a5c" />
+            <line x1={LEFT_W} y1={0} x2={LEFT_W} y2={HDR_H} stroke="#E2E8F0" strokeWidth={1.5} />
+            <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">TASK NAME</text>
+            <line x1={COL_W.name+10} y1={0} x2={COL_W.name+10} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+            <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
+            <line x1={COL_W.name+10+COL_W.start} y1={0} x2={COL_W.name+10+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+            <text x={COL_W.name+COL_W.start+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
+            <line x1={LEFT_W-COL_W.dur-4} y1={0} x2={LEFT_W-COL_W.dur-4} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+            <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">DAYS</text>
           </g>
 
         </svg>
