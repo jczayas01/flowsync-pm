@@ -103,6 +103,8 @@ export const authConfig: NextAuthConfig = {
       name:         'Azure AD (SSO)',
       clientId:     process.env.AZURE_AD_CLIENT_ID!,
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+      // Single-tenant model: authenticate against the customer's tenant, not "common"
+      issuer:       `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}/v2.0`,
       authorization: {
         params: {
           scope: 'openid profile email offline_access User.Read',
