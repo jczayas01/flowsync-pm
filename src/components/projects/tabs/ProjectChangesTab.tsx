@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { Avatar, Badge } from "@/components/ui"
 
 const STATUS_CONFIG: Record<string, { label:string; color:string; bg:string }> = {
@@ -428,12 +429,38 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
           <div style={{ fontSize:12, color:"var(--text-3)" }}>{changeRequests.length} total</div>
         </div>
         {can("changes:create") && (
+        <div style={{ display:"flex", gap:8 }}>
         <button onClick={() => setView("create")}
           style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
             borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
             fontFamily:"var(--font)" }}>
           + New Change Request
         </button>
+        <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="changes"
+          commitLabel="as change requests"
+          renderCandidate={(c: any) => (
+            <div>
+              <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</span>
+                <span style={{ fontSize:10, color:"var(--text-3)" }}>{c.priority}</span>
+              </div>
+              {c.description && <div style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{c.description}</div>}
+              {c.justification && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>Why: {c.justification}</div>}
+            </div>
+          )}
+          commit={async (chosen: any[]) => {
+            const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/change-requests`, {
+              method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+              body: JSON.stringify({
+                title: String(c.title||"").slice(0,200),
+                description: String(c.description||"").slice(0,5000) || null,
+                priority: ["CRITICAL","HIGH","MEDIUM","LOW"].includes(c.priority) ? c.priority : "MEDIUM",
+                justification: String(c.justification||"").slice(0,3000) || null,
+              }),
+            })))
+            return rs.filter(r => !r.ok).length
+          }} />
+          </div>
         )}
       </div>
 

@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { Avatar } from "@/components/ui"
 
 function fmtDate(d: any) {
@@ -57,11 +58,33 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
         padding:"10px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div style={{ fontSize:12, color:"var(--text-3)" }}>{decisions.length} decision{decisions.length!==1?"s":""} recorded</div>
         {can("projects:edit") && (
+        <div style={{ display:"flex", gap:8 }}>
         <button onClick={()=>setCreating(c=>!c)}
           style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
             borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
           {creating ? "Cancel" : "+ Record decision"}
         </button>
+        <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="decisions"
+          commitLabel="to decision log"
+          renderCandidate={(c: any) => (
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</div>
+              {c.description && <div style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{c.description}</div>}
+              {c.rationale && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>Why: {c.rationale}</div>}
+            </div>
+          )}
+          commit={async (chosen: any[]) => {
+            const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/decisions`, {
+              method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+              body: JSON.stringify({
+                title: String(c.title||"").slice(0,300),
+                description: String(c.description||"").slice(0,3000) || null,
+                rationale: String(c.rationale||"").slice(0,3000) || null,
+              }),
+            })))
+            return rs.filter(r => !r.ok).length
+          }} />
+          </div>
         )}
       </div>
 

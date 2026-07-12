@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { Avatar } from "@/components/ui"
 
 const CATEGORIES = [
@@ -326,12 +327,44 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             {lessons.length} lessons · {positiveCount} positive · {negativeCount} issues
           </div>
         </div>
-        {can("projects:edit") && (<button onClick={() => setView("create")}
+        {can("projects:edit") && (<div style={{ display:"flex", gap:8 }}><button onClick={() => setView("create")}
           style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
             borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
             fontFamily:"var(--font)" }}>
           + Add lesson
-        </button>)}
+        </button>
+        <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="lessons"
+          commitLabel="to lessons"
+          renderCandidate={(c: any) => (
+            <div>
+              <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</span>
+                <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:4,
+                  background: c.impact === "POSITIVE" ? "#ECFDF5" : "#FEF2F2",
+                  color: c.impact === "POSITIVE" ? "#059669" : "#B91C1C" }}>
+                  {c.impact || "LESSON"}
+                </span>
+                <span style={{ fontSize:10, color:"var(--text-3)" }}>{c.category}</span>
+              </div>
+              {c.lesson && <div style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{c.lesson}</div>}
+            </div>
+          )}
+          commit={async (chosen: any[]) => {
+            const CATS = ["PLANNING","EXECUTION","STAKEHOLDER","RISK","COMMUNICATION","TEAM","TECHNICAL","PROCUREMENT","QUALITY","OTHER"]
+            const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/lessons`, {
+              method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+              body: JSON.stringify({
+                title: String(c.title||"").slice(0,300),
+                category: CATS.includes(c.category) ? c.category : "OTHER",
+                situation: String(c.situation||c.title||"").slice(0,5000),
+                lesson: String(c.lesson||c.title||"").slice(0,5000),
+                recommendation: String(c.recommendation||"Apply this learning in future work.").slice(0,5000),
+                impact: ["POSITIVE","NEGATIVE"].includes(c.impact) ? c.impact : null,
+              }),
+            })))
+            return rs.filter(r => !r.ok).length
+          }} />
+          </div>)}
       </div>
 
       {/* Filters */}

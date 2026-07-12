@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 
 const REQ_TYPES  = ["FUNCTIONAL","NON_FUNCTIONAL","BUSINESS","TECHNICAL","REGULATORY","OTHER"]
 const PRIORITIES = ["CRITICAL","HIGH","MEDIUM","LOW"]
@@ -108,6 +109,35 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
             fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
           {showForm?"Cancel":"+ Add requirement"}
         </button>
+        <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="requirements"
+          commitLabel="to requirements"
+          renderCandidate={(c: any) => (
+            <div>
+              <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</span>
+                <span style={{ fontSize:10, color:"var(--text-3)" }}>{c.type} · {c.priority}</span>
+              </div>
+              {c.description && <div style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{c.description}</div>}
+              {c.acceptanceCriteria && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>Acceptance: {c.acceptanceCriteria}</div>}
+            </div>
+          )}
+          commit={async (chosen: any[]) => {
+            const base = requirements.length
+            const rs = await Promise.all(chosen.map((c, i) => fetch(`/api/projects/${projectId}/requirements`, {
+              method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+              body: JSON.stringify({
+                code: `REQ-${String(base + i + 1).padStart(3,"0")}`,
+                title: String(c.title||"").slice(0,300),
+                description: String(c.description||"").slice(0,3000) || null,
+                type: ["FUNCTIONAL","NON_FUNCTIONAL","BUSINESS","TECHNICAL","REGULATORY","OTHER"].includes(c.type) ? c.type : "FUNCTIONAL",
+                priority: ["CRITICAL","HIGH","MEDIUM","LOW"].includes(c.priority) ? c.priority : "MEDIUM",
+                status: "DRAFT",
+                source: c.sourceDoc ? String(c.sourceDoc).slice(0,200) : null,
+                acceptanceCriteria: c.acceptanceCriteria ? String(c.acceptanceCriteria).slice(0,2000) : null,
+              }),
+            })))
+            return rs.filter(r => !r.ok).length
+          }} />
       </div>
 
       {/* Sub-tabs */}

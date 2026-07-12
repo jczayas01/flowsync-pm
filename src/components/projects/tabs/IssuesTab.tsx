@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { Avatar } from "@/components/ui"
 
 const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
@@ -89,11 +90,36 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
         </select>
         <div style={{ marginLeft:"auto" }}>
           {can("projects:edit") && (
+          <div style={{ display:"flex", gap:8 }}>
           <button onClick={()=>setCreating(c=>!c)}
             style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
             {creating ? "Cancel" : "+ Log issue"}
           </button>
+          <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="issues"
+            commitLabel="to issue log"
+            renderCandidate={(c: any) => (
+              <div>
+                <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</span>
+                  <span style={{ fontSize:10, color:"var(--text-3)" }}>{c.priority}{c.category ? ` · ${c.category}` : ""}</span>
+                </div>
+                {c.description && <div style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{c.description}</div>}
+              </div>
+            )}
+            commit={async (chosen: any[]) => {
+              const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/issues`, {
+                method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+                body: JSON.stringify({
+                  title: String(c.title||"").slice(0,300),
+                  description: String(c.description||"").slice(0,3000) || null,
+                  category: c.category ? String(c.category).slice(0,100) : null,
+                  priority: ["CRITICAL","HIGH","MEDIUM","LOW"].includes(c.priority) ? c.priority : "MEDIUM",
+                }),
+              })))
+              return rs.filter(r => !r.ok).length
+            }} />
+          </div>
           )}
         </div>
       </div>
