@@ -7,6 +7,7 @@ export const runtime = "nodejs"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
@@ -78,7 +79,8 @@ export async function POST(
     select: { name: true, code: true },
   })
 
-  const prompt = `You are a PMO assistant. Based on the project documents below, draft the Project Brief for "${project?.name}" (${project?.code}).
+  const styleDirective = await getAiStyleDirective(params.projectId)
+  const prompt = `${styleDirective}You are a PMO assistant. Based on the project documents below, draft the Project Brief for "${project?.name}" (${project?.code}).
 
 Write in the SAME LANGUAGE as the source documents.
 

@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -182,7 +183,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     }
   }
 
-  const prompt = buildPrompt(reportType, audience, {
+  const styleDirective = await getAiStyleDirective(params.projectId)
+  const prompt = styleDirective + buildPrompt(reportType, audience, {
     period,
     project, tasks, risks,
     budgetItems: budgetItems.map(b=>({ plannedCost:Number(b.plannedCost||0), actualCost:Number(b.actualCost||0), earnedValue:Number(b.earnedValue||0) })),

@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     select: { name: true },
   }).catch(() => [] as any[])
 
-  const prompt = `You are a project cost analyst. Read the documents (proposals, contracts, quotes, plans) and extract BUDGET LINE ITEMS — planned costs the project will incur.
+  const styleDirective = await getAiStyleDirective(params.projectId)
+  const prompt = `${styleDirective}You are a project cost analyst. Read the documents (proposals, contracts, quotes, plans) and extract BUDGET LINE ITEMS — planned costs the project will incur.
 
 ALREADY IN THE BUDGET (do not repeat these or close variants): ${existing.map(r => r.name).join("; ") || "none"}
 

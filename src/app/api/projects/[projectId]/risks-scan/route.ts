@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     select: { title: true },
   }).catch(() => [] as any[])
 
-  const prompt = `You are a project risk analyst following industry-standard PM practices. Read the documents and extract project RISKS (threats) and OPPORTUNITIES (positive risks).
+  const styleDirective = await getAiStyleDirective(params.projectId)
+  const prompt = `${styleDirective}You are a project risk analyst following industry-standard PM practices. Read the documents and extract project RISKS (threats) and OPPORTUNITIES (positive risks).
 
 ALREADY IN THE REGISTER (do not repeat these or close variants): ${existing.map(r => r.title).join("; ") || "none"}
 

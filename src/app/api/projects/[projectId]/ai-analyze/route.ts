@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -142,6 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   }
 
   // Call Anthropic API
+  const styleDirective = await getAiStyleDirective(params.projectId)
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -153,7 +155,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 4000,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: styleDirective + prompt }],
       }),
     })
 

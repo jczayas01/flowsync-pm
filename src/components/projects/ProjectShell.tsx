@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { HealthBadge } from "@/components/ui"
+import { ProjectSettingsModal } from "@/components/projects/ProjectSettingsModal"
 import { mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
 
 const TABS = [
@@ -63,6 +64,7 @@ export function ProjectShell({ project, userRole, children }:{
 
   // ── Project status (lifecycle) ──
   const [status, setStatus]       = useState<string>(project.status || "DRAFT")
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [statusBusy, setStatusBusy] = useState(false)
   const canChangeStatus = myLevel >= 68 // PMO Director and above
 
@@ -143,6 +145,12 @@ export function ProjectShell({ project, userRole, children }:{
             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
             {project.name}
           </h1>
+          {/* Project settings */}
+          <button onClick={() => setSettingsOpen(true)} title="Project settings"
+            style={{ padding:"4px 9px", background:"#fff", border:"1px solid var(--border)",
+              borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
+              fontFamily:"var(--font)", color:"var(--text-2)", lineHeight:1 }}>⚙️</button>
+
           {/* Status pill + governance actions */}
           <span style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4,
             background:STATUS_META[status]?.bg||"#F1F5F9", color:STATUS_META[status]?.fg||"#64748B",
@@ -210,6 +218,10 @@ export function ProjectShell({ project, userRole, children }:{
         </div>
       </div>
       <div style={{flex:1,overflowY:"auto"}}>{children}</div>
+
+      {settingsOpen && (
+        <ProjectSettingsModal projectId={project.id} onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   )
 }

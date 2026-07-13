@@ -37,6 +37,7 @@ const updateSchema = z.object({
   portfolioId:     z.string().min(1).optional().nullable(),
   programId:       z.string().min(1).optional().nullable(),
   methodology:     z.enum(['WATERFALL','AGILE','SCRUM','HYBRID']).optional(),
+  settings:        z.record(z.any()).optional(),
 })
 
 async function getProject(ctx: ApiContext, params?: Record<string,string>) {
@@ -94,6 +95,9 @@ async function updateProject(ctx: ApiContext, params?: Record<string,string>) {
       ...parsed.data,
       ...(parsed.data.startDate !== undefined && { startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null }),
       ...(parsed.data.endDate   !== undefined && { endDate:   parsed.data.endDate   ? new Date(parsed.data.endDate)   : null }),
+      ...(parsed.data.settings !== undefined && {
+        settings: { ...(((before as any)?.settings as any) || {}), ...parsed.data.settings },
+      }),
     },
   })
 

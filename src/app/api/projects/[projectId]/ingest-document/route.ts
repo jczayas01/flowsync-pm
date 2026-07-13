@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { extractTextFromBuffer } from "@/lib/extract"
@@ -139,6 +140,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   }
 
   // Call AI to extract structured data
+  const styleDirective = await getAiStyleDirective(pid)
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
     headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01", "x-api-key": process.env.ANTHROPIC_API_KEY || "" },
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       max_tokens: 4000,
       messages: [{
         role: "user",
-        content: `${systemPrompt}\n\nDOCUMENT CONTENT:\n${textContent}\n\nReturn ONLY valid JSON, no markdown, no explanation.`
+        content: styleDirective + (`${systemPrompt}\n\nDOCUMENT CONTENT:\n${textContent}\n\nReturn ONLY valid JSON, no markdown, no explanation.`)
       }]
     }),
   })

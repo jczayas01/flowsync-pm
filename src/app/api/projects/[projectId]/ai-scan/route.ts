@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
+import { getAiStyleDirective } from "@/lib/ai-style"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
@@ -122,7 +123,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
   const existing = await cfg.existing(params.projectId)
 
-  const prompt = `You are a project management analyst following industry-standard PM practices.
+  const styleDirective = await getAiStyleDirective(params.projectId)
+  const prompt = `${styleDirective}You are a project management analyst following industry-standard PM practices.
 
 ${cfg.rules}
 

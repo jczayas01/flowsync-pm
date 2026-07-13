@@ -190,6 +190,7 @@ model Project {
   actualEnd         DateTime?
   budgetTotal       Decimal                @default(0) @db.Decimal(15, 2)
   budgetSpent       Decimal                @default(0) @db.Decimal(15, 2)
+  settings          Json?
   currency          String                 @default("USD")
   percentComplete   Int                    @default(0)
   timezone          String                 @default("UTC")
