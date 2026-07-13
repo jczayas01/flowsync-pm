@@ -5,6 +5,7 @@
 // milestone pipeline, benefits realization, pending decisions
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
 
@@ -153,6 +154,22 @@ export function ExecutiveDashboard({ projects, risks, milestones,
 
   const now = new Date().toLocaleDateString("en-US", {
     weekday:"long", year:"numeric", month:"long", day:"numeric" })
+  const router = useRouter()
+
+  async function approvalAct(projectId: string, action: "approve" | "reject") {
+    let reason = ""
+    if (action === "reject") reason = window.prompt("Reason for sending back to Draft (optional):") || ""
+    const res = await fetch(`/api/projects/${projectId}/approval`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, reason }),
+    })
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      alert(d?.error || `Action failed (${res.status})`)
+      return
+    }
+    router.refresh()
+  }
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflowY:"auto",
@@ -217,6 +234,43 @@ export function ExecutiveDashboard({ projects, risks, milestones,
       </div>
 
       <div style={{ padding:20, display:"flex", flexDirection:"column", gap:16 }}>
+
+      {/* ── Awaiting approval ── */}
+      {(() => {
+        const pending = projects.filter((p: any) => p.status === "PENDING_APPROVAL")
+        if (!pending.length) return null
+        return (
+          <div style={{ background:"#FFFBEB", border:"1px solid #FDE68A",
+            borderLeft:"4px solid #F59E0B", borderRadius:"var(--radius)",
+            padding:"14px 18px", margin:"0 0 16px" }}>
+            <div style={{ fontSize:13, fontWeight:700, color:"#92400E", marginBottom:10 }}>
+              ⏳ Awaiting approval ({pending.length})
+            </div>
+            {pending.map((p: any) => {
+              const pm = (p.members || []).find((m: any) => m.projectRole === "PM")
+              return (
+                <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12,
+                  padding:"9px 0", borderTop:"1px solid #FDE68A" }}>
+                  <a href={`/projects/${p.id}`} style={{ flex:1, textDecoration:"none" }}>
+                    <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{p.name}</span>
+                    <span style={{ fontSize:11, color:"var(--text-3)", marginLeft:8 }}>
+                      {p.code}{pm?.user?.name ? ` · PM: ${pm.user.name}` : ""}
+                    </span>
+                  </a>
+                  <button onClick={() => approvalAct(p.id, "approve")}
+                    style={{ padding:"6px 14px", background:"#ECFDF5", border:"1px solid #A7F3D0",
+                      borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#059669",
+                      cursor:"pointer", fontFamily:"var(--font)" }}>✓ Approve</button>
+                  <button onClick={() => approvalAct(p.id, "reject")}
+                    style={{ padding:"6px 14px", background:"#FEF2F2", border:"1px solid #FECACA",
+                      borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#DC2626",
+                      cursor:"pointer", fontFamily:"var(--font)" }}>✗ Reject</button>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
 
         {/* ── KPI Strip ── */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>

@@ -49,7 +49,7 @@ export default async function ExecutivePage() {
   ] = await Promise.all([
     // All active projects with full data
     db.project.findMany({
-      where:   { workspaceId, status:{ in:['ACTIVE','ON_HOLD','DRAFT'] } },
+      where:   { workspaceId, status:{ in:['ACTIVE','ON_HOLD','DRAFT','PENDING_APPROVAL'] } },
       orderBy: { priority:'asc' },
       include: {
         _count:  { select:{ tasks:true, risks:true, members:true, changes:true } },
