@@ -243,8 +243,12 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           <div style={{ background:"#FFFBEB", border:"1px solid #FDE68A",
             borderLeft:"4px solid #F59E0B", borderRadius:"var(--radius)",
             padding:"14px 18px", margin:"0 0 16px" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:"#92400E", marginBottom:10 }}>
-              ⏳ Awaiting approval ({pending.length})
+            <div style={{ fontSize:13, fontWeight:700, color:"#92400E", marginBottom:2 }}>
+              ⏳ Projects awaiting your approval ({pending.length})
+            </div>
+            <div style={{ fontSize:11, color:"#B45309", marginBottom:10 }}>
+              Approving authorizes execution — the project moves from Draft to Active and a governance
+              decision is logged. Rejecting returns it to Draft with your reason.
             </div>
             {pending.map((p: any) => {
               const pm = (p.members || []).find((m: any) => m.projectRole === "PM")
@@ -256,6 +260,10 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                     <span style={{ fontSize:11, color:"var(--text-3)", marginLeft:8 }}>
                       {p.code}{pm?.user?.name ? ` · PM: ${pm.user.name}` : ""}
                     </span>
+                    <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
+                      Submitted{p.approvalRequestedBy?.name ? ` by ${p.approvalRequestedBy.name}` : ""}
+                      {p.approvalRequestedAt ? ` · ${new Date(p.approvalRequestedAt).toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })}` : ""} — requesting authorization to start execution
+                    </div>
                   </a>
                   <button onClick={() => approvalAct(p.id, "approve")}
                     style={{ padding:"6px 14px", background:"#ECFDF5", border:"1px solid #A7F3D0",

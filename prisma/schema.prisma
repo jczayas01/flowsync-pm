@@ -22,6 +22,7 @@ model User {
   updatedAt            DateTime                @updatedAt
   accounts             Account[]
   auditLogs            AuditLog[]
+  approvalRequests     Project[]             @relation("ApprovalRequester")
   baselinesApproved    Baseline[]              @relation("BaselinesApproved")
   baselinesCreated     Baseline[]              @relation("BaselinesCreated")
   benefitsOwned        Benefit[]               @relation("BenefitOwner")
@@ -184,6 +185,7 @@ model Project {
   status            ProjectStatus          @default(DRAFT)
   approvalRequestedAt   DateTime?
   approvalRequestedById String?
+  approvalRequestedBy   User?                @relation("ApprovalRequester", fields: [approvalRequestedById], references: [id])
   health            ProjectHealth          @default(GREEN)
   startDate         DateTime?
   endDate           DateTime?

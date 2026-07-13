@@ -53,6 +53,7 @@ export default async function ExecutivePage() {
       orderBy: { priority:'asc' },
       include: {
         _count:  { select:{ tasks:true, risks:true, members:true, changes:true } },
+        approvalRequestedBy: { select: { name: true } },
         members: {
           where:   { projectRole:{ in:['PM','SPONSOR','EXECUTIVE_SPONSOR'] } },
           include: { user:{ select:{ id:true, name:true, avatarUrl:true } } },
