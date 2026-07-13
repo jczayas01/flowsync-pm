@@ -21,6 +21,7 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
   const [scanning, setScanning]     = useState(false)
   const [error, setError]           = useState("")
   const [candidates, setCandidates] = useState<any[]|null>(null)
+  const [skipped, setSkipped]       = useState<{name:string;reason:string}[]>([])
   const [picked, setPicked]         = useState<Set<number>>(new Set())
   const [committing, setCommitting] = useState(false)
 
@@ -34,6 +35,7 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
       const d = await res.json().catch(() => null)
       if (!res.ok) { setError(d?.error || `Scan failed (${res.status})`); return }
       const c = d?.data?.candidates || []
+      setSkipped(d?.data?.skippedDocs || [])
       setCandidates(c)
       setPicked(new Set(c.map((_: any, i: number) => i)))
     } catch { setError("Connection lost — try again") }
@@ -120,6 +122,11 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
                   Close
                 </button>
               </div>
+            </div>
+          )}
+          {skipped.length > 0 && candidates && (
+            <div style={{ fontSize:11, color:"#B45309", marginTop:8 }}>
+              ⚠ Skipped: {skipped.map(x => `${x.name} (${x.reason})`).join(" · ")}
             </div>
           )}
           {error && <div style={{ fontSize:12, color:"#B91C1C", marginTop:8 }}>✗ {error}</div>}

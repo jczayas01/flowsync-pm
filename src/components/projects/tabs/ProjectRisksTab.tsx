@@ -85,6 +85,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   const [scanning, setScanning]         = useState(false)
   const [scanError, setScanError]       = useState("")
   const [candidates, setCandidates]     = useState<any[]|null>(null)
+  const [scanSkipped, setScanSkipped] = useState<{name:string;reason:string}[]>([])
   const [pickedCands, setPickedCands]   = useState<Set<number>>(new Set())
   const [committing, setCommitting]     = useState(false)
 
@@ -98,6 +99,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
       const d = await res.json().catch(() => null)
       if (!res.ok) { setScanError(d?.error || `Scan failed (${res.status})`); return }
       const c = d?.data?.candidates || []
+      setScanSkipped(d?.data?.skippedDocs || [])
       setCandidates(c)
       setPickedCands(new Set(c.map((_: any, i: number) => i)))
     } catch { setScanError("Connection lost — try again") }
@@ -385,6 +387,11 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   ← Pick different documents
                 </button>
               </div>
+            </div>
+          )}
+          {scanSkipped.length > 0 && candidates && (
+            <div style={{ fontSize:11, color:"#B45309", marginTop:8 }}>
+              ⚠ Skipped: {scanSkipped.map(x => `${x.name} (${x.reason})`).join(" · ")}
             </div>
           )}
           {scanError && <div style={{ fontSize:12, color:"#B91C1C", marginTop:8 }}>✗ {scanError}</div>}
