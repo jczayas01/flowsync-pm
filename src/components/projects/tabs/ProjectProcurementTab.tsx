@@ -162,6 +162,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
     color:"var(--text)", outline:"none",
   }
+  const lblE: React.CSSProperties = { fontSize:9, fontWeight:700, color:"var(--text-4)",
+    textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }
   const lbl: React.CSSProperties = {
     display:"block", fontSize:10, fontWeight:700, color:"var(--text-3)",
     textTransform:"uppercase", letterSpacing:".05em", marginBottom:5,
@@ -624,47 +626,63 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                           borderRadius:8, padding:12, marginBottom:12, display:"flex",
                           flexDirection:"column", gap:8 }}>
                           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                            <div><div style={lblE}>Title *</div>
                             <input style={inp} placeholder="Title *" value={editF.title}
-                              onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))} /></div>
+                            <div><div style={lblE}>Vendor *</div>
                             <input style={inp} placeholder="Vendor *" value={editF.vendorName}
-                              onChange={e=>setEditF((f:any)=>({...f,vendorName:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,vendorName:e.target.value}))} /></div>
+                            <div><div style={lblE}>Contact person</div>
                             <input style={inp} placeholder="Contact person" value={editF.vendorContact}
-                              onChange={e=>setEditF((f:any)=>({...f,vendorContact:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,vendorContact:e.target.value}))} /></div>
+                            <div><div style={lblE}>Vendor email</div>
                             <input style={inp} placeholder="Vendor email" value={editF.vendorEmail}
-                              onChange={e=>setEditF((f:any)=>({...f,vendorEmail:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,vendorEmail:e.target.value}))} /></div>
+                            <div><div style={lblE}>Vendor phone</div>
                             <input style={inp} placeholder="Vendor phone" value={editF.vendorPhone}
-                              onChange={e=>setEditF((f:any)=>({...f,vendorPhone:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,vendorPhone:e.target.value}))} /></div>
+                            <div><div style={lblE}>Vendor location</div>
                             <input style={inp} placeholder="Vendor location (logistics)" value={editF.vendorLocation}
-                              onChange={e=>setEditF((f:any)=>({...f,vendorLocation:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,vendorLocation:e.target.value}))} /></div>
+                            <div><div style={lblE}>Internal owner</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.ownerId}
                               onChange={e=>setEditF((f:any)=>({...f,ownerId:e.target.value}))}>
                               <option value="">Internal owner — unassigned</option>
                               {members.map((m:any)=><option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
-                            </select>
+                            </select></div>
+                            <div><div style={lblE}>Type</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.type}
                               onChange={e=>setEditF((f:any)=>({...f,type:e.target.value}))}>
                               {Object.entries(TYPE_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
-                            </select>
+                            </select></div>
+                            <div><div style={lblE}>Status</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.status}
                               onChange={e=>setEditF((f:any)=>({...f,status:e.target.value}))}>
                               {Object.entries(STATUS_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
-                            </select>
+                            </select></div>
+                            <div><div style={lblE}>PO number</div>
                             <input style={inp} placeholder="PO number" value={editF.poNumber}
-                              onChange={e=>setEditF((f:any)=>({...f,poNumber:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,poNumber:e.target.value}))} /></div>
+                            <div><div style={lblE}>Contract ref</div>
                             <input style={inp} placeholder="Contract ref" value={editF.contractRef}
-                              onChange={e=>setEditF((f:any)=>({...f,contractRef:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,contractRef:e.target.value}))} /></div>
+                            <div><div style={lblE}>Value</div>
                             <input style={inp} type="number" placeholder="Value" value={editF.value}
-                              onChange={e=>setEditF((f:any)=>({...f,value:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,value:e.target.value}))} /></div>
+                            <div><div style={lblE}>Currency</div>
                             <input style={inp} placeholder="Currency" value={editF.currency}
-                              onChange={e=>setEditF((f:any)=>({...f,currency:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,currency:e.target.value}))} /></div>
+                            <div><div style={lblE}>Start date</div>
                             <input style={inp} type="date" value={editF.startDate}
-                              onChange={e=>setEditF((f:any)=>({...f,startDate:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,startDate:e.target.value}))} /></div>
+                            <div><div style={lblE}>End date</div>
                             <input style={inp} type="date" value={editF.endDate}
-                              onChange={e=>setEditF((f:any)=>({...f,endDate:e.target.value}))} />
+                              onChange={e=>setEditF((f:any)=>({...f,endDate:e.target.value}))} /></div>
                           </div>
-                          <textarea style={{...inp,resize:"vertical"}} rows={2} placeholder="Key deliverables"
+                          <div><div style={lblE}>Key deliverables</div>
+                          <textarea style={{...inp,resize:"vertical",width:"100%"}} rows={2} placeholder="Key deliverables"
                             value={editF.deliverables}
-                            onChange={e=>setEditF((f:any)=>({...f,deliverables:e.target.value}))} />
+                            onChange={e=>setEditF((f:any)=>({...f,deliverables:e.target.value}))} /></div>
                           <div style={{ display:"flex", gap:8 }}>
                             <button onClick={saveItemEdit} disabled={savingEdit||!editF.title?.trim()||!editF.vendorName?.trim()}
                               style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
