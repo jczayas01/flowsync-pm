@@ -448,41 +448,25 @@ export function ProjectDashboardTab({
 
       {/* ── Row 1: Description + Economic Impact ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-        <EditablePanel field="description" label="Description" icon="📋"
-          value={project?.description}
-          hint="Describe this project at a high level." />
-        <EditablePanel field="economicImpact" label="Economic Impact / ROI" icon="💹"
-          value={project?.economicImpact}
-          hint="Describe the expected financial benefit or ROI of this project." />
+        {EditablePanel({ field: 'description', label: 'Description', icon: '📋', value: project?.description, hint: 'Describe this project at a high level.' })}
+        {EditablePanel({ field: 'economicImpact', label: 'Economic Impact / ROI', icon: '💹', value: project?.economicImpact, hint: 'Describe the expected financial benefit or ROI of this project.' })}
       </div>
 
       {/* ── Row 2: Objective + Scope (In) ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-        <EditablePanel field="objective" label="Project Objective" icon="🎯"
-          value={project?.objective}
-          hint="What must this project achieve? State the measurable outcomes." />
-        <EditablePanel field="scope" label="In Scope" icon="✅"
-          value={project?.scope}
-          hint="What deliverables and work are included in this project?" />
+        {EditablePanel({ field: 'objective', label: 'Project Objective', icon: '🎯', value: project?.objective, hint: 'What must this project achieve? State the measurable outcomes.' })}
+        {EditablePanel({ field: 'scope', label: 'In Scope', icon: '✅', value: project?.scope, hint: 'What deliverables and work are included in this project?' })}
       </div>
 
       {/* ── Row 3: Out of Scope + Background/Assumptions ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-        <EditablePanel field="outOfScope" label="Out of Scope" icon="🚫"
-          value={project?.outOfScope}
-          hint="What is explicitly excluded from this project?" />
+        {EditablePanel({ field: 'outOfScope', label: 'Out of Scope', icon: '🚫', value: project?.outOfScope, hint: 'What is explicitly excluded from this project?' })}
         {project?.background ? (
-          <EditablePanel field="background" label="Background" icon="📖"
-            value={project?.background}
-            hint="What is the background and context for this project?" />
+          EditablePanel({ field: 'background', label: 'Background', icon: '📖', value: project?.background, hint: 'What is the background and context for this project?' })
         ) : project?.assumptions ? (
-          <EditablePanel field="assumptions" label="Assumptions" icon="💡"
-            value={project?.assumptions}
-            hint="What assumptions has the team made about this project?" />
+          EditablePanel({ field: 'assumptions', label: 'Assumptions', icon: '💡', value: project?.assumptions, hint: 'What assumptions has the team made about this project?' })
         ) : (
-          <EditablePanel field="background" label="Background" icon="📖"
-            value={project?.background}
-            hint="What is the background and context for this project?" />
+          EditablePanel({ field: 'background', label: 'Background', icon: '📖', value: project?.background, hint: 'What is the background and context for this project?' })
         )}
       </div>
 

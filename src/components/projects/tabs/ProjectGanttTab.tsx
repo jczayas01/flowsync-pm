@@ -297,7 +297,13 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             startDate: newStart.toISOString(),
             dueDate:   newEnd.toISOString(),
           }),
-        }).then(() => { router.refresh() }).finally(() => setSaving(false))
+        }).then(async res => {
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}))
+            alert(d?.error || `Could not reschedule (${res.status})`)
+          }
+          router.refresh()
+        }).finally(() => setSaving(false))
       }
       setDragging(null); setDragDays(0)
     }
@@ -540,6 +546,22 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                   {/* Downward end caps */}
                   <polygon points={`${px},${by} ${px+6},${by} ${px},${by+8+cap}`} fill="#1B6CA8" opacity={0.85} />
                   <polygon points={`${px+pw},${by} ${px+pw-6},${by} ${px+pw},${by+8+cap}`} fill="#1B6CA8" opacity={0.85} />
+                  {/* Baseline span (approved plan) for this phase */}
+                  {showBaseline && (() => {
+                    const snaps = allPhaseTasks
+                      .map(t => baselineMap.get(t.id))
+                      .filter(Boolean) as any[]
+                    if (!snaps.length) return null
+                    const bs = new Date(Math.min(...snaps.map(x => +new Date(x.start || x.startDate))))
+                    const be = new Date(Math.max(...snaps.map(x => +new Date(x.end || x.dueDate))))
+                    if (isNaN(+bs) || isNaN(+be)) return null
+                    const bx = dayX(bs)
+                    const bw = Math.max(4, dayX(be) + dayW - bx)
+                    return <rect x={bx} y={by + 8 + cap + 2} width={bw} height={3} rx={1.5}
+                      fill="#C4B5FD" opacity={0.95}>
+                      <title>Baseline (approved plan)</title>
+                    </rect>
+                  })()}
                   {/* Completion % label */}
                   <text x={px+pw+10} y={by+8} fontSize={9} fontWeight={700} fill={pctColor}>{phasePct}%</text>
                 </g>

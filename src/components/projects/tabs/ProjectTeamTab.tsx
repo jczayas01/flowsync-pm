@@ -272,7 +272,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                             borderRadius:"var(--radius)", fontSize:11, fontFamily:"var(--font)",
                             color:"var(--text-2)", cursor:"pointer", maxWidth:160 }}>
                           <option value="">— No role —</option>
-                          {availableRoles.map(r => (
+                          {PROJECT_ROLES_ORDERED.map(r => (
                             <option key={r.value} value={r.value}>{r.label}</option>
                           ))}
                         </select>
@@ -328,7 +328,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                           color:"var(--text-2)", cursor:"pointer", maxWidth:160,
                           background:"#FFFBEB" }}>
                         <option value="">⚠ Assign role…</option>
-                        {availableRoles.map(r => (
+                        {PROJECT_ROLES_ORDERED.map(r => (
                           <option key={r.value} value={r.value}>{r.label}</option>
                         ))}
                       </select>

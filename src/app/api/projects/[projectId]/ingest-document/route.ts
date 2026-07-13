@@ -164,6 +164,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     return NextResponse.json({ error:"Failed to parse AI response", raw:rawText }, { status:502 })
   }
 
+  const pick = (o: any, keys: string[]) =>
+    Object.fromEntries(keys.filter(k => o?.[k] !== undefined).map(k => [k, o[k]]))
+
   // Write extracted data to database
   let result: any = {}
   const pid = params.projectId
@@ -173,8 +176,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       case "TEAM_CHARTER":
         result = await db.teamCharter.upsert({
           where:  { projectId:pid },
-          create: { projectId:pid, createdById:session.user.id, ...extracted },
-          update: extracted,
+          create: { projectId:pid, createdById:session.user.id, ...pick(extracted, ["vision","objectives","values","norms","decisionMaking","conflictResolution","communicationPlan","toolsAndProcesses"]) },
+          update: pick(extracted, ["vision","objectives","values","norms","decisionMaking","conflictResolution","communicationPlan","toolsAndProcesses"]),
         })
         break
 
@@ -183,7 +186,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
           for (const e of extracted.entries) {
             await db.wbsEntry.create({
               data: { projectId:pid, createdById:session.user.id, ...e }
-            }).catch(()=>{}) // skip dupes
+            }).catch(()=>{}) // skip dupes/malformed
           }
           result = { created: extracted.entries.length }
         }

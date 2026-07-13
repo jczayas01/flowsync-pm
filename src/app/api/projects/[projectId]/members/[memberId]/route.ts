@@ -15,7 +15,7 @@ import { requirePermission } from "@/lib/rbac/guards"
 
 const updateMemberSchema = z.object({
   role:        z.enum(["PM","MEMBER","VIEWER","CLIENT"]).optional(),
-  projectRole: z.enum(["SPONSOR","STAKEHOLDER","PM","PMO","TEAM_MEMBER","EXTERNAL_RESOURCE"]).optional().nullable(),
+  projectRole: z.enum(['EXECUTIVE_SPONSOR','SPONSOR','STEERING_COMMITTEE','PMO_DIRECTOR','PMO','PROGRAM_MANAGER','PM','PRODUCT_OWNER','BUSINESS_ANALYST','TECH_LEAD','SCRUM_MASTER','TEAM_MEMBER','STAKEHOLDER','EXTERNAL_RESOURCE','CLIENT','AUDITOR']).optional().nullable(),
   allocation:  z.number().int().min(0).max(100).optional(),
 }).strict()
 

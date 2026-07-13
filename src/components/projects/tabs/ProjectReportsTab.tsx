@@ -285,6 +285,12 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               fontFamily:"var(--font)",display:"flex",alignItems:"center",gap:6 }}>
             {downloading ? "Generating…" : "📄 Download Word (.docx)"}
           </button>
+          <button onClick={downloadPdf} disabled={downloadingPdf}
+            style={{ padding:"9px 18px", background:"#fff", color:"var(--text-2)",
+              border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:13,
+              fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
+            {downloadingPdf ? "Generating…" : "📕 PDF"}
+          </button>
           <button onClick={() => window.print()}
             style={{ padding:"8px 16px",background:"#fff",border:"1px solid #E2E8F0",
               borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"var(--font)" }}>
@@ -476,6 +482,15 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   }
   const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())
   const [includeWeekDocs, setIncludeWeekDocs] = useState(true)
+  const [projDocs, setProjDocs] = useState<any[]|null>(null)
+  useEffect(() => {
+    let live = true
+    fetch(`/api/projects/${projectId}/documents`)
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(d => { if (live) setProjDocs(d?.data || []) })
+      .catch(() => { if (live) setProjDocs([]) })
+    return () => { live = false }
+  }, [projectId])
   const reportWeekEnd = (startIso: string) => {
     const st = new Date(startIso); const en = new Date(st)
     en.setDate(st.getDate() + 6); en.setHours(23,59,59,0)
@@ -550,6 +565,24 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   }
   const splitLines = (s?: string | null) =>
     (s || "").split("\n").map(t => t.trim()).filter(Boolean)
+
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+  async function downloadPdf() {
+    if (!generatedReport) return
+    setDownloadingPdf(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/export-pdf`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ reportData: toDocxShape(generatedReport) }),
+      })
+      if (!res.ok) { alert("PDF download failed"); return }
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement("a")
+      a.href = url; a.download = `${project?.code}_${reportType}_${new Date().toISOString().split("T")[0]}.pdf`; a.click()
+      URL.revokeObjectURL(url)
+    } finally { setDownloadingPdf(false) }
+  }
 
   async function downloadDocx() {
     setDownloading(true)
@@ -705,6 +738,20 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                       <input type="checkbox" checked={includeWeekDocs}
                         onChange={e => setIncludeWeekDocs(e.target.checked)} />
                       Use this week's documents as context
+                    
+                      {projDocs && (() => {
+                        const ws = new Date(reportWeek).getTime()
+                        const we = ws + 7*86400000
+                        const n = projDocs.filter((d:any) => {
+                          const t = new Date(d.weekOf || d.createdAt).getTime()
+                          return t >= ws && t < we
+                        }).length
+                        return (
+                          <span style={{ color: n ? "var(--steel)" : "#B45309", fontWeight:600 }}>
+                            {" "}· {n} document{n===1?"":"s"} found this week
+                          </span>
+                        )
+                      })()}
                     </label>
                   </div>
                 </div>
@@ -955,6 +1002,26 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                         cursor: historyDownloadingId===su.id ? "wait" : "pointer",
                         fontFamily:"var(--font)", color:"var(--text-2)" }}>
                       {historyDownloadingId===su.id ? "…" : "📄 Word"}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const r = reconstructReport(su)
+                        if (!r) return
+                        const res = await fetch(`/api/projects/${projectId}/export-pdf`, {
+                          method:"POST", headers:{"Content-Type":"application/json"},
+                          body: JSON.stringify({ reportData: toDocxShape(r) }),
+                        })
+                        if (!res.ok) { alert("PDF download failed"); return }
+                        const blob = await res.blob()
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement("a")
+                        a.href = url; a.download = `${project?.code}_Report.pdf`; a.click()
+                        URL.revokeObjectURL(url)
+                      }}
+                      style={{ padding:"5px 10px", background:"#fff", border:"1px solid var(--border)",
+                        borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
+                        fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                      📕 PDF
                     </button>
                   </div>
                 </div>

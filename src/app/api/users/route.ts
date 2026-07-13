@@ -107,6 +107,10 @@ async function inviteUser(ctx: ApiContext) {
 
   // Create invitation record
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  // Replace any prior pending invitation for this email (prevents duplicates)
+  await db.workspaceInvitation.deleteMany({
+    where: { workspaceId: ctx.workspaceId, email, acceptedAt: null },
+  }).catch(() => {})
   const invitation = await db.workspaceInvitation.create({
     data: {
       workspaceId: ctx.workspaceId,
