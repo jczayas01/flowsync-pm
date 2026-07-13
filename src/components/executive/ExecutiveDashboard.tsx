@@ -173,6 +173,28 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             <div suppressHydrationWarning style={{ fontSize:12, color:"rgba(255,255,255,.55)" }}>{now}</div>
           </div>
           <div style={{ textAlign:"right" }}>
+            <button onClick={async () => {
+                const btn = document.getElementById("deck-btn-exec") as HTMLButtonElement | null
+                if (btn) { btn.disabled = true; btn.textContent = "Building…" }
+                try {
+                  const res = await fetch(`/api/workspace/export-pptx`, {
+                    method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+                    body: JSON.stringify({ flavor:"EXECUTIVE" }),
+                  })
+                  if (!res.ok) { alert("Deck generation failed"); return }
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement("a"); a.href = url; a.download = "Executive_Portfolio_Deck.pptx"; a.click()
+                  URL.revokeObjectURL(url)
+                } finally { if (btn) { btn.disabled = false; btn.textContent = "🎬 Executive deck" } }
+              }}
+              id="deck-btn-exec"
+              style={{ padding:"8px 16px", background:"rgba(255,255,255,.12)", color:"#fff",
+                border:"1px solid rgba(255,255,255,.3)", borderRadius:"var(--radius)",
+                fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"var(--font)",
+                marginBottom:10 }}>
+              🎬 Executive deck
+            </button>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", marginBottom:4 }}>
               Overall portfolio health
             </div>

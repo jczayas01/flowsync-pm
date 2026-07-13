@@ -86,6 +86,28 @@ export function DashboardView({ projects, milestones, risks, activity,
             <span style={{ fontSize:14 }}>{a.icon}</span> {a.label}
           </Link>
         ))}
+        <button onClick={async () => {
+            const btn = document.getElementById("deck-btn-dash") as HTMLButtonElement | null
+            if (btn) { btn.disabled = true; btn.textContent = "Building…" }
+            try {
+              const res = await fetch(`/api/workspace/export-pptx`, {
+                method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+                body: JSON.stringify({ flavor:"DASHBOARD" }),
+              })
+              if (!res.ok) { alert("Deck generation failed"); return }
+              const blob = await res.blob()
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement("a"); a.href = url; a.download = "Portfolio_Dashboard_Deck.pptx"; a.click()
+              URL.revokeObjectURL(url)
+            } finally { if (btn) { btn.disabled = false; btn.textContent = "🎬 Deck" } }
+          }}
+          id="deck-btn-dash"
+          style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'9px 16px',
+            background:'#fff', color:'var(--text-2)', border:'1px solid var(--border)',
+            borderRadius:'var(--radius)', fontSize:13, fontWeight:500, cursor:'pointer',
+            fontFamily:'var(--font)' }}>
+          🎬 Deck
+        </button>
       </div>
 
       {/* ── KPI row ── */}

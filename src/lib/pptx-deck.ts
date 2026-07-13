@@ -263,3 +263,193 @@ export async function generateProjectDeck(data: DeckData, audience: DeckAudience
   const out = await (pptx as any).write({ outputType: "nodebuffer" })
   return out as Buffer
 }
+
+
+// ═══════════════════ Workspace-level decks ═══════════════════
+
+export type PortfolioFlavor = "DASHBOARD" | "EXECUTIVE"
+
+export interface PortfolioDeckData {
+  workspace: { name: string; primaryColor?: string | null; accentColor?: string | null }
+  projects: {
+    name: string; code: string; health?: string | null; status?: string | null
+    percentComplete?: number | null; budgetTotal?: any; budgetSpent?: any
+  }[]
+  risks: { title: string; score?: number | null; status?: string | null; isOpportunity?: boolean | null; projectName?: string }[]
+  milestones: { name: string; dueDate?: any; status?: string | null; projectName?: string }[]
+  decisions: { code?: string | null; title: string; projectName?: string }[]
+  pendingApprovals: number
+}
+
+export async function generatePortfolioDeck(data: PortfolioDeckData, flavor: PortfolioFlavor): Promise<Buffer> {
+  const P = hex(data.workspace.primaryColor)
+  const A = hex(data.workspace.accentColor, "F59E0B")
+  const hcol = (h?: string | null) => (h === "RED" ? RED : h === "AMBER" ? AMBER : GREEN)
+
+  const live = data.projects.filter(pr => !["CANCELLED", "ARCHIVED"].includes(String(pr.status)))
+  const totBAC = live.reduce((sm, pr) => sm + Number(pr.budgetTotal || 0), 0)
+  const totAC = live.reduce((sm, pr) => sm + Number(pr.budgetSpent || 0), 0)
+  const counts = { GREEN: 0, AMBER: 0, RED: 0 } as Record<string, number>
+  live.forEach(pr => { counts[String(pr.health || "GREEN")] = (counts[String(pr.health || "GREEN")] || 0) + 1 })
+
+  const pptx = new PptxGenJS()
+  pptx.defineLayout({ name: "WIDE", width: 13.33, height: 7.5 })
+  pptx.layout = "WIDE"
+  pptx.author = data.workspace.name
+  pptx.title = `${data.workspace.name} — ${flavor === "EXECUTIVE" ? "Executive Portfolio Review" : "Portfolio Dashboard"}`
+
+  const brandFooter = (s: any) => {
+    s.addShape("rect", { x: 0, y: 7.14, w: 13.33, h: 0.36, fill: { color: NAVY } })
+    s.addShape("rect", { x: 0.55, y: 7.24, w: 0.34, h: 0.16, fill: { color: A } })
+    s.addShape("rect", { x: 0.72, y: 7.28, w: 0.34, h: 0.16, fill: { color: P } })
+    s.addText(data.workspace.name, { x: 1.2, y: 7.14, w: 8, h: 0.36, fontSize: 9, color: "B8C4D0", valign: "middle" })
+    s.addText(fdate(new Date()), { x: 10.6, y: 7.14, w: 2.2, h: 0.36, fontSize: 9, color: "B8C4D0", align: "right", valign: "middle" })
+  }
+  const newSlide = (t?: string) => {
+    const s = pptx.addSlide()
+    if (t) {
+      s.addText(t, { x: 0.55, y: 0.32, w: 11, h: 0.6, fontSize: 24, bold: true, color: NAVY })
+      s.addShape("rect", { x: 0.57, y: 0.95, w: 1.5, h: 0.05, fill: { color: P } })
+    }
+    brandFooter(s)
+    return s
+  }
+
+  // ── Title ──
+  {
+    const s = pptx.addSlide()
+    s.background = { color: NAVY }
+    s.addShape("rect", { x: 0, y: 5.3, w: 13.33, h: 0.09, fill: { color: A } })
+    s.addText(data.workspace.name.toUpperCase(), { x: 0.7, y: 0.7, w: 12, h: 0.4, fontSize: 13, color: "9FB3C8", charSpacing: 3 })
+    s.addText(flavor === "EXECUTIVE" ? "Executive Portfolio Review" : "Portfolio Dashboard", { x: 0.7, y: 2.3, w: 12, h: 1.3, fontSize: 42, bold: true, color: WHITE })
+    s.addText(`${live.length} active project${live.length !== 1 ? "s" : ""}  ·  ${fmtK(totBAC)} portfolio budget`, { x: 0.7, y: 3.7, w: 12, h: 0.5, fontSize: 17, color: "B8C4D0" })
+    s.addText(fdate(new Date()), { x: 0.7, y: 5.6, w: 6, h: 0.4, fontSize: 13, color: "9FB3C8" })
+  }
+
+  // ── Portfolio KPIs (+ health pie on Executive) ──
+  {
+    const s = newSlide("Portfolio Health")
+    const kpis = [
+      { l: "ACTIVE PROJECTS", v: String(live.length), c: P },
+      { l: "ON TRACK", v: String(counts.GREEN || 0), c: GREEN },
+      { l: "AT RISK", v: String(counts.AMBER || 0), c: AMBER },
+      { l: "OFF TRACK", v: String(counts.RED || 0), c: RED },
+    ]
+    kpis.forEach((k, i) => {
+      const x = 0.55 + i * 3.15
+      s.addShape("roundRect", { x, y: 1.35, w: 2.9, h: 1.5, rectRadius: 0.08, fill: { color: "F8FAFC" }, line: { color: "E2E8F0", width: 1 } })
+      s.addShape("rect", { x, y: 1.35, w: 2.9, h: 0.07, fill: { color: k.c } })
+      s.addText(k.l, { x: x + 0.15, y: 1.52, w: 2.6, h: 0.3, fontSize: 10, bold: true, color: SLATE, charSpacing: 1 })
+      s.addText(k.v, { x: x + 0.15, y: 1.82, w: 2.6, h: 0.8, fontSize: 34, bold: true, color: k.c })
+    })
+    if (flavor === "EXECUTIVE" && live.length) {
+      s.addChart("pie" as any, [
+        { name: "Health", labels: ["On track", "At risk", "Off track"], values: [counts.GREEN || 0, counts.AMBER || 0, counts.RED || 0] },
+      ], { x: 0.55, y: 3.2, w: 5.4, h: 3.5, chartColors: [GREEN, AMBER, RED], showLegend: true, legendPos: "r", showValue: true, dataLabelFontSize: 12 } as any)
+      s.addText([
+        { text: `${fmtK(totAC)} `, options: { bold: true, color: P, fontSize: 28 } },
+        { text: `of ${fmtK(totBAC)} portfolio budget consumed (${totBAC > 0 ? Math.round((totAC / totBAC) * 100) : 0}%)`, options: { color: "334155", fontSize: 14 } },
+      ], { x: 6.4, y: 4.3, w: 6.3, h: 1 })
+    } else {
+      s.addText([
+        { text: `${fmtK(totAC)} `, options: { bold: true, color: P, fontSize: 30 } },
+        { text: `spent of ${fmtK(totBAC)} total budget`, options: { color: "334155", fontSize: 15 } },
+      ], { x: 0.55, y: 3.4, w: 12, h: 0.8 })
+    }
+  }
+
+  // ── Projects table ──
+  if (live.length) {
+    const s = newSlide(flavor === "EXECUTIVE" ? "Strategic Project Overview" : "Projects")
+    const hdr = (t: string, align: any = "left") => ({ text: t, options: { bold: true, color: WHITE, fill: { color: NAVY }, fontSize: 11, align } })
+    const rows: any[] = [[hdr("Project"), hdr("Code"), hdr("Progress", "center"), hdr("Budget", "right"), hdr("Used", "center"), hdr("Health", "center")]]
+    live.slice(0, 10).forEach(pr => {
+      const bt = Number(pr.budgetTotal || 0), bs = Number(pr.budgetSpent || 0)
+      rows.push([
+        { text: pr.name.slice(0, 40), options: { fontSize: 11, color: "334155" } },
+        { text: pr.code, options: { fontSize: 10, color: SLATE } },
+        { text: `${Math.round(pr.percentComplete || 0)}%`, options: { fontSize: 11, align: "center", color: NAVY, bold: true } },
+        { text: fmtK(bt), options: { fontSize: 11, align: "right", color: "334155" } },
+        { text: bt > 0 ? `${Math.round((bs / bt) * 100)}%` : "—", options: { fontSize: 11, align: "center", color: bs > bt ? RED : SLATE } },
+        { text: String(pr.health || "GREEN"), options: { fontSize: 10, bold: true, color: WHITE, fill: { color: hcol(pr.health) }, align: "center" } },
+      ])
+    })
+    s.addTable(rows, { x: 0.55, y: 1.35, w: 12.2, colW: [4.6, 1.5, 1.5, 1.9, 1.3, 1.4], rowH: 0.5, border: { color: "E2E8F0", pt: 1 }, valign: "middle" })
+  }
+
+  // ── Budget by project chart (Dashboard flavor) ──
+  if (flavor === "DASHBOARD" && live.some(pr => Number(pr.budgetTotal || 0) > 0)) {
+    const s = newSlide("Budget by Project")
+    const top = [...live].sort((a, b) => Number(b.budgetTotal || 0) - Number(a.budgetTotal || 0)).slice(0, 8)
+    s.addChart("bar" as any, [
+      { name: "Budget", labels: top.map(pr => pr.code), values: top.map(pr => Math.round(Number(pr.budgetTotal || 0))) },
+      { name: "Spent", labels: top.map(pr => pr.code), values: top.map(pr => Math.round(Number(pr.budgetSpent || 0))) },
+    ], { x: 0.55, y: 1.3, w: 12.2, h: 5.2, barDir: "col", barGrouping: "clustered", chartColors: [P, A], showLegend: true, legendPos: "t", catAxisLabelFontSize: 10, valAxisLabelFontSize: 10, dataLabelFormatCode: "#,##0" } as any)
+  }
+
+  // ── Top risks across portfolio ──
+  const topRisks = data.risks.filter(r => !r.isOpportunity && r.status !== "CLOSED")
+    .sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, flavor === "EXECUTIVE" ? 5 : 8)
+  if (topRisks.length) {
+    const s = newSlide("Top Portfolio Risks")
+    const rows: any[] = [[
+      { text: "Risk", options: { bold: true, color: WHITE, fill: { color: NAVY }, fontSize: 11 } },
+      { text: "Project", options: { bold: true, color: WHITE, fill: { color: NAVY }, fontSize: 11 } },
+      { text: "Score", options: { bold: true, color: WHITE, fill: { color: NAVY }, fontSize: 11, align: "center" } },
+    ]]
+    topRisks.forEach(r => {
+      const sc = r.score || 0
+      rows.push([
+        { text: r.title.slice(0, 70), options: { fontSize: 11, color: "334155" } },
+        { text: (r.projectName || "").slice(0, 24), options: { fontSize: 10, color: SLATE } },
+        { text: String(sc), options: { fontSize: 11, bold: true, color: WHITE, fill: { color: sc >= 15 ? RED : sc >= 9 ? AMBER : GREEN }, align: "center" } },
+      ])
+    })
+    s.addTable(rows, { x: 0.55, y: 1.35, w: 12.2, colW: [8, 2.9, 1.3], rowH: 0.48, border: { color: "E2E8F0", pt: 1 }, valign: "middle" })
+  }
+
+  // ── Governance (Executive flavor) ──
+  if (flavor === "EXECUTIVE") {
+    const s = newSlide("Governance & Decisions")
+    s.addShape("roundRect", { x: 0.55, y: 1.5, w: 4.2, h: 2.2, rectRadius: 0.08, fill: { color: data.pendingApprovals > 0 ? "FFFBEB" : "F8FAFC" }, line: { color: data.pendingApprovals > 0 ? A : "E2E8F0", width: 1 } })
+    s.addText(String(data.pendingApprovals), { x: 0.55, y: 1.7, w: 4.2, h: 1.1, fontSize: 48, bold: true, color: data.pendingApprovals > 0 ? A : SLATE, align: "center" })
+    s.addText("PROJECTS AWAITING APPROVAL", { x: 0.55, y: 2.9, w: 4.2, h: 0.4, fontSize: 10, bold: true, color: SLATE, align: "center", charSpacing: 1 })
+    s.addText("RECENT DECISIONS", { x: 5.3, y: 1.4, w: 6, h: 0.3, fontSize: 11, bold: true, color: P, charSpacing: 1 })
+    if (data.decisions.length) {
+      data.decisions.slice(0, 5).forEach((d, i) => {
+        s.addText([
+          { text: `${d.code || "DEC"}  `, options: { bold: true, color: P } },
+          { text: d.title.slice(0, 55), options: { color: "334155" } },
+          { text: d.projectName ? `  · ${d.projectName.slice(0, 18)}` : "", options: { color: SLATE, fontSize: 10 } },
+        ], { x: 5.3, y: 1.8 + i * 0.55, w: 7.4, h: 0.5, fontSize: 12 })
+      })
+    } else {
+      s.addText("No decisions recorded yet.", { x: 5.3, y: 1.8, w: 7, h: 0.4, fontSize: 12, color: SLATE, italic: true })
+    }
+  }
+
+  // ── Upcoming milestones ──
+  {
+    const s = newSlide(flavor === "EXECUTIVE" ? "Outlook — Next 60 Days" : "Milestones — Next 30 Days")
+    const horizon = flavor === "EXECUTIVE" ? 60 : 30
+    const upcoming = data.milestones
+      .filter(m => m.status !== "ACHIEVED" && m.dueDate && +new Date(m.dueDate) > Date.now() && +new Date(m.dueDate) < Date.now() + horizon * 86400000)
+      .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate)).slice(0, 8)
+    if (upcoming.length) {
+      upcoming.forEach((m, i) => {
+        s.addShape("ellipse", { x: 0.6, y: 1.62 + i * 0.58, w: 0.14, h: 0.14, fill: { color: A } })
+        s.addText([
+          { text: `${fdate(m.dueDate)}  —  `, options: { bold: true, color: NAVY } },
+          { text: m.name.slice(0, 60), options: { color: "334155" } },
+          { text: m.projectName ? `  · ${m.projectName.slice(0, 22)}` : "", options: { color: SLATE, fontSize: 10 } },
+        ], { x: 0.9, y: 1.46 + i * 0.58, w: 12, h: 0.5, fontSize: 13 })
+      })
+    } else {
+      s.addText(`No milestones due in the next ${horizon} days.`, { x: 0.55, y: 1.6, w: 11, h: 0.4, fontSize: 12, color: SLATE, italic: true })
+    }
+    s.addText("Generated by FlowSync PM — industry-standard PM practices", { x: 0.55, y: 6.3, w: 12, h: 0.4, fontSize: 10, color: SLATE, italic: true })
+  }
+
+  const out = await (pptx as any).write({ outputType: "nodebuffer" })
+  return out as Buffer
+}
