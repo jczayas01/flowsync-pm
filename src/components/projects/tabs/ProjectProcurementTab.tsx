@@ -46,6 +46,51 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
   const [error, setError]       = useState("")
   const [deleting, setDeleting] = useState<string|null>(null)
   const [expanded, setExpanded] = useState<string|null>(null)
+  const [selectedVendor, setSelectedVendor] = useState<string|null>(null)
+  const [editItem, setEditItem]   = useState<any|null>(null)
+  const [editF, setEditF]         = useState<any>({})
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  function openEditItem(it: any) {
+    setEditItem(it)
+    setEditF({
+      title: it.title||"", vendorName: it.vendorName||"", vendorContact: it.vendorContact||"",
+      vendorEmail: it.vendorEmail||"", type: it.type||"OTHER", status: it.status||"DRAFT",
+      poNumber: it.poNumber||"", contractRef: it.contractRef||"",
+      value: it.value != null ? String(it.value) : "", currency: it.currency||"USD",
+      startDate: it.startDate ? String(it.startDate).slice(0,10) : "",
+      endDate:   it.endDate   ? String(it.endDate).slice(0,10)   : "",
+      deliverables: it.deliverables||"", notes: it.notes||"",
+    })
+  }
+
+  async function patchItem(itemId: string, body: any) {
+    const res = await fetch(`/api/projects/${projectId}/procurement/${itemId}`, {
+      method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Update failed (${res.status})`); return false }
+    router.refresh()
+    return true
+  }
+
+  async function saveItemEdit() {
+    if (!editF.title?.trim() || !editF.vendorName?.trim() || savingEdit) return
+    setSavingEdit(true)
+    try {
+      const okd = await patchItem(editItem.id, {
+        title: editF.title.trim(), vendorName: editF.vendorName.trim(),
+        vendorContact: editF.vendorContact||null, vendorEmail: editF.vendorEmail||"",
+        type: editF.type, status: editF.status,
+        poNumber: editF.poNumber||null, contractRef: editF.contractRef||null,
+        value: editF.value !== "" ? Number(editF.value)||0 : null,
+        currency: editF.currency||"USD",
+        startDate: editF.startDate||null, endDate: editF.endDate||null,
+        deliverables: editF.deliverables||null, notes: editF.notes||null,
+      })
+      if (okd) setEditItem(null)
+    } finally { setSavingEdit(false) }
+  }
 
   const [form, setForm] = useState({
     vendorName:"", vendorContact:"", vendorEmail:"",
@@ -334,6 +379,81 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
           </div>
         )}
 
+        {/* ── Summary strip ── */}
+        {items.length > 0 && (() => {
+          const totalVal = items.reduce((a,i)=>a+(Number(i.value)||0), 0)
+          const nActive = items.filter(i=>i.status==="ACTIVE").length
+          const nDraft  = items.filter(i=>i.status==="DRAFT").length
+          const nExp    = items.filter(i=>i.endDate && i.status==="ACTIVE" &&
+            (new Date(i.endDate).getTime()-Date.now())/86400000 <= 30 &&
+            (new Date(i.endDate).getTime()-Date.now()) > 0).length
+          return (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",
+              gap:10, marginBottom:16 }}>
+              {[
+                { l:"Total contracted", v: fmtCurrency(totalVal), c:"var(--steel)" },
+                { l:"Active",  v:String(nActive), c:"#059669" },
+                { l:"Draft — needs review", v:String(nDraft), c: nDraft>0?"#D97706":"var(--text-3)" },
+                { l:"Expiring ≤30d", v:String(nExp), c: nExp>0?"var(--red)":"var(--text-3)" },
+              ].map((k,i)=>(
+                <div key={i} style={{ background:"#fff", border:"1px solid var(--border)",
+                  borderRadius:"var(--radius)", padding:"10px 14px" }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)",
+                    textTransform:"uppercase", letterSpacing:".06em", marginBottom:2 }}>{k.l}</div>
+                  <div style={{ fontSize:17, fontWeight:700, color:k.c }}>{k.v}</div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
+        {/* ── Vendor directory (index cards) ── */}
+        {items.length > 0 && (() => {
+          const vendors = Object.values(items.reduce((acc: any, i: any) => {
+            const k = i.vendorName || "Unknown vendor"
+            acc[k] = acc[k] || { name:k, contact:i.vendorContact, email:i.vendorEmail, count:0, total:0 }
+            acc[k].count++; acc[k].total += Number(i.value)||0
+            if (!acc[k].contact && i.vendorContact) acc[k].contact = i.vendorContact
+            if (!acc[k].email && i.vendorEmail) acc[k].email = i.vendorEmail
+            return acc
+          }, {})) as any[]
+          return (
+            <div style={{ marginBottom:18 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)",
+                textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>
+                Vendors ({vendors.length})
+                {selectedVendor && (
+                  <button onClick={()=>setSelectedVendor(null)}
+                    style={{ marginLeft:10, padding:"2px 8px", fontSize:10, background:"#fff",
+                      border:"1px solid var(--border)", borderRadius:10, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>✕ Show all</button>
+                )}
+              </div>
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                {vendors.map((v:any) => (
+                  <div key={v.name} onClick={()=>setSelectedVendor(sv=>sv===v.name?null:v.name)}
+                    style={{ width:220, background: selectedVendor===v.name?"#EFF6FF":"#fff",
+                      border:`1px solid ${selectedVendor===v.name?"var(--steel)":"var(--border)"}`,
+                      borderTop:`3px solid ${selectedVendor===v.name?"var(--steel)":"#CBD5E1"}`,
+                      borderRadius:"var(--radius)", padding:"10px 14px", cursor:"pointer" }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:"var(--text)",
+                      overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.name}</div>
+                    {(v.contact || v.email) && (
+                      <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {v.contact}{v.contact && v.email ? " · " : ""}{v.email}
+                      </div>
+                    )}
+                    <div style={{ fontSize:11, color:"var(--text-2)", marginTop:6, fontWeight:600 }}>
+                      {v.count} agreement{v.count!==1?"s":""}{v.total>0 ? ` · ${fmtCurrency(v.total)}` : ""}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Items list */}
         {items.length === 0 && !showForm ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
@@ -354,7 +474,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
           </div>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {items.map(item => {
+            {(selectedVendor ? items.filter(i=>i.vendorName===selectedVendor) : items).map(item => {
               const tc = TYPE_CFG[item.type]   || TYPE_CFG.OTHER
               const sc = STATUS_CFG[item.status] || STATUS_CFG.ACTIVE
               const isExpanded = expanded === item.id
@@ -470,7 +590,73 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                           </a>
                         </div>
                       )}
-                      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                      {editItem?.id === item.id && (
+                        <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+                          borderRadius:8, padding:12, marginBottom:12, display:"flex",
+                          flexDirection:"column", gap:8 }}>
+                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                            <input style={inp} placeholder="Title *" value={editF.title}
+                              onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))} />
+                            <input style={inp} placeholder="Vendor *" value={editF.vendorName}
+                              onChange={e=>setEditF((f:any)=>({...f,vendorName:e.target.value}))} />
+                            <input style={inp} placeholder="Contact person" value={editF.vendorContact}
+                              onChange={e=>setEditF((f:any)=>({...f,vendorContact:e.target.value}))} />
+                            <input style={inp} placeholder="Vendor email" value={editF.vendorEmail}
+                              onChange={e=>setEditF((f:any)=>({...f,vendorEmail:e.target.value}))} />
+                            <select style={{...inp,cursor:"pointer"}} value={editF.type}
+                              onChange={e=>setEditF((f:any)=>({...f,type:e.target.value}))}>
+                              {Object.entries(TYPE_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
+                            </select>
+                            <select style={{...inp,cursor:"pointer"}} value={editF.status}
+                              onChange={e=>setEditF((f:any)=>({...f,status:e.target.value}))}>
+                              {Object.entries(STATUS_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
+                            </select>
+                            <input style={inp} placeholder="PO number" value={editF.poNumber}
+                              onChange={e=>setEditF((f:any)=>({...f,poNumber:e.target.value}))} />
+                            <input style={inp} placeholder="Contract ref" value={editF.contractRef}
+                              onChange={e=>setEditF((f:any)=>({...f,contractRef:e.target.value}))} />
+                            <input style={inp} type="number" placeholder="Value" value={editF.value}
+                              onChange={e=>setEditF((f:any)=>({...f,value:e.target.value}))} />
+                            <input style={inp} placeholder="Currency" value={editF.currency}
+                              onChange={e=>setEditF((f:any)=>({...f,currency:e.target.value}))} />
+                            <input style={inp} type="date" value={editF.startDate}
+                              onChange={e=>setEditF((f:any)=>({...f,startDate:e.target.value}))} />
+                            <input style={inp} type="date" value={editF.endDate}
+                              onChange={e=>setEditF((f:any)=>({...f,endDate:e.target.value}))} />
+                          </div>
+                          <textarea style={{...inp,resize:"vertical"}} rows={2} placeholder="Key deliverables"
+                            value={editF.deliverables}
+                            onChange={e=>setEditF((f:any)=>({...f,deliverables:e.target.value}))} />
+                          <div style={{ display:"flex", gap:8 }}>
+                            <button onClick={saveItemEdit} disabled={savingEdit||!editF.title?.trim()||!editF.vendorName?.trim()}
+                              style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                                borderRadius:"var(--radius)", fontSize:12, fontWeight:600, fontFamily:"var(--font)",
+                                cursor: savingEdit?"wait":"pointer" }}>
+                              {savingEdit?"Saving…":"💾 Save changes"}
+                            </button>
+                            <button onClick={()=>setEditItem(null)}
+                              style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
+                                borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                                fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ display:"flex", justifyContent:"flex-end", gap:8 }}>
+                        {can("projects:edit") && item.status === "DRAFT" && (
+                          <button onClick={()=>patchItem(item.id, { status:"ACTIVE" })}
+                            title="Promote this draft to an active agreement"
+                            style={{ padding:"5px 12px", background:"#ECFDF5",
+                              border:"1px solid #A7F3D0", borderRadius:"var(--radius)",
+                              fontSize:11, color:"#059669", fontWeight:600, cursor:"pointer",
+                              fontFamily:"var(--font)" }}>▶ Activate</button>
+                        )}
+                        {can("projects:edit") && (
+                          <button onClick={()=>openEditItem(item)}
+                            style={{ padding:"5px 12px", background:"#fff",
+                              border:"1px solid var(--border)", borderRadius:"var(--radius)",
+                              fontSize:11, color:"var(--text-2)", cursor:"pointer",
+                              fontFamily:"var(--font)" }}>✏️ Edit</button>
+                        )}
                         <button onClick={()=>del(item.id)} disabled={deleting===item.id}
                           style={{ padding:"5px 12px", background:"#FEF2F2",
                             border:"1px solid #FECACA", borderRadius:"var(--radius)",
