@@ -50,6 +50,7 @@ Rules:
 - phases: use the document's own phase/stage structure if present. If none, derive 3-6 logical phases from section headings. Every task's phaseName must exactly match a phase name or be null.
 - Limits: phases ≤ 8, tasks ≤ 60, milestones ≤ 12, risks ≤ 15, budget ≤ 20. Prefer the most important items when trimming.
 - Deduplicate: a milestone should not also appear as a task; a phase should not also appear as a task.
+- FIDELITY: when the document contains an explicit phase list or schedule table, use EXACTLY those phases — never add, split, or rename phases beyond it. When the document contains a work-plan/task table, extract EXACTLY those rows as the tasks — do not additionally convert milestones, deliverables, assumptions, scope bullets, or budget lines into tasks.
 - Keep original language of the document for names and titles.`
 
 export async function POST(req: NextRequest) {

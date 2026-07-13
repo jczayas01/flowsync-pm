@@ -24,6 +24,24 @@ const AUDIENCES = [
   { value:"PMO",                label:"PMO",                icon:"📐" },
 ]
 
+function coerceReport(r: any) {
+  if (!r || typeof r !== "object") return r
+  const H: Record<string, string> = {
+    GREEN:"GREEN", YELLOW:"YELLOW", AMBER:"YELLOW", RED:"RED",
+    VERDE:"GREEN", AMARILLO:"YELLOW", "ÁMBAR":"YELLOW", AMBAR:"YELLOW", ROJO:"RED",
+  }
+  const out: any = { ...r }
+  if (out.overallHealth !== undefined)
+    out.overallHealth = H[String(out.overallHealth).toUpperCase().trim()] || "GREEN"
+  for (const k of Object.keys(out)) {
+    const v = out[k]
+    if (v != null && typeof v === "object" && !Array.isArray(v) &&
+        /^(accomplishments|planned|decisions|strategic|critical|recommended|corrective)/i.test(k))
+      out[k] = Object.values(v)
+  }
+  return out
+}
+
 const HEALTH_COLOR: Record<string,string> = {
   GREEN:"#059669", AMBER:"#D97706", YELLOW:"#D97706", RED:"#DC2626",
 }
@@ -541,7 +559,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
       })
       const d = await res.json()
       if (!res.ok || !d.success) { setGenError(d.error||"Generation failed"); return }
-      setGeneratedReport(d.report); setSavedToHistory(false); setHistoryError(""); setResultOrigin("generate")
+      setGeneratedReport(coerceReport(d.report)); setSavedToHistory(false); setHistoryError(""); setResultOrigin("generate")
       setGeneratedAt(d.generatedAt)
       setView("result")
     } catch { setGenError("Network error") }

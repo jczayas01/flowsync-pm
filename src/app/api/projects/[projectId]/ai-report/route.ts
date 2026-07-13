@@ -206,5 +206,24 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   try { report = JSON.parse(rawText.replace(/```json\n?|```/g,"").trim()) }
   catch { return NextResponse.json({ error:"Failed to parse AI response", raw:rawText }, { status:502 }) }
 
+  // Normalize shape defensively — a styled/translated response must never break the UI contract
+  const S = (v: any) => (v == null ? "" : String(v))
+  const A = (v: any) => (Array.isArray(v) ? v : [])
+  const H: Record<string, string> = {
+    GREEN:"GREEN", YELLOW:"YELLOW", AMBER:"YELLOW", RED:"RED",
+    VERDE:"GREEN", AMARILLO:"YELLOW", "ÁMBAR":"YELLOW", AMBAR:"YELLOW", ROJO:"RED",
+  }
+  if (report && typeof report === "object") {
+    if (report.overallHealth !== undefined)
+      report.overallHealth = H[S(report.overallHealth).toUpperCase().trim()] || "GREEN"
+    for (const k of Object.keys(report)) {
+      const v = (report as any)[k]
+      if (Array.isArray(v)) continue
+      // string-array fields the UI iterates must be arrays
+      if (/^(accomplishments|planned|decisions|strategic|critical|recommended|corrective)/i.test(k) && v != null && typeof v === "object")
+        (report as any)[k] = A(Object.values(v))
+    }
+  }
+
   return NextResponse.json({ success:true, reportType, audience, generatedAt:new Date().toISOString(), report })
 }
