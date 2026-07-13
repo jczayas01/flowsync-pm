@@ -29,6 +29,7 @@ const TABS = [
   { slug:"governance",  label:"Governance",  icon:"📐" },
   { slug:"docs",        label:"Docs",        icon:"📁" },
   { slug:"reports",     label:"Reports",     icon:"📈" },
+  { slug:"presentation",label:"Present",     icon:"🎬" },
   { slug:"closure",     label:"Closure",     icon:"🏁" },
 ]
 
