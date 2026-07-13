@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
 
-const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED","BLOCKED"]
+const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"]
 const PRIORITY_OPTS = ["CRITICAL","HIGH","MEDIUM","LOW"]
 
 const STATUS_COLORS: Record<string,string> = {

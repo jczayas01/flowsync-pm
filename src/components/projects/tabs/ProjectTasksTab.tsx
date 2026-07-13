@@ -12,10 +12,11 @@ import { computeCriticalPath } from "@/lib/projects/critical-path"
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const STATUS_OPTS   = ["TODO","IN_PROGRESS","IN_REVIEW","DONE","BLOCKED","CANCELLED"]
+const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"]
 const PRIORITY_OPTS = ["CRITICAL","HIGH","MEDIUM","LOW"]
 
 const STATUS_COLOR: Record<string,{bg:string;text:string;label:string}> = {
+  BACKLOG:     { bg:"#F8FAFC", text:"#94A3B8", label:"Backlog"     },
   TODO:        { bg:"#F1F5F9", text:"#64748B", label:"To Do"       },
   IN_PROGRESS: { bg:"#EFF6FF", text:"#1B6CA8", label:"In Progress" },
   IN_REVIEW:   { bg:"#F5F3FF", text:"#7C3AED", label:"In Review"   },
@@ -43,7 +44,7 @@ function isOverdue(t: any) {
 }
 
 // ── Column sorting helpers ─────────────────────────────────────────────────
-const SORT_STATUS   = ["TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"]
+const SORT_STATUS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"]
 const SORT_PRIORITY = ["CRITICAL","HIGH","MEDIUM","LOW"]
 const SORTABLE_COLS = ["Task Name","Status","Priority","Assignee","Duration","Start","Finish","% Done"]
 function assigneeName(t:any): string {
@@ -1445,7 +1446,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             onChange={e=>saveCell("status", e.target.value)}
             onBlur={cancelEdit}
             onKeyDown={e=>e.key==="Escape"&&cancelEdit()}>
-            {["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","BLOCKED","CANCELLED"].map(s=>(
+            {["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"].map(s=>(
               <option key={s} value={s}>{s.replace(/_/g," ")}</option>
             ))}
           </select>
