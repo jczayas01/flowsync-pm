@@ -1,7 +1,7 @@
 "use client"
 // src/components/projects/tabs/ProjectReportsTab.tsx
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 const REPORT_TYPES = [
@@ -482,6 +482,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   }
   const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())
   const [includeWeekDocs, setIncludeWeekDocs] = useState(true)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [projDocs, setProjDocs] = useState<any[]|null>(null)
   useEffect(() => {
     let live = true
@@ -566,7 +567,6 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   const splitLines = (s?: string | null) =>
     (s || "").split("\n").map(t => t.trim()).filter(Boolean)
 
-  const [downloadingPdf, setDownloadingPdf] = useState(false)
   async function downloadPdf() {
     if (!generatedReport) return
     setDownloadingPdf(true)

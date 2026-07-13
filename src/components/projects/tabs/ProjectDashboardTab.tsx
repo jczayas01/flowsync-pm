@@ -182,9 +182,25 @@ function MethodologyPanelWaterfall({ phases, milestones, tasks }: {
     ON_HOLD:     { color:"#F59E0B", bg:"#FFFBEB", label:"On Hold"     },
   }
 
-  const currentPhase = phases.find(p => p.status==="IN_PROGRESS")
-  const completedPhases = phases.filter(p => p.status==="COMPLETED").length
-  const phasePct = phases.length > 0 ? Math.round((completedPhases/phases.length)*100) : 0
+  // Derive each phase's progress from its tasks (matches Gantt & Tasks tab)
+  const phaseInfo = new Map<string, { pct: number; status: string }>()
+  for (const p of phases) {
+    const pts = tasks.filter((t: any) => t.phaseId === p.id)
+    const pct = pts.length
+      ? Math.round(pts.reduce((sm: number, t: any) => sm + (t.percentComplete || 0), 0) / pts.length)
+      : 0
+    const status = p.status === "ON_HOLD" ? "ON_HOLD"
+      : pts.length && pct === 100 ? "COMPLETED"
+      : pct > 0 ? "IN_PROGRESS"
+      : "PENDING"
+    phaseInfo.set(p.id, { pct, status })
+  }
+  const currentPhase = phases.find(p => phaseInfo.get(p.id)?.status === "IN_PROGRESS")
+  const completedPhases = phases.filter(p => phaseInfo.get(p.id)?.status === "COMPLETED").length
+  const withTasks = phases.filter(p => tasks.some((t: any) => t.phaseId === p.id))
+  const phasePct = withTasks.length
+    ? Math.round(withTasks.reduce((sm, p) => sm + (phaseInfo.get(p.id)?.pct || 0), 0) / withTasks.length)
+    : 0
 
   // Next phase gate milestone
   const nextGate = milestones.find(m =>
@@ -216,7 +232,8 @@ function MethodologyPanelWaterfall({ phases, milestones, tasks }: {
       {/* Phase timeline */}
       <div style={{ display:"flex", gap:4, marginBottom:12, flexWrap:"wrap" }}>
         {phases.map((p, i) => {
-          const sc = PHASE_STATUS[p.status] || PHASE_STATUS.PENDING
+          const info = phaseInfo.get(p.id) || { pct: 0, status: "PENDING" }
+          const sc = PHASE_STATUS[info.status] || PHASE_STATUS.PENDING
           const isCurrent = p.id === currentPhase?.id
           return (
             <div key={p.id} style={{ flex:1, minWidth:80, position:"relative" }}>
@@ -230,11 +247,11 @@ function MethodologyPanelWaterfall({ phases, milestones, tasks }: {
                 borderTop:`3px solid ${sc.color}` }}>
                 <div style={{ fontSize:10, fontWeight:700,
                   color:isCurrent?"#fff":sc.color, marginBottom:2 }}>
-                  {p.status==="COMPLETED"?"✓ ":""}
+                  {info.status==="COMPLETED"?"✓ ":""}
                   {isCurrent?"▶ ":""}{p.name?.slice(0,18)}{p.name?.length>18?"…":""}
                 </div>
                 <div style={{ fontSize:9, color:isCurrent?"rgba(255,255,255,.7)":sc.color,
-                  fontWeight:600 }}>{sc.label}</div>
+                  fontWeight:600 }}>{sc.label}{info.pct > 0 && info.pct < 100 ? ` · ${info.pct}%` : ""}</div>
                 {/* Phase gate indicator */}
                 {p.gateApproved && (
                   <div style={{ fontSize:8, color:"#059669", fontWeight:700, marginTop:2 }}>

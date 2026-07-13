@@ -503,7 +503,24 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
           </div>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {(selectedVendor ? items.filter(i=>i.vendorName===selectedVendor) : items).map(item => {
+            {(() => {
+              const visible = selectedVendor ? items.filter((i:any)=>i.vendorName===selectedVendor) : items
+              const gm: Record<string, any[]> = {}
+              for (const it of visible) { const k = it.vendorName || "Unknown vendor"; (gm[k] = gm[k] || []).push(it) }
+              const groups = Object.entries(gm).sort((a,b) =>
+                b[1].reduce((sm:number,i:any)=>sm+(Number(i.value)||0),0) -
+                a[1].reduce((sm:number,i:any)=>sm+(Number(i.value)||0),0))
+              return groups.map(([vname, gitems]) => (
+                <div key={vname}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px",
+                    background:"var(--surface)", borderTop:"1px solid var(--border)",
+                    borderBottom:"1px solid var(--border)", marginTop:10 }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:"var(--text)" }}>🏢 {vname}</span>
+                    <span style={{ fontSize:11, color:"var(--text-3)" }}>
+                      {gitems.length} agreement{gitems.length !== 1 ? "s" : ""} · {fmtCurrency(gitems.reduce((sm:number,i:any)=>sm+(Number(i.value)||0),0))}
+                    </span>
+                  </div>
+                  {gitems.map(item => {
               const tc = TYPE_CFG[item.type]   || TYPE_CFG.OTHER
               const sc = STATUS_CFG[item.status] || STATUS_CFG.ACTIVE
               const isExpanded = expanded === item.id
@@ -726,6 +743,9 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 </div>
               )
             })}
+                </div>
+              ))
+            })()}
           </div>
         )}
       </div>
