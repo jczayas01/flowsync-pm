@@ -6,6 +6,7 @@
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { Avatar } from "@/components/ui"
 
 const TYPE_CFG: Record<string,{label:string;color:string;bg:string}> = {
@@ -147,6 +148,50 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
               fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
             {showForm ? "Cancel" : "+ Add vendor/contract"}
           </button>
+          <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain={"procurement" as any}
+            commitLabel="to procurement"
+            renderCandidate={(c: any) => (
+              <div>
+                <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</span>
+                  <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:4,
+                    background:"var(--surface)", border:"1px solid var(--border)", color:"var(--text-3)" }}>
+                    {c.type || "OTHER"}
+                  </span>
+                  {Number(c.value) > 0 && (
+                    <span style={{ fontSize:12, fontWeight:700, color:"var(--steel)" }}>
+                      {Number(c.value).toLocaleString("en-US", { style:"currency", currency: (c.currency && String(c.currency).length===3 ? c.currency : "USD"), maximumFractionDigits:0 })}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize:12, color:"var(--text-2)" }}>
+                  {c.vendorName}{c.poNumber ? ` · ${c.poNumber}` : ""}{c.startDate ? ` · ${c.startDate}${c.endDate ? " → " + c.endDate : ""}` : ""}
+                </div>
+              </div>
+            )}
+            commit={async (chosen: any[]) => {
+              const TYPES = ["CONTRACT","PURCHASE_ORDER","SOW","MSA","NDA","OTHER"]
+              const iso = (v: any) => /^\d{4}-\d{2}-\d{2}$/.test(String(v||"")) ? String(v) : null
+              const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/procurement`, {
+                method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+                body: JSON.stringify({
+                  title: String(c.title||"").slice(0,300),
+                  vendorName: String(c.vendorName||"Unknown vendor").slice(0,200),
+                  vendorContact: c.vendorContact ? String(c.vendorContact).slice(0,200) : null,
+                  type: TYPES.includes(c.type) ? c.type : "OTHER",
+                  poNumber: c.poNumber ? String(c.poNumber).slice(0,100) : null,
+                  contractRef: c.contractRef ? String(c.contractRef).slice(0,100) : null,
+                  value: Number(c.value) > 0 ? Number(c.value) : null,
+                  currency: c.currency && String(c.currency).length === 3 ? String(c.currency).toUpperCase() : "USD",
+                  startDate: iso(c.startDate),
+                  endDate: iso(c.endDate),
+                  status: "DRAFT",
+                  deliverables: c.deliverables ? String(c.deliverables).slice(0,3000) : null,
+                  notes: c.evidence ? `Source: ${c.sourceDoc} — "${String(c.evidence).slice(0,200)}"` : null,
+                }),
+              })))
+              return rs.filter(r => !r.ok).length
+            }} />
         </div>
       </div>
 

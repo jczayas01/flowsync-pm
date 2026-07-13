@@ -49,6 +49,13 @@ const DOMAINS: Record<string, DomainCfg> = {
     spec: `{"candidates":[{"title":"short requirement statement (max 150 chars)","description":"fuller description if the document gives one","type":"FUNCTIONAL|NON_FUNCTIONAL|BUSINESS|TECHNICAL|REGULATORY|OTHER","priority":"CRITICAL|HIGH|MEDIUM|LOW","acceptanceCriteria":"measurable criteria if stated, else empty string","sourceDoc":"document name","evidence":"short phrase from the document (max 160 chars)"}]}`,
     rules: `A REQUIREMENT is a capability, constraint, or condition the deliverable must satisfy ("must", "shall", "needs to", "required"). Write each as a single testable statement.`,
   },
+  procurement: {
+    existing: async (projectId) =>
+      (await db.procurementItem.findMany({ where: { projectId }, select: { title: true, vendorName: true } }).catch(() => []))
+        .map((r: any) => `${r.title} (${r.vendorName})`),
+    spec: `{"candidates":[{"title":"short name of the agreement/document (max 150 chars)","vendorName":"the vendor/supplier/counterparty name","vendorContact":"contact person if stated, else null","type":"CONTRACT|PURCHASE_ORDER|SOW|MSA|NDA|OTHER","poNumber":"PO number if stated, else null","contractRef":"contract/reference number if stated, else null","value":12345.67,"currency":"USD or the stated currency code","startDate":"yyyy-mm-dd or null","endDate":"yyyy-mm-dd or null","deliverables":"short summary of deliverables/scope if stated, else null","sourceDoc":"document name","evidence":"short phrase with the key detail (max 160 chars)"}]}`,
+    rules: `Extract PROCUREMENT records: purchase orders, contracts, invoices, statements of work, master agreements, NDAs — any commercial document binding the project to a vendor. Invoices map to type OTHER with the invoice number in poNumber. value must be a plain number when a monetary amount is stated, otherwise null — never invent amounts. Dates strictly yyyy-mm-dd or null.`,
+  },
   lessons: {
     existing: async (projectId) =>
       (await db.lessonLearned.findMany({ where: { projectId }, select: { title: true } }).catch(() => []))
