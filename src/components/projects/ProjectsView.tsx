@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/ProjectsView.tsx
+import { ImportProjectModal } from "@/components/projects/ImportProjectModal"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -15,6 +16,7 @@ const METHOD_COLORS: Record<string,string> = {
 export function ProjectsView({ projects, workspaceId, userRole, filters }: {
   projects:any[]; workspaceId:string; userRole:string; filters:any
 }) {
+  const [importOpen, setImportOpen] = useState(false)
   const router  = useRouter()
   const [view, setView] = useState<"grid"|"list">("list")
   const canCreate = !["VIEWER","CLIENT","MEMBER"].includes(userRole)
@@ -49,6 +51,15 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                 textDecoration:"none", fontSize:13, fontWeight:500 }}>
               + New project
             </Link>
+          )}
+          {canCreate && (
+          <button onClick={() => setImportOpen(true)}
+            style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"9px 16px",
+              background:"#fff", color:"var(--text-2)", border:"1px solid var(--border)",
+              borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
+              fontFamily:"var(--font)" }}>
+            📄 Import from plan
+          </button>
           )}
         </div>
       </div>
@@ -192,6 +203,9 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
           </div>
         )}
       </div>
+      {importOpen && (
+        <ImportProjectModal workspaceId={workspaceId} onClose={() => setImportOpen(false)} />
+      )}
     </div>
   )
 }
