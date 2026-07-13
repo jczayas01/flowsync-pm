@@ -1272,6 +1272,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
   const [editingCell, setEditingCell] = useState<string|null>(null)
   const [menuUp, setMenuUp] = useState(false)
   const [cellValue,   setCellValue]   = useState<any>(null)
+  const dateCommitTimer = useRef<any>(null)
   const [saving,      setSaving]      = useState(false)
 
   const isDone       = t.status === "DONE"
@@ -1572,9 +1573,17 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", ...ring("startDate") }} onClick={() => onFocusCell?.("startDate")}>
         {editingCell==="startDate" ? (
           <input autoFocus type="date" style={cellInp} value={cellValue}
-            onChange={e=>{ const v=e.target.value; setCellValue(v); if(v) saveCell("startDate",v) }}
-            onBlur={()=>cellValue ? saveCell("startDate",cellValue) : cancelEdit()}
-            onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("startDate",cellValue) }} />
+            onChange={e=>{ const v=e.target.value; setCellValue(v);
+              if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
+              if (v) dateCommitTimer.current = setTimeout(()=>saveCell("startDate", v), 700) }}
+            onBlur={e=>{ const el=e.currentTarget
+              setTimeout(()=>{
+                if (document.activeElement === el) return
+                if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
+                cellValue ? saveCell("startDate", cellValue) : cancelEdit()
+              }, 160) }}
+            onKeyDown={e=>{ if(e.key==="Escape"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); cancelEdit() }
+              if(e.key==="Enter"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); saveCell("startDate", cellValue) } }} />
         ) : (
           <span onClick={() => !editingCell && startEdit("startDate", toDateInput(t.startDate))}
             title="Click to edit"
@@ -1588,9 +1597,17 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       <td style={{ padding:"4px 8px", ...ring("finishDate") }} onClick={() => onFocusCell?.("finishDate")}>
         {editingCell==="finishDate" ? (
           <input autoFocus type="date" style={cellInp} value={cellValue}
-            onChange={e=>{ const v=e.target.value; setCellValue(v); if(v) saveCell("dueDate",v) }}
-            onBlur={()=>cellValue ? saveCell("dueDate",cellValue) : cancelEdit()}
-            onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("dueDate",cellValue) }} />
+            onChange={e=>{ const v=e.target.value; setCellValue(v);
+              if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
+              if (v) dateCommitTimer.current = setTimeout(()=>saveCell("dueDate", v), 700) }}
+            onBlur={e=>{ const el=e.currentTarget
+              setTimeout(()=>{
+                if (document.activeElement === el) return
+                if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
+                cellValue ? saveCell("dueDate", cellValue) : cancelEdit()
+              }, 160) }}
+            onKeyDown={e=>{ if(e.key==="Escape"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); cancelEdit() }
+              if(e.key==="Enter"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); saveCell("dueDate", cellValue) } }} />
         ) : (
           <span onClick={() => !editingCell && startEdit("finishDate", toDateInput(t.dueDate))}
             title="Click to edit"
