@@ -658,6 +658,8 @@ model ProcurementItem {
   vendorName    String
   vendorContact String?
   vendorEmail   String?
+  vendorPhone   String?
+  vendorLocation String?
   type          String
   title         String
   poNumber      String?

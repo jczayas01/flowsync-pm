@@ -11,6 +11,8 @@ const schema = z.object({
   vendorName:    z.string().min(1).max(200),
   vendorContact: z.string().max(200).optional().nullable(),
   vendorEmail:   z.string().email().optional().nullable().or(z.literal("")),
+  vendorPhone:   z.string().max(50).optional().nullable(),
+  vendorLocation: z.string().max(300).optional().nullable(),
   type:          z.enum(["CONTRACT","PURCHASE_ORDER","SOW","MSA","NDA","OTHER"]).default("CONTRACT"),
   title:         z.string().min(1).max(300),
   poNumber:      z.string().max(100).optional().nullable(),

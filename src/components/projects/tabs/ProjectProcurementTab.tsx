@@ -55,7 +55,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     setEditItem(it)
     setEditF({
       title: it.title||"", vendorName: it.vendorName||"", vendorContact: it.vendorContact||"",
-      vendorEmail: it.vendorEmail||"", type: it.type||"OTHER", status: it.status||"DRAFT",
+      vendorEmail: it.vendorEmail||"", vendorPhone: it.vendorPhone||"", vendorLocation: it.vendorLocation||"",
+      ownerId: it.ownerId||"", type: it.type||"OTHER", status: it.status||"DRAFT",
       poNumber: it.poNumber||"", contractRef: it.contractRef||"",
       value: it.value != null ? String(it.value) : "", currency: it.currency||"USD",
       startDate: it.startDate ? String(it.startDate).slice(0,10) : "",
@@ -81,6 +82,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
       const okd = await patchItem(editItem.id, {
         title: editF.title.trim(), vendorName: editF.vendorName.trim(),
         vendorContact: editF.vendorContact||null, vendorEmail: editF.vendorEmail||"",
+        vendorPhone: editF.vendorPhone||null, vendorLocation: editF.vendorLocation||null,
+        ownerId: editF.ownerId||null,
         type: editF.type, status: editF.status,
         poNumber: editF.poNumber||null, contractRef: editF.contractRef||null,
         value: editF.value !== "" ? Number(editF.value)||0 : null,
@@ -93,14 +96,14 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
   }
 
   const [form, setForm] = useState({
-    vendorName:"", vendorContact:"", vendorEmail:"",
+    vendorName:"", vendorContact:"", vendorEmail:"", vendorPhone:"", vendorLocation:"",
     type:"CONTRACT", title:"", poNumber:"", contractRef:"",
     value:"", currency:"USD", startDate:"", endDate:"",
     status:"ACTIVE", deliverables:"", notes:"", ownerId:"",
   })
 
   function resetForm() {
-    setForm({ vendorName:"", vendorContact:"", vendorEmail:"",
+    setForm({ vendorName:"", vendorContact:"", vendorEmail:"", vendorPhone:"", vendorLocation:"",
       type:"CONTRACT", title:"", poNumber:"", contractRef:"",
       value:"", currency:"USD", startDate:"", endDate:"",
       status:"ACTIVE", deliverables:"", notes:"", ownerId:"" })
@@ -122,6 +125,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
           endDate:   form.endDate   || null,
           ownerId:   form.ownerId   || null,
           vendorEmail: form.vendorEmail || null,
+          vendorPhone: form.vendorPhone || null,
+          vendorLocation: form.vendorLocation || null,
         }),
       })
       if (!res.ok) {
@@ -223,6 +228,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                   title: String(c.title||"").slice(0,300),
                   vendorName: String(c.vendorName||"Unknown vendor").slice(0,200),
                   vendorContact: c.vendorContact ? String(c.vendorContact).slice(0,200) : null,
+                  vendorPhone: c.vendorPhone ? String(c.vendorPhone).slice(0,50) : null,
+                  vendorLocation: c.vendorLocation ? String(c.vendorLocation).slice(0,300) : null,
                   type: TYPES.includes(c.type) ? c.type : "OTHER",
                   poNumber: c.poNumber ? String(c.poNumber).slice(0,100) : null,
                   contractRef: c.contractRef ? String(c.contractRef).slice(0,100) : null,
@@ -292,6 +299,18 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <input type="email" style={inp} value={form.vendorEmail}
                   onChange={e=>setForm(f=>({...f,vendorEmail:e.target.value}))}
                   placeholder="contact@vendor.com" />
+              </div>
+              <div>
+                <label style={lbl}>Vendor phone</label>
+                <input style={inp} value={form.vendorPhone}
+                  onChange={e=>setForm(f=>({...f,vendorPhone:e.target.value}))}
+                  placeholder="+1 …" />
+              </div>
+              <div>
+                <label style={lbl}>Vendor location</label>
+                <input style={inp} value={form.vendorLocation}
+                  onChange={e=>setForm(f=>({...f,vendorLocation:e.target.value}))}
+                  placeholder="City / address — logistics" />
               </div>
               <div>
                 <label style={lbl}>PO / Contract number</label>
@@ -411,10 +430,12 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
         {items.length > 0 && (() => {
           const vendors = Object.values(items.reduce((acc: any, i: any) => {
             const k = i.vendorName || "Unknown vendor"
-            acc[k] = acc[k] || { name:k, contact:i.vendorContact, email:i.vendorEmail, count:0, total:0 }
+            acc[k] = acc[k] || { name:k, contact:i.vendorContact, email:i.vendorEmail, phone:i.vendorPhone, location:i.vendorLocation, count:0, total:0 }
             acc[k].count++; acc[k].total += Number(i.value)||0
             if (!acc[k].contact && i.vendorContact) acc[k].contact = i.vendorContact
             if (!acc[k].email && i.vendorEmail) acc[k].email = i.vendorEmail
+            if (!acc[k].phone && i.vendorPhone) acc[k].phone = i.vendorPhone
+            if (!acc[k].location && i.vendorLocation) acc[k].location = i.vendorLocation
             return acc
           }, {})) as any[]
           return (
@@ -442,6 +463,12 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2,
                         overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                         {v.contact}{v.contact && v.email ? " · " : ""}{v.email}
+                      </div>
+                    )}
+                    {(v.phone || v.location) && (
+                      <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {v.phone}{v.phone && v.location ? " · " : ""}{v.location}
                       </div>
                     )}
                     <div style={{ fontSize:11, color:"var(--text-2)", marginTop:6, fontWeight:600 }}>
@@ -543,6 +570,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                           { l:"Start date",    v:fmtDate(item.startDate) },
                           { l:"End date",      v:fmtDate(item.endDate)   },
                           { l:"Internal owner",v:item.owner?.name||"—"   },
+                          { l:"Vendor phone",  v:item.vendorPhone||"—" },
+                          { l:"Vendor location", v:item.vendorLocation||"—" },
                           { l:"Vendor contact",v:item.vendorContact||"—" },
                           { l:"Vendor email",  v:item.vendorEmail||"—"   },
                           { l:"Contract ref",  v:item.contractRef||"—"   },
@@ -603,6 +632,15 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                               onChange={e=>setEditF((f:any)=>({...f,vendorContact:e.target.value}))} />
                             <input style={inp} placeholder="Vendor email" value={editF.vendorEmail}
                               onChange={e=>setEditF((f:any)=>({...f,vendorEmail:e.target.value}))} />
+                            <input style={inp} placeholder="Vendor phone" value={editF.vendorPhone}
+                              onChange={e=>setEditF((f:any)=>({...f,vendorPhone:e.target.value}))} />
+                            <input style={inp} placeholder="Vendor location (logistics)" value={editF.vendorLocation}
+                              onChange={e=>setEditF((f:any)=>({...f,vendorLocation:e.target.value}))} />
+                            <select style={{...inp,cursor:"pointer"}} value={editF.ownerId}
+                              onChange={e=>setEditF((f:any)=>({...f,ownerId:e.target.value}))}>
+                              <option value="">Internal owner — unassigned</option>
+                              {members.map((m:any)=><option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
+                            </select>
                             <select style={{...inp,cursor:"pointer"}} value={editF.type}
                               onChange={e=>setEditF((f:any)=>({...f,type:e.target.value}))}>
                               {Object.entries(TYPE_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
