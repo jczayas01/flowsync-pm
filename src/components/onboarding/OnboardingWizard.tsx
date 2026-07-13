@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 // ─── Types ───────────────────────────────────
-type Step = 'workspace' | 'methodology' | 'project' | 'team'
+type Step = 'workspace' | 'methodology' | 'team'
 
 interface FormData {
   // Step 1
@@ -13,7 +13,7 @@ interface FormData {
   timezone:      string
   currency:      string
   // Step 2
-  methodology: 'WATERFALL' | 'AGILE' | 'SCRUM' | ''
+  methodology: 'WATERFALL' | 'AGILE' | 'SCRUM' | 'HYBRID' | ''
   // Step 3
   projectName: string
   startDate:   string
@@ -22,13 +22,12 @@ interface FormData {
   invites: { email: string; role: string }[]
 }
 
-const STEPS: Step[] = ['workspace', 'methodology', 'project', 'team']
+const STEPS: Step[] = ['workspace', 'methodology', 'team']
 
 const STEP_META = {
   workspace:   { num: 1, label: 'Workspace',   icon: '🏢' },
   methodology: { num: 2, label: 'Methodology', icon: '⚙️' },
-  project:     { num: 3, label: 'First project', icon: '📁' },
-  team:        { num: 4, label: 'Invite team',   icon: '👥' },
+  team:        { num: 3, label: 'Invite team',   icon: '👥' },
 }
 
 const TIMEZONES = [
@@ -82,6 +81,16 @@ const METHODOLOGIES = [
     features: ['Full ceremony support', 'Story point estimation', 'Sprint retrospectives', 'Velocity & capacity'],
     color: '#7C3AED',
     bg: '#F5F3FF',
+  },
+  {
+    id: 'HYBRID',
+    icon: '🔀',
+    name: 'Hybrid',
+    tagline: 'Waterfall governance with agile delivery',
+    desc: 'Best when leadership needs phase gates and baselines but teams deliver in iterations. Combine formal planning with sprint-based execution.',
+    features: ['Phase gates + sprints', 'Baselines with agile boards', 'Blended reporting', 'Flexible per-project setup'],
+    color: '#D97706',
+    bg: '#FFFBEB',
   },
 ]
 
@@ -165,7 +174,6 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
   function canAdvance(): boolean {
     if (step === 'workspace')   return form.workspaceName.trim().length >= 2
     if (step === 'methodology') return form.methodology !== ''
-    if (step === 'project')     return true  // project name optional
     return true
   }
 
@@ -547,121 +555,6 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
 
           {/* ════════════════════════
               STEP 3: FIRST PROJECT
-          ════════════════════════ */}
-          {step === 'project' && (
-            <>
-              <div style={{ marginBottom:20 }}>
-                <h2 style={{ fontSize:22,fontWeight:600,color:'#fff',marginBottom:6 }}>
-                  Create your first project
-                </h2>
-                <p style={{ fontSize:14,color:'rgba(255,255,255,.45)',lineHeight:1.65 }}>
-                  Start from scratch or use a template to get a pre-built structure immediately.
-                </p>
-              </div>
-
-              <div style={{ marginBottom:12 }}>
-                <label style={s.label}>Project name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. CRM Migration, Office Expansion, Product Launch 2026"
-                  value={form.projectName}
-                  onChange={e => setForm(f => ({ ...f, projectName: e.target.value }))}
-                  autoFocus
-                  style={s.input}
-                />
-              </div>
-
-              <div style={{ marginBottom:20 }}>
-                <label style={s.label}>Target start date</label>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                  style={s.input}
-                />
-              </div>
-
-              {/* Template picker */}
-              <div style={{ marginBottom:24 }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                  marginBottom:10 }}>
-                  <label style={{ ...s.label, marginBottom:0 }}>
-                    Start from a template
-                    <span style={{ fontSize:10,color:'rgba(255,255,255,.3)',fontWeight:400,marginLeft:6 }}>
-                      optional
-                    </span>
-                  </label>
-                  {form.templateId && (
-                    <button
-                      onClick={() => setForm(f => ({ ...f, templateId:'' }))}
-                      style={{ fontSize:11,color:'rgba(255,255,255,.35)',background:'none',
-                        border:'none',cursor:'pointer',fontFamily:'var(--font)' }}
-                    >
-                      Clear selection
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  {relevantTemplates.slice(0,4).map(t => {
-                    const selected = form.templateId === t.id
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => setForm(f => ({
-                          ...f,
-                          templateId:  f.templateId === t.id ? '' : t.id,
-                          projectName: f.projectName || t.name,
-                        }))}
-                        style={{
-                          padding:'12px 13px', borderRadius:8, cursor:'pointer',
-                          border: selected ? `2px solid ${t.color}` : '1.5px solid rgba(255,255,255,.09)',
-                          background: selected ? `${t.color}18` : 'rgba(255,255,255,.03)',
-                          transition:'all .15s', position:'relative',
-                        }}
-                      >
-                        {selected && (
-                          <div style={{ position:'absolute',top:7,right:8,
-                            width:16,height:16,borderRadius:'50%',background:t.color,
-                            display:'flex',alignItems:'center',justifyContent:'center',
-                            fontSize:9,fontWeight:700,color:'#fff' }}>
-                            ✓
-                          </div>
-                        )}
-                        <div style={{ fontSize:20,marginBottom:6 }}>{t.icon}</div>
-                        <div style={{ fontSize:12,fontWeight:600,
-                          color:selected?'#fff':'rgba(255,255,255,.75)',marginBottom:3,
-                          lineHeight:1.3 }}>
-                          {t.name}
-                        </div>
-                        <div style={{ fontSize:10,color:'rgba(255,255,255,.35)',lineHeight:1.4 }}>
-                          {t.desc}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {relevantTemplates.length === 0 && (
-                  <div style={{ padding:'16px',textAlign:'center',fontSize:12,
-                    color:'rgba(255,255,255,.3)',border:'1px dashed rgba(255,255,255,.1)',
-                    borderRadius:8 }}>
-                    No templates match your methodology — choose any below
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display:'flex', gap:8 }}>
-                <button style={s.btnBack} onClick={back}>← Back</button>
-                <button style={s.btnPrimary} onClick={advance}>
-                  {form.projectName || form.templateId ? 'Continue →' : 'Skip for now →'}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ════════════════════════
-              STEP 4: INVITE TEAM
           ════════════════════════ */}
           {step === 'team' && (
             <>
