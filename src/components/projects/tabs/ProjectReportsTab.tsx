@@ -91,10 +91,11 @@ function ReportMetric({ label, value, color }: { label:string; value:string; col
 
 // ── Report view ─────────────────────────────────────────────────────────────
 
-function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, onDownload, downloading }: {
+function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, onDownload, downloading, onDownloadPdf, downloadingPdf }: {
   report:any; reportType:string; audience:string; generatedAt:string;
   project:any; workspaceName:string; workspaceLogo?:string;
   onDownload:()=>void; downloading:boolean
+  onDownloadPdf:()=>void; downloadingPdf:boolean
 }) {
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
@@ -303,7 +304,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               fontFamily:"var(--font)",display:"flex",alignItems:"center",gap:6 }}>
             {downloading ? "Generating…" : "📄 Download Word (.docx)"}
           </button>
-          <button onClick={downloadPdf} disabled={downloadingPdf}
+          <button onClick={onDownloadPdf} disabled={downloadingPdf}
             style={{ padding:"9px 18px", background:"#fff", color:"var(--text-2)",
               border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:13,
               fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
@@ -906,6 +907,8 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               workspaceLogo={workspaceLogo}
               onDownload={downloadDocx}
               downloading={downloading}
+              onDownloadPdf={downloadPdf}
+              downloadingPdf={downloadingPdf}
             />
             )}
           </div>
