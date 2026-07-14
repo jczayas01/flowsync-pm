@@ -1,7 +1,7 @@
 "use client"
 // src/components/settings/TeamSettingsView.tsx
 import { useState } from "react"
-import { isWorkspaceManager } from "@/lib/rbac/roles"
+import { isWorkspaceManager, ROLE_DESCRIPTIONS, mapDbRoleToRbac } from "@/lib/rbac/roles"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
 
@@ -118,6 +118,12 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                     <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                   ))}
                 </select>
+            <div style={{ fontSize:11, color:"var(--text-3)", marginTop:5, lineHeight:1.45, maxWidth:340 }}>
+              {ROLE_DESCRIPTIONS[mapDbRoleToRbac(inviteRole)] || ""}
+              {" "}<a href="/settings/roles" style={{ color:"var(--steel)", textDecoration:"none", fontWeight:600 }}>
+                Full permission matrix →
+              </a>
+            </div>
               </div>
               <button type="submit" disabled={inviting}
                 style={{ padding:"9px 18px", background:"var(--steel)", color:"#fff", border:"none",

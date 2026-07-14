@@ -175,5 +175,29 @@
     "⏳ Projects awaiting your approval": "⏳ Proyectos en espera de tu aprobación",
     "✓ Approve": "✓ Aprobar",
     "✗ Reject": "✗ Rechazar"
+  },
+  "resources": {
+    "Resource management": "Gestión de recursos",
+    "team members": "miembros del equipo",
+    "team member": "miembro del equipo",
+    "h/week capacity each": "h/semana de capacidad cada uno",
+    "over-allocated": "sobreasignados",
+    "over-allocated_one": "sobreasignado",
+    "📊 Workload heatmap": "📊 Mapa de carga",
+    "👤 Capacity": "👤 Capacidad",
+    "🗓 Availability": "🗓 Disponibilidad",
+    "No team members found": "No se encontraron miembros del equipo",
+    "Over-allocated by": "Sobreasignado por",
+    "h/week": "h/semana",
+    "Over-allocated": "Sobreasignado",
+    "Heavily booked": "Muy ocupado",
+    "Partially available": "Parcialmente disponible",
+    "Available": "Disponible",
+    "unscheduled": "sin programar",
+    "tasks without estimates": "tareas sin estimación",
+    "over-scheduled": "sobreprogramadas",
+    "h/day": "h/día",
+    "Unassigned effort": "Esfuerzo sin asignar",
+    "tasks": "tareas"
   }
 }

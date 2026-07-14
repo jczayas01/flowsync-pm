@@ -175,5 +175,29 @@
     "⏳ Projects awaiting your approval": "⏳ Projects awaiting your approval",
     "✓ Approve": "✓ Approve",
     "✗ Reject": "✗ Reject"
+  },
+  "resources": {
+    "Resource management": "Resource management",
+    "team members": "team members",
+    "team member": "team member",
+    "h/week capacity each": "h/week capacity each",
+    "over-allocated": "over-allocated",
+    "over-allocated_one": "over-allocated_one",
+    "📊 Workload heatmap": "📊 Workload heatmap",
+    "👤 Capacity": "👤 Capacity",
+    "🗓 Availability": "🗓 Availability",
+    "No team members found": "No team members found",
+    "Over-allocated by": "Over-allocated by",
+    "h/week": "h/week",
+    "Over-allocated": "Over-allocated",
+    "Heavily booked": "Heavily booked",
+    "Partially available": "Partially available",
+    "Available": "Available",
+    "unscheduled": "unscheduled",
+    "tasks without estimates": "tasks without estimates",
+    "over-scheduled": "over-scheduled",
+    "h/day": "h/day",
+    "Unassigned effort": "Unassigned effort",
+    "tasks": "tasks"
   }
 }

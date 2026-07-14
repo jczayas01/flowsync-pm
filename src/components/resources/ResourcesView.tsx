@@ -1,5 +1,7 @@
 "use client"
 // src/components/resources/ResourcesView.tsx
+import { computeWorkload } from "@/lib/workload"
+import { useTranslations } from "next-intl"
 import { useState, useMemo } from "react"
 import { Avatar } from "@/components/ui"
 
@@ -16,43 +18,29 @@ function heatClass(pct:number, isOff=false):{bg:string;text:string;label:string}
   return {bg:"#FEE2E2",text:"#991B1B",label:`${pct}%`}
 }
 
-export function ResourcesView({ members, projectAssignments, timeEntries, workspaceId }:{
-  members:any[]; projectAssignments:any[]; timeEntries:any[]; workspaceId:string
+export function ResourcesView({ members, projectAssignments, timeEntries, tasks = [], workspaceId }:{
+  members:any[]; projectAssignments:any[]; timeEntries:any[]; tasks?:any[]; workspaceId:string
 }) {
+  const t = useTranslations("resources")
   const [subTab, setSubTab]   = useState<"heatmap"|"capacity"|"availability">("heatmap")
   const [weeks,  setWeeks]    = useState(8)
   const [overOnly,setOverOnly]= useState(false)
 
   // Week date labels starting from last Monday
-  const weekDates = useMemo(()=>{
-    const today = new Date()
-    const day   = today.getDay()
-    const monday= new Date(today)
-    monday.setDate(today.getDate()-(day===0?6:day-1))
-    return Array.from({length:weeks},(_,i)=>{
-      const d=new Date(monday); d.setDate(monday.getDate()+i*7)
-      return d
-    })
-  },[weeks])
+  const wl = useMemo(()=>computeWorkload(tasks, WEEKS),[tasks])
+  const weekDates = useMemo(()=>wl.weekStarts.map(ms=>new Date(ms)),[wl])
 
   const todayIdx = 0 // current week
 
-  // Build allocation map: userId → weekly hours (simulated from assignments)
+  // Workload per user — task-effort engine (D1–D4 signed spec; see src/lib/workload.ts)
   const allocationByUser = useMemo(()=>{
-    const map: Record<string,{total:number;projects:{name:string;color:string;hours:number}[]}> = {}
-    for(const m of members) {
-      const userId = m.userId||m.user?.id
-      const assignments = projectAssignments.filter(a=>a.userId===userId)
-      const totalHours  = assignments.reduce((s:number,a:any)=>s+(a.allocation||40)*0.4,0) // allocation% → hrs
-      const projects    = assignments.map((a:any)=>({
-        name:  a.project?.name||"Project",
-        color: a.project?.color||"var(--steel)",
-        hours: Math.round((a.allocation||40)*0.4),
-      }))
-      map[userId]={total:Math.round(totalHours),projects}
+    const out: Record<string, any> = {}
+    for (const [uid, m] of Object.entries(wl.byUser)) {
+      out[uid] = { ...(m as any), total: (m as any).thisWeek,
+        projects: (m as any).projects.map((p:any)=>({ ...p, hours: p.thisWeek, color: "var(--steel)" })) }
     }
-    return map
-  },[members,projectAssignments])
+    return out
+  },[wl])
 
   const overAllocated = members.filter(m=>{
     const uid=m.userId||m.user?.id
@@ -69,22 +57,28 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"14px 20px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
           <div>
-            <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>Resource management</h1>
+            <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>{t("Resource management")}</h1>
             <p style={{fontSize:12,color:"var(--text-3)"}}>
-              {members.length} team member{members.length!==1?"s":""} · {CAPACITY_HRS}h/week capacity each
+              {members.length} {members.length!==1?t("team members"):t("team member")} · {CAPACITY_HRS}{t("h/week capacity each")}
             </p>
           </div>
           {overAllocated.length>0&&(
             <div style={{background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:"var(--radius)",
               padding:"8px 14px",fontSize:12,color:"var(--red)",fontWeight:500}}>
-              ⚠ {overAllocated.length} member{overAllocated.length!==1?"s":""} over-allocated
+              ⚠ {overAllocated.length} {overAllocated.length!==1?t("team members"):t("team member")} {t("over-allocated")}
+            </div>
+          )}
+          {wl.unassigned.count>0 && (
+            <div style={{background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:"var(--radius)",
+              padding:"6px 12px",fontSize:12,color:"var(--steel)",fontWeight:600}}>
+              📥 {t("Unassigned effort")}: {wl.unassigned.count} {t("tasks")} · {wl.unassigned.hours}h
             </div>
           )}
         </div>
       </div>
 
       {/* Sub-tabs */}
-      <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"0 20px",flexShrink:0,display:"flex",gap:0}}>
+      <div className="fs-tabbar" style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"0 20px",flexShrink:0,display:"flex",gap:0}}>
         {[["heatmap","📊 Workload heatmap"],["capacity","👤 Capacity"],["availability","🗓 Availability"]].map(([id,label])=>(
           <button key={id} onClick={()=>setSubTab(id as any)}
             style={{padding:"10px 14px",border:"none",background:"none",cursor:"pointer",
@@ -92,7 +86,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
               color:subTab===id?"var(--steel)":"var(--text-3)",
               borderBottom:subTab===id?"2px solid var(--steel)":"2px solid transparent",
               marginBottom:-1}}>
-            {label}
+            {t(label as any)}
           </button>
         ))}
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,padding:"8px 0"}}>
@@ -142,14 +136,15 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
             {/* Grid */}
             {members.length===0?(
               <div style={{textAlign:"center",padding:48,fontSize:13,color:"var(--text-3)"}}>
-                No team members found
+                {t("No team members found")}
               </div>
             ):(
               <div style={{background:"#fff",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
                 {/* Column headers */}
                 <div style={{display:"grid",
+                  minWidth:640,
                   gridTemplateColumns:`180px repeat(${weeks},1fr) 60px`,
-                  background:"var(--surface)",borderBottom:"2px solid var(--border)"}}>
+                  background:"var(--surface)",borderBottom:"2px solid var(--border)",overflowX:"auto"}}>
                   <div style={{padding:"8px 12px",fontSize:10,fontWeight:600,color:"var(--text-3)",
                     textTransform:"uppercase",letterSpacing:".05em"}}>
                     Team member
@@ -173,11 +168,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                   const userId = m.userId||m.user?.id
                   const user   = m.user||m
                   const alloc  = allocationByUser[userId]||{total:0,projects:[]}
-                  // Simulate weekly variance
-                  const weeklyLoads = weekDates.map((_,i)=>{
-                    const variance=[.85,.9,1,.95,1.1,1.05,.9,1,.95,1.05,.85,1][i%12]
-                    return Math.round(alloc.total*variance)
-                  })
+                  const weeklyLoads = (alloc.weekly||weekDates.map(()=>0)).map((h:number)=>Math.round(h))
                   const avgPct = Math.round(weeklyLoads.reduce((s,h)=>s+h,0)/weeks/CAPACITY_HRS*100)
 
                   return (
@@ -270,6 +261,25 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                         <span style={{color:"var(--text-3)",flexShrink:0}}>{p.hours}h</span>
                       </div>
                     ))}
+                    {(alloc.unscheduled?.length>0 || alloc.missingEstimate?.length>0 || alloc.overScheduled?.length>0) && (
+                      <div style={{marginTop:8,paddingTop:8,borderTop:"1px dashed var(--border)",display:"flex",flexDirection:"column",gap:3}}>
+                        {alloc.unscheduled?.length>0 && (
+                          <div style={{fontSize:11,color:"var(--text-3)"}}>
+                            🗂 {alloc.unscheduled.length} {t("unscheduled")} · {alloc.unscheduled.reduce((s:number,x:any)=>s+x.hours,0).toFixed(0)}h
+                          </div>
+                        )}
+                        {alloc.missingEstimate?.length>0 && (
+                          <div style={{fontSize:11,color:"#B45309"}}>
+                            ⚠ {alloc.missingEstimate.length} {t("tasks without estimates")}
+                          </div>
+                        )}
+                        {alloc.overScheduled?.length>0 && (
+                          <div style={{fontSize:11,color:"var(--red,#DC2626)"}}>
+                            ⛔ {alloc.overScheduled.length} {t("over-scheduled")}: {alloc.overScheduled.slice(0,2).map((x:any)=>`${x.title.slice(0,24)} (${x.dailyLoad}${t("h/day")})`).join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {alloc.total<CAPACITY_HRS&&(
                       <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,opacity:.5}}>
                         <div style={{width:8,height:8,borderRadius:2,background:"var(--border)",flexShrink:0}}/>
@@ -281,7 +291,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                   {over&&(
                     <div style={{marginTop:10,paddingTop:8,borderTop:"1px solid rgba(220,38,38,.2)",
                       fontSize:11,color:"var(--red)",fontWeight:500}}>
-                      Over-allocated by {alloc.total-CAPACITY_HRS}h/week
+                      {t("Over-allocated by")} {alloc.total-CAPACITY_HRS}{t("h/week")}
                     </div>
                   )}
                 </div>
@@ -317,7 +327,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, worksp
                       <div>
                         <div style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>{user.name}</div>
                         <div style={{fontSize:10,color:statusColor,fontWeight:500}}>
-                          {avgPct>105?"Over-allocated":avgPct>85?"Heavily booked":avgPct>50?"Partially available":"Available"}
+                          {avgPct>105?t("Over-allocated"):avgPct>85?t("Heavily booked"):avgPct>50?t("Partially available"):t("Available")}
                           {" · "}{alloc.total}h/wk
                         </div>
                       </div>

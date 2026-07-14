@@ -17,7 +17,7 @@ export default async function ResourcesPage() {
   })
   if (!membership) redirect('/onboarding')
 
-  const [members, projects, timeEntries] = await Promise.all([
+  const [members, projects, tasks, timeEntries] = await Promise.all([
     db.workspaceMember.findMany({
       where:   { workspaceId: membership.workspaceId },
       include: { user: { select:{ id:true, name:true, email:true, avatarUrl:true } } },
@@ -27,6 +27,18 @@ export default async function ResourcesPage() {
       include: {
         project: { select:{ id:true, code:true, name:true } },
         user:    { select:{ id:true, name:true } },
+      },
+    }),
+    db.task.findMany({
+      where: {
+        project: { workspaceId: membership.workspaceId, status: 'ACTIVE' },
+        status: { notIn: ['DONE','CANCELLED'] as any },
+      },
+      select: {
+        id:true, title:true, status:true, percentComplete:true,
+        estimatedHours:true, remainingHours:true, startDate:true, dueDate:true,
+        projectId:true, project:{ select:{ name:true, code:true } },
+        assignees:{ select:{ userId:true } },
       },
     }),
     db.timeEntry.findMany({
@@ -47,6 +59,7 @@ export default async function ResourcesPage() {
     <ResourcesView
       members={members as any}
       projectAssignments={projects as any}
+      tasks={JSON.parse(JSON.stringify(tasks)) as any}
       timeEntries={serializedTimeEntries as any}
       workspaceId={membership.workspaceId}
     />
