@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/tabs/ProjectBudgetTab.tsx
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -15,6 +16,7 @@ function fmt(n: number, currency = "USD") {
 export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries, workspaceId }: {
   projectId:string; project:any; budgetItems:any[]; timeEntries:any[]; workspaceId?:string
 }) {
+  const t = useTranslations("budget")
   const { can } = usePermissions()
   const router = useRouter()
 
@@ -189,13 +191,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
           borderBottom:"1px solid var(--border)" }}>
           {[
-            { label:"Budget at Completion (BAC)", value:fmt(BAC,currency), sub:"Total project budget",
+            { label:t("Budget at Completion (BAC)"), value:fmt(BAC,currency), sub:t("Total project budget"),
               color:"var(--text)", tip:"The total authorized budget for the project" },
-            { label:"Earned Value (EV)", value:fmt(EV,currency), sub:`${pct}% work done`,
+            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:`${pct}% ${t("work done")}`,
               color:"var(--steel)", tip:"Value of work actually performed" },
-            { label:"Actual Cost (AC)", value:fmt(AC,currency), sub:"Spent to date",
+            { label:t("Actual Cost (AC)"), value:fmt(AC,currency), sub:t("Spent to date"),
               color:AC>EV?"var(--red)":"var(--text)", tip:"Total costs incurred for work performed" },
-            { label:"Planned Value (PV)", value:fmt(PV,currency), sub:"Scheduled work to date",
+            { label:t("Planned Value (PV)"), value:fmt(PV,currency), sub:t("Scheduled work to date"),
               color:"var(--text-2)", tip:"Authorized budget assigned to scheduled work" },
           ].map((k,i) => (
             <div key={k.label} style={{ padding:"14px 16px",
@@ -216,12 +218,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
           borderBottom:"1px solid var(--border)" }}>
           {[
-            { label:"Cost Performance Index (CPI)", value:CPI.toFixed(2),
-              sub:CPI>1?"Under budget":CPI<1?"Over budget":"On budget",
+            { label:t("Cost Performance Index (CPI)"), value:CPI.toFixed(2),
+              sub:CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
               color:CPI>=1?"var(--green)":"var(--red)",
               tip:"CPI = EV/AC. >1 = under budget, <1 = over budget" },
-            { label:"Schedule Performance Index (SPI)", value:SPI.toFixed(2),
-              sub:SPI>1?"Ahead of schedule":SPI<1?"Behind schedule":"On schedule",
+            { label:t("Schedule Performance Index (SPI)"), value:SPI.toFixed(2),
+              sub:SPI>1?t("Ahead of schedule"):SPI<1?t("Behind schedule"):t("On schedule"),
               color:SPI>=1?"var(--green)":"var(--amber)",
               tip:"SPI = EV/PV. >1 = ahead, <1 = behind" },
             { label:"Cost Variance (CV)", value:(CV>=0?"+":"")+fmt(Math.abs(CV),currency),
@@ -229,7 +231,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               color:CV>=0?"var(--green)":"var(--red)",
               tip:"CV = EV - AC. Positive = under budget" },
             { label:"To-Complete Performance Index (TCPI)", value:TCPI.toFixed(2),
-              sub:TCPI>1?"Needs improvement":TCPI<=1?"On track":"",
+              sub:TCPI>1?t("Needs improvement"):TCPI<=1?t("On track"):"",
               color:TCPI>1.1?"var(--red)":TCPI>1?"var(--amber)":"var(--green)",
               tip:"Efficiency needed to complete on budget" },
           ].map((k,i) => (
@@ -250,16 +252,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         {/* Row 3: Forecasts */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)" }}>
           {[
-            { label:"Estimate at Completion (EAC)", value:fmt(EAC,currency),
+            { label:t("Estimate at Completion (EAC)"), value:fmt(EAC,currency),
               sub:`${EAC>BAC?"⚠ Over":"✓ Within"} budget forecast`,
               color:EAC>BAC?"var(--red)":"var(--green)",
               tip:"EAC = BAC/CPI. Forecast of total project cost" },
             { label:"Estimate to Complete (ETC)", value:fmt(ETC,currency),
-              sub:"Remaining cost needed",
+              sub:t("Remaining cost needed"),
               color:"var(--text)",
               tip:"ETC = EAC - AC. Expected cost to finish" },
-            { label:"Variance at Completion (VAC)", value:(VAC>=0?"+":"")+fmt(Math.abs(VAC),currency),
-              sub:VAC>=0?"Projected savings":"Projected overrun",
+            { label:t("Variance at Completion (VAC)"), value:(VAC>=0?"+":"")+fmt(Math.abs(VAC),currency),
+              sub:VAC>=0?t("Projected savings"):t("Projected overrun"),
               color:VAC>=0?"var(--green)":"var(--red)",
               tip:"VAC = BAC - EAC. Positive = projected savings" },
           ].map((k,i) => (
@@ -513,7 +515,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 <tr style={{ background:"#ECFDF5", borderBottom:"1px solid var(--border)" }}>
                   <td style={{ padding:"6px 10px" }}>
                     <input style={inpS} value={newItem.description} autoFocus
-                      placeholder="Budget item name…"
+                      placeholder={t("Budget item name…")}
                       onChange={e=>setNewItem(f=>({...f,description:e.target.value}))} />
                   </td>
                   <td style={{ padding:"6px 10px" }}>

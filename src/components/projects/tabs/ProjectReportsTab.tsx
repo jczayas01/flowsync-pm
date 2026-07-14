@@ -1,14 +1,15 @@
 "use client"
 // src/components/projects/tabs/ProjectReportsTab.tsx
 
+import { useTranslations } from "next-intl"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 const REPORT_TYPES = [
-  { value:"STATUS",       label:"Weekly Status Report",  icon:"📋",
+  { value:"STATUS",       label:tr("Weekly Status Report"),  icon:"📋",
     desc:"Accomplishments, plans, risks, EVM summary." },
-  { value:"EXECUTIVE",    label:"Executive Brief",        icon:"👔",
+  { value:"EXECUTIVE",    label:tr("Executive Brief"),        icon:"👔",
     desc:"1-page strategic summary for leadership." },
   { value:"PHASE_GATE",   label:"Phase Gate Review",      icon:"🔁",
     desc:"Go/No-Go decision with entry/exit criteria." },
@@ -140,7 +141,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         {/* STATUS */}
         {reportType==="STATUS" && (
           <>
-            <ReportSection title="Executive Summary">
+            <ReportSection title={tr("Executive Summary")}>
               <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.executiveSummary}</p>
             </ReportSection>
             {report.keyMetrics && (
@@ -177,7 +178,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         {/* EXECUTIVE */}
         {reportType==="EXECUTIVE" && (
           <>
-            <ReportSection title="Executive Summary">
+            <ReportSection title={tr("Executive Summary")}>
               <p style={{ fontSize:14, lineHeight:1.8, color:"#1E293B", margin:0, fontWeight:500 }}>{report.executiveSummary}</p>
             </ReportSection>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
@@ -328,6 +329,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   project:any; projectId:string; workspaceName:string; workspaceLogo?:string;
   statusUpdates:any[]; members:any[]; reportTemplates?:any[]
 }) {
+  const tr = useTranslations("reports")
   const router = useRouter()
   const [view, setView]             = useState<"list"|"generate"|"result">("list")
   const [reportType, setReportType] = useState("STATUS")
@@ -409,7 +411,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
           health: healthMap[r.overallHealth] || "GREEN",
           periodStart: start.toISOString(),
           periodEnd:   end.toISOString(),
-          summary: (summary || "Generated report").slice(0, 5000),
+          summary: (summary || tr("Generated report")).slice(0, 5000),
           accomplishments: lines(r.accomplishmentsThisWeek || r.strategicHighlights).slice(0, 5000) || null,
           nextSteps:       lines(r.plannedNextWeek || r.recommendations).slice(0, 5000) || null,
           risks:           (typeof r.risksAndIssues === "string" ? r.risksAndIssues : lines(r.criticalIssues)).slice(0, 5000) || null,
@@ -470,7 +472,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ docType: "STATUS_REPORT", reportData: toDocxShape(report) }),
       })
-      if (!res.ok) { alert("Download failed"); return }
+      if (!res.ok) { alert(tr("Download failed")); return }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -498,7 +500,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
     const isThis = st.getTime() === rWeekStartOf(new Date()).getTime()
     const end = new Date(st); end.setDate(st.getDate() + 6)
     const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
-    return `${isThis ? "This week — " : ""}${f(st)} – ${f(end)}, ${end.getFullYear()}`
+    return `${isThis ? tr("This week — ") : ""}${f(st)} – ${f(end)}, ${end.getFullYear()}`
   }
   const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())
   const [includeWeekDocs, setIncludeWeekDocs] = useState(true)
@@ -611,7 +613,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ docType:"STATUS_REPORT", reportData: toDocxShape(generatedReport) }),
       })
-      if (!res.ok) { alert("Download failed"); return }
+      if (!res.ok) { alert(tr("Download failed")); return }
       const blob = await res.blob()
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement("a")
@@ -933,7 +935,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                     method:"POST", headers:{"Content-Type":"application/json"},
                     body: JSON.stringify({ docType:"PROJECT_BRIEF" }),
                   })
-                  if (!res.ok) { alert("Download failed"); return }
+                  if (!res.ok) { alert(tr("Download failed")); return }
                   const blob = await res.blob()
                   const url  = URL.createObjectURL(blob)
                   const a    = document.createElement("a")

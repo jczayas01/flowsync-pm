@@ -27,6 +27,7 @@ const commitSchema = z.object({
     phaseName: z.string().nullable().optional(),
     startDate: iso, dueDate: iso,
     priority: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]).nullable().optional(),
+    estimatedHours: z.number().min(0).nullable().optional(),
   })).max(60),
   milestones: z.array(z.object({ name: z.string().min(1).max(200), dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })).max(12),
   risks: z.array(z.object({
@@ -116,6 +117,7 @@ async function commit(ctx: ApiContext) {
           phaseId: t.phaseName ? phaseIdByName.get(t.phaseName) || null : null,
           startDate: t.startDate ? new Date(t.startDate) : null,
           dueDate: t.dueDate ? new Date(t.dueDate) : null,
+          estimatedHours: t.estimatedHours ?? undefined,
         },
       })
       tNum++; created.tasks++

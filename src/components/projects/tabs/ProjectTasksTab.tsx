@@ -48,7 +48,7 @@ function isOverdue(t: any) {
 // ── Column sorting helpers ─────────────────────────────────────────────────
 const SORT_STATUS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"]
 const SORT_PRIORITY = ["CRITICAL","HIGH","MEDIUM","LOW"]
-const SORTABLE_COLS = ["Task Name","Status","Priority","Assignee","Duration","Start","Finish","% Done"]
+const SORTABLE_COLS = ["Task Name","Status","Priority","Assignee","Duration","Start","Finish","% Done","Hours"]
 function assigneeName(t:any): string {
   const a = t.assignees?.[0]
   return (a?.projectMember?.user?.name || a?.user?.name || "").toLowerCase()
@@ -69,6 +69,7 @@ function compareTasks(a:any, b:any, col:string): number {
     case "Start":     return dateVal(a.startDate) - dateVal(b.startDate)
     case "Finish":    return dateVal(a.dueDate)   - dateVal(b.dueDate)
     case "% Done":    return (a.percentComplete||0) - (b.percentComplete||0)
+    case "Hours":     return (Number(a.estimatedHours)||0) - (Number(b.estimatedHours)||0)
     default:          return (a.sortOrder||0) - (b.sortOrder||0)
   }
 }
@@ -964,7 +965,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                   onChange={e => e.target.checked ? selectAll() : clearSelection()}
                   style={{ width:13, height:13, accentColor:"#fff", cursor:"pointer" }} />
               </th>
-              {["#","Task Name","Status","Priority","Assignee","Duration","Start","Finish","% Done"].map((h,i) => {
+              {["#","Task Name","Status","Priority","Assignee","Duration","Start","Finish","% Done","Hours"].map((h,i) => {
                 const sortable = SORTABLE_COLS.includes(h)
                 const active = sortBy?.col === h
                 return (
@@ -1298,6 +1299,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
     if (field === "status")          patch.status = value
     if (field === "priority")        patch.priority = value
     if (field === "percentComplete") patch.percentComplete = Number(value)
+    if (field === "estimatedHours") patch.estimatedHours = (value===""||value==null) ? null : Number(value)
     if (field === "startDate")       patch.startDate = value ? new Date(value+"T00:00:00Z").toISOString() : null
     if (field === "dueDate")         patch.dueDate   = value ? new Date(value+"T00:00:00Z").toISOString() : null
     if (field === "assignee") {
@@ -1646,6 +1648,25 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
               {saving?"…":`${t.percentComplete||0}%`}
             </span>
           </div>
+        )}
+      </td>
+
+      {/* Estimated hours — click to edit (feeds workload engine) */}
+      <td style={{ padding:"4px 8px", minWidth:70, ...ring("estimatedHours") }} onClick={() => onFocusCell?.("estimatedHours")}>
+        {editingCell==="estimatedHours" ? (
+          <input autoFocus type="number" min={0} step="0.5" style={{...cellInp,width:58}}
+            value={cellValue}
+            onChange={e=>setCellValue(e.target.value)}
+            onBlur={()=>saveCell("estimatedHours",cellValue)}
+            onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("estimatedHours",cellValue) }} />
+        ) : (
+          <span onClick={() => !editingCell && startEdit("estimatedHours", t.estimatedHours ?? "")}
+            title="Estimated effort (hours)"
+            style={{ fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
+              color: (t.estimatedHours==null||t.estimatedHours==="") ? "var(--text-4)" : "var(--text-2)",
+              fontWeight: (t.estimatedHours==null||t.estimatedHours==="") ? 400 : 600 }}>
+            {(t.estimatedHours==null||t.estimatedHours==="") ? "— h" : `${Number(t.estimatedHours)}h`}
+          </span>
         )}
       </td>
     </tr>

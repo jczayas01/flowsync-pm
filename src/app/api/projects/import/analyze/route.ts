@@ -26,7 +26,8 @@ const SPEC = `{
     "phaseName": "must exactly match one of the phases above, or null",
     "startDate": "yyyy-mm-dd or null",
     "dueDate": "yyyy-mm-dd or null",
-    "priority": "CRITICAL|HIGH|MEDIUM|LOW or null"
+    "priority": "CRITICAL|HIGH|MEDIUM|LOW or null",
+    "estimatedHours": "total effort in hours as a number, or null"
   }],
   "milestones": [{ "name": "milestone name", "dueDate": "yyyy-mm-dd (required — omit undated milestones)" }],
   "risks": [{
@@ -47,6 +48,7 @@ Rules:
 - Respond with ONLY valid JSON matching the spec exactly. No markdown fences, no commentary.
 - Dates strictly yyyy-mm-dd. Infer the year from document context; if a date is relative or unclear, use null. Never invent dates.
 - budgetTotal and plannedCost must be plain numbers actually stated in the document — never invent or estimate amounts. If no budget is stated, use null / empty array.
+- estimatedHours: only if the document states an effort/hours/work estimate for the task (e.g. an 'Effort', 'Hours', or 'Work' column or 'Xh'/'X hours' text). It is the TOTAL effort for the task. Never invent or estimate hours — use null when not stated.
 - phases: use the document's own phase/stage structure if present. If none, derive 3-6 logical phases from section headings. Every task's phaseName must exactly match a phase name or be null.
 - Limits: phases ≤ 8, tasks ≤ 60, milestones ≤ 12, risks ≤ 15, budget ≤ 20. Prefer the most important items when trimming.
 - Deduplicate: a milestone should not also appear as a task; a phase should not also appear as a task.
@@ -154,6 +156,7 @@ export async function POST(req: NextRequest) {
           startDate: iso(t?.startDate),
           dueDate: iso(t?.dueDate),
           priority: PR_ENUM.includes(t?.priority) ? t.priority : null,
+          estimatedHours: Number(t?.estimatedHours) > 0 ? Math.round(Number(t.estimatedHours) * 100) / 100 : null,
         }))
         .filter((t: any) => t.title).slice(0, 60),
       milestones: (Array.isArray(parsed?.milestones) ? parsed.milestones : [])

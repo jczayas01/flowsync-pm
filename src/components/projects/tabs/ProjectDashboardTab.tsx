@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/tabs/ProjectDashboardTab.tsx
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
@@ -23,7 +24,7 @@ const PROJECT_ROLE_COLOR: Record<string,string> = {
 }
 const PROJECT_ROLE_LABEL: Record<string,string> = {
   SPONSOR:"Sponsor", STAKEHOLDER:"Stakeholder", PM:"PM",
-  PMO:"PMO", TEAM_MEMBER:"Team member", EXTERNAL_RESOURCE:"External"
+  PMO:"PMO", TEAM_MEMBER:td("Team member"), EXTERNAL_RESOURCE:td("External")
 }
 
 function fmt(n: number) {
@@ -151,7 +152,7 @@ function MethodologyPanelAgile({ tasks, phases, milestones }: {
           {daysToReview !== null && (
             <span style={{ color:daysToReview<=2?"#DC2626":daysToReview<=5?"#F59E0B":"#64748B",
               fontWeight:daysToReview<=2?700:400 }}>
-              {daysToReview===0?"Review TODAY":daysToReview===1?"Review tomorrow":`Review in ${daysToReview}d`}
+              {daysToReview===0?td("Review TODAY"):daysToReview===1?td("Review tomorrow"):`Review in ${daysToReview}d`}
             </span>
           )}
         </div>
@@ -223,7 +224,7 @@ function MethodologyPanelWaterfall({ phases, milestones, tasks }: {
             color:daysToGate!==null&&daysToGate<=7?"#DC2626":"#64748B",
             fontWeight:daysToGate!==null&&daysToGate<=7?700:400 }}>
             {daysToGate!==null
-              ? daysToGate===0?"Phase gate TODAY":daysToGate===1?"Phase gate tomorrow":`Phase gate in ${daysToGate}d`
+              ? daysToGate===0?td("Phase gate TODAY"):daysToGate===1?td("Phase gate tomorrow"):`Phase gate in ${daysToGate}d`
               : ""}
           </span>
         )}
@@ -306,6 +307,7 @@ export function ProjectDashboardTab({
   milestones:any[]; budgetItems:any[]; members:any[]; statusUpdates:any[]; phases?:any[];
   portfolios?:any[]; programs?:any[]; linkedGoals?:any[]
 }) {
+  const td = useTranslations("projectDash")
   const router = useRouter()
   const [weekOffset, setWeekOffset] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -492,7 +494,7 @@ export function ProjectDashboardTab({
         <div style={sTitle}>👥 Project Leadership & Stakeholders</div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)" }}>
           {[
-            { role:"Project Manager", people:pm?[pm]:[], color:"#1B6CA8" },
+            { role:td("Project Manager"), people:pm?[pm]:[], color:"#1B6CA8" },
             { role:"Sponsor",         people:sponsors,    color:"#7C3AED" },
             { role:"Stakeholders",    people:stakeholders,color:"#F59E0B" },
             { role:"PMO",             people:pmoMembers,  color:"#0E7490" },
@@ -609,19 +611,19 @@ export function ProjectDashboardTab({
       {/* ── KPI cards ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
         {[
-          { icon:"✅", label:"Tasks complete",
+          { icon:"✅", label:td("Tasks complete"),
             value:`${doneTasks.length}/${tasks.length}`,
             color:"var(--text)" },
-          { icon:"⏰", label:"Overdue tasks",
+          { icon:"⏰", label:td("Overdue tasks"),
             value:overdueTasks.length,
             color:overdueTasks.length>0?"var(--red)":"var(--text)" },
-          { icon:"⚠",  label:"Overall risk",
+          { icon:"⚠",  label:td("Overall risk"),
             value:overallRisk,
             color:riskColor, bg:riskBg },
-          { icon:"💰", label:"Budget used",
+          { icon:"💰", label:td("Budget used"),
             value:`${budgetPct}%`,
             color:budgetPct>90?"var(--red)":budgetPct>75?"var(--amber)":"var(--text)" },
-          { icon:"📊", label:"Progress",
+          { icon:"📊", label:td("Progress"),
             value:`${project?.percentComplete||0}%`,
             color:"var(--steel)" },
         ].map(kpi => (
@@ -678,9 +680,9 @@ export function ProjectDashboardTab({
               padding:"0 14px", gap:0 }}>
               {[
                 { id:"summary",         label:"Summary"         },
-                { id:"accomplishments", label:"Accomplished"    },
-                { id:"next",            label:"Next period"     },
-                { id:"risks",           label:"Risks & Issues"  },
+                { id:"accomplishments", label:td("Accomplished")    },
+                { id:"next",            label:td("Next period")     },
+                { id:"risks",           label:td("Risks & Issues")  },
               ].map(s => (
                 <button key={s.id}
                   onClick={() => setStatusSection(s.id as any)}
@@ -813,7 +815,7 @@ export function ProjectDashboardTab({
                   ) : (
                     <span style={{ fontSize:11, fontWeight:600, flexShrink:0,
                       color:days<0?"var(--red)":days<=7?"var(--amber)":"var(--text-3)" }}>
-                      {days<0?"Overdue":days===0?"Today":days===1?"Tomorrow":`${days}d`}
+                      {days<0?td("Overdue"):days===0?"Today":days===1?"Tomorrow":`${days}d`}
                     </span>
                   )}
                 </div>

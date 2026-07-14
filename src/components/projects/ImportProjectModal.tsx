@@ -240,6 +240,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
                                   {it.phaseName ? `  · ${it.phaseName}` : ""}
                                   {it.startDate || it.dueDate ? `  · ${it.startDate || "…"} → ${it.dueDate || "…"}` : ""}
                                   {it.priority ? `  · ${it.priority}` : ""}
+                                  {it.estimatedHours ? `  · ${it.estimatedHours}h` : ""}
                                 </span>
                               </>)}
                               {sec === "milestones" && (<><strong>{it.name}</strong>
