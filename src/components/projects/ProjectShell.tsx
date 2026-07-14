@@ -217,7 +217,7 @@ export function ProjectShell({ project, userRole, children }:{
                   color:active?"var(--steel)":"var(--text-3)",
                   background:active?"rgba(27,108,168,.06)":"transparent",
                   marginBottom:-1,transition:"color .15s"}}>
-                <span style={{fontSize:12}}>{tab.icon}</span>{tTabs(tab.slug as any)}
+                <span style={{fontSize:12}}>{tab.icon}</span>{tTabs((tab.slug || "dashboard") as any)}
               </Link>
             )
           })}
