@@ -2,7 +2,7 @@
 // src/components/layout/AppShell.tsx — Phase 3 final nav
 import { useTranslations } from "next-intl"
 import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
