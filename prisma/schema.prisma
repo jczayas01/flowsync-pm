@@ -11,7 +11,9 @@ datasource db {
 model User {
   id                   String                  @id @default(cuid())
   email                String                  @unique
+  emailVerified        DateTime?
   name                 String
+  image                String?
   avatarUrl            String?
   timezone             String                  @default("UTC")
   locale               String                  @default("en")
@@ -74,18 +76,28 @@ model User {
 }
 
 model Account {
-  id                String       @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
-  provider          AuthProvider
+  // NextAuth adapter contract — provider MUST be String ("microsoft-entra-id", "google", …)
+  // Legacy app values ("EMAIL", "AZURE_AD", "MICROSOFT") remain valid as plain strings.
+  type              String?
+  provider          String
   providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  // App-specific (pre-existing): EMAIL password hash lives in accessToken; M365 tokens.
   accessToken       String?
   refreshToken      String?
   tokenExpiresAt    DateTime?
-  scope             String?
   tenantId          String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -1330,12 +1342,6 @@ enum Plan {
   ENTERPRISE
 }
 
-enum AuthProvider {
-  EMAIL
-  GOOGLE
-  MICROSOFT
-  AZURE_AD
-}
 
 enum Methodology {
   WATERFALL
