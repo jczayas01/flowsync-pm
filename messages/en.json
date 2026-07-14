@@ -56,7 +56,8 @@
     "On Hold": "On Hold",
     "Completed": "Completed",
     "Cancelled": "Cancelled",
-    "Archived": "Archived"
+    "Archived": "Archived",
+    "On hold": "On hold"
   },
   "dashboard": {
     "deck": "Deck",

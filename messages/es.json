@@ -56,7 +56,8 @@
     "On Hold": "En pausa",
     "Completed": "Completado",
     "Cancelled": "Cancelado",
-    "Archived": "Archivado"
+    "Archived": "Archivado",
+    "On hold": "En pausa"
   },
   "dashboard": {
     "deck": "Presentación",

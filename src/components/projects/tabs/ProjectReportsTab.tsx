@@ -7,9 +7,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 const REPORT_TYPES = [
-  { value:"STATUS",       label:tr("Weekly Status Report"),  icon:"📋",
+  { value:"STATUS",       label:"Weekly Status Report",  icon:"📋",
     desc:"Accomplishments, plans, risks, EVM summary." },
-  { value:"EXECUTIVE",    label:tr("Executive Brief"),        icon:"👔",
+  { value:"EXECUTIVE",    label:"Executive Brief",        icon:"👔",
     desc:"1-page strategic summary for leadership." },
   { value:"PHASE_GATE",   label:"Phase Gate Review",      icon:"🔁",
     desc:"Go/No-Go decision with entry/exit criteria." },
@@ -141,7 +141,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         {/* STATUS */}
         {reportType==="STATUS" && (
           <>
-            <ReportSection title={tr("Executive Summary")}>
+            <ReportSection title={"Executive Summary"}>
               <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.executiveSummary}</p>
             </ReportSection>
             {report.keyMetrics && (
@@ -178,7 +178,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         {/* EXECUTIVE */}
         {reportType==="EXECUTIVE" && (
           <>
-            <ReportSection title={tr("Executive Summary")}>
+            <ReportSection title={"Executive Summary"}>
               <p style={{ fontSize:14, lineHeight:1.8, color:"#1E293B", margin:0, fontWeight:500 }}>{report.executiveSummary}</p>
             </ReportSection>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
@@ -800,7 +800,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                 style={{ padding:"11px 24px", background:"#059669", color:"#fff",
                   border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:600,
                   cursor:generating?"wait":"pointer", fontFamily:"var(--font)", width:"100%" }}>
-                {generating ? "⏳ Analyzing and generating report…" : `✨ Generate ${selectedType?.label}`}
+                {generating ? "⏳ Analyzing and generating report…" : `✨ Generate ${tr((selectedType?.label||'') as any)}`}
               </button>
             </div>
           </div>

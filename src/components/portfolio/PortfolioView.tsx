@@ -35,7 +35,9 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
   const [openPorts, setOpenPorts] = useState<Record<string,boolean>>(
     Object.fromEntries(portfolios.map(p=>[p.id,true]))
   )
-  const [openProgs, setOpenProgs] = useState<Record<string,boolean>>({})
+  const [openProgs, setOpenProgs] = useState<Record<string,boolean>>(
+    Object.fromEntries(portfolios.flatMap(p=>p.programs.map((pg:any)=>[pg.id,true])))
+  )
   const [creating,  setCreating]  = useState(false)
   const canCreate = !["VIEWER","CLIENT","MEMBER"].includes(userRole)
 

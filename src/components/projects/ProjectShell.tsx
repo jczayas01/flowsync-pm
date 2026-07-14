@@ -192,7 +192,10 @@ export function ProjectShell({ project, userRole, children }:{
               ))}
             </select>
           )}
-          <HealthBadge health={project.health}/>
+          {status==="ON_HOLD"
+            ? <span style={{ fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:12,
+                background:"#F1F5F9", color:"#64748B", letterSpacing:".03em" }}>⏸ {tTabs("On hold")}</span>
+            : <HealthBadge health={project.health}/>}
           <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,
             background:METHOD_COLORS[project.methodology]+"18",
             color:METHOD_COLORS[project.methodology]}}>

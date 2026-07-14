@@ -42,9 +42,9 @@ const STATUS_CFG: Record<string,{color:string;bg:string}> = {
   APPROVED:     { color:"#059669", bg:"#ECFDF5" },
 }
 const BENEFIT_CFG: Record<string,{color:string;label:string}> = {
-  PROJECTED: { color:"#1B6CA8", label:tx("Projected")  },
-  TRACKING:  { color:"#F59E0B", label:tx("Tracking")   },
-  REALIZED:  { color:"#059669", label:tx("Realized")   },
+  PROJECTED: { color:"#1B6CA8", label:"Projected"  },
+  TRACKING:  { color:"#F59E0B", label:"Tracking"   },
+  REALIZED:  { color:"#059669", label:"Realized"   },
   MISSED:    { color:"#DC2626", label:"Missed"     },
 }
 
@@ -482,7 +482,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                         background:"var(--surface)", borderRadius:6 }}>
                         <div style={{ fontSize:18, fontWeight:800, color:c.color }}>{count}</div>
                         <div style={{ fontSize:9, color:"var(--text-4)", textTransform:"uppercase",
-                          letterSpacing:".04em" }}>{c.label}</div>
+                          letterSpacing:".04em" }}>{tx((c.label||s) as any)}</div>
                       </div>
                     )
                   })}

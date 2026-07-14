@@ -24,7 +24,7 @@ const PROJECT_ROLE_COLOR: Record<string,string> = {
 }
 const PROJECT_ROLE_LABEL: Record<string,string> = {
   SPONSOR:"Sponsor", STAKEHOLDER:"Stakeholder", PM:"PM",
-  PMO:"PMO", TEAM_MEMBER:td("Team member"), EXTERNAL_RESOURCE:td("External")
+  PMO:"PMO", TEAM_MEMBER:"Team member", EXTERNAL_RESOURCE:"External"
 }
 
 function fmt(n: number) {
@@ -152,7 +152,7 @@ function MethodologyPanelAgile({ tasks, phases, milestones }: {
           {daysToReview !== null && (
             <span style={{ color:daysToReview<=2?"#DC2626":daysToReview<=5?"#F59E0B":"#64748B",
               fontWeight:daysToReview<=2?700:400 }}>
-              {daysToReview===0?td("Review TODAY"):daysToReview===1?td("Review tomorrow"):`Review in ${daysToReview}d`}
+              {daysToReview===0?"Review TODAY":daysToReview===1?"Review tomorrow":`Review in ${daysToReview}d`}
             </span>
           )}
         </div>
@@ -224,7 +224,7 @@ function MethodologyPanelWaterfall({ phases, milestones, tasks }: {
             color:daysToGate!==null&&daysToGate<=7?"#DC2626":"#64748B",
             fontWeight:daysToGate!==null&&daysToGate<=7?700:400 }}>
             {daysToGate!==null
-              ? daysToGate===0?td("Phase gate TODAY"):daysToGate===1?td("Phase gate tomorrow"):`Phase gate in ${daysToGate}d`
+              ? daysToGate===0?"Phase gate TODAY":daysToGate===1?"Phase gate tomorrow":`Phase gate in ${daysToGate}d`
               : ""}
           </span>
         )}

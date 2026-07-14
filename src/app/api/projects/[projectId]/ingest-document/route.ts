@@ -106,6 +106,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error:"Unauthorized" }, { status:401 })
 
+  const pid = params.projectId
+
   let docType = "TEAM_CHARTER"
   let textContent = ""
 
@@ -140,7 +142,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   }
 
   // Call AI to extract structured data
-  const styleDirective = await getAiStyleDirective(pid)
+  const styleDirective = await getAiStyleDirective(pid).catch(() => "")
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
     headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01", "x-api-key": process.env.ANTHROPIC_API_KEY || "" },
@@ -157,7 +159,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   if (!aiRes.ok) return NextResponse.json({ error:"AI service error" }, { status:502 })
 
   const aiData = await aiRes.json()
-  const rawText = aiData.content?.[0]?.text || ""
+  if (aiData?.stop_reason === "max_tokens") {
+    return NextResponse.json({ error:"Document too long to process — try a shorter section." }, { status:422 })
+  }
+  const rawText = (aiData.content || []).map((c:any)=>c?.text||"").join("") || ""
 
   let extracted: any
   try {
@@ -171,7 +176,6 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
   // Write extracted data to database
   let result: any = {}
-  const pid = params.projectId
 
   try {
     switch(docType) {
