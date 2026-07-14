@@ -4,6 +4,7 @@
 // critical path, dependencies, phase filter, searchable assignee
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
+import { DatePickerPopover } from "@/components/shared/DatePicker"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal"
@@ -1572,12 +1573,17 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       {/* Current Start Date — click to edit */}
       <td style={{ padding:"4px 8px", ...ring("startDate") }} onClick={() => onFocusCell?.("startDate")}>
         {editingCell==="startDate" ? (
-          <input autoFocus type="date" style={cellInp} value={cellValue}
-            onChange={e=>{ const v=e.target.value; setCellValue(v);
-              if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
-              if (v) dateCommitTimer.current = setTimeout(()=>saveCell("startDate", v), 700) }}
-            onKeyDown={e=>{ if(e.key==="Escape"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); cancelEdit() }
-              if(e.key==="Enter"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); saveCell("startDate", cellValue) } }} />
+          <div style={{ position:"relative", display:"inline-block" }}>
+            <span style={{ fontSize:12, color:"var(--steel)", fontWeight:600, whiteSpace:"nowrap" }}>
+              {cellValue || "Pick a date…"}
+            </span>
+            <DatePickerPopover
+              value={cellValue}
+              onSelect={(d)=>saveCell("startDate", d)}
+              onClear={()=>saveCell("startDate", "")}
+              onClose={cancelEdit}
+            />
+          </div>
         ) : (
           <span onClick={() => !editingCell && startEdit("startDate", toDateInput(t.startDate))}
             title="Click to edit"
@@ -1590,12 +1596,17 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
       {/* Current Finish Date — click to edit */}
       <td style={{ padding:"4px 8px", ...ring("finishDate") }} onClick={() => onFocusCell?.("finishDate")}>
         {editingCell==="finishDate" ? (
-          <input autoFocus type="date" style={cellInp} value={cellValue}
-            onChange={e=>{ const v=e.target.value; setCellValue(v);
-              if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
-              if (v) dateCommitTimer.current = setTimeout(()=>saveCell("dueDate", v), 700) }}
-            onKeyDown={e=>{ if(e.key==="Escape"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); cancelEdit() }
-              if(e.key==="Enter"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); saveCell("dueDate", cellValue) } }} />
+          <div style={{ position:"relative", display:"inline-block" }}>
+            <span style={{ fontSize:12, color:"var(--steel)", fontWeight:600, whiteSpace:"nowrap" }}>
+              {cellValue || "Pick a date…"}
+            </span>
+            <DatePickerPopover
+              value={cellValue}
+              onSelect={(d)=>saveCell("dueDate", d)}
+              onClear={()=>saveCell("dueDate", "")}
+              onClose={cancelEdit}
+            />
+          </div>
         ) : (
           <span onClick={() => !editingCell && startEdit("finishDate", toDateInput(t.dueDate))}
             title="Click to edit"
