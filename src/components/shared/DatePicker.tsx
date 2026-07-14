@@ -1,7 +1,6 @@
 "use client"
 // src/components/shared/DatePicker.tsx — branded calendar popover (replaces native date inputs)
 // Deterministic behavior: browsing never closes; picking a day commits immediately.
-import { DateField } from "@/components/shared/DatePicker"
 import { useEffect, useRef, useState } from "react"
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"]
@@ -128,7 +127,7 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose }: {
 }
 
 
-// ── Drop-in replacement for <DateField > ─────────────────────────────
+// ── Drop-in replacement for native date inputs ─────────────────────────────
 // Same contract: value is "yyyy-mm-dd" | "", onChange receives { target: { value } }.
 export function DateField({ value, onChange, style, placeholder, disabled, ...rest }: {
   value?: string | null
