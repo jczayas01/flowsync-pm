@@ -1,11 +1,13 @@
 {
-  "signIn": "Iniciar sesión",
-  "signingIn": "Iniciando sesión…",
-  "workEmail": "Correo de trabajo",
-  "password": "Contraseña",
-  "continueGoogle": "Continuar con Google",
-  "continueMicrosoft": "Continuar con Microsoft",
-  "or": "o",
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signingIn": "Iniciando sesión…",
+    "workEmail": "Correo de trabajo",
+    "password": "Contraseña",
+    "continueGoogle": "Continuar con Google",
+    "continueMicrosoft": "Continuar con Microsoft",
+    "or": "o"
+  },
   "nav": {
     "Dashboard": "Panel principal",
     "Executive": "Ejecutivo",

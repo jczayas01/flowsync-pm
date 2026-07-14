@@ -1,11 +1,13 @@
 {
-  "signIn": "Sign in",
-  "signingIn": "Signing in…",
-  "workEmail": "Work email",
-  "password": "Password",
-  "continueGoogle": "Continue with Google",
-  "continueMicrosoft": "Continue with Microsoft",
-  "or": "or",
+  "auth": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "workEmail": "Work email",
+    "password": "Password",
+    "continueGoogle": "Continue with Google",
+    "continueMicrosoft": "Continue with Microsoft",
+    "or": "or"
+  },
   "nav": {
     "Dashboard": "Dashboard",
     "Executive": "Executive",
