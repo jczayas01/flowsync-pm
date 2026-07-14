@@ -1576,12 +1576,6 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             onChange={e=>{ const v=e.target.value; setCellValue(v);
               if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
               if (v) dateCommitTimer.current = setTimeout(()=>saveCell("startDate", v), 700) }}
-            onBlur={e=>{ const el=e.currentTarget
-              setTimeout(()=>{
-                if (document.activeElement === el) return
-                if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
-                cellValue ? saveCell("startDate", cellValue) : cancelEdit()
-              }, 160) }}
             onKeyDown={e=>{ if(e.key==="Escape"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); cancelEdit() }
               if(e.key==="Enter"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); saveCell("startDate", cellValue) } }} />
         ) : (
@@ -1600,12 +1594,6 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             onChange={e=>{ const v=e.target.value; setCellValue(v);
               if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
               if (v) dateCommitTimer.current = setTimeout(()=>saveCell("dueDate", v), 700) }}
-            onBlur={e=>{ const el=e.currentTarget
-              setTimeout(()=>{
-                if (document.activeElement === el) return
-                if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current)
-                cellValue ? saveCell("dueDate", cellValue) : cancelEdit()
-              }, 160) }}
             onKeyDown={e=>{ if(e.key==="Escape"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); cancelEdit() }
               if(e.key==="Enter"){ if (dateCommitTimer.current) clearTimeout(dateCommitTimer.current); saveCell("dueDate", cellValue) } }} />
         ) : (
