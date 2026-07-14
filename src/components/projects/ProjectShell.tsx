@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/ProjectShell.tsx — Phase 3: includes docs tab
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
@@ -64,6 +65,7 @@ export function ProjectShell({ project, userRole, children }:{
   const myLevel  = ROLE_LEVEL[mapDbRoleToRbac(userRole)] ?? 0
 
   // ── Project status (lifecycle) ──
+  const tTabs = useTranslations("tabs")
   const [status, setStatus]       = useState<string>(project.status || "DRAFT")
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [statusBusy, setStatusBusy] = useState(false)
@@ -156,14 +158,14 @@ export function ProjectShell({ project, userRole, children }:{
           <span style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4,
             background:STATUS_META[status]?.bg||"#F1F5F9", color:STATUS_META[status]?.fg||"#64748B",
             textTransform:"uppercase", letterSpacing:".03em", whiteSpace:"nowrap" }}>
-            {STATUS_META[status]?.label||status}
+            {tTabs((STATUS_META[status]?.label||status) as any)}
           </span>
           {status === "DRAFT" && approval?.canSubmit &&
-            approvalBtn("Submit for approval", () => approvalAction("submit"), true)}
+            approvalBtn(tTabs("Submit for approval"), () => approvalAction("submit"), true)}
           {status === "PENDING_APPROVAL" && approval?.canApprove && (
             <>
-              {approvalBtn("✓ Approve", () => approvalAction("approve"), true)}
-              {approvalBtn("✗ Reject", () => approvalAction("reject"), true, true)}
+              {approvalBtn(tTabs("✓ Approve"), () => approvalAction("approve"), true)}
+              {approvalBtn(tTabs("✗ Reject"), () => approvalAction("reject"), true, true)}
             </>
           )}
           {status !== "DRAFT" && status !== "PENDING_APPROVAL" && canChangeStatus && (
@@ -173,7 +175,7 @@ export function ProjectShell({ project, userRole, children }:{
                 border:"1px solid var(--border)", background:"#fff", color:"var(--text-2)",
                 cursor: statusBusy ? "wait" : "pointer", fontFamily:"var(--font)" }}>
               {["ACTIVE","ON_HOLD","COMPLETED","CANCELLED","ARCHIVED"].map(v => (
-                <option key={v} value={v}>{STATUS_META[v]?.label||v}</option>
+                <option key={v} value={v}>{tTabs((STATUS_META[v]?.label||v) as any)}</option>
               ))}
             </select>
           )}
@@ -186,7 +188,7 @@ export function ProjectShell({ project, userRole, children }:{
                 cursor:"pointer", fontFamily:"var(--font)", width:26 }}>
               <option value="">⋮</option>
               {["ACTIVE","ON_HOLD","CANCELLED","ARCHIVED"].map(v => (
-                <option key={v} value={v}>{STATUS_META[v]?.label||v}</option>
+                <option key={v} value={v}>{tTabs((STATUS_META[v]?.label||v) as any)}</option>
               ))}
             </select>
           )}
@@ -212,7 +214,7 @@ export function ProjectShell({ project, userRole, children }:{
                   color:active?"var(--steel)":"var(--text-3)",
                   background:active?"rgba(27,108,168,.06)":"transparent",
                   marginBottom:-1,transition:"color .15s"}}>
-                <span style={{fontSize:12}}>{tab.icon}</span>{tab.label}
+                <span style={{fontSize:12}}>{tab.icon}</span>{tTabs(tab.slug as any)}
               </Link>
             )
           })}

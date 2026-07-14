@@ -1,6 +1,7 @@
 // src/components/dashboard/DashboardView.tsx
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useState } from 'react'
 import Link from 'next/link'
 import { WelcomeBanner } from './WelcomeBanner'
@@ -44,11 +45,12 @@ export function DashboardView({ projects, milestones, risks, activity,
   const rbac = mapDbRoleToRbac(userRole)
   const lvl  = ROLE_LEVEL[rbac] ?? 0
   const can  = (p:string) => rbacCan(rbac, p as any)
+  const t = useTranslations("dashboard")
   const quickActions = [
-    { href:'/my-tasks',  label:'My Tasks',       icon:'✔',  show:true },
-    { href:'/projects',  label:'New Project',    icon:'＋', show:can('projects:create') },
-    { href:'/intake',    label:'Submit an Idea', icon:'💡', show:lvl > 5 },
-    { href:'/executive', label:'Executive View', icon:'👔', show:can('projects:view_all') },
+    { href:'/my-tasks',  label:t('myTasks'),       icon:'✔',  show:true },
+    { href:'/projects',  label:t('newProject'),    icon:'＋', show:can('projects:create') },
+    { href:'/intake',    label:t('submitIdea'), icon:'💡', show:lvl > 5 },
+    { href:'/executive', label:t('executiveView'), icon:'👔', show:can('projects:view_all') },
   ].filter(a => a.show)
 
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
@@ -99,7 +101,7 @@ export function DashboardView({ projects, milestones, risks, activity,
               const url = URL.createObjectURL(blob)
               const a = document.createElement("a"); a.href = url; a.download = "Portfolio_Dashboard_Deck.pptx"; a.click()
               URL.revokeObjectURL(url)
-            } finally { if (btn) { btn.disabled = false; btn.textContent = "🎬 Deck" } }
+            } finally { if (btn) { btn.disabled = false; btn.textContent = t("deck") } }
           }}
           id="deck-btn-dash"
           style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'9px 16px',
@@ -113,15 +115,15 @@ export function DashboardView({ projects, milestones, risks, activity,
       {/* ── KPI row ── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
         {[
-          { label:'Active projects', value:projects.length, sub:`${healthCounts.RED} at risk`,
+          { label:t('Active projects'), value:projects.length, sub:`${healthCounts.RED} ${t('at risk')}`,
             subColor: healthCounts.RED > 0 ? 'var(--red)' : 'var(--text-3)', icon:'📁' },
-          { label:'Overall completion', value:`${avgComplete}%`,
-            sub: projects.length===1 ? 'project progress' : 'across all projects',
+          { label:t('Overall completion'), value:`${avgComplete}%`,
+            sub: projects.length===1 ? t('project progress') : t('across all projects'),
             hint:'Simple average of each project\u2019s % complete', subColor:'var(--text-3)', icon:'📊' },
-          { label:'Total budget', value:fmtCurrency(totalBudget), sub:`${fmtCurrency(totalSpent)} spent`,
+          { label:t('Total budget'), value:fmtCurrency(totalBudget), sub:`${fmtCurrency(totalSpent)} ${t('spent')}`,
             hint: totalBudget>0 ? `${Math.round((totalSpent/totalBudget)*100)}% of budget spent` : undefined,
             subColor: totalBudget > 0 && totalSpent/totalBudget > .9 ? 'var(--red)' : 'var(--text-3)', icon:'💰' },
-          { label:'Open high risks', value:risks.length, sub:'score ≥ 9',
+          { label:t('Open high risks'), value:risks.length, sub:t('score ≥ 9'),
             hint:'Risks with probability × impact score of 9 or higher',
             subColor: risks.length > 0 ? 'var(--amber)' : 'var(--text-3)', icon:'⚠' },
         ].map((kpi:any) => (
@@ -145,7 +147,7 @@ export function DashboardView({ projects, milestones, risks, activity,
       <div style={{ ...card, padding:'12px 16px', marginBottom:16,
         display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
         <span style={{ fontSize:12, fontWeight:600, color:'var(--text-2)' }}>
-          {projects.length === 1 ? 'Project health' : 'Portfolio health'}
+          {projects.length === 1 ? t('Project health') : t('Portfolio health')}
         </span>
         {[
           { key:'GREEN', label:'On track' },
@@ -182,9 +184,9 @@ export function DashboardView({ projects, milestones, risks, activity,
         <div style={card}>
           <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--border)',
             display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Active projects</span>
+            <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('activeProjectsSection')}</span>
             <Link href="/projects" style={{ fontSize:12, color:'var(--steel)', textDecoration:'none' }}>
-              View all →
+              {t('View all')} →
             </Link>
           </div>
           {methodChips.length > 2 && (
@@ -294,13 +296,13 @@ export function DashboardView({ projects, milestones, risks, activity,
           <div style={card}>
             <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)',
               display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Milestones (30d)</span>
+              <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('milestones30')}</span>
               <span style={{ fontSize:20 }}>🎯</span>
             </div>
             {milestones.length === 0 ? (
               <div style={{ padding:'20px 14px', textAlign:'center',
                 fontSize:12, color:'var(--text-3)' }}>
-                No milestones in the next 30 days
+                {t('No milestones in the next 30 days')}
               </div>
             ) : (
               <div>
@@ -339,7 +341,7 @@ export function DashboardView({ projects, milestones, risks, activity,
           <div style={card}>
             <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)',
               display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>High-score risks</span>
+              <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('highScoreRisks')}</span>
               <span style={{ fontSize:20 }}>⚠️</span>
             </div>
             {risks.length === 0 ? (
@@ -385,7 +387,7 @@ export function DashboardView({ projects, milestones, risks, activity,
       <div style={card}>
         <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)',
           display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Recent activity</span>
+          <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('recentActivity')}</span>
           <Link href="/settings/security" style={{ fontSize:12, color:'var(--steel)', textDecoration:'none' }}>
             Audit log →
           </Link>

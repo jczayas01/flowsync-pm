@@ -1,4 +1,6 @@
 // src/app/layout.tsx
+import { NextIntlClientProvider } from "next-intl"
+import { getLocale, getMessages } from "next-intl/server"
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -40,11 +42,15 @@ export const metadata: Metadata = {
   category: 'Business Software',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale()
+  const messages = await getMessages()
   return (
-    <html lang="en" translate="no" className={inter.variable}>
+    <html lang={locale} translate="no" className={inter.variable}>
       <body>
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

@@ -1,5 +1,7 @@
 "use client"
 // src/components/layout/AppShell.tsx — Phase 3 final nav
+import { useTranslations } from "next-intl"
+import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -53,6 +55,7 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
   const pathname    = usePathname()
   const [menu, setMenu] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const t = useTranslations("nav")
   const isSettings  = pathname.startsWith("/settings")
 
   function isActive(href:string) {
@@ -108,7 +111,7 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
               {showHeader && (
                 <div style={{fontSize:9,fontWeight:600,letterSpacing:".08em",textTransform:"uppercase",
                   color:"rgba(255,255,255,.25)",padding:"12px 9px 5px"}}>
-                  {item.section}
+                  {t(item.section as any)}
                 </div>
               )}
               <Link href={item.href}
@@ -118,7 +121,7 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
                   color:isActive(item.href)?"#fff":"rgba(255,255,255,.45)",
                   fontSize:12,fontWeight:isActive(item.href)?500:400,transition:"all .15s"}}>
                 <span style={{fontSize:13,width:17,textAlign:"center"}}>{item.icon}</span>
-                {item.label}
+                {t(item.label as any)}
               </Link>
               {item.children && (pathname.startsWith(item.href) || item.children.some((c:any) => pathname.startsWith(c.href))) && (
                 <div style={{paddingLeft:26,marginBottom:2}}>
@@ -142,7 +145,7 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
             <>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:".08em",textTransform:"uppercase",
                 color:"rgba(255,255,255,.25)",padding:"12px 9px 5px"}}>
-                Settings
+                {t("Settings")}
               </div>
               {settingsItems.map(item=>(
                 <Link key={item.href} href={item.href}
@@ -150,7 +153,7 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
                     textDecoration:"none",fontSize:11,
                     background:pathname===item.href?"rgba(27,108,168,.3)":"transparent",
                     color:pathname===item.href?"#fff":"rgba(255,255,255,.38)"}}>
-                  {item.label}
+                  {t(item.label as any)}
                 </Link>
               ))}
             </>
@@ -206,13 +209,14 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
         </div>
 
         {/* Help button */}
+        <LocaleSwitcher />
         <button onClick={()=>setHelpOpen(true)}
           style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px",
             background:"rgba(255,255,255,.06)", border:"none", borderRadius:6,
             cursor:"pointer", width:"100%", color:"rgba(255,255,255,.6)",
             fontFamily:"var(--font)", fontSize:12, marginBottom:6 }}>
           <span style={{ fontSize:14 }}>❓</span>
-          <span>Help & Guide</span>
+          <span>{t("Help & Guide")}</span>
         </button>
 
         {/* Copyright footer */}
