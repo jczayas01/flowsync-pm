@@ -92,11 +92,11 @@ function Section({ title, icon, children, action }: {
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export function ExecutiveDashboard({ projects, risks, milestones,
-  changeRequests, benefits, decisions, budgetItems, workspaceId }: {
+  changeRequests, benefits, decisions, budgetItems, pendingBaselines = [], workspaceId }: {
   projects:any[]; risks:any[];
   milestones:{ d30:any[]; d60:any[]; d90:any[] };
   changeRequests:any[]; benefits:any[];
-  decisions:any[]; budgetItems:any[]; workspaceId:string
+  decisions:any[]; budgetItems:any[]; pendingBaselines?:any[]; workspaceId:string
 }) {
   const [milestoneWindow, setMilestoneWindow] = useState<30|60|90>(30)
 
@@ -157,6 +157,15 @@ export function ExecutiveDashboard({ projects, risks, milestones,
     weekday:"long", year:"numeric", month:"long", day:"numeric" })
   const tx = useTranslations("exec")
   const router = useRouter()
+
+  async function baselineApprove(projectId: string, baselineId: string) {
+    const res = await fetch(`/api/projects/${projectId}/baselines/${baselineId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", "x-workspace-id": workspaceId },
+      body: JSON.stringify({ action: "approve" }),
+    })
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error || "Approval failed"); return }
+    router.refresh()
+  }
 
   async function approvalAct(projectId: string, action: "approve" | "reject") {
     let reason = ""
@@ -281,6 +290,40 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           </div>
         )
       })()}
+
+      {/* ── Baselines awaiting approval ── */}
+      {pendingBaselines.length > 0 && (
+        <div style={{ background:"#F5F3FF", border:"1px solid #DDD6FE",
+          borderLeft:"4px solid #7C3AED", borderRadius:"var(--radius)",
+          padding:"14px 18px", margin:"0 0 16px" }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#5B21B6", marginBottom:2 }}>
+            📐 {tx("Baselines awaiting approval")} ({pendingBaselines.length})
+          </div>
+          <div style={{ fontSize:11, color:"#6D28D9", marginBottom:10 }}>
+            {tx("Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.")}
+          </div>
+          {pendingBaselines.map((b:any) => (
+            <div key={b.id} className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:12,
+              padding:"9px 0", borderTop:"1px solid #DDD6FE" }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{b.name}</span>
+                <span style={{ fontSize:11, color:"var(--text-3)", marginLeft:8 }}>
+                  {b.project?.code} · {b.project?.name}
+                </span>
+                <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
+                  {tx("Created")}{b.createdBy?.name ? ` ${tx("by")} ${b.createdBy.name}` : ""}
+                  {" · "}{new Date(b.startDate).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
+                  {" → "}{new Date(b.endDate).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
+                </div>
+              </div>
+              <button onClick={() => baselineApprove(b.project.id, b.id)}
+                style={{ padding:"6px 14px", background:"#EDE9FE", border:"1px solid #C4B5FD",
+                  borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#6D28D9",
+                  cursor:"pointer", fontFamily:"var(--font)" }}>✓ {tx("Approve baseline")}</button>
+            </div>
+          ))}
+        </div>
+      )}
 
         {/* ── KPI Strip ── */}
         <div className="fs-cols-6">

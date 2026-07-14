@@ -7,6 +7,7 @@ import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 
 const STATUS_CFG: Record<string,{label:string;color:string;bg:string;icon:string}> = {
   PROJECTED: { label:"Projected",  color:"#1B6CA8", bg:"#EFF6FF",  icon:"📊" },
@@ -96,6 +97,40 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
           </button>)}
         </div>
       </div>
+
+      {can("projects:edit") && (
+        <div style={{ padding:"10px 16px 0" }}>
+          <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="benefits"
+            commitLabel="to benefits register"
+            renderCandidate={(c: any) => (
+              <div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</div>
+                {c.description && <div style={{ fontSize:12, color:"var(--text-2)", marginTop:2 }}>{c.description}</div>}
+                <div style={{ fontSize:11, color:"var(--text-3)", marginTop:3 }}>
+                  {c.category ? `${c.category}` : ""}{c.projectedValue ? ` · ${c.projectedValue}` : ""}
+                  {c.sourceDoc ? ` · ${c.sourceDoc}` : ""}
+                </div>
+              </div>
+            )}
+            commit={async (chosen: any[]) => {
+              let failed = 0
+              for (const c of chosen) {
+                try {
+                  const res = await fetch(`/api/projects/${projectId}/benefits`, {
+                    method:"POST", headers:{ "Content-Type":"application/json", "x-workspace-id":workspaceId },
+                    body: JSON.stringify({
+                      title: c.title, description: c.description || null,
+                      category: c.category || null, projectedValue: c.projectedValue || null,
+                      status: "PROJECTED",
+                    }),
+                  })
+                  if (!res.ok) failed++
+                } catch { failed++ }
+              }
+              return failed
+            }} />
+        </div>
+      )}
 
       {creating && (
         <div style={{ background:"var(--surface)", borderBottom:"1px solid var(--border)", padding:16 }}>

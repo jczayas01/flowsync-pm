@@ -175,7 +175,12 @@
     "Tracking": "Tracking",
     "⏳ Projects awaiting your approval": "⏳ Projects awaiting your approval",
     "✓ Approve": "✓ Approve",
-    "✗ Reject": "✗ Reject"
+    "✗ Reject": "✗ Reject",
+    "Baselines awaiting approval": "Baselines awaiting approval",
+    "Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.": "Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.",
+    "Created": "Created",
+    "by": "by",
+    "Approve baseline": "Approve baseline"
   },
   "resources": {
     "Resource management": "Resource management",

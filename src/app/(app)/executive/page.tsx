@@ -44,6 +44,7 @@ export default async function ExecutivePage() {
     milestones90,
     changeRequests,
     benefits,
+    pendingBaselines,
     recentDecisions,
     budgetItems,
   ] = await Promise.all([
@@ -116,6 +117,15 @@ export default async function ExecutivePage() {
     }),
 
     // Recent key decisions
+    db.baseline.findMany({
+      where: { isApproved: false, project: { workspaceId } },
+      select: {
+        id:true, name:true, budgetTotal:true, startDate:true, endDate:true, createdAt:true,
+        project: { select:{ id:true, code:true, name:true } },
+        createdBy: { select:{ name:true } },
+      },
+      orderBy: { createdAt:'desc' }, take: 20,
+    }),
     db.decision.findMany({
       where:   { project:{ workspaceId } },
       orderBy: { madeAt:'desc' },
@@ -159,6 +169,7 @@ export default async function ExecutivePage() {
       benefits={benefits as any}
       decisions={recentDecisions as any}
       budgetItems={serializedBudget}
+      pendingBaselines={JSON.parse(JSON.stringify(pendingBaselines)) as any}
       workspaceId={workspaceId}
     />
   )

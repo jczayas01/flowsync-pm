@@ -57,6 +57,13 @@ const DOMAINS: Record<string, DomainCfg> = {
     spec: `{"candidates":[{"title":"short name of the agreement/document (max 150 chars)","vendorName":"the vendor/supplier/counterparty name","vendorContact":"contact person if stated, else null","vendorPhone":"phone number if stated, else null","vendorLocation":"vendor address/city/location if stated, else null","type":"CONTRACT|PURCHASE_ORDER|SOW|MSA|NDA|OTHER","poNumber":"PO number if stated, else null","contractRef":"contract/reference number if stated, else null","value":12345.67,"currency":"USD or the stated currency code","startDate":"yyyy-mm-dd or null","endDate":"yyyy-mm-dd or null","deliverables":"short summary of deliverables/scope if stated, else null","sourceDoc":"document name","evidence":"short phrase with the key detail (max 160 chars)"}]}`,
     rules: `Extract PROCUREMENT records: purchase orders, contracts, invoices, statements of work, master agreements, NDAs — any commercial document binding the project to a vendor. Invoices map to type OTHER with the invoice number in poNumber. value must be a plain number when a monetary amount is stated, otherwise null — never invent amounts. Dates strictly yyyy-mm-dd or null.`,
   },
+  benefits: {
+    existing: async (projectId) =>
+      (await db.benefit.findMany({ where: { projectId }, select: { title: true } }).catch(() => []))
+        .map((r: any) => r.title),
+    spec: `{"candidates":[{"title":"short benefit title (max 120 chars)","description":"what value/outcome is expected","category":"one or two words e.g. Financial, Efficiency, Quality, Strategic, Compliance","projectedValue":"the target value or measure if stated (e.g. '$50K/yr', '20% faster'), else null","sourceDoc":"document name","evidence":"short phrase from the document (max 160 chars)"}]}`,
+    rules: `A BENEFIT is a measurable value or outcome the project is meant to deliver (cost savings, revenue, efficiency, quality, strategic advantage). Extract expected/target benefits the documents describe. projectedValue is a stated measure or null — never invent numbers.`,
+  },
   lessons: {
     existing: async (projectId) =>
       (await db.lessonLearned.findMany({ where: { projectId }, select: { title: true } }).catch(() => []))

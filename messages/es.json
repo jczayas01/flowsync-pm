@@ -175,7 +175,12 @@
     "Tracking": "En seguimiento",
     "⏳ Projects awaiting your approval": "⏳ Proyectos en espera de tu aprobación",
     "✓ Approve": "✓ Aprobar",
-    "✗ Reject": "✗ Rechazar"
+    "✗ Reject": "✗ Rechazar",
+    "Baselines awaiting approval": "Líneas base en espera de aprobación",
+    "Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.": "Aprobar una línea base fija formalmente el plan de referencia — alcance, cronograma y presupuesto — para el seguimiento de variaciones.",
+    "Created": "Creada",
+    "by": "por",
+    "Approve baseline": "Aprobar línea base"
   },
   "resources": {
     "Resource management": "Gestión de recursos",

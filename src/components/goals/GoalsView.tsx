@@ -42,7 +42,12 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
   const atRisk   = localGoals.filter(g=>g.status==="AT_RISK").length
   const offTrack = localGoals.filter(g=>g.status==="OFF_TRACK").length
   const avgProgress = localGoals.length
-    ? Math.round(localGoals.reduce((s,g)=>s+(g.progress||0),0)/localGoals.length) : 0
+    ? Math.round(localGoals.reduce((s,g)=>{
+        const kr=(g.keyResults||[]).map((k:any)=>k.progress||0)
+        const pj=(g.linkedProjects||[]).map((lp:any)=>lp.percentComplete ?? lp.progress ?? 0)
+        const av=[...kr,...pj]
+        return s+(av.length?av.reduce((a:number,b:number)=>a+b,0)/av.length:(g.progress||0))
+      },0)/localGoals.length) : 0
 
   async function createGoal(e:React.FormEvent) {
     e.preventDefault()
@@ -237,8 +242,12 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {filtered.map(goal=>{
               const isOpen = expanded[goal.id]!==false
-              const avgKR  = goal.keyResults?.length
-                ? Math.round(goal.keyResults.reduce((s:number,kr:any)=>s+(kr.progress||0),0)/goal.keyResults.length)
+              // Roll up BOTH key-result progress AND linked-project completion (equal weight across all contributors)
+              const krVals   = (goal.keyResults||[]).map((kr:any)=>kr.progress||0)
+              const projVals = (goal.linkedProjects||[]).map((lp:any)=>lp.percentComplete ?? lp.progress ?? 0)
+              const allVals  = [...krVals, ...projVals]
+              const avgKR    = allVals.length
+                ? Math.round(allVals.reduce((s:number,v:number)=>s+v,0)/allVals.length)
                 : goal.progress||0
               return (
                 <div key={goal.id} style={{background:"#fff",border:"1px solid var(--border)",

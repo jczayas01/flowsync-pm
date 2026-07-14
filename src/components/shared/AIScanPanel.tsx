@@ -11,7 +11,7 @@ import { DocScanPicker } from "@/components/shared/DocScanPicker"
 export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, renderCandidate, commit }: {
   projectId: string
   workspaceId: string
-  domain: "issues" | "changes" | "decisions" | "requirements" | "lessons"
+  domain: "issues" | "changes" | "decisions" | "requirements" | "lessons" | "benefits"
   commitLabel: string                               // e.g. "to issue log"
   renderCandidate: (c: any) => React.ReactNode      // card body (checkbox handled here)
   commit: (chosen: any[]) => Promise<number>        // returns count of failures
