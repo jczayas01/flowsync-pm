@@ -57,6 +57,8 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
   const [helpOpen, setHelpOpen] = useState(false)
   const t = useTranslations("nav")
   const isSettings  = pathname.startsWith("/settings")
+  const [mobileNav, setMobileNav] = useState(false)
+  useEffect(() => { setMobileNav(false) }, [pathname])
 
   function isActive(href:string) {
     if(href==="/dashboard") return pathname==="/dashboard"
@@ -81,7 +83,8 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
   return (
     <PermissionsProvider role={userRole}>
     <div style={{display:"flex",height:"100vh",overflow:"hidden",background:"var(--surface)"}}>
-      <aside style={{width:196,background:"var(--navy,#0D1B2A)",display:"flex",flexDirection:"column",
+      <aside className={`fs-sidebar ${mobileNav ? "fs-open" : ""}`}
+        style={{width:196,background:"var(--navy,#0D1B2A)",display:"flex",flexDirection:"column",
         flexShrink:0,borderRight:"1px solid rgba(255,255,255,.06)"}}>
         <div style={{padding:"13px 11px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
           <Link href="/dashboard" style={{display:"flex",alignItems:"center",gap:8,
@@ -231,11 +234,20 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
           </div>
         </div>
       </aside>
+      {mobileNav && <div className="fs-backdrop" onClick={() => setMobileNav(false)} />}
 
       {/* Help Center panel */}
       {helpOpen && <HelpCenter onClose={()=>setHelpOpen(false)} />}
 
       <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
+        <div className="fs-mobilebar">
+          <button onClick={() => setMobileNav(true)} aria-label="Menu"
+            style={{background:"none",border:"none",color:"#fff",fontSize:20,cursor:"pointer",
+              padding:"0 2px",lineHeight:1}}>☰</button>
+          <span style={{fontWeight:800,fontSize:14,letterSpacing:".01em"}}>
+            FlowSync <span style={{color:"var(--amber,#F59E0B)"}}>PM</span>
+          </span>
+        </div>
         {children}
       </main>
     </div>

@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/ProjectsView.tsx
+import { useTranslations } from "next-intl"
 import { ImportProjectModal } from "@/components/projects/ImportProjectModal"
 import { useState } from "react"
 import Link from "next/link"
@@ -16,6 +17,7 @@ const METHOD_COLORS: Record<string,string> = {
 export function ProjectsView({ projects, workspaceId, userRole, filters }: {
   projects:any[]; workspaceId:string; userRole:string; filters:any
 }) {
+  const t = useTranslations("projects")
   const [importOpen, setImportOpen] = useState(false)
   const router  = useRouter()
   const [view, setView] = useState<"grid"|"list">("list")
@@ -49,7 +51,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
             <Link href="/projects/new"
               style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", borderRadius:"var(--radius)",
                 textDecoration:"none", fontSize:13, fontWeight:500 }}>
-              + New project
+              {t('+ New project')}
             </Link>
           )}
           {canCreate && (
@@ -58,7 +60,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
               background:"#fff", color:"var(--text-2)", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
               fontFamily:"var(--font)" }}>
-            📄 Import from plan
+            {t('📄 Import from plan')}
           </button>
           )}
         </div>
@@ -69,7 +71,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
         padding:"8px 20px", display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", flexShrink:0 }}>
         <select style={sel} defaultValue={filters.status || ""}
           onChange={e => applyFilter("status", e.target.value)}>
-          <option value="">All statuses</option>
+          <option value="">{t("All statuses")}</option>
           {["ACTIVE","PENDING_APPROVAL","ON_HOLD","DRAFT","COMPLETED","CANCELLED"].map(s =>
             <option key={s} value={s}>{s.replace("_"," ")}</option>
           )}
@@ -83,12 +85,12 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
         </select>
         <select style={sel} defaultValue={filters.method || ""}
           onChange={e => applyFilter("method", e.target.value)}>
-          <option value="">All methodologies</option>
+          <option value="">{t("All methodologies")}</option>
           <option value="WATERFALL">Waterfall</option>
           <option value="AGILE">Agile</option>
           <option value="SCRUM">Scrum</option>
         </select>
-        <input placeholder="Search projects…" defaultValue={filters.q || ""}
+        <input placeholder={t("Search projects…")} defaultValue={filters.q || ""}
           onChange={e => applyFilter("q", e.target.value)}
           style={{ padding:"6px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
             fontSize:12, fontFamily:"var(--font)", outline:"none", width:180 }} />
@@ -97,8 +99,8 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
       {/* List */}
       <div style={{ flex:1, overflowY:"auto", padding:16 }}>
         {projects.length === 0 ? (
-          <EmptyState icon="📁" title="No projects found"
-            description={canCreate ? "Create your first project or install a template to get started." : "No projects match your current filters."}
+          <EmptyState icon="📁" title={t("No projects found")}
+            description={canCreate ? t("Create your first project or install a template to get started.") : t("No projects match your current filters.")}
             action={canCreate ? (
               <div style={{ display:"flex", gap:8, justifyContent:"center" }}>
                 <Link href="/templates"
@@ -109,7 +111,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                 <Link href="/projects/new"
                   style={{ padding:"8px 16px", background:"var(--steel)", borderRadius:"var(--radius)",
                     textDecoration:"none", color:"#fff", fontSize:13, fontWeight:500 }}>
-                  + New project
+                  {t('+ New project')}
                 </Link>
               </div>
             ) : undefined} />
@@ -190,7 +192,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                   {/* Health badge */}
                   <div>
                     <Badge variant={HEALTH_COLORS[p.health] || "gray"}>
-                      {p.health==="GREEN"?"On track":p.health==="AMBER"?"At risk":"Off track"}
+                      {p.health==="GREEN"?t("On track"):p.health==="AMBER"?t("At risk"):t("Off track")}
                     </Badge>
                   </div>
                   {/* Status */}

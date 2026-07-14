@@ -3,6 +3,7 @@
 // Full redesign per PM best practices — phase headers, context menu, hierarchy,
 // critical path, dependencies, phase filter, searchable assignee
 
+import { useTranslations } from "next-intl"
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { DatePickerPopover } from "@/components/shared/DatePicker"
 import { useRouter } from "next/navigation"
@@ -223,6 +224,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
   const [collapsed, setCollapsed]   = useState<Set<string>>(new Set())
   const [ctxMenu, setCtxMenu]       = useState<{x:number;y:number;task:any}|null>(null)
   const [phaseFilter, setPhaseFilter] = useState<Set<string>>(new Set())
+  const tt = useTranslations("tasksTab")
   const [search, setSearch]         = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [priorityFilter, setPriorityFilter] = useState("")
@@ -730,7 +732,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
         padding:"8px 14px", display:"flex", gap:8, flexWrap:"wrap",
         alignItems:"center", flexShrink:0 }}>
 
-        <input placeholder="Search tasks…" value={search}
+        <input placeholder={tt("Search tasks…")} value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ padding:"6px 10px", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", fontSize:12, fontFamily:"var(--font)",
@@ -845,7 +847,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
             style={{ padding:"7px 14px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
               fontFamily:"var(--font)" }}>
-            + Add task
+            {tt("+ Add task")}
           </button>
         </div>
       </div>
@@ -1273,6 +1275,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
   const [editingCell, setEditingCell] = useState<string|null>(null)
   const [menuUp, setMenuUp] = useState(false)
   const [cellValue,   setCellValue]   = useState<any>(null)
+  const tt = useTranslations("tasksTab")
   const dateCommitTimer = useRef<any>(null)
   const [saving,      setSaving]      = useState(false)
 
@@ -1456,7 +1459,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
           <span title="Click to edit" style={{ padding:"3px 8px", borderRadius:10,
             fontSize:10, fontWeight:600, cursor:"pointer",
             color:sc.text, background:sc.bg }}>
-            {sc.label}
+            {tt(sc.label as any)}
           </span>
         )}
       </td>
@@ -1476,7 +1479,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
         ) : (
           <span title="Click to edit" style={{ fontSize:11, fontWeight:700,
             cursor:"pointer", color:pc.color }}>
-            {pc.label}
+            {tt(pc.label as any)}
           </span>
         )}
       </td>

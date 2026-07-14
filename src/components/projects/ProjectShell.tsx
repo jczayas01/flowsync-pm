@@ -143,7 +143,7 @@ export function ProjectShell({ project, userRole, children }:{
           <span>›</span>
           <span style={{color:"var(--text-2)",fontFamily:"monospace"}}>{project.code}</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:9}}>
+        <div className="fs-wrap" style={{display:"flex",alignItems:"center",gap:10,marginBottom:9}}>
           <h1 style={{fontSize:16,fontWeight:600,color:"var(--text)",lineHeight:1.2,flex:1,minWidth:0,
             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
             {project.name}
@@ -200,7 +200,7 @@ export function ProjectShell({ project, userRole, children }:{
           </span>
           <div style={{fontSize:11,color:"var(--text-3)"}}>{project.percentComplete}%</div>
         </div>
-        <div style={{display:"flex",gap:0,flexWrap:"wrap",borderBottom:"1px solid var(--border)"}}>
+        <div className="fs-tabbar" style={{display:"flex",gap:0,flexWrap:"wrap",borderBottom:"1px solid var(--border)"}}>
           {tabs.map(tab=>{
             const href   = tab.slug ? `${base}/${tab.slug}` : base
             const active = tab.slug===""

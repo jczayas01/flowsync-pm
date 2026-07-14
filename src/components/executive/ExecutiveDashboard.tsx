@@ -4,6 +4,7 @@
 // Provides Resources & Direction layer: portfolio health, financial, risk,
 // milestone pipeline, benefits realization, pending decisions
 
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -41,9 +42,9 @@ const STATUS_CFG: Record<string,{color:string;bg:string}> = {
   APPROVED:     { color:"#059669", bg:"#ECFDF5" },
 }
 const BENEFIT_CFG: Record<string,{color:string;label:string}> = {
-  PROJECTED: { color:"#1B6CA8", label:"Projected"  },
-  TRACKING:  { color:"#F59E0B", label:"Tracking"   },
-  REALIZED:  { color:"#059669", label:"Realized"   },
+  PROJECTED: { color:"#1B6CA8", label:tx("Projected")  },
+  TRACKING:  { color:"#F59E0B", label:tx("Tracking")   },
+  REALIZED:  { color:"#059669", label:tx("Realized")   },
   MISSED:    { color:"#DC2626", label:"Missed"     },
 }
 
@@ -154,6 +155,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
 
   const now = new Date().toLocaleDateString("en-US", {
     weekday:"long", year:"numeric", month:"long", day:"numeric" })
+  const tx = useTranslations("exec")
   const router = useRouter()
 
   async function approvalAct(projectId: string, action: "approve" | "reject") {
@@ -178,7 +180,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
       {/* ── Executive Header ── */}
       <div style={{ background:"linear-gradient(135deg,#1a3a5c 0%,#1B6CA8 100%)",
         padding:"24px 28px", color:"#fff", flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
+        <div className="fs-wrap" style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:14 }}>
           <div>
             <div style={{ fontSize:11, fontWeight:600, color:"rgba(255,255,255,.5)",
               textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>
@@ -244,7 +246,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             borderLeft:"4px solid #F59E0B", borderRadius:"var(--radius)",
             padding:"14px 18px", margin:"0 0 16px" }}>
             <div style={{ fontSize:13, fontWeight:700, color:"#92400E", marginBottom:2 }}>
-              ⏳ Projects awaiting your approval ({pending.length})
+              {tx("⏳ Projects awaiting your approval")} ({pending.length})
             </div>
             <div style={{ fontSize:11, color:"#B45309", marginBottom:10 }}>
               Approving authorizes execution — the project moves from Draft to Active and a governance
@@ -253,7 +255,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             {pending.map((p: any) => {
               const pm = (p.members || []).find((m: any) => m.projectRole === "PM")
               return (
-                <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12,
+                <div key={p.id} className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:12,
                   padding:"9px 0", borderTop:"1px solid #FDE68A" }}>
                   <a href={`/projects/${p.id}`} style={{ flex:1, textDecoration:"none" }}>
                     <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{p.name}</span>
@@ -268,11 +270,11 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                   <button onClick={() => approvalAct(p.id, "approve")}
                     style={{ padding:"6px 14px", background:"#ECFDF5", border:"1px solid #A7F3D0",
                       borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#059669",
-                      cursor:"pointer", fontFamily:"var(--font)" }}>✓ Approve</button>
+                      cursor:"pointer", fontFamily:"var(--font)" }}>{tx("✓ Approve")}</button>
                   <button onClick={() => approvalAct(p.id, "reject")}
                     style={{ padding:"6px 14px", background:"#FEF2F2", border:"1px solid #FECACA",
                       borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#DC2626",
-                      cursor:"pointer", fontFamily:"var(--font)" }}>✗ Reject</button>
+                      cursor:"pointer", fontFamily:"var(--font)" }}>{tx("✗ Reject")}</button>
                 </div>
               )
             })}
@@ -281,7 +283,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
       })()}
 
         {/* ── KPI Strip ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
+        <div className="fs-cols-6">
           <KPI icon="📁" label="Active projects" value={activeProjects.length} />
           <KPI icon="💰" label="Total portfolio budget" value={fmtCurrency(totalBAC)}
             sub={`${budgetPct}% spent`}
@@ -308,10 +310,10 @@ export function ExecutiveDashboard({ projects, risks, milestones,
         </div>
 
         {/* ── Row 1: Project health grid + Financial summary ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        <div className="fs-cols-2">
 
           {/* Project health grid */}
-          <Section title="Project Health Scorecard" icon="🚦"
+          <Section title={tx("Project Health Scorecard")} icon="🚦"
             action={
               <Link href="/projects" style={{ fontSize:11, color:"var(--steel)",
                 textDecoration:"none" }}>All projects →</Link>
@@ -405,7 +407,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
 
           {/* Financial summary */}
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-            <Section title="Financial Overview" icon="💰">
+            <Section title={tx("Financial Overview")} icon="💰">
               <div style={{ padding:16 }}>
                 {/* Budget utilization bar */}
                 <div style={{ marginBottom:14 }}>
@@ -426,12 +428,12 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                 </div>
 
                 {/* EVM metrics row */}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:14 }}>
+                <div className="fs-cols-3" style={{ marginBottom:14 }}>
                   {[
-                    { label:"Budget (BAC)",  value:fmtCurrency(totalBAC), color:"var(--text)" },
-                    { label:"Actual Cost",   value:fmtCurrency(totalSpent),
+                    { label:tx("Budget (BAC)"),  value:fmtCurrency(totalBAC), color:"var(--text)" },
+                    { label:tx("Actual Cost"),   value:fmtCurrency(totalSpent),
                       color:totalSpent>totalBAC?"var(--red)":"var(--text)" },
-                    { label:"Earned Value",  value:fmtCurrency(totalEV), color:"var(--steel)" },
+                    { label:tx("Earned Value"),  value:fmtCurrency(totalEV), color:"var(--steel)" },
                   ].map(m => (
                     <div key={m.label} style={{ background:"var(--surface)",
                       borderRadius:"var(--radius)", padding:"10px 12px" }}>
@@ -470,7 +472,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             </Section>
 
             {/* Benefits realization */}
-            <Section title="Benefits Realization" icon="💹">
+            <Section title={tx("Benefits Realization")} icon="💹">
               <div style={{ padding:"10px 16px" }}>
                 <div style={{ display:"flex", gap:10, marginBottom:10 }}>
                   {Object.entries(BENEFIT_CFG).map(([s,c]) => {
@@ -503,10 +505,10 @@ export function ExecutiveDashboard({ projects, risks, milestones,
         </div>
 
         {/* ── Row 2: Risk exposure + Milestone pipeline ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        <div className="fs-cols-2">
 
           {/* Risk exposure */}
-          <Section title="Risk Exposure — Top Threats" icon="⚠"
+          <Section title={tx("Risk Exposure — Top Threats")} icon="⚠"
             action={
               <div style={{ display:"flex", gap:8, fontSize:11 }}>
                 <span style={{ padding:"2px 7px", borderRadius:10,
@@ -551,7 +553,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           </Section>
 
           {/* Milestone pipeline */}
-          <Section title="Milestone Pipeline" icon="◇"
+          <Section title={tx("Milestone Pipeline")} icon="◇"
             action={
               <div style={{ display:"flex", gap:2, border:"1px solid var(--border)",
                 borderRadius:6, overflow:"hidden" }}>
@@ -604,10 +606,10 @@ export function ExecutiveDashboard({ projects, risks, milestones,
         </div>
 
         {/* ── Row 3: Pending decisions + Recent decisions ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+        <div className="fs-cols-2">
 
           {/* Change requests requiring action */}
-          <Section title="Change Requests — Action Required" icon="🔄"
+          <Section title={tx("Change Requests — Action Required")} icon="🔄"
             action={pendingCRs.length > 0 ? (
               <span style={{ fontSize:11, fontWeight:700, padding:"2px 8px",
                 borderRadius:10, background:"#FFFBEB", color:"var(--amber)" }}>
@@ -665,7 +667,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           </Section>
 
           {/* Recent key decisions */}
-          <Section title="Recent Key Decisions" icon="⚡"
+          <Section title={tx("Recent Key Decisions")} icon="⚡"
             action={
               <span style={{ fontSize:11, color:"var(--text-3)" }}>Last 5 recorded</span>
             }>

@@ -113,7 +113,7 @@ export function DashboardView({ projects, milestones, risks, activity,
       </div>
 
       {/* ── KPI row ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
+      <div className="fs-cols-4" style={{ marginBottom:16 }}>
         {[
           { label:t('Active projects'), value:projects.length, sub:`${healthCounts.RED} ${t('at risk')}`,
             subColor: healthCounts.RED > 0 ? 'var(--red)' : 'var(--text-3)', icon:'📁' },
@@ -178,7 +178,7 @@ export function DashboardView({ projects, milestones, risks, activity,
       </div>
 
       {/* ── Main grid ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:16, marginBottom:16 }}>
+      <div className="fs-cols-main" style={{ marginBottom:16 }}>
 
         {/* Projects table */}
         <div style={card}>

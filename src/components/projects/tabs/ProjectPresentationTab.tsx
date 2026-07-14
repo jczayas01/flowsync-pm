@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/tabs/ProjectPresentationTab.tsx — branded PPTX generation
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 const AUDIENCES = [
@@ -18,6 +19,7 @@ const AUDIENCES = [
 export function ProjectPresentationTab({ projectId, workspaceId, project }: {
   projectId: string; workspaceId: string; project: any
 }) {
+  const t = useTranslations("present")
   const [audience, setAudience] = useState<"EXECUTIVE"|"TEAM">("EXECUTIVE")
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState("")
@@ -60,9 +62,9 @@ export function ProjectPresentationTab({ projectId, workspaceId, project }: {
               border: `2px solid ${audience === a.id ? "var(--steel)" : "var(--border)"}`,
               borderRadius: "var(--radius)", padding: 18, cursor: "pointer" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
-              {a.icon} {a.title}
+              {a.icon} {t(a.title as any)}
             </div>
-            <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.5 }}>{a.desc}</div>
+            <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.5 }}>{t(a.desc as any)}</div>
           </div>
         ))}
       </div>
@@ -70,7 +72,7 @@ export function ProjectPresentationTab({ projectId, workspaceId, project }: {
       <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: 18, marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase",
           letterSpacing: ".05em", marginBottom: 10 }}>
-          Deck contents — {sel.title}
+          {t("Deck contents")} — {t(sel.title as any)}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {sel.slides.map((sl, i) => (
@@ -90,7 +92,7 @@ export function ProjectPresentationTab({ projectId, workspaceId, project }: {
         style={{ padding: "12px 26px", background: "var(--steel)", color: "#fff", border: "none",
           borderRadius: "var(--radius)", fontSize: 14, fontWeight: 600, fontFamily: "var(--font)",
           cursor: generating ? "wait" : "pointer" }}>
-        {generating ? "Building deck…" : "🎬 Generate PowerPoint"}
+        {generating ? t("Building deck…") : t("🎬 Generate PowerPoint")}
       </button>
       {error && <div style={{ fontSize: 12, color: "#B91C1C", marginTop: 10 }}>✗ {error}</div>}
     </div>

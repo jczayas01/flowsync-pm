@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/ImportProjectModal.tsx — New Project from Document (flagship)
+import { useTranslations } from "next-intl"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -15,6 +16,7 @@ const SECTION_META: Record<string, { icon: string; label: string }> = {
 }
 
 export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
+  const t = useTranslations("import")
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [stage, setStage] = useState<Stage>("upload")
@@ -107,9 +109,9 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
           display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>📄</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>New project from document</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("New project from document")}</div>
             <div style={{ fontSize: 11, color: "var(--text-3)" }}>
-              Upload a project plan — the AI builds the project, you review before anything is created
+              {t("Upload a project plan — the AI builds the project, you review before anything is created")}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20,
@@ -129,10 +131,10 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
                 padding: "64px 24px", textAlign: "center", cursor: "pointer" }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>📎</div>
               <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
-                Drop your project plan here, or click to browse
+                {t("Drop your project plan here, or click to browse")}
               </div>
               <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-                Word · PDF (scans read visually) · Excel · text — max 8 MB
+                {t("Word · PDF (scans read visually) · Excel · text — max 8 MB")}
               </div>
               <input ref={fileRef} type="file" hidden accept=".docx,.doc,.pdf,.xlsx,.txt,.md"
                 onChange={e => { const f = e.target.files?.[0]; if (f) analyze(f) }} />
@@ -142,11 +144,9 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
           {stage === "analyzing" && (
             <div style={{ textAlign: "center", padding: "70px 20px" }}>
               <div style={{ fontSize: 40, marginBottom: 14 }}>🤖</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>
-                Reading your plan…
-              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("Reading your plan…")}</div>
               <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-                Extracting phases, tasks, dates, milestones, risks, and budget — typically 15–30 seconds
+                {t("Extracting phases, tasks, dates, milestones, risks, and budget — typically 15–30 seconds")}
               </div>
             </div>
           )}
@@ -154,7 +154,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
           {stage === "creating" && (
             <div style={{ textAlign: "center", padding: "70px 20px" }}>
               <div style={{ fontSize: 40, marginBottom: 14 }}>🏗️</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>Creating your project…</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>{t("Creating your project…")}</div>
             </div>
           )}
 
@@ -169,7 +169,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
                 {Object.keys(SECTION_META).map(sec => (
                   <span key={sec} style={{ fontSize: 12, padding: "5px 12px", background: "var(--surface)",
                     border: "1px solid var(--border)", borderRadius: 14, color: "var(--text-2)" }}>
-                    {SECTION_META[sec].icon} {countIn(sec)} {SECTION_META[sec].label.toLowerCase()}
+                    {SECTION_META[sec].icon} {countIn(sec)} {t(SECTION_META[sec].label as any).toLowerCase()}
                   </span>
                 ))}
               </div>
@@ -178,28 +178,28 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)",
                 borderRadius: 8, padding: 14, marginBottom: 14 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
-                  <div><div style={lbl}>Project name *</div>
+                  <div><div style={lbl}>{t("Project name *")}</div>
                     <input style={inp} value={data.project.name} onChange={e => setProjField("name", e.target.value)} /></div>
-                  <div><div style={lbl}>Methodology</div>
+                  <div><div style={lbl}>{t("Methodology")}</div>
                     <select style={{ ...inp, cursor: "pointer" }} value={data.project.methodology}
                       onChange={e => setProjField("methodology", e.target.value)}>
                       {["WATERFALL", "AGILE", "SCRUM", "HYBRID"].map(m => <option key={m} value={m}>{m}</option>)}
                     </select></div>
                   <div><div style={lbl}>Budget ({data.project.currency})</div>
                     <input style={inp} type="number" value={data.project.budgetTotal ?? ""}
-                      placeholder="from budget lines"
+                      placeholder={t("from budget lines")}
                       onChange={e => setProjField("budgetTotal", e.target.value === "" ? null : Number(e.target.value))} /></div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                  <div><div style={lbl}>Start date</div>
+                  <div><div style={lbl}>{t("Start date")}</div>
                     <DateField style={inp} value={data.project.startDate || ""}
                       onChange={e => setProjField("startDate", e.target.value || null)} /></div>
-                  <div><div style={lbl}>End date</div>
+                  <div><div style={lbl}>{t("End date")}</div>
                     <DateField style={inp} value={data.project.endDate || ""}
                       onChange={e => setProjField("endDate", e.target.value || null)} /></div>
                 </div>
                 {data.project.objective && (
-                  <div><div style={lbl}>Objective</div>
+                  <div><div style={lbl}>{t("Objective")}</div>
                     <textarea style={{ ...inp, resize: "vertical" }} rows={2} value={data.project.objective}
                       onChange={e => setProjField("objective", e.target.value)} /></div>
                 )}
@@ -218,10 +218,10 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
                         borderRadius: open[sec] ? "8px 8px 0 0" : 8 }}>
                       <span style={{ fontSize: 13 }}>{open[sec] ? "▾" : "▸"}</span>
                       <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-                        {meta.icon} {meta.label}
+                        {meta.icon} {t(meta.label as any)}
                       </span>
                       <span style={{ fontSize: 11, color: "var(--text-3)" }}>
-                        {countIn(sec)} of {items.length} selected
+                        {countIn(sec)} {t("of")} {items.length} {t("selected")}
                       </span>
                     </div>
                     {open[sec] && (
@@ -276,14 +276,14 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
               style={{ padding: "9px 14px", background: "#fff", border: "1px solid var(--border)",
                 borderRadius: "var(--radius)", fontSize: 13, cursor: "pointer",
                 fontFamily: "var(--font)", color: "var(--text-2)" }}>
-              ← Different file
+              {t("← Different file")}
             </button>
             <div style={{ flex: 1 }} />
             <button onClick={create} disabled={!data.project.name?.trim()}
               style={{ padding: "11px 22px", background: "var(--steel)", color: "#fff", border: "none",
                 borderRadius: "var(--radius)", fontSize: 14, fontWeight: 600,
                 fontFamily: "var(--font)", cursor: "pointer" }}>
-              🏗️ Create project with {countIn("phases") + countIn("tasks") + countIn("milestones") + countIn("risks") + countIn("budget")} items
+              {t("🏗️ Create project with")} {countIn("phases") + countIn("tasks") + countIn("milestones") + countIn("risks") + countIn("budget")} {t("items")}
             </button>
           </div>
         )}
