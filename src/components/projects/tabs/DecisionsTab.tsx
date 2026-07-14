@@ -2,6 +2,7 @@
 // src/components/projects/tabs/DecisionsTab.tsx
 // PM Best Practices — Decision Log (formal record of key project decisions)
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -100,7 +101,7 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
               </div>
               <div>
                 <label style={lbl}>Date made</label>
-                <input type="date" style={inp} value={form.madeAt}
+                <DateField  style={inp} value={form.madeAt}
                   onChange={e=>setForm(f=>({...f,madeAt:e.target.value}))} />
               </div>
             </div>

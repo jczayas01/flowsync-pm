@@ -3,6 +3,7 @@
 // Stable right-side drawer panel — not a floating modal
 // Opens as a fixed panel on the right side of the screen, does not float or cover the full page
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
@@ -448,12 +449,12 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                     <div>
                       <label style={lbl}>Start date</label>
-                      <input type="date" style={inp} value={form.startDate}
+                      <DateField  style={inp} value={form.startDate}
                         onChange={e => setForm((f:any) => ({ ...f, startDate:e.target.value }))} />
                     </div>
                     <div>
                       <label style={lbl}>Due date</label>
-                      <input type="date" style={inp} value={form.dueDate}
+                      <DateField  style={inp} value={form.dueDate}
                         onChange={e => setForm((f:any) => ({ ...f, dueDate:e.target.value }))} />
                     </div>
                   </div>
@@ -469,7 +470,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                     </div>
                     <div>
                       <label style={lbl}>Completed on</label>
-                      <input type="date" style={inp} value={form.completedAt}
+                      <DateField  style={inp} value={form.completedAt}
                         onChange={e => setForm((f:any) => ({ ...f, completedAt:e.target.value }))} />
                     </div>
                   </div>

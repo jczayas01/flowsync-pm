@@ -2,6 +2,7 @@
 // src/components/projects/tabs/BenefitsTab.tsx
 // PM Best Practices — Benefits Realization (value delivery tracking)
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -116,7 +117,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                   onChange={e=>setForm(f=>({...f,projectedValue:e.target.value}))} />
               </div>
               <div><label style={lbl}>Measure by</label>
-                <input type="date" style={inp} value={form.measureBy}
+                <DateField  style={inp} value={form.measureBy}
                   onChange={e=>setForm(f=>({...f,measureBy:e.target.value}))} />
               </div>
               <div style={{ gridColumn:"1/-1" }}><label style={lbl}>Description</label>

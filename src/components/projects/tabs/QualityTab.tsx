@@ -2,6 +2,7 @@
 // src/components/projects/tabs/QualityTab.tsx
 // Quality Management — Quality Plan + Quality Checklist per deliverable
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -211,7 +212,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                   </div>
                   <div>
                     <label style={lbl}>Scheduled date</label>
-                    <input type="date" style={inp} value={checklistForm.scheduledDate}
+                    <DateField  style={inp} value={checklistForm.scheduledDate}
                       onChange={e=>setChecklistForm(f=>({...f,scheduledDate:e.target.value}))} />
                   </div>
                 </div>

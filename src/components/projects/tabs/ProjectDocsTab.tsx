@@ -1,6 +1,7 @@
 "use client"
 // src/components/projects/tabs/ProjectDocsTab.tsx
 // Three-panel Docs tab: Files | Project Brief | AI Analyzer
+import { DateField } from "@/components/shared/DatePicker"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -922,7 +923,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       color:"var(--text-2)", marginBottom:5, textTransform:"uppercase" }}>
                       Period start
                     </label>
-                    <input type="date" style={inp} value={reportPeriodStart}
+                    <DateField  style={inp} value={reportPeriodStart}
                       onChange={e => setReportPeriodStart(e.target.value)} />
                   </div>
                   <div>
@@ -930,7 +931,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       color:"var(--text-2)", marginBottom:5, textTransform:"uppercase" }}>
                       Period end
                     </label>
-                    <input type="date" style={inp} value={reportPeriodEnd}
+                    <DateField  style={inp} value={reportPeriodEnd}
                       onChange={e => setReportPeriodEnd(e.target.value)} />
                   </div>
                   <div>

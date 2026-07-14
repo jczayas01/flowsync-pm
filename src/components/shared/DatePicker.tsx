@@ -1,6 +1,7 @@
 "use client"
 // src/components/shared/DatePicker.tsx — branded calendar popover (replaces native date inputs)
 // Deterministic behavior: browsing never closes; picking a day commits immediately.
+import { DateField } from "@/components/shared/DatePicker"
 import { useEffect, useRef, useState } from "react"
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"]
@@ -122,6 +123,43 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose }: {
           Today
         </button>
       </div>
+    </div>
+  )
+}
+
+
+// ── Drop-in replacement for <DateField > ─────────────────────────────
+// Same contract: value is "yyyy-mm-dd" | "", onChange receives { target: { value } }.
+export function DateField({ value, onChange, style, placeholder, disabled, ...rest }: {
+  value?: string | null
+  onChange: (e: { target: { value: string } }) => void
+  style?: React.CSSProperties
+  placeholder?: string
+  disabled?: boolean
+  [key: string]: any
+}) {
+  const [open, setOpen] = useState(false)
+  const val = /^\d{4}-\d{2}-\d{2}/.test(String(value || "")) ? String(value).slice(0, 10) : ""
+  return (
+    <div style={{ position: "relative", display: "inline-block", width: (style as any)?.width }}>
+      <button type="button" disabled={disabled}
+        onClick={() => !disabled && setOpen(o => !o)}
+        style={{ textAlign: "left", cursor: disabled ? "default" : "pointer",
+          background: "#fff", display: "flex", alignItems: "center", gap: 8,
+          fontFamily: "var(--font)", ...style, width: "100%" }}>
+        <span style={{ flex: 1, color: val ? undefined : "var(--text-4)" }}>
+          {val || placeholder || "Select date"}
+        </span>
+        <span aria-hidden style={{ fontSize: 12, color: "var(--text-4)", flexShrink: 0 }}>📅</span>
+      </button>
+      {open && (
+        <DatePickerPopover
+          value={val || null}
+          onSelect={(d) => { onChange({ target: { value: d } }); setOpen(false) }}
+          onClear={() => { onChange({ target: { value: "" } }); setOpen(false) }}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   )
 }

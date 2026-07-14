@@ -3,6 +3,7 @@
 // PM Standard Procurement Management — §2.3.5 Apply Expertise (External Resources)
 // Tracks contracts, POs, SOWs, MSAs, NDAs per project
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -343,12 +344,12 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
               </div>
               <div>
                 <label style={lbl}>Start date</label>
-                <input type="date" style={inp} value={form.startDate}
+                <DateField  style={inp} value={form.startDate}
                   onChange={e=>setForm(f=>({...f,startDate:e.target.value}))} />
               </div>
               <div>
                 <label style={lbl}>End / Expiry date</label>
-                <input type="date" style={inp} value={form.endDate}
+                <DateField  style={inp} value={form.endDate}
                   onChange={e=>setForm(f=>({...f,endDate:e.target.value}))} />
               </div>
               <div>
@@ -690,10 +691,10 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                             <input style={inp} placeholder="Currency" value={editF.currency}
                               onChange={e=>setEditF((f:any)=>({...f,currency:e.target.value}))} /></div>
                             <div><div style={lblE}>Start date</div>
-                            <input style={inp} type="date" value={editF.startDate}
+                            <DateField style={inp} value={editF.startDate}
                               onChange={e=>setEditF((f:any)=>({...f,startDate:e.target.value}))} /></div>
                             <div><div style={lblE}>End date</div>
-                            <input style={inp} type="date" value={editF.endDate}
+                            <DateField style={inp} value={editF.endDate}
                               onChange={e=>setEditF((f:any)=>({...f,endDate:e.target.value}))} /></div>
                           </div>
                           <div><div style={lblE}>Key deliverables</div>

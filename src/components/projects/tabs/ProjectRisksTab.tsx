@@ -3,6 +3,7 @@
 // PM Best Practices — Uncertainty Performance Domain
 // P×I heat map, risk register, opportunity tracking, response strategies
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -455,7 +456,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                 </div>
                 <div>
                   <label style={lbl}>Review date</label>
-                  <input type="date" style={inp} value={form.reviewDate}
+                  <DateField  style={inp} value={form.reviewDate}
                     onChange={e => setForm(f=>({...f,reviewDate:e.target.value}))} />
                 </div>
                 <div style={{ gridColumn:"1/-1" }}>

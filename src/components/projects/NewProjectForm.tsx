@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/NewProjectForm.tsx
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -199,12 +200,12 @@ export function NewProjectForm({ workspaceId, members }:{
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
               <div>
                 <label style={label}>Start date</label>
-                <input type="date" value={form.startDate}
+                <DateField  value={form.startDate}
                   onChange={e => setForm(f => ({ ...f, startDate:e.target.value }))} style={inp} />
               </div>
               <div>
                 <label style={label}>End date</label>
-                <input type="date" value={form.endDate}
+                <DateField  value={form.endDate}
                   onChange={e => setForm(f => ({ ...f, endDate:e.target.value }))} style={inp} />
               </div>
             </div>

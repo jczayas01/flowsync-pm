@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/ImportProjectModal.tsx — New Project from Document (flagship)
+import { DateField } from "@/components/shared/DatePicker"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 
@@ -191,10 +192,10 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                   <div><div style={lbl}>Start date</div>
-                    <input style={inp} type="date" value={data.project.startDate || ""}
+                    <DateField style={inp} value={data.project.startDate || ""}
                       onChange={e => setProjField("startDate", e.target.value || null)} /></div>
                   <div><div style={lbl}>End date</div>
-                    <input style={inp} type="date" value={data.project.endDate || ""}
+                    <DateField style={inp} value={data.project.endDate || ""}
                       onChange={e => setProjField("endDate", e.target.value || null)} /></div>
                 </div>
                 {data.project.objective && (

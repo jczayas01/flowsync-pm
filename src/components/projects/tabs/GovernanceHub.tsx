@@ -3,6 +3,7 @@
 // Unified PM Governance Best Practices Documents Hub
 // Team Charter · WBS Dictionary · Quality Plan · Requirements · Meeting Minutes · Handover Plan
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -675,7 +676,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                     </div>
                     <div>
                       <label style={lbl}>Date</label>
-                      <input type="date" style={inp} value={minutesForm.meetingDate}
+                      <DateField  style={inp} value={minutesForm.meetingDate}
                         onChange={e=>setMinutesForm(f=>({...f,meetingDate:e.target.value}))} />
                     </div>
                     <div>
@@ -705,7 +706,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                     placeholder="Who does what by when? (e.g. Juan: complete risk assessment by Jul 15)" />
                   <div style={{ marginBottom:12 }}>
                     <label style={lbl}>Next meeting date</label>
-                    <input type="date" style={{...inp,width:"auto"}} value={minutesForm.nextMeeting}
+                    <DateField  style={{...inp,width:"auto"}} value={minutesForm.nextMeeting}
                       onChange={e=>setMinutesForm(f=>({...f,nextMeeting:e.target.value}))} />
                   </div>
                   <button onClick={saveMinutes} disabled={saving||!minutesForm.title}
@@ -788,7 +789,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
               placeholder="Post-handover support: who to contact, SLAs, warranty period..." />
             <div style={{ marginBottom:14 }}>
               <label style={lbl}>Handover date</label>
-              <input type="date" style={{...inp,width:"auto"}} value={handoverForm.handoverDate}
+              <DateField  style={{...inp,width:"auto"}} value={handoverForm.handoverDate}
                 onChange={e=>setHandoverForm(f=>({...f,handoverDate:e.target.value}))} />
             </div>
             <button onClick={saveHandover} disabled={saving}

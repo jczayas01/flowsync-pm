@@ -2,6 +2,7 @@
 // src/components/projects/tabs/IssuesTab.tsx
 // PM Best Practices — Issue Log (current problems, distinct from risks which are potential)
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -350,7 +351,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
                       letterSpacing:".05em", marginBottom:4 }}>Due date</div>
-                    <input type="date" style={inp} value={editIssue.dueDate}
+                    <DateField  style={inp} value={editIssue.dueDate}
                       onChange={e=>setEditIssue((f:any)=>({...f, dueDate:e.target.value}))} />
                   </div>
                 </div>

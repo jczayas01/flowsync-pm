@@ -1,6 +1,7 @@
 "use client"
 // src/components/projects/tabs/ProjectReportsTab.tsx
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
@@ -955,12 +956,12 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
                   <div>
                     <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>Period start</label>
-                    <input type="date" style={inp} value={statusForm.periodStart}
+                    <DateField  style={inp} value={statusForm.periodStart}
                       onChange={e=>setStatusForm(f=>({...f,periodStart:e.target.value}))} />
                   </div>
                   <div>
                     <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>Period end</label>
-                    <input type="date" style={inp} value={statusForm.periodEnd}
+                    <DateField  style={inp} value={statusForm.periodEnd}
                       onChange={e=>setStatusForm(f=>({...f,periodEnd:e.target.value}))} />
                   </div>
                 </div>

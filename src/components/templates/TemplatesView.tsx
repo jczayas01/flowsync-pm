@@ -1,5 +1,6 @@
 "use client"
 // src/components/templates/TemplatesView.tsx
+import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui"
 
@@ -284,7 +285,7 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
                 <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5,fontWeight:500}}>
                   Start date
                 </label>
-                <input type="date" value={installDate}
+                <DateField  value={installDate}
                   onChange={e=>setInstallDate(e.target.value)}
                   style={{width:"100%",padding:"9px 12px",border:"1px solid var(--border)",
                     borderRadius:"var(--radius)",fontSize:13,fontFamily:"var(--font)",

@@ -4,6 +4,7 @@
 // Sections: Background, Objective, Scope, Assumptions, Constraints, Team.
 // Every section is inline-editable. Prints cleanly as a single page.
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -282,7 +283,7 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
                   {dk === "startDate" ? "Start date" : "End date"}
                 </div>
                 {editingDate === dk ? (
-                  <input type="date" autoFocus
+                  <DateField  autoFocus
                     defaultValue={localProject?.[dk] ? String(localProject[dk]).slice(0,10) : ""}
                     onBlur={e => saveDate(dk, e.target.value)}
                     onKeyDown={e => {

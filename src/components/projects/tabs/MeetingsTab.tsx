@@ -2,6 +2,7 @@
 // src/components/projects/tabs/MeetingsTab.tsx
 // Meeting Minutes — standalone tab view
 
+import { DateField } from "@/components/shared/DatePicker"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -130,7 +131,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
               </div>
               <div>
                 <label style={lbl}>Date</label>
-                <input type="date" style={inp} value={form.meetingDate}
+                <DateField  style={inp} value={form.meetingDate}
                   onChange={e=>setForm(f=>({...f,meetingDate:e.target.value}))} />
               </div>
               <div>
@@ -163,7 +164,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
             ))}
             <div style={{ marginBottom:14 }}>
               <label style={lbl}>Next meeting date</label>
-              <input type="date" style={{...inp,width:"auto"}} value={form.nextMeeting}
+              <DateField  style={{...inp,width:"auto"}} value={form.nextMeeting}
                 onChange={e=>setForm(f=>({...f,nextMeeting:e.target.value}))} />
             </div>
             <div style={{ display:"flex", gap:8 }}>
