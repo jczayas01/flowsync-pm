@@ -9,13 +9,18 @@ import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from "@/lib/security/ra
 import { isIPAllowed } from "@/lib/security/ip-allowlist"
 
 const PUBLIC_PREFIXES = [
-  "/_next", "/favicon", "/images", "/fonts",
+  "/_next", "/favicon", "/icon", "/apple-icon", "/opengraph", "/images", "/fonts",
   "/api/auth", "/intake/", "/api/health", "/invite/",
+  "/legal",             // terms, privacy, DPA, DMCA, AI policy — must be readable by anyone
 ]
 
 const PUBLIC_ROUTES = new Set([
   "/", "/auth/signin", "/auth/signup",
   "/auth/error", "/auth/verify", "/intake",
+  // Password recovery — by definition reached by people who CANNOT sign in.
+  "/auth/forgot-password", "/auth/reset-password",
+  // Marketing — prospects must never hit a login wall.
+  "/pricing", "/api/demo-request",
 ])
 
 // Routes that require 2FA to be set up (enforced for sensitive roles)
