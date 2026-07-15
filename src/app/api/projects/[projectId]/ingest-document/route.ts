@@ -189,9 +189,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
       case "WBS":
         if (extracted.entries?.length > 0) {
-          for (const e of extracted.entries) {
+          for (const [i, e] of (extracted.entries as any[]).entries()) {
             await db.wbsEntry.create({
-              data: { projectId:pid, createdById:session.user.id, ...e }
+              data: { projectId:pid, createdById:session.user.id, ...e,
+                      code: e?.code || `WBS-${String(i + 1).padStart(3, "0")}` }
             }).catch(()=>{}) // skip dupes/malformed
           }
           result = { created: extracted.entries.length }
@@ -201,9 +202,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       case "REQUIREMENTS":
         if (extracted.requirements?.length > 0) {
           let created = 0
-          for (const r of extracted.requirements) {
+          for (const [i, r] of (extracted.requirements as any[]).entries()) {
             await db.requirement.create({
-              data: { projectId:pid, createdById:session.user.id, ...r }
+              data: { projectId:pid, createdById:session.user.id, ...r,
+                      code: r?.code || `REQ-${String(i + 1).padStart(3, "0")}` }
             }).catch(()=>{})
             created++
           }
@@ -221,9 +223,12 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
       case "MEETING_MINUTES": {
         const { meetingDate, ...rest } = extracted
+        const mCount = await db.meetingMinutes.count({ where: { projectId: pid } }).catch(() => 0)
         result = await db.meetingMinutes.create({
-          data: { projectId:pid, createdById:session.user.id,
-                  meetingDate:meetingDate?new Date(meetingDate):new Date(), ...rest }
+          data: { projectId:pid, createdById:session.user.id, ...rest,
+                  code: (rest as any)?.code || `MIN-${String(mCount + 1).padStart(3, "0")}`,
+                  attendees: (rest as any)?.attendees ?? [],
+                  meetingDate:meetingDate?new Date(meetingDate):new Date() }
         })
         break
       }

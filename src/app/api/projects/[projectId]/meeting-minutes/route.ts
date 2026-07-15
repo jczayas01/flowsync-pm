@@ -29,6 +29,17 @@ async function list(ctx: ApiContext, params?: Record<string,string>) {
   return ok({ minutes })
 }
 
+async function nextCode(projectId: string) {
+  try {
+    const all = await db.meetingMinutes.findMany({ where: { projectId }, select: { code: true } })
+    const nums = all
+      .map(r => parseInt((r.code || "").replace(/^MIN-/, ""), 10))
+      .filter(n => !isNaN(n))
+    const max = nums.length ? Math.max(...nums) : 0
+    return `MIN-${String(max + 1).padStart(3, "0")}`
+  } catch { return "MIN-001" }
+}
+
 async function create(ctx: ApiContext, params?: Record<string,string>) {
     { const _g = await requirePermission(ctx as any, "projects:edit" as any); if (_g) return _g }
   const access = await verifyProjectAccess(params!.projectId, ctx.userId, ctx.workspaceId)
@@ -36,9 +47,11 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
   const parsed = await parseBody(ctx.req, schema)
   if ("error" in parsed) return parsed.error
   const { meetingDate, ...rest } = parsed.data
+  const code = await nextCode(params!.projectId)
   const minutes = await db.meetingMinutes.create({
-    data: { projectId:params!.projectId, createdById:ctx.userId,
-            meetingDate:new Date(meetingDate), ...rest },
+    data: { projectId:params!.projectId, createdById:ctx.userId, code,
+            meetingDate:new Date(meetingDate), ...rest,
+            attendees: (rest as any).attendees ?? [] },
     include: { createdBy:{ select:{ id:true,name:true,avatarUrl:true } } },
   })
   return ok({ minutes }, 201)
