@@ -43,6 +43,12 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
         <input type="password" placeholder={t("password")} required value={password}
           onChange={e => setPassword(e.target.value)}
           style={inputStyle} />
+        <div style={{ textAlign:'right', marginTop:-4 }}>
+          <Link href="/auth/forgot-password"
+            style={{ fontSize:12, color:'rgba(255,255,255,.55)', textDecoration:'none' }}>
+            {t("forgotPassword")}
+          </Link>
+        </div>
         <button type="submit" disabled={loading} style={btnStyle}>
           {loading ? t("signingIn") : t("signIn")}
         </button>

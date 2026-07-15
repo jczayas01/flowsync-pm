@@ -23,6 +23,7 @@ model User {
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
   accounts             Account[]
+  passwordResets       PasswordResetToken[]
   auditLogs            AuditLog[]
   approvalRequests     Project[]             @relation("ApprovalRequester")
   baselinesApproved    Baseline[]              @relation("BaselinesApproved")
@@ -73,6 +74,19 @@ model User {
   commentReads    CommentRead[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique          // sha256 of the emailed token — raw token is never stored
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model Account {
