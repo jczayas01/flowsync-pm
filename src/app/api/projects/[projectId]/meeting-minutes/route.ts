@@ -46,12 +46,17 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
   if (!access.ok) return notFound("Project")
   const parsed = await parseBody(ctx.req, schema)
   if ("error" in parsed) return parsed.error
-  const { meetingDate, ...rest } = parsed.data
+  const { meetingDate, attendees, decisions, actionItems, nextMeeting, ...rest } = parsed.data
   const code = await nextCode(params!.projectId)
   const minutes = await db.meetingMinutes.create({
+    // Json columns reject `null` (Prisma wants JsonNull or omission) — coerce explicitly.
     data: { projectId:params!.projectId, createdById:ctx.userId, code,
-            meetingDate:new Date(meetingDate), ...rest,
-            attendees: (rest as any).attendees ?? [] },
+            meetingDate:  new Date(meetingDate),
+            attendees:    attendees   ?? [],
+            decisions:    decisions   ?? undefined,
+            actionItems:  actionItems ?? undefined,
+            nextMeeting:  nextMeeting ? new Date(nextMeeting) : null,
+            ...rest },
     include: { createdBy:{ select:{ id:true,name:true,avatarUrl:true } } },
   })
   return ok({ minutes }, 201)

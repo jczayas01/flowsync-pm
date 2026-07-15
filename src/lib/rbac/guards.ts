@@ -104,8 +104,8 @@ export async function requireProjectAccess(
 
   const rbacRole     = resolveRbacRole(ctx)
   const isMember     = project.members.length > 0
-  const isProjectPM  = project.members[0]?.role === "PROJECT_MANAGER" ||
-                       project.members[0]?.role === "PM"
+  // ProjectMember.role is UserRole — "PM" is the PM value ("PROJECT_MANAGER" is a ProjectRole, never stored here)
+  const isProjectPM  = project.members[0]?.role === "PM"
   const canViewAll   = can(rbacRole, "projects:view_all")
   const canViewConf  = can(rbacRole, "projects:view_confidential")
 

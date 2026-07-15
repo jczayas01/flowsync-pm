@@ -1336,7 +1336,9 @@ enum ProjectRole {
 
 enum Plan {
   FREE
+  STARTER
   PRO
+  PROFESSIONAL
   CONSULTANT
   BUSINESS
   ENTERPRISE

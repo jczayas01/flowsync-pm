@@ -109,7 +109,6 @@ async function commit(ctx: ApiContext) {
       await db.task.create({
         data: {
           projectId: project.id,
-          createdById: ctx.userId,
           code: `T-${String(tNum).padStart(3, "0")}`,
           title: t.title,
           status: "TODO" as any,
@@ -139,7 +138,6 @@ async function commit(ctx: ApiContext) {
       await db.risk.create({
         data: {
           projectId: project.id,
-          createdById: ctx.userId,
           code: `RISK-${String(rNum).padStart(3, "0")}`,
           title: r.title,
           description: r.description || null,
@@ -158,7 +156,6 @@ async function commit(ctx: ApiContext) {
       await db.budgetItem.create({
         data: {
           projectId: project.id,
-          createdById: ctx.userId,
           category: b.category as any,
           name: b.name,
           plannedCost: b.plannedCost,

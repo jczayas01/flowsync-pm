@@ -14,7 +14,7 @@ const updateSchema = z.object({
   name:   z.string().min(1).max(120).optional(),
   color:  z.string().max(20).optional().nullable(),
   order:  z.number().int().min(0).optional(),
-  status: z.enum(["PENDING","IN_PROGRESS","COMPLETED","ON_HOLD"]).optional(),
+  status: z.enum(["PENDING","IN_PROGRESS","COMPLETED","BLOCKED","SKIPPED"]).optional(),
 })
 
 async function load(ctx: ApiContext, params?: Record<string, string>) {
