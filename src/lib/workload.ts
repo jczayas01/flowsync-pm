@@ -21,14 +21,14 @@ export const DAY_HRS = 8
 export const WEEK_HRS = 40
 
 const DAY_MS = 86400000
-const utc = (d: string | Date) => {
+const utc = (d: string | Date | number) => {
   const x = new Date(d)
   return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate())
 }
 const isWorkday = (t: number) => { const dow = new Date(t).getUTCDay(); return dow !== 0 && dow !== 6 }
 
 /** Inclusive count of Mon–Fri days between two dates (order-safe). */
-export function workingDaysInclusive(start: string | Date, end: string | Date): number {
+export function workingDaysInclusive(start: string | Date | number, end: string | Date | number): number {
   let a = utc(start), b = utc(end)
   if (b < a) [a, b] = [b, a]
   let n = 0

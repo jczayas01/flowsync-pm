@@ -331,7 +331,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           <div style={{ margin:"12px 16px", padding:14, border:"1px solid var(--border)",
             borderRadius:"var(--radius)", background:"var(--surface)" }}>
             {!candidates ? (
-              <DocScanPicker projectId={projectId} workspaceId={workspaceId}
+              <DocScanPicker projectId={projectId} workspaceId={workspaceId || ""}
                 scanning={scanning} onScan={runScan} />
             ) : (
               <div>

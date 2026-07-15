@@ -8,7 +8,7 @@ const RED = "DC2626"
 const AMBER = "F59E0B"
 const GREEN = "059669"
 
-const hex = (c?: string, fb = "1B6CA8") => (c || fb).replace("#", "")
+const hex = (c?: string | null, fb = "1B6CA8") => (c || fb).replace("#", "")
 const fmtK = (n: number, cur = "USD") =>
   `${cur === "USD" ? "$" : cur + " "}${Math.abs(n) >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1) + "K" : Math.round(n).toString()}`
 const fdate = (d?: string | Date | null) =>

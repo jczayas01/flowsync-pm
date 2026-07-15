@@ -283,13 +283,9 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
                   {dk === "startDate" ? "Start date" : "End date"}
                 </div>
                 {editingDate === dk ? (
-                  <DateField  autoFocus
-                    defaultValue={localProject?.[dk] ? String(localProject[dk]).slice(0,10) : ""}
-                    onBlur={e => saveDate(dk, e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur()
-                      if (e.key === "Escape") setEditingDate(null)
-                    }}
+                  <DateField
+                    value={localProject?.[dk] ? String(localProject[dk]).slice(0,10) : ""}
+                    onChange={e => saveDate(dk, e.target.value)}
                     style={{ fontSize:13, fontWeight:600, color:"var(--text)", padding:"2px 4px",
                       border:"1px solid var(--steel)", borderRadius:6, fontFamily:"var(--font)",
                       background:"#fff", width:"100%" }} />

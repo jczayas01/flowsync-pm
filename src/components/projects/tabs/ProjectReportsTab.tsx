@@ -1029,7 +1029,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                     </button>
                     <button
                       onClick={async () => {
-                        const r = reconstructReport(su)
+                        const { report: r } = reportFromEntry(su)
                         if (!r) return
                         const res = await fetch(`/api/projects/${projectId}/export-pdf`, {
                           method:"POST", headers:{"Content-Type":"application/json"},

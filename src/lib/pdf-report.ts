@@ -54,7 +54,7 @@ export async function generateReportPdf(opts: {
   const font  = await pdf.embedFont(StandardFonts.Helvetica)
   const bold  = await pdf.embedFont(StandardFonts.HelveticaBold)
 
-  let page: PDFPage
+  let page!: PDFPage   // assigned by newPage() before any use
   let y = 0
   const pages: PDFPage[] = []
 

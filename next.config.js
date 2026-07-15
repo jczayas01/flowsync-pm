@@ -3,7 +3,8 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: { ignoreBuildErrors: true },
+  // Type errors now FAIL the build (retired the escape hatch — Jul 2026).
+  typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: true },
   images: {
     remotePatterns: [
