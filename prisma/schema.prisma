@@ -76,6 +76,27 @@ model User {
   @@map("users")
 }
 
+model DemoRequest {
+  id          String    @id @default(cuid())
+  name        String
+  email       String
+  company     String
+  teamSize    String?
+  phone       String?
+  message     String?
+  locale      String    @default("en")
+  source      String    @default("landing")   // landing | pricing | app
+  status      String    @default("NEW")       // NEW | CONTACTED | QUALIFIED | WON | LOST
+  notes       String?
+  contactedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("demo_requests")
+}
+
 model PasswordResetToken {
   id        String    @id @default(cuid())
   userId    String

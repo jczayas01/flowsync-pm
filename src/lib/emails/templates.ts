@@ -252,6 +252,64 @@ export function trialEndingSoonEmail({ recipientName, workspaceName, trialEndDat
   }
 }
 
+// ── Enterprise demo requests ───────────────────────────
+
+export function demoRequestNotification({ id, name, email, company, teamSize, phone, message }: {
+  id: string; name: string; email: string; company: string
+  teamSize?: string | null; phone?: string | null; message?: string | null
+}) {
+  const row = (k: string, v: string) =>
+    `<tr>
+       <td style="padding:6px 12px 6px 0;color:#64748B;font-size:13px;white-space:nowrap;vertical-align:top">${k}</td>
+       <td style="padding:6px 0;color:#0D1B2A;font-size:13px;font-weight:600">${v}</td>
+     </tr>`
+  return {
+    subject: `🔔 Demo request — ${company} (${name})`,
+    html: layout(`
+      ${h1('New Enterprise demo request')}
+      ${p(`<strong>${name}</strong> from <strong>${company}</strong> asked for a demo.`)}
+      <table style="width:100%;border-collapse:collapse;margin:8px 0 16px">
+        ${row('Name', name)}
+        ${row('Company', company)}
+        ${row('Email', `<a href="mailto:${email}" style="color:#1B6CA8;text-decoration:none">${email}</a>`)}
+        ${phone    ? row('Phone', phone) : ''}
+        ${teamSize ? row('Team size', teamSize) : ''}
+      </table>
+      ${message ? `${p('<strong>What they said:</strong>')}${p(message.replace(/</g, '&lt;'), true)}` : ''}
+      ${btn('Reply to ' + name, `mailto:${email}?subject=${encodeURIComponent('Your FlowSync PM demo')}`)}
+      ${divider()}
+      ${p(`Lead ID ${id} · saved to your demo requests.`, true)}
+    `, `Demo request from ${company}`)
+  }
+}
+
+export function demoRequestConfirmation({ recipientName, locale = 'en' }: {
+  recipientName: string; locale?: string
+}) {
+  if (locale === 'es') {
+    return {
+      subject: 'Recibimos tu solicitud de demo — FlowSync PM',
+      html: layout(`
+        ${h1('Gracias por tu interés')}
+        ${p(`Hola ${recipientName}, recibimos tu solicitud de demostración de FlowSync PM.`)}
+        ${p('Te contactaremos dentro de un día hábil para coordinar una sesión de 15 minutos donde veremos la plataforma con un proyecto real — no una presentación genérica.')}
+        ${divider()}
+        ${p('Si prefieres, responde a este correo con tu disponibilidad y lo agendamos de una vez.', true)}
+      `, 'Recibimos tu solicitud de demo')
+    }
+  }
+  return {
+    subject: 'We got your demo request — FlowSync PM',
+    html: layout(`
+      ${h1('Thanks for your interest')}
+      ${p(`Hi ${recipientName}, we received your request for a FlowSync PM demo.`)}
+      ${p("We'll be in touch within one business day to set up a 15-minute session — we'll walk through the platform with a real project, not a canned slide deck.")}
+      ${divider()}
+      ${p('If it\'s easier, just reply to this email with your availability and we\'ll book it.', true)}
+    `, 'We got your demo request')
+  }
+}
+
 // ── Sender helper ──────────────────────────────────────
 export async function sendEmail({ to, ...template }: {
   to: string; subject: string; html: string

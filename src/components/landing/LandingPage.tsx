@@ -1,5 +1,6 @@
 "use client"
 // src/components/landing/LandingPage.tsx
+import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 
@@ -66,6 +67,7 @@ const GANTT_BARS = [
 const TODAY_X = 64
 
 export default function LandingPage() {
+  const [demoOpen, setDemoOpen] = useState(false)
   const [email,    setEmail]    = useState("")
   const [email2,   setEmail2]   = useState("")
   const [joined,   setJoined]   = useState(false)
@@ -129,6 +131,11 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <button onClick={() => setDemoOpen(true)}
+              style={{fontSize:13,color:"rgba(255,255,255,.5)",background:"none",border:"none",
+                cursor:"pointer",padding:"0 12px",fontFamily:"inherit"}}>
+              Request a demo
+            </button>
             <Link href="/auth/signin"
               style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none",padding:"0 12px"}}>
               Sign in
@@ -459,6 +466,32 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+
+          {/* ── Enterprise ── */}
+          <div style={{marginTop:28,background:"#0D1B2A",borderRadius:14,padding:"28px 32px",
+            display:"flex",alignItems:"center",justifyContent:"space-between",gap:24,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:260}}>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",
+                color:"#F59E0B",marginBottom:8}}>
+                Enterprise
+              </div>
+              <div style={{fontSize:20,fontWeight:700,color:"#fff",marginBottom:8,lineHeight:1.3}}>
+                Running a PMO, a portfolio, or a regulated program?
+              </div>
+              <div style={{fontSize:13.5,color:"rgba(255,255,255,.65)",lineHeight:1.65,maxWidth:520}}>
+                Custom pricing, SSO and directory sync, white-labeling, a data processing agreement,
+                and personal onboarding — set up by the person who built the platform.
+                Your team and stakeholders come in bundles, so you only pay for the people who
+                actually drive the work.
+              </div>
+            </div>
+            <button onClick={() => setDemoOpen(true)}
+              style={{padding:"13px 26px",background:"#F59E0B",color:"#0D1B2A",border:"none",
+                borderRadius:9,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
+                whiteSpace:"nowrap",flexShrink:0}}>
+              Request a demo →
+            </button>
+          </div>
         </div>
       </section>
 
@@ -602,6 +635,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <RequestDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} source="landing" />
     </div>
   )
 }

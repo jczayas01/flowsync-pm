@@ -1,6 +1,7 @@
 "use client"
 // src/components/marketing/PricingPage.tsx
 
+import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 import { useState } from "react"
 import Link from "next/link"
 
@@ -52,7 +53,7 @@ const TIERS = [
     name:"Enterprise", price:38, priceSuffix:"/user/mo", annualPrice:30.40,
     desc:"For large PMOs with enterprise governance needs.",
     color:"#1a3a5c", highlight:false,
-    cta:"Contact sales", ctaHref:"mailto:sales@flowsyncpm.com",
+    cta:"Request a demo", ctaHref:"", demo:true,
     features:[
       "Everything in Professional",
       "SSO / Azure AD / SAML", "White-label & custom domain",
@@ -101,6 +102,7 @@ const COMPARE_FEATURES = [
 ]
 
 export function PricingPage() {
+  const [demoOpen, setDemoOpen] = useState(false)
   const [annual, setAnnual] = useState(true)
 
   return (
@@ -187,12 +189,21 @@ export function PricingPage() {
               <p style={{ fontSize:12, color:"#64748B", margin:0, lineHeight:1.5 }}>{tier.desc}</p>
             </div>
             <div style={{ padding:"16px 20px" }}>
-              <a href={tier.ctaHref}
-                style={{ display:"block", textAlign:"center", padding:"10px", borderRadius:8,
-                  background:tier.highlight?GREEN:tier.color, color:"#fff",
-                  textDecoration:"none", fontSize:13, fontWeight:600, marginBottom:16 }}>
-                {tier.cta}
-              </a>
+              {(tier as any).demo ? (
+                <button onClick={() => setDemoOpen(true)}
+                  style={{ display:"block", width:"100%", textAlign:"center", padding:"10px", borderRadius:8,
+                    background:tier.highlight?GREEN:tier.color, color:"#fff", border:"none",
+                    fontSize:13, fontWeight:600, marginBottom:16, cursor:"pointer", fontFamily:"inherit" }}>
+                  {tier.cta}
+                </button>
+              ) : (
+                <a href={tier.ctaHref}
+                  style={{ display:"block", textAlign:"center", padding:"10px", borderRadius:8,
+                    background:tier.highlight?GREEN:tier.color, color:"#fff",
+                    textDecoration:"none", fontSize:13, fontWeight:600, marginBottom:16 }}>
+                  {tier.cta}
+                </a>
+              )}
               {tier.features.map((f,i) => (
                 <div key={i} style={{ display:"flex", gap:8, marginBottom:6 }}>
                   <span style={{ color:GREEN, flexShrink:0, fontSize:12 }}>✓</span>
@@ -270,6 +281,7 @@ export function PricingPage() {
           © 2026 FlowSync PM. All rights reserved.
         </div>
       </div>
+      <RequestDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} source="pricing" />
     </div>
   )
 }
