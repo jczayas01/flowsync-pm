@@ -1,5 +1,7 @@
 "use client"
 // src/components/templates/TemplatesView.tsx
+import { useLocale } from "next-intl"
+import { DocTemplateLibrary } from "@/components/templates/DocTemplateLibrary"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui"
@@ -44,6 +46,9 @@ const METHOD_COLORS: Record<string,string> = {
 export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
   workspaceTemplates:any[]; workspaceId:string; filters:any
 }) {
+  const locale = useLocale() as "en" | "es"
+  const es = locale === "es"
+  const [section,  setSection]  = useState<"projects"|"documents">("projects")
   const [cat,      setCat]      = useState("all")
   const [method,   setMethod]   = useState("all")
   const [freeOnly, setFreeOnly] = useState(false)
@@ -114,9 +119,13 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"14px 20px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
           <div>
-            <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>Template marketplace</h1>
+            <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>
+              {es ? "Plantillas" : "Templates"}
+            </h1>
             <p style={{fontSize:12,color:"var(--text-3)"}}>
-              {templates.length} built-in templates · {workspaceTemplates.length} workspace templates
+              {section === "projects"
+                ? `${templates.length} ${es ? "plantillas de proyecto" : "project templates"} · ${workspaceTemplates.length} ${es ? "del espacio de trabajo" : "workspace"}`
+                : (es ? "Formatos en blanco para cualquier tipo de proyecto" : "Blank forms for any type of project")}
             </p>
           </div>
           <button style={{padding:"8px 16px",background:"var(--steel)",color:"#fff",border:"none",
@@ -124,8 +133,26 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
             📤 Publish template
           </button>
         </div>
+        <div style={{display:"flex",gap:6,marginTop:12}}>
+          {([["projects", es ? "🏗 Plantillas de proyecto" : "🏗 Project templates"],
+             ["documents", es ? "📄 Plantillas de documentos" : "📄 Document templates"]] as const).map(([id,label])=>(
+            <button key={id} onClick={()=>setSection(id as any)}
+              style={{padding:"7px 14px",borderRadius:"var(--radius)",fontSize:12.5,fontWeight:600,
+                cursor:"pointer",fontFamily:"var(--font)",
+                border: section===id ? "none" : "1px solid var(--border)",
+                background: section===id ? "var(--navy,#0D1B2A)" : "#fff",
+                color: section===id ? "#fff" : "var(--text-2)"}}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {section === "documents" ? (
+        <div style={{flex:1,overflowY:"auto",padding:"14px 20px",background:"var(--surface-2,#F8FAFC)"}}>
+          <DocTemplateLibrary locale={locale} />
+        </div>
+      ) : (
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {/* Sidebar */}
         <div style={{width:180,background:"#fff",borderRight:"1px solid var(--border)",
@@ -236,6 +263,7 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
           )}
         </div>
       </div>
+      )}
 
       {/* Install modal */}
       {selected&&(
