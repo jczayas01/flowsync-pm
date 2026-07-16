@@ -2,10 +2,23 @@
 // src/components/projects/tabs/QualityTab.tsx
 // Quality Management — Quality Plan + Quality Checklist per deliverable
 
+import { FieldCard, EditToggle } from "@/components/shared/FieldCard"
 import { DateField } from "@/components/shared/DatePicker"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
+
+// Labels match the Governance → Quality Plan section (same underlying record).
+const QMP_FIELDS = [
+  { key:"qualityStandards",  label:"Standards",       icon:"📏" },
+  { key:"qualityObjectives", label:"Objectives",      icon:"🎯" },
+  { key:"roles",             label:"Roles",           icon:"👥" },
+  { key:"processes",         label:"QA Processes",    icon:"⚙️" },
+  { key:"tools",             label:"QC Tools",        icon:"🛠" },
+  { key:"metrics",           label:"Metrics",         icon:"📊" },
+  { key:"audits",            label:"Audit Schedule",  icon:"🔍" },
+  { key:"nonConformance",    label:"Non-Conformance", icon:"⚠️" },
+]
 
 const CHECKLIST_STATUS = {
   PENDING:  { label:"Pending",  color:"#64748B", bg:"#F8FAFC" },
@@ -36,6 +49,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
   const [showAddChecklist, setShowAddChecklist] = useState(false)
 
   // QMP form
+  const [editing, setEditing] = useState(false)
   const [qmpForm, setQmpForm] = useState({
     qualityStandards:  qmp?.qualityStandards  ||"",
     qualityObjectives: qmp?.qualityObjectives ||"",
@@ -46,6 +60,21 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
     audits:            qmp?.audits            ||"",
     nonConformance:    qmp?.nonConformance     ||"",
   })
+
+  // Governance ingest writes this same record — re-seed when fresh data arrives,
+  // otherwise the tab shows stale values until it is remounted.
+  useEffect(() => {
+    setQmpForm({
+      qualityStandards:  qmp?.qualityStandards||"",
+      qualityObjectives: qmp?.qualityObjectives||"",
+      roles:             qmp?.roles||"",
+      processes:         qmp?.processes||"",
+      tools:             qmp?.tools||"",
+      metrics:           qmp?.metrics||"",
+      audits:            qmp?.audits||"",
+      nonConformance:    qmp?.nonConformance||"",
+    })
+  }, [qmp])
 
   // Checklist form
   const [checklistForm, setChecklistForm] = useState({
@@ -141,30 +170,33 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
             <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:18 }}>
               PM Standard — Quality and Delivery Performance Domains
             </div>
-            {[
-              { key:"qualityStandards",  label:"Applicable Quality Standards" },
-              { key:"qualityObjectives", label:"Quality Objectives" },
-              { key:"roles",             label:"Roles & Responsibilities" },
-              { key:"processes",         label:"Quality Assurance Processes" },
-              { key:"tools",             label:"Quality Tools & Techniques" },
-              { key:"metrics",           label:"Quality Metrics" },
-              { key:"audits",            label:"Audit Schedule" },
-              { key:"nonConformance",    label:"Non-Conformance Handling" },
-            ].map(({key,label})=>(
-              <div key={key} style={{ marginBottom:14 }}>
-                <label style={lbl}>{label}</label>
-                <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
-                  value={(qmpForm as any)[key]}
-                  onChange={e=>setQmpForm(f=>({...f,[key]:e.target.value}))}
-                  placeholder={`${label}...`} />
+            <EditToggle editing={editing} onClick={()=>setEditing(e=>!e)} />
+
+            {!editing ? (
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {QMP_FIELDS.map(({key,label,icon})=>(
+                  <FieldCard key={key} label={label} icon={icon} value={(qmpForm as any)[key]} />
+                ))}
               </div>
-            ))}
-            <button onClick={saveQmp} disabled={saving}
-              style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
-                border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
-                cursor:"pointer", fontFamily:"var(--font)" }}>
-              {saving?"Saving…":"💾 Save Quality Plan"}
-            </button>
+            ) : (
+              <>
+                {QMP_FIELDS.map(({key,label})=>(
+                  <div key={key} style={{ marginBottom:14 }}>
+                    <label style={lbl}>{label}</label>
+                    <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
+                      value={(qmpForm as any)[key]}
+                      onChange={e=>setQmpForm(f=>({...f,[key]:e.target.value}))}
+                      placeholder={`${label}...`} />
+                  </div>
+                ))}
+                <button onClick={async()=>{ await saveQmp(); setEditing(false) }} disabled={saving}
+                  style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
+                    border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
+                    cursor:"pointer", fontFamily:"var(--font)" }}>
+                  {saving?"Saving…":"💾 Save Quality Plan"}
+                </button>
+              </>
+            )}
           </div>
         )}
 
