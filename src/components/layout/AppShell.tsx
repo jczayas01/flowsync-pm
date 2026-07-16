@@ -49,8 +49,9 @@ const SETTINGS_NAV = [
   { href:"/settings/api",          label:"API & integrations", perm:"workspace:manage_integrations" },
 ] as any[]
 
-export function AppShell({ user, workspace, workspaces, userRole, children }:{
-  user:User; workspace:Workspace; workspaces:Workspace[]; userRole:string; children:React.ReactNode
+export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmin = false, children }:{
+  user:User; workspace:Workspace; workspaces:Workspace[]; userRole:string
+  isPlatformAdmin?:boolean; children:React.ReactNode
 }) {
   const pathname    = usePathname()
   const [menu, setMenu] = useState(false)
@@ -143,6 +144,24 @@ export function AppShell({ user, workspace, workspaces, userRole, children }:{
               )}
             </div>
           ))}
+
+          {isPlatformAdmin && (
+            <>
+              <div style={{fontSize:9,fontWeight:600,letterSpacing:".08em",textTransform:"uppercase",
+                color:"rgba(255,255,255,.25)",padding:"12px 9px 5px"}}>
+                Platform
+              </div>
+              <Link href="/admin"
+                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 9px",
+                  borderRadius:6,marginBottom:1,textDecoration:"none",
+                  background:isActive("/admin")?"rgba(220,38,38,.25)":"transparent",
+                  color:isActive("/admin")?"#fff":"rgba(255,255,255,.45)",
+                  fontSize:12,fontWeight:isActive("/admin")?500:400}}>
+                <span style={{fontSize:13,width:17,textAlign:"center"}}>⚡</span>
+                Platform Admin
+              </Link>
+            </>
+          )}
 
           {isSettings&&(
             <>

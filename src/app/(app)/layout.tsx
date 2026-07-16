@@ -35,6 +35,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       workspace={membership.workspace}
       workspaces={allMemberships.map(m => m.workspace)}
       userRole={membership.role}
+      isPlatformAdmin={
+        (process.env.PLATFORM_ADMIN_EMAILS || "")
+          .split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
+          .includes((session.user.email || "").toLowerCase())
+      }
     >
       {children}
     </AppShell>
