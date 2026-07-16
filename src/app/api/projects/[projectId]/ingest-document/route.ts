@@ -192,9 +192,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
           for (const [i, e] of (extracted.entries as any[]).entries()) {
             await db.wbsEntry.create({
               data: { projectId:pid, createdById:session.user.id,
-                      ...pick(e, ["title","description","acceptanceCriteria","assumptions",
+                      ...pick(e, ["description","acceptanceCriteria","assumptions",
                                   "responsible","estimatedHours","estimatedCost","qualityStandards"]),
-                      code: e?.code || `WBS-${String(i + 1).padStart(3, "0")}` }
+                      code:  e?.code  || `WBS-${String(i + 1).padStart(3, "0")}`,
+                      title: e?.title || `Work package ${i + 1}` }
             }).catch(()=>{}) // skip dupes/malformed
           }
           result = { created: extracted.entries.length }
@@ -207,9 +208,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
           for (const [i, r] of (extracted.requirements as any[]).entries()) {
             await db.requirement.create({
               data: { projectId:pid, createdById:session.user.id,
-                      ...pick(r, ["title","description","type","priority","status",
+                      ...pick(r, ["description","type","priority","status",
                                   "source","acceptanceCriteria","traceability"]),
-                      code: r?.code || `REQ-${String(i + 1).padStart(3, "0")}` }
+                      code:  r?.code  || `REQ-${String(i + 1).padStart(3, "0")}`,
+                      title: r?.title || `Requirement ${i + 1}` }
             }).catch(()=>{})
             created++
           }
@@ -229,13 +231,14 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       }
 
       case "MEETING_MINUTES": {
-        const m = pick(extracted, ["title","meetingType","location","facilitator",
+        const m = pick(extracted, ["meetingType","location","facilitator",
                                    "agenda","discussion","nextAgenda"])
         const mCount = await db.meetingMinutes.count({ where: { projectId: pid } }).catch(() => 0)
         result = await db.meetingMinutes.create({
           data: {
             projectId: pid, createdById: session.user.id, ...m,
-            code:        extracted?.code || `MIN-${String(mCount + 1).padStart(3, "0")}`,
+            code:        extracted?.code  || `MIN-${String(mCount + 1).padStart(3, "0")}`,
+            title:       extracted?.title || "Meeting minutes",
             meetingDate: extracted?.meetingDate ? new Date(extracted.meetingDate) : new Date(),
             nextMeeting: extracted?.nextMeeting ? new Date(extracted.nextMeeting) : null,
             // Json columns: reject null, accept a value or nothing at all
