@@ -4,7 +4,7 @@
 // Drop it next to any tab's create button:
 //   <AIScanPanel projectId=.. workspaceId=.. domain="issues"
 //     renderCandidate={(c)=>..} commit={async (chosen)=>failedCount} />
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DocScanPicker } from "@/components/shared/DocScanPicker"
 
@@ -18,6 +18,16 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
 }) {
   const router = useRouter()
   const [open, setOpen]             = useState(false)
+  // The dropdown is right-anchored, so a button near the left edge would push
+  // 620px of panel off-screen. Measure on open and flip the anchor if needed.
+  const btnRef                      = useRef<HTMLButtonElement>(null)
+  const [anchorLeft, setAnchorLeft] = useState(false)
+  useEffect(() => {
+    if (!open || !btnRef.current) return
+    const r = btnRef.current.getBoundingClientRect()
+    const w = Math.min(620, window.innerWidth * 0.92)
+    setAnchorLeft(r.right - w < 8)
+  }, [open])
   const [scanning, setScanning]     = useState(false)
   const [error, setError]           = useState("")
   const [candidates, setCandidates] = useState<any[]|null>(null)
@@ -58,7 +68,7 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
 
   return (
     <div style={{ position:"relative", display:"inline-block" }}>
-      <button onClick={() => { setOpen(o => !o); setCandidates(null); setError("") }}
+      <button ref={btnRef} onClick={() => { setOpen(o => !o); setCandidates(null); setError("") }}
         title="AI-scan project documents and add findings here"
         style={{ padding:"7px 14px", background:"#fff", color:"var(--text-2)",
           border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:12,
@@ -67,7 +77,7 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
       </button>
 
       {open && (
-        <div style={{ position:"absolute", right:0, top:"calc(100% + 6px)", zIndex:120,
+        <div style={{ position:"absolute", ...(anchorLeft ? { left:0 } : { right:0 }), top:"calc(100% + 6px)", zIndex:120,
           width:"min(620px, 92vw)", background:"var(--surface)", border:"1px solid var(--border)",
           borderRadius:10, boxShadow:"0 12px 32px rgba(13,27,42,.14)", padding:14 }}>
           {!candidates ? (
