@@ -136,7 +136,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         headers:{ "x-workspace-id":workspaceId },
       })
       const d = await res.json()
-      if (!res.ok) { setIngestMsg(`✗ ${d.error||"Ingestion failed"}`); return }
+      if (!res.ok) { setIngestMsg(`✗ ${d.error||"Ingestion failed"}${d.details ? ` — ${d.details}` : ""}`); return }
       setIngestMsg(`✓ ${d.message}`)
       setTimeout(()=>setIngestMsg(""), 4000)
       router.refresh()

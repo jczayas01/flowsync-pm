@@ -191,7 +191,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         if (extracted.entries?.length > 0) {
           for (const [i, e] of (extracted.entries as any[]).entries()) {
             await db.wbsEntry.create({
-              data: { projectId:pid, createdById:session.user.id, ...e,
+              data: { projectId:pid, createdById:session.user.id,
+                      ...pick(e, ["title","description","acceptanceCriteria","assumptions",
+                                  "responsible","estimatedHours","estimatedCost","qualityStandards"]),
                       code: e?.code || `WBS-${String(i + 1).padStart(3, "0")}` }
             }).catch(()=>{}) // skip dupes/malformed
           }
@@ -204,7 +206,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
           let created = 0
           for (const [i, r] of (extracted.requirements as any[]).entries()) {
             await db.requirement.create({
-              data: { projectId:pid, createdById:session.user.id, ...r,
+              data: { projectId:pid, createdById:session.user.id,
+                      ...pick(r, ["title","description","type","priority","status",
+                                  "source","acceptanceCriteria","traceability"]),
                       code: r?.code || `REQ-${String(i + 1).padStart(3, "0")}` }
             }).catch(()=>{})
             created++
@@ -213,33 +217,47 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         }
         break
 
-      case "QUALITY_PLAN":
+      case "QUALITY_PLAN": {
+        const q = pick(extracted, ["qualityStandards","qualityObjectives","roles","processes",
+                                   "tools","metrics","audits","nonConformance"])
         result = await db.qualityManagementPlan.upsert({
           where:  { projectId:pid },
-          create: { projectId:pid, createdById:session.user.id, ...extracted },
-          update: extracted,
+          create: { projectId:pid, createdById:session.user.id, ...q },
+          update: q,
         })
         break
+      }
 
       case "MEETING_MINUTES": {
-        const { meetingDate, ...rest } = extracted
+        const m = pick(extracted, ["title","meetingType","location","facilitator",
+                                   "agenda","discussion","nextAgenda"])
         const mCount = await db.meetingMinutes.count({ where: { projectId: pid } }).catch(() => 0)
         result = await db.meetingMinutes.create({
-          data: { projectId:pid, createdById:session.user.id, ...rest,
-                  code: (rest as any)?.code || `MIN-${String(mCount + 1).padStart(3, "0")}`,
-                  attendees: (rest as any)?.attendees ?? [],
-                  meetingDate:meetingDate?new Date(meetingDate):new Date() }
+          data: {
+            projectId: pid, createdById: session.user.id, ...m,
+            code:        extracted?.code || `MIN-${String(mCount + 1).padStart(3, "0")}`,
+            meetingDate: extracted?.meetingDate ? new Date(extracted.meetingDate) : new Date(),
+            nextMeeting: extracted?.nextMeeting ? new Date(extracted.nextMeeting) : null,
+            // Json columns: reject null, accept a value or nothing at all
+            attendees:   extracted?.attendees   ?? [],
+            decisions:   extracted?.decisions   ?? undefined,
+            actionItems: extracted?.actionItems ?? undefined,
+          },
         })
         break
       }
 
       case "HANDOVER_PLAN": {
-        const { handoverDate, ...rest } = extracted
+        const h = {
+          ...pick(extracted, ["overview","operationsContact","systemsHandedOver","documentation",
+                              "trainingCompleted","knownIssues","supportArrangements",
+                              "knowledgeTransfer","successCriteria"]),
+          handoverDate: extracted?.handoverDate ? new Date(extracted.handoverDate) : null,
+        }
         result = await db.transitionPlan.upsert({
           where:  { projectId:pid },
-          create: { projectId:pid, createdById:session.user.id,
-                    handoverDate:handoverDate?new Date(handoverDate):null, ...rest },
-          update: { handoverDate:handoverDate?new Date(handoverDate):null, ...rest },
+          create: { projectId:pid, createdById:session.user.id, ...h },
+          update: h,
         })
         break
       }
