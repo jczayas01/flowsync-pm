@@ -4,7 +4,7 @@
 // Team Charter · WBS Dictionary · Quality Plan · Requirements · Meeting Minutes · Handover Plan
 
 import { DateField } from "@/components/shared/DatePicker"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -221,6 +221,23 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
     nonConformance:    qmp?.nonConformance||"",
   })
 
+  // router.refresh() re-fetches the server data, but useState only reads a prop
+  // on first mount — so an AI ingest updated the props while the form kept the
+  // old empty values, and the data only appeared after navigating away and back.
+  // These effects re-seed the forms whenever fresh server data arrives.
+  useEffect(() => {
+    setCharterForm({
+      vision:             charter?.vision||"",
+      objectives:         charter?.objectives||"",
+      values:             charter?.values||"",
+      norms:              charter?.norms||"",
+      decisionMaking:     charter?.decisionMaking||"",
+      conflictResolution: charter?.conflictResolution||"",
+      communicationPlan:  charter?.communicationPlan||"",
+      toolsAndProcesses:  charter?.toolsAndProcesses||"",
+    })
+  }, [charter])
+
   async function saveQmp() {
     setSaving(true); setError("")
     try {
@@ -258,6 +275,19 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
   }
 
   // ── HANDOVER state ────────────────────────────────────────────────────
+  useEffect(() => {
+    setQmpForm({
+      qualityStandards:  qmp?.qualityStandards||"",
+      qualityObjectives: qmp?.qualityObjectives||"",
+      roles:             qmp?.roles||"",
+      processes:         qmp?.processes||"",
+      tools:             qmp?.tools||"",
+      metrics:           qmp?.metrics||"",
+      audits:            qmp?.audits||"",
+      nonConformance:    qmp?.nonConformance||"",
+    })
+  }, [qmp])
+
   const [handoverForm, setHandoverForm] = useState({
     overview:            handover?.overview||"",
     operationsContact:   handover?.operationsContact||"",
@@ -268,6 +298,19 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
     supportArrangements: handover?.supportArrangements||"",
     handoverDate:        handover?.handoverDate?.split("T")[0]||"",
   })
+
+  useEffect(() => {
+    setHandoverForm({
+      overview:            handover?.overview||"",
+      operationsContact:   handover?.operationsContact||"",
+      systemsHandedOver:   handover?.systemsHandedOver||"",
+      documentation:       handover?.documentation||"",
+      trainingCompleted:   handover?.trainingCompleted||"",
+      knownIssues:         handover?.knownIssues||"",
+      supportArrangements: handover?.supportArrangements||"",
+      handoverDate:        handover?.handoverDate?.split("T")[0]||"",
+    })
+  }, [handover])
 
   async function saveHandover() {
     setSaving(true); setError("")

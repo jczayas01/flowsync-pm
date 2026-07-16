@@ -658,6 +658,7 @@ model MeetingMinutes {
   projectId    String
   code         String
   title        String
+  meetingType  String    @default("STATUS")   // KICKOFF|STATUS|PHASE_GATE|RISK_REVIEW|STEERING|SPRINT_PLANNING|RETROSPECTIVE|AD_HOC|OTHER
   meetingDate  DateTime
   location     String?
   facilitator  String?
@@ -683,14 +684,18 @@ model MeetingMinutes {
 model TransitionPlan {
   id                 String    @id @default(cuid())
   projectId          String    @unique
-  operationsOwner    String?
-  handoverDate       DateTime?
-  trainingPlan       String?
-  documentation      String?
-  supportArrangement String?
-  knowledgeTransfer  String?
-  risksPostHandover  String?
-  successCriteria    String?
+  // Field names match the UI form, the /handover route and the AI ingest prompt.
+  // @map keeps the original DB columns, so only the two genuinely new ones migrate.
+  overview            String?
+  operationsContact   String?   @map("operationsOwner")
+  systemsHandedOver   String?
+  handoverDate        DateTime?
+  trainingCompleted   String?   @map("trainingPlan")
+  documentation       String?
+  supportArrangements String?   @map("supportArrangement")
+  knownIssues         String?   @map("risksPostHandover")
+  knowledgeTransfer   String?
+  successCriteria     String?
   signoffs           Json      @default("[]")
   status             String    @default("DRAFT")
   createdById        String
