@@ -60,6 +60,49 @@ function TextArea({ label, value, onChange, rows=4, placeholder="" }: {
   )
 }
 
+// Read view for free-text governance fields — mirrors the WBS entry card so every
+// section in this tab reads the same way: accent rail, label chip, content.
+function FieldCard({ label, value, icon }: { label:string; value:string; icon?:string }) {
+  const empty = !value?.trim()
+  return (
+    <div style={{ background:"var(--surface)", borderRadius:"var(--radius)",
+      padding:"12px 16px", border:"1px solid var(--border)",
+      borderLeft:`3px solid ${empty ? "var(--border)" : "var(--steel)"}` }}>
+      <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+        <span style={{ fontSize:10, fontFamily:"monospace", fontWeight:700,
+          color: empty ? "var(--text-4)" : "var(--steel)", flexShrink:0, padding:"2px 6px",
+          background: empty ? "var(--surface-2,#F1F5F9)" : "#EFF6FF", borderRadius:4,
+          whiteSpace:"nowrap", textTransform:"uppercase", letterSpacing:".03em" }}>
+          {icon ? `${icon} ` : ""}{label}
+        </span>
+        <div style={{ flex:1, minWidth:0 }}>
+          {empty ? (
+            <div style={{ fontSize:12, color:"var(--text-4)", fontStyle:"italic" }}>Not documented yet</div>
+          ) : (
+            <p style={{ fontSize:12.5, color:"var(--text-2)", margin:0, lineHeight:1.6,
+              whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{value}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Right-aligned Edit / Cancel toggle — same placement as WBS's "+ Add WBS entry".
+function EditToggle({ editing, onClick }: { editing:boolean; onClick:()=>void }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
+      <button onClick={onClick}
+        style={{ padding:"8px 16px", background:editing?"#fff":"var(--steel)",
+          color:editing?"var(--text-2)":"#fff",
+          border:editing?"1px solid var(--border)":"none",
+          borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)" }}>
+        {editing ? "Cancel" : "✏️ Edit"}
+      </button>
+    </div>
+  )
+}
+
 function SectionHeader({ title, standardRef, icon }: { title:string; standardRef:string; icon:string }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16,
@@ -107,6 +150,9 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
 }) {
   const router = useRouter()
   const [activeDoc, setActiveDoc] = useState("charter")
+  const [editing, setEditing] = useState<Record<string,boolean>>({})
+  const isEditing = (k:string) => !!editing[k]
+  const toggleEdit = (k:string) => setEditing(e => ({ ...e, [k]: !e[k] }))
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState("")
   const [success, setSuccess] = useState("")
@@ -424,39 +470,58 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
 
         {/* ── TEAM CHARTER ── */}
         {activeDoc==="charter" && (
-          <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24 }}>
-            <SectionHeader title="Team Charter" icon="🤝"
-              standardRef="PM Standard — Team Performance Domain · Defines team norms, values, and working agreements" />
-            <TextArea label="Team Vision" value={charterForm.vision}
-              onChange={v=>setCharterForm(f=>({...f,vision:v}))}
-              placeholder="What does this team aim to achieve together?" />
-            <TextArea label="Team Objectives & Success Criteria" value={charterForm.objectives}
-              onChange={v=>setCharterForm(f=>({...f,objectives:v}))}
-              placeholder="What does success look like for this team?" />
-            <TextArea label="Team Values & Working Agreements" value={charterForm.values}
-              onChange={v=>setCharterForm(f=>({...f,values:v}))}
-              placeholder="e.g. Transparency, respect, accountability, quality..." />
-            <TextArea label="Working Norms (hours, meetings, communication)" value={charterForm.norms}
-              onChange={v=>setCharterForm(f=>({...f,norms:v}))}
-              placeholder="e.g. Core hours 9-5, daily standup at 9am, no meeting Fridays..." />
-            <TextArea label="Decision-Making Process" value={charterForm.decisionMaking}
-              onChange={v=>setCharterForm(f=>({...f,decisionMaking:v}))}
-              placeholder="How are decisions made? Who has authority for what?" />
-            <TextArea label="Conflict Resolution" value={charterForm.conflictResolution}
-              onChange={v=>setCharterForm(f=>({...f,conflictResolution:v}))}
-              placeholder="How will the team handle disagreements?" />
-            <TextArea label="Communication Plan" value={charterForm.communicationPlan}
-              onChange={v=>setCharterForm(f=>({...f,communicationPlan:v}))}
-              placeholder="Tools used, response time expectations, escalation..." />
-            <TextArea label="Tools & Processes" value={charterForm.toolsAndProcesses}
-              onChange={v=>setCharterForm(f=>({...f,toolsAndProcesses:v}))}
-              placeholder="Project tools, coding standards, review processes..." />
-            <button onClick={saveCharter} disabled={saving}
-              style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
-                border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
-                cursor:"pointer", fontFamily:"var(--font)" }}>
-              {saving?"Saving…":"💾 Save Team Charter"}
-            </button>
+          <div>
+            <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
+              <SectionHeader title="Team Charter" icon="🤝"
+                standardRef="PM Standard — Team Performance Domain · Defines team norms, values, and working agreements" />
+              <EditToggle editing={isEditing("charter")} onClick={()=>toggleEdit("charter")} />
+
+              {!isEditing("charter") ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <FieldCard label="Team Vision" icon="🎯" value={charterForm.vision} />
+                  <FieldCard label="Objectives & Success Criteria" icon="✅" value={charterForm.objectives} />
+                  <FieldCard label="Values & Working Agreements" icon="🤝" value={charterForm.values} />
+                  <FieldCard label="Working Norms" icon="⏰" value={charterForm.norms} />
+                  <FieldCard label="Decision-Making" icon="⚖️" value={charterForm.decisionMaking} />
+                  <FieldCard label="Conflict Resolution" icon="🔀" value={charterForm.conflictResolution} />
+                  <FieldCard label="Communication Plan" icon="📢" value={charterForm.communicationPlan} />
+                  <FieldCard label="Tools & Processes" icon="🛠" value={charterForm.toolsAndProcesses} />
+                </div>
+              ) : (
+                <>
+                <TextArea label="Team Vision" value={charterForm.vision}
+                  onChange={v=>setCharterForm(f=>({...f,vision:v}))}
+                  placeholder="What does this team aim to achieve together?" />
+                <TextArea label="Objectives & Success Criteria" value={charterForm.objectives}
+                  onChange={v=>setCharterForm(f=>({...f,objectives:v}))}
+                  placeholder="What does success look like for this team?" />
+                <TextArea label="Values & Working Agreements" value={charterForm.values}
+                  onChange={v=>setCharterForm(f=>({...f,values:v}))}
+                  placeholder="e.g. Transparency, respect, accountability, quality..." />
+                <TextArea label="Working Norms" value={charterForm.norms}
+                  onChange={v=>setCharterForm(f=>({...f,norms:v}))}
+                  placeholder="e.g. Core hours 9-5, daily standup at 9am, no meeting Fridays..." />
+                <TextArea label="Decision-Making" value={charterForm.decisionMaking}
+                  onChange={v=>setCharterForm(f=>({...f,decisionMaking:v}))}
+                  placeholder="How are decisions made? Who has authority for what?" />
+                <TextArea label="Conflict Resolution" value={charterForm.conflictResolution}
+                  onChange={v=>setCharterForm(f=>({...f,conflictResolution:v}))}
+                  placeholder="How will the team handle disagreements?" />
+                <TextArea label="Communication Plan" value={charterForm.communicationPlan}
+                  onChange={v=>setCharterForm(f=>({...f,communicationPlan:v}))}
+                  placeholder="Tools used, response time expectations, escalation..." />
+                <TextArea label="Tools & Processes" value={charterForm.toolsAndProcesses}
+                  onChange={v=>setCharterForm(f=>({...f,toolsAndProcesses:v}))}
+                  placeholder="Project tools, coding standards, review processes..." />
+                  <button onClick={async()=>{ await saveCharter(); toggleEdit("charter") }} disabled={saving}
+                    style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
+                      border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
+                      cursor:"pointer", fontFamily:"var(--font)" }}>
+                    {saving?"Saving…":"💾 Save Team Charter"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -666,39 +731,58 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
 
         {/* ── QUALITY PLAN ── */}
         {activeDoc==="quality" && (
-          <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24 }}>
-            <SectionHeader title="Quality Management Plan" icon="✅"
-              standardRef="PM Standard — Measurement — Delivery Domain · Quality standards, objectives, processes and metrics" />
-            <TextArea label="Applicable Quality Standards" value={qmpForm.qualityStandards}
-              onChange={v=>setQmpForm(f=>({...f,qualityStandards:v}))}
-              placeholder="e.g. ISO 9001, CMMI Level 3, organizational quality standards..." />
-            <TextArea label="Quality Objectives" value={qmpForm.qualityObjectives}
-              onChange={v=>setQmpForm(f=>({...f,qualityObjectives:v}))}
-              placeholder="What quality targets must be met? Measurable objectives..." />
-            <TextArea label="Roles & Responsibilities" value={qmpForm.roles}
-              onChange={v=>setQmpForm(f=>({...f,roles:v}))}
-              placeholder="Who is responsible for quality? QA lead, reviewers, approvers..." />
-            <TextArea label="Quality Assurance Processes" value={qmpForm.processes}
-              onChange={v=>setQmpForm(f=>({...f,processes:v}))}
-              placeholder="Reviews, audits, testing procedures, inspections..." />
-            <TextArea label="Quality Tools & Techniques" value={qmpForm.tools}
-              onChange={v=>setQmpForm(f=>({...f,tools:v}))}
-              placeholder="e.g. peer review, code review, UAT, checklists, statistical sampling..." />
-            <TextArea label="Quality Metrics" value={qmpForm.metrics}
-              onChange={v=>setQmpForm(f=>({...f,metrics:v}))}
-              placeholder="How will quality be measured? Defect rates, test coverage, customer satisfaction..." />
-            <TextArea label="Quality Audit Schedule" value={qmpForm.audits}
-              onChange={v=>setQmpForm(f=>({...f,audits:v}))}
-              placeholder="When and how quality audits will be conducted..." />
-            <TextArea label="Non-Conformance Handling" value={qmpForm.nonConformance}
-              onChange={v=>setQmpForm(f=>({...f,nonConformance:v}))}
-              placeholder="What happens when quality standards are not met?" />
-            <button onClick={saveQmp} disabled={saving}
-              style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
-                border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
-                cursor:"pointer", fontFamily:"var(--font)" }}>
-              {saving?"Saving…":"💾 Save Quality Plan"}
-            </button>
+          <div>
+            <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
+              <SectionHeader title="Quality Management Plan" icon="✅"
+                standardRef="PM Standard — Measurement — Delivery Domain · Quality standards, objectives, processes and metrics" />
+              <EditToggle editing={isEditing("quality")} onClick={()=>toggleEdit("quality")} />
+
+              {!isEditing("quality") ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <FieldCard label="Standards" icon="📏" value={qmpForm.qualityStandards} />
+                  <FieldCard label="Objectives" icon="🎯" value={qmpForm.qualityObjectives} />
+                  <FieldCard label="Roles" icon="👥" value={qmpForm.roles} />
+                  <FieldCard label="QA Processes" icon="⚙️" value={qmpForm.processes} />
+                  <FieldCard label="QC Tools" icon="🛠" value={qmpForm.tools} />
+                  <FieldCard label="Metrics" icon="📊" value={qmpForm.metrics} />
+                  <FieldCard label="Audit Schedule" icon="🔍" value={qmpForm.audits} />
+                  <FieldCard label="Non-Conformance" icon="⚠️" value={qmpForm.nonConformance} />
+                </div>
+              ) : (
+                <>
+                <TextArea label="Standards" value={qmpForm.qualityStandards}
+                  onChange={v=>setQmpForm(f=>({...f,qualityStandards:v}))}
+                  placeholder="e.g. ISO 9001, CMMI Level 3, organizational quality standards..." />
+                <TextArea label="Objectives" value={qmpForm.qualityObjectives}
+                  onChange={v=>setQmpForm(f=>({...f,qualityObjectives:v}))}
+                  placeholder="Measurable quality targets for this project..." />
+                <TextArea label="Roles" value={qmpForm.roles}
+                  onChange={v=>setQmpForm(f=>({...f,roles:v}))}
+                  placeholder="Who owns quality? Reviewers, approvers, QA lead..." />
+                <TextArea label="QA Processes" value={qmpForm.processes}
+                  onChange={v=>setQmpForm(f=>({...f,processes:v}))}
+                  placeholder="Reviews, testing approach, inspections, sign-off process..." />
+                <TextArea label="QC Tools" value={qmpForm.tools}
+                  onChange={v=>setQmpForm(f=>({...f,tools:v}))}
+                  placeholder="Tools used for quality assurance and control..." />
+                <TextArea label="Metrics" value={qmpForm.metrics}
+                  onChange={v=>setQmpForm(f=>({...f,metrics:v}))}
+                  placeholder="Defect rate, test coverage, satisfaction targets..." />
+                <TextArea label="Audit Schedule" value={qmpForm.audits}
+                  onChange={v=>setQmpForm(f=>({...f,audits:v}))}
+                  placeholder="Planned quality audits, dates and focus..." />
+                <TextArea label="Non-Conformance" value={qmpForm.nonConformance}
+                  onChange={v=>setQmpForm(f=>({...f,nonConformance:v}))}
+                  placeholder="What happens when standards are not met..." />
+                  <button onClick={async()=>{ await saveQmp(); toggleEdit("quality") }} disabled={saving}
+                    style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
+                      border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
+                      cursor:"pointer", fontFamily:"var(--font)" }}>
+                    {saving?"Saving…":"💾 Save Quality Plan"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -819,41 +903,62 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
 
         {/* ── HANDOVER PLAN ── */}
         {activeDoc==="handover" && (
-          <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24 }}>
-            <SectionHeader title="Transition & Handover Plan" icon="🔄"
-              standardRef="PM Best Practices — Closing Domain · Operational handover to sustaining organization" />
-            <TextArea label="Handover Overview" value={handoverForm.overview}
-              onChange={v=>setHandoverForm(f=>({...f,overview:v}))}
-              placeholder="Summary of what is being handed over and to whom..." />
-            <TextArea label="Operations Contact / Receiving Team" value={handoverForm.operationsContact}
-              onChange={v=>setHandoverForm(f=>({...f,operationsContact:v}))}
-              placeholder="Name, role, and contact info of the receiving team/person..." />
-            <TextArea label="Systems & Deliverables Handed Over" value={handoverForm.systemsHandedOver}
-              onChange={v=>setHandoverForm(f=>({...f,systemsHandedOver:v}))}
-              placeholder="List all systems, products, or deliverables being handed over..." />
-            <TextArea label="Documentation Provided" value={handoverForm.documentation}
-              onChange={v=>setHandoverForm(f=>({...f,documentation:v}))}
-              placeholder="User manuals, technical docs, training materials, runbooks..." />
-            <TextArea label="Training Completed" value={handoverForm.trainingCompleted}
-              onChange={v=>setHandoverForm(f=>({...f,trainingCompleted:v}))}
-              placeholder="Who received training, what was covered, when completed..." />
-            <TextArea label="Known Issues & Workarounds" value={handoverForm.knownIssues}
-              onChange={v=>setHandoverForm(f=>({...f,knownIssues:v}))}
-              placeholder="Outstanding bugs, limitations, or issues the receiving team should know about..." />
-            <TextArea label="Support Arrangements" value={handoverForm.supportArrangements}
-              onChange={v=>setHandoverForm(f=>({...f,supportArrangements:v}))}
-              placeholder="Post-handover support: who to contact, SLAs, warranty period..." />
-            <div style={{ marginBottom:14 }}>
-              <label style={lbl}>Handover date</label>
-              <DateField  style={{...inp,width:"auto"}} value={handoverForm.handoverDate}
-                onChange={e=>setHandoverForm(f=>({...f,handoverDate:e.target.value}))} />
+          <div>
+            <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
+              <SectionHeader title="Transition & Handover Plan" icon="🔄"
+                standardRef="PM Best Practices — Closing Domain · Operational handover to sustaining organization" />
+              <EditToggle editing={isEditing("handover")} onClick={()=>toggleEdit("handover")} />
+
+              {!isEditing("handover") ? (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <FieldCard label="Overview" icon="📖" value={handoverForm.overview} />
+                  <FieldCard label="Receiving Team" icon="👤" value={handoverForm.operationsContact} />
+                  <FieldCard label="Systems" icon="🖥" value={handoverForm.systemsHandedOver} />
+                  <FieldCard label="Documentation" icon="📚" value={handoverForm.documentation} />
+                  <FieldCard label="Training" icon="🎓" value={handoverForm.trainingCompleted} />
+                  <FieldCard label="Known Issues" icon="⚠️" value={handoverForm.knownIssues} />
+                  <FieldCard label="Support" icon="🛟" value={handoverForm.supportArrangements} />
+                  <FieldCard label="Handover Date" icon="📅"
+                    value={handoverForm.handoverDate ? new Date(handoverForm.handoverDate + "T00:00:00")
+                      .toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : ""} />
+                </div>
+              ) : (
+                <>
+                <TextArea label="Overview" value={handoverForm.overview}
+                  onChange={v=>setHandoverForm(f=>({...f,overview:v}))}
+                  placeholder="Summary of what is being handed over and to whom..." />
+                <TextArea label="Receiving Team" value={handoverForm.operationsContact}
+                  onChange={v=>setHandoverForm(f=>({...f,operationsContact:v}))}
+                  placeholder="Name, role, and contact info of the receiving team/person..." />
+                <TextArea label="Systems" value={handoverForm.systemsHandedOver}
+                  onChange={v=>setHandoverForm(f=>({...f,systemsHandedOver:v}))}
+                  placeholder="Systems and deliverables being transferred..." />
+                <TextArea label="Documentation" value={handoverForm.documentation}
+                  onChange={v=>setHandoverForm(f=>({...f,documentation:v}))}
+                  placeholder="Documentation provided to the receiving team..." />
+                <TextArea label="Training" value={handoverForm.trainingCompleted}
+                  onChange={v=>setHandoverForm(f=>({...f,trainingCompleted:v}))}
+                  placeholder="Training sessions delivered, attendees, topics..." />
+                <TextArea label="Known Issues" value={handoverForm.knownIssues}
+                  onChange={v=>setHandoverForm(f=>({...f,knownIssues:v}))}
+                  placeholder="Open issues and their workarounds..." />
+                <TextArea label="Support" value={handoverForm.supportArrangements}
+                  onChange={v=>setHandoverForm(f=>({...f,supportArrangements:v}))}
+                  placeholder="Support period, contacts, escalation, SLA..." />
+                  <div style={{ marginBottom:14 }}>
+                    <label style={lbl}>Handover Date</label>
+                    <DateField style={{...inp, width:"auto"}} value={handoverForm.handoverDate}
+                      onChange={e=>setHandoverForm(f=>({...f, handoverDate:e.target.value}))} />
+                  </div>
+                  <button onClick={async()=>{ await saveHandover(); toggleEdit("handover") }} disabled={saving}
+                    style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
+                      border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
+                      cursor:"pointer", fontFamily:"var(--font)" }}>
+                    {saving?"Saving…":"💾 Save Handover Plan"}
+                  </button>
+                </>
+              )}
             </div>
-            <button onClick={saveHandover} disabled={saving}
-              style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
-                border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
-                cursor:"pointer", fontFamily:"var(--font)" }}>
-              {saving?"Saving…":"💾 Save Handover Plan"}
-            </button>
           </div>
         )}
       </div>
