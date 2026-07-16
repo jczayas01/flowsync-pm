@@ -82,7 +82,20 @@ export function withAuth(
       }
 
       const userId = session.user.id
-      const workspaceId = session.user.activeWorkspaceId
+      let workspaceId = session.user.activeWorkspaceId
+
+      // The JWT resolves memberships at sign-in. A user who signs up first and
+      // creates their workspace during onboarding therefore carries a token with
+      // no activeWorkspaceId until they sign out and back in — which nobody would
+      // guess to do. Fall back to their actual membership instead of failing.
+      if (!workspaceId) {
+        const fallback = await prisma.workspaceMember.findFirst({
+          where:   { userId },
+          orderBy: { joinedAt: 'asc' },
+          select:  { workspaceId: true },
+        })
+        workspaceId = fallback?.workspaceId
+      }
 
       if (!workspaceId) {
         return err(400, 'NO_WORKSPACE', 'No active workspace selected')

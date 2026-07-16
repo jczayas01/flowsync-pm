@@ -124,8 +124,11 @@ export const authConfig: NextAuthConfig = {
         token.provider = account?.provider
       }
 
-      // Fetch workspace memberships on sign-in or explicit update
-      if (trigger === 'signIn' || trigger === 'update') {
+      // Fetch workspace memberships on sign-in, on explicit update, or whenever the
+      // token still has no workspace. That last case matters: a user who signs up
+      // before creating a workspace gets a token with no activeWorkspaceId, and
+      // without this it stays empty until they sign out and back in.
+      if (trigger === 'signIn' || trigger === 'update' || !token.activeWorkspaceId) {
         const dbUser = await db.user.findUnique({
           where: { id: token.userId as string },
           select: {
