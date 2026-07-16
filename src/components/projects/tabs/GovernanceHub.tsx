@@ -86,6 +86,19 @@ const DOCS = [
 
 // ── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
+
+// handoverDate arrives as a Date object from the server component (Prisma) but
+// as an ISO string after JSON round-trips. .split() on a Date crashes the page,
+// so normalize defensively regardless of which form arrives.
+const toDateInput = (v: any): string => {
+  if (!v) return ""
+  try {
+    if (typeof v === "string") return v.split("T")[0]
+    const d = new Date(v)
+    return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0]
+  } catch { return "" }
+}
+
 export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
   wbsEntries, requirements, minutes, handover, tasks, members }: {
   projectId:string; workspaceId:string; project:any;
@@ -296,7 +309,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
     trainingCompleted:   handover?.trainingCompleted||"",
     knownIssues:         handover?.knownIssues||"",
     supportArrangements: handover?.supportArrangements||"",
-    handoverDate:        handover?.handoverDate?.split("T")[0]||"",
+    handoverDate:        toDateInput(handover?.handoverDate),
   })
 
   useEffect(() => {
@@ -308,7 +321,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
       trainingCompleted:   handover?.trainingCompleted||"",
       knownIssues:         handover?.knownIssues||"",
       supportArrangements: handover?.supportArrangements||"",
-      handoverDate:        handover?.handoverDate?.split("T")[0]||"",
+      handoverDate:        toDateInput(handover?.handoverDate),
     })
   }, [handover])
 
