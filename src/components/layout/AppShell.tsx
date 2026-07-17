@@ -45,7 +45,6 @@ const SETTINGS_NAV = [
   { href:"/settings/roles",        label:"Roles"            },
   { href:"/settings/custom-fields",label:"Custom fields",   perm:"workspace:edit_settings" },
   { href:"/settings/white-label",  label:"White-label",     perm:"workspace:edit_branding" },
-  { href:"/settings/integrations", label:"Integrations"      },
   { href:"/settings/webhooks",     label:"Webhooks",        perm:"workspace:manage_integrations" },
   { href:"/settings/api",          label:"API & integrations", perm:"workspace:manage_integrations" },
 ] as any[]

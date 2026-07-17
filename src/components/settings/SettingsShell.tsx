@@ -12,6 +12,7 @@ const TABS = [
   { href:"/settings/custom-fields",label:"Custom fields",   icon:"⚙️" },
   { href:"/settings/report-templates", label:"Report Templates", icon:"📈" },
   { href:"/settings/white-label",  label:"White-label",     icon:"🎨" },
+  { href:"/settings/integrations", label:"Integrations",    icon:"🪟" },
   { href:"/settings/webhooks",     label:"Webhooks",        icon:"🔗" },
   { href:"/settings/api",          label:"API",             icon:"🔑" },
 ]
