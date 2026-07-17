@@ -13,6 +13,12 @@ export default async function InvitePage({ params }: { params: { token: string }
     include: { workspace: { select: { name: true } } },
   }).catch(() => null)
 
+  // Does this invited email already have an account? Decides whether the page
+  // offers "create your account" or "sign in to accept".
+  const hasAccount = invitation?.email
+    ? !!(await db.user.findUnique({ where: { email: invitation.email.toLowerCase() }, select: { id: true } }).catch(() => null))
+    : false
+
   const state = !invitation ? "not_found"
     : invitation.acceptedAt ? "accepted"
     : invitation.expiresAt < new Date() ? "expired"
@@ -27,6 +33,7 @@ export default async function InvitePage({ params }: { params: { token: string }
       email={invitation?.email || ""}
       signedIn={!!session?.user?.id}
       signedInEmail={session?.user?.email || ""}
+      hasAccount={hasAccount}
     />
   )
 }
