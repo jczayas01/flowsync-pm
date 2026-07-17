@@ -33,7 +33,10 @@
     "oauthOnlyTitleGoogle": "This email signs in with Google",
     "oauthOnlyBodyGoogle": "Your account was created with Google, so it has no password. Use the \"Google\" button below to sign in.",
     "oauthOnlyTitleMicrosoft": "This email signs in with Microsoft",
-    "oauthOnlyBodyMicrosoft": "Your account was created with Microsoft, so it has no password. Use the \"Microsoft\" button below to sign in."
+    "oauthOnlyBodyMicrosoft": "Your account was created with Microsoft, so it has no password. Use the \"Microsoft\" button below to sign in.",
+    "inviteNoAccountTitle": "Create your account to join",
+    "inviteNoAccountBody": "You've been invited to a workspace. Create an account with this email to accept the invitation — it takes a moment.",
+    "inviteNoAccountCta": "Create account & join →"
   },
   "nav": {
     "Dashboard": "Dashboard",

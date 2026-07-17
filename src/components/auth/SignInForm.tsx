@@ -22,6 +22,9 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
   // that have no password. Wrong-password stays deliberately generic.
   const [guide, setGuide]       = useState<null | { status:"none" } | { status:"oauth"; provider:string }>(null)
   const dest = callbackUrl || '/dashboard'
+  // An invitee is joining someone else's workspace — telling them to "start a free
+  // trial" describes the wrong thing entirely.
+  const isInvite = (callbackUrl || '').startsWith('/invite/')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,16 +61,16 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
         <div style={{ background:'rgba(245,158,11,.12)', border:'1px solid rgba(245,158,11,.35)',
           padding:'12px 14px', borderRadius:'var(--radius)', marginBottom:16 }}>
           <div style={{ fontSize:13, color:'#FDE68A', fontWeight:600, marginBottom:4 }}>
-            {t('noAccountTitle')}
+            {isInvite ? t('inviteNoAccountTitle') : t('noAccountTitle')}
           </div>
           <div style={{ fontSize:12.5, color:'rgba(255,255,255,.65)', lineHeight:1.55, marginBottom:10 }}>
-            {t('noAccountBody')}
+            {isInvite ? t('inviteNoAccountBody') : t('noAccountBody')}
           </div>
-          <Link href={`/auth/signup?email=${encodeURIComponent(email)}`}
+          <Link href={`/auth/signup?email=${encodeURIComponent(email)}${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
             style={{ display:'inline-block', padding:'8px 16px', background:'#F59E0B',
               color:'#0D1B2A', borderRadius:8, fontSize:12.5, fontWeight:700,
               textDecoration:'none' }}>
-            {t('noAccountCta')}
+            {isInvite ? t('inviteNoAccountCta') : t('noAccountCta')}
           </Link>
         </div>
       )}
@@ -121,7 +124,8 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
 
       <p style={{ textAlign:'center', fontSize:13, color:'rgba(255,255,255,.4)', marginTop:20 }}>
         No account?{' '}
-        <Link href="/auth/signup" style={{ color:'var(--amber)', textDecoration:'none', fontWeight:500 }}>
+        <Link href={callbackUrl ? `/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/auth/signup"}
+          style={{ color:'var(--amber)', textDecoration:'none', fontWeight:500 }}>
           Sign up free
         </Link>
       </p>

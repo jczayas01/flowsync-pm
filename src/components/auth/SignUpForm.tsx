@@ -7,8 +7,11 @@ import Link from 'next/link'
 
 export function SignUpForm() {
   // Arriving from "no account found" on the sign-in page carries ?email= so the
-  // person doesn't type it a third time.
+  // person doesn't type it a third time. ?callbackUrl= carries where they were
+  // headed — an invite link, most importantly: registering must accept the
+  // invitation, not dump them into onboarding to build a second workspace.
   const params = useSearchParams()
+  const callbackUrl = params.get('callbackUrl') || ''
   const [form, setForm]     = useState({ name:'', email: params.get('email') || '', password:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -27,7 +30,11 @@ export function SignUpForm() {
         setLoading(false); return
       }
       await signIn('credentials', { email:form.email, password:form.password, redirect:false })
-      window.location.href = '/onboarding'
+      // Only allow same-site paths — an open redirect here would be a phishing gift.
+      const dest = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
+        ? callbackUrl
+        : '/onboarding'
+      window.location.href = dest
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)

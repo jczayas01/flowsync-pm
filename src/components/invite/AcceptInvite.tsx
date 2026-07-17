@@ -58,7 +58,8 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
               You&apos;re invited to <strong>{workspaceName}</strong>
             </h1>
             <p style={{ color: "#64748B", fontSize: 13, marginBottom: 20 }}>
-              as <strong>{role.replace(/_/g, " ")}</strong> · sent to {email}
+              as <strong>{role.replace(/_/g, " ").toLowerCase()
+                .replace(/\b\w/g, c => c.toUpperCase())}</strong> · sent to {email}
             </p>
 
             {!signedIn && (
