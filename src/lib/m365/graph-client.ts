@@ -5,7 +5,7 @@
 import { db } from "@/lib/db"
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0"
-const TOKEN_URL  = `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID || "common"}/oauth2/v2.0/token`
+const TOKEN_URL  = "https://login.microsoftonline.com/common/oauth2/v2.0/token"   // multitenant app
 
 // ── Scopes needed per feature ──
 export const GRAPH_SCOPES = {

@@ -40,9 +40,10 @@ export async function GET(req: NextRequest) {
   // Signed-ish state: random value paired to the user, round-tripped via cookie.
   const state = randomBytes(16).toString("hex")
 
-  // "common" lets both work and personal accounts consent; a single-tenant app
-  // should pin its own tenant instead.
-  const tenant = process.env.AZURE_AD_TENANT_ID || "common"
+  // The app registration is multitenant, so consent goes through "common": a
+  // customer signing in from their own tenant must be able to grant access.
+  // Pinning a tenant here would lock the integration to one organization.
+  const tenant = "common"
   const url = new URL(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`)
   url.searchParams.set("client_id", clientId)
   url.searchParams.set("response_type", "code")

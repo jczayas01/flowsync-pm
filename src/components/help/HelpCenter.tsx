@@ -33,6 +33,13 @@ const GLOSSARY = [
 ]
 
 const FAQS = [
+  { q:"How do I get my existing project plan into FlowSync PM?", a:"Projects → + New project → Import from plan, then upload the Word, Excel or PDF you already have. The AI reads it and lists what it found — phases, tasks with dates and effort, risks, budget lines — and you approve each item before anything is written. If it missed something, the document usually didn't state it clearly; add it there, re-upload, and it fills in." },
+  { q:"What's the difference between the template library and AI ingest?", a:"They're two halves of the same loop. Templates → Document templates gives you blank forms (charter, WBS, risk register, minutes, handover). Six of them are marked 🤖 AI-readable: fill one in, upload it under the project's Governance tab, and FlowSync reads it back and populates the project. Download → fill → upload → done." },
+  { q:"I signed in with Microsoft. Why isn't Microsoft 365 connected?", a:"Signing in with Microsoft only proves who you are. Reading your mail, calendar and tasks is a separate permission that you grant deliberately: Settings → Integrations → Connect Microsoft 365. Microsoft will show you exactly what's being requested, and you can disconnect at any time." },
+  { q:"What happens when my free trial ends?", a:"The two-month trial covers the whole product with no feature limits. Because a card is on file at sign-up, it converts to Starter automatically so nothing stops working mid-project. Cancel any time before it converts and you're not charged." },
+  { q:"Do I pay for every person I add?", a:"On Business, no. Paid seats are for the roles that drive and govern the work — sponsors, PMO directors, program and project managers, product owners, PMO analysts. Everyone else — team members, stakeholders, clients, external resources — comes in bundles at $20/mo per 10 people." },
+  { q:"Can I work in Spanish?", a:"Yes. Every screen, report and generated document works in English and Spanish, including the document templates. Switch language in Settings — you stay on the same page." },
+  { q:"Why is a task missing from the workload view?", a:"Resource workload only counts tasks that have both dates and an effort estimate. A task with no estimate is flagged rather than silently counted as zero, and a task with no dates shows as Unscheduled. Done and Cancelled work is excluded by design." },
   { q:"What does CPI < 1.0 mean?", a:"Your project is over budget. You're spending more money than the value of work completed. A CPI of 0.8 means for every $1 spent, you're only getting $0.80 of planned work done." },
   { q:"What's the difference between a Portfolio, Program, and Project?", a:"A Portfolio is a collection of programs and projects aligned to strategic objectives. A Program is a group of related projects managed together to achieve benefits not available individually. A Project is a temporary endeavor to create a unique product, service, or result." },
   { q:"When should I create a Change Request?", a:"Any time there's a proposed modification to scope, schedule, cost, quality, or resources. Even small changes should be documented to maintain accurate baselines and audit trails." },
@@ -48,78 +55,110 @@ const FAQS = [
 ]
 
 const SHORTCUTS = [
-  { key:"G then D",    action:"Go to Dashboard" },
-  { key:"G then T",    action:"Go to Tasks" },
-  { key:"G then G",    action:"Go to Gantt" },
-  { key:"G then R",    action:"Go to Risks" },
-  { key:"N",           action:"New item (context-sensitive)" },
-  { key:"Escape",      action:"Close modal / cancel" },
-  { key:"Enter",       action:"Save / confirm" },
-  { key:"Ctrl + /",    action:"Open help" },
-  { key:"Ctrl + K",    action:"Command palette (coming soon)" },
+  { key:"Ctrl + D",  action:"Tasks — copy the cell above down the column" },
+  { key:"Escape",    action:"Close a modal or cancel an edit" },
+  { key:"Enter",     action:"Save or confirm in a form" },
+  { key:"Tab",       action:"Move to the next field" },
 ]
 
+
+// `id` lets a Guide button deep-link straight to the relevant walkthrough.
 const WALKTHROUGHS = [
-  { icon:"📋", title:"Tasks Tab", steps:[
-    "Click a phase header (➔ arrow) to expand/collapse tasks in that phase",
-    "Click any cell directly to edit inline — Status, Priority, Assignee, Dates, % Complete",
-    "Use the blue action toolbar at the top to add, move, indent, or delete tasks",
-    "Check the checkbox on a row to select it — bulk actions appear in the toolbar",
-    "Click ⋯ on any row for the full action menu",
-    "Click Edit or double-click a task to open the side panel for full details",
+  { id:"import", icon:"📥", title:"Import a plan (start here)", steps:[
+    "Projects → + New project → Import from plan, or open a project and use Import",
+    "Upload the plan you already have — Word, Excel or PDF",
+    "The AI reads it and lists what it found: phases, tasks with dates and effort, risks, budget lines",
+    "Review every row before committing — nothing is written until you approve it",
+    "Uncheck anything it misread, then Commit — the project is built in one step",
+    "If something is missing, the document usually didn't say it. Add it, re-upload, and it fills in",
   ]},
-  { icon:"📊", title:"Gantt Chart", steps:[
-    "Drag bars left/right to reschedule tasks",
-    "Drag the right edge of a bar to resize duration",
-    "Click ➔ phase headers to collapse/expand phases",
-    "Purple striped bars show the original baseline dates",
-    "⚡ badges mark critical path tasks",
-    "Use Week/Month/Quarter buttons to change the time scale",
-    "Hover over a task name to see the ⋯ action menu",
+  { id:"tasks", icon:"📋", title:"Tasks", steps:[
+    "Click a phase header (➔ arrow) to expand or collapse tasks in that phase",
+    "Click any cell to edit inline — Status, Priority, Assignee, Dates, % Complete",
+    "Use the toolbar at the top to add, move, indent, or delete tasks",
+    "Tick a row's checkbox to select it — bulk actions appear in the toolbar",
+    "Ctrl + D copies the value from the cell above down the column",
+    "Click Edit, or double-click a task, to open the full side panel",
   ]},
-  { icon:"💰", title:"Budget & EVM", steps:[
-    "Click + Add item to add a budget line item",
+  { id:"gantt", icon:"📊", title:"Gantt chart", steps:[
+    "Drag bars left or right to reschedule",
+    "Drag the right edge of a bar to change duration",
+    "Click ➔ phase headers to collapse or expand phases",
+    "Purple striped bars are the baseline — the dates you originally committed to",
+    "⚡ marks tasks on the critical path: delay one and the project end date moves",
+    "Week / Month / Quarter change the time scale",
+  ]},
+  { id:"budget", icon:"💰", title:"Budget & EVM", steps:[
+    "Click + Add item to add a budget line",
     "Click Edit on any row to change planned or actual amounts",
-    "CPI and SPI update automatically from your actuals",
-    "EAC shows projected final cost based on current CPI",
-    "Green = under budget, Red = over budget",
-    "Lock baselines before the project starts to enable variance analysis",
+    "CPI and SPI recalculate from your actuals — no spreadsheet needed",
+    "EAC projects the final cost at the current rate of spend",
+    "Green is under budget, red is over",
+    "Lock a baseline before work starts, or there's nothing to measure variance against",
   ]},
-  { icon:"⚠", title:"Risk Management", steps:[
-    "Use the Heat Map tab to see overall risk exposure",
-    "Click Register to see the full list",
-    "Toggle Threats/Opportunities to filter",
-    "Set Probability (1-5) × Impact (1-5) to get the P×I score",
-    "High-score risks (≥15) appear in red — assign a response strategy immediately",
-    "Mark risks as Triggered if they occur — log the resulting Issue",
+  { id:"risks", icon:"⚠", title:"Risks", steps:[
+    "Heat Map shows overall exposure; Register lists everything",
+    "Toggle Threats / Opportunities to filter",
+    "Probability (1–5) × Impact (1–5) gives the P×I score",
+    "Anything scoring 15+ shows red — give it a response strategy and an owner now",
+    "Mark a risk Triggered when it happens, then log the resulting Issue",
+    "🤖 Scan documents reads an uploaded document and proposes risks you may have missed",
   ]},
-  { icon:"📐", title:"Governance Hub", steps:[
-    "Click the Governance tab in any project",
-    "Use the left nav to switch between Team Charter, WBS, Requirements, Quality Plan, Meetings, Handover",
-    "Click ⬇ Download template to get a pre-filled Word template",
-    "Fill out the template offline, then click 🤖 Upload & AI ingest",
-    "The AI reads your completed document and auto-populates the project fields",
+  { id:"governance", icon:"📐", title:"Governance", steps:[
+    "Open the Governance tab in any project",
+    "Use the left nav for Team Charter, WBS, Requirements, Quality Plan, Meetings, Handover",
+    "Each section shows what's documented and what isn't — empty fields say 'Not documented yet'",
+    "Click ✏️ Edit to change a section, then Save to return to the read view",
+    "🤖 Upload & AI ingest reads a completed document and fills the section in",
+    "Six document templates map to these sections — download one from Templates → Document templates",
   ]},
-  { icon:"✨", title:"AI Reports", steps:[
+  { id:"templates", icon:"📄", title:"Document templates", steps:[
+    "Templates → 📄 Document templates",
+    "Eighteen blank forms — charter, WBS, risk register, minutes, handover and more",
+    "Word for forms, Excel for registers, in English or Spanish depending on your language",
+    "Filter by phase, or show only 🤖 AI-readable ones",
+    "AI-readable templates round-trip: fill one in, upload it under Governance, and the project updates itself",
+    "The Task & Schedule Plan template imports straight into a project",
+  ]},
+  { id:"reports", icon:"✨", title:"AI reports", steps:[
     "Go to the Reports tab",
     "Click ✨ AI Generate Report",
-    "Select the report type — Status, Executive Brief, Phase Gate, EVM, or Risk Summary",
-    "Select your audience — the AI tailors the language accordingly",
-    "Click Generate — the AI reads live project data and produces the report",
-    "Download as Word (.docx) or Print directly from the browser",
+    "Pick the type — Status, Executive Brief, Phase Gate, EVM, or Risk Summary",
+    "Pick the audience — the AI adjusts the language to match",
+    "Generate: it reads live project data, so the numbers are current, not typed",
+    "Download as Word, or print from the browser. Read it before you send it",
   ]},
-  { icon:"👥", title:"Roles & Multiple Hats", steps:[
-    "Understand the two systems: Access Roles (permissions, one per person, set in Settings → Team) vs Governance/Project Roles (titles on a project, descriptive only)",
-    "Access Roles are cumulative — a higher role keeps every ability beneath it, so senior people can still do hands-on task work",
-    "For someone with several hats, set their Access Role to the highest they need (e.g., Executive or PMO Director for a sponsor)",
-    "Record their other hats as Governance/Project Roles on the project (Executive Sponsor, Stakeholder, etc.) — these don't change permissions",
-    "Assign them tasks normally — they'll appear in My Tasks and receive bell notifications like anyone else",
-    "For intake, if you need separation of duties, ensure the evaluator is a different person than the submitter",
+  { id:"m365", icon:"🪟", title:"Microsoft 365", steps:[
+    "Settings → Integrations → Connect Microsoft 365",
+    "Signing in with Microsoft only proves who you are — mail and calendar access is a separate permission",
+    "Microsoft shows a consent screen listing exactly what you're granting",
+    "Once connected: project email gets tagged, meetings are detected, Planner tasks stay in step",
+    "You can disconnect any time from your Microsoft account",
+    "Connecting affects only your own account, not the workspace",
+  ]},
+  { id:"resources", icon:"🧑\u200d💻", title:"Resource workload", steps:[
+    "Resources shows who is over-committed, and when",
+    "Load is calculated from remaining effort on tasks that have dates",
+    "Tasks without an estimate are flagged — they're invisible to the calculation otherwise",
+    "Tasks with no dates appear as Unscheduled rather than being silently dropped",
+    "Done and Cancelled work is excluded",
+    "A member's allocation % caps their availability — it doesn't create work",
+  ]},
+  { id:"roles", icon:"👥", title:"Roles & multiple hats", steps:[
+    "Two systems: Access Roles (permissions, one per person, Settings → Team) and Governance/Project Roles (titles on a project, descriptive only)",
+    "Access Roles are cumulative — a senior role keeps every ability beneath it",
+    "For someone wearing several hats, set the Access Role to the highest they need",
+    "Record the other hats as Governance/Project Roles — these never change permissions",
+    "Assign them tasks normally: they appear in My Tasks and get notifications like anyone else",
+    "For intake, if you need separation of duties, make the evaluator someone other than the submitter",
   ]},
 ]
 
-export function HelpCenter({ onClose }: { onClose:()=>void }) {
-  const [tab, setTab]         = useState<"faq"|"glossary"|"walkthrough"|"shortcuts">("faq")
+export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string }) {
+  // Opened from a Guide button on a specific screen → land on that walkthrough,
+  // not on a generic FAQ list the person then has to search.
+  const [tab, setTab]         = useState<"faq"|"glossary"|"walkthrough"|"shortcuts">(topic ? "walkthrough" : "faq")
+  const [openWalk, setOpenWalk] = useState<string|null>(topic ?? null)
   const [search, setSearch]   = useState("")
   const [aiQ, setAiQ]         = useState("")
   const [aiA, setAiA]         = useState("")
@@ -140,16 +179,14 @@ export function HelpCenter({ onClose }: { onClose:()=>void }) {
     if (!aiQ.trim()) return
     setAiLoading(true); setAiA("")
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/help/ask", {
         method:"POST",
-        headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01" },
-        body: JSON.stringify({
-          model:"claude-sonnet-4-6", max_tokens:500,
-          messages:[{ role:"user", content:`You are a project management expert assistant for FlowSync PM, an enterprise project management platform. Answer this PM question concisely in 2-4 sentences:\n\n${aiQ}` }]
-        }),
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ question: aiQ, context: topic || undefined }),
       })
-      const d = await res.json()
-      setAiA(d.content?.[0]?.text || "Sorry, I couldn't generate an answer.")
+      const d = await res.json().catch(() => ({}))
+      setAiA(res.ok ? (d?.data?.answer || "No answer came back — try rephrasing.")
+                    : (d?.error || "Couldn't reach the assistant."))
     } catch { setAiA("Network error — please try again.") }
     finally { setAiLoading(false) }
   }
@@ -282,24 +319,41 @@ export function HelpCenter({ onClose }: { onClose:()=>void }) {
           {/* Walkthroughs */}
           {tab==="walkthrough" && (
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {WALKTHROUGHS.map((w,i)=>(
-                <div key={i} style={{ background:"#fff", border:"1px solid var(--border)",
-                  borderRadius:"var(--radius)", padding:14 }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:"var(--text)",
-                    marginBottom:10, display:"flex", alignItems:"center", gap:8 }}>
-                    <span>{w.icon}</span>{w.title}
-                  </div>
-                  {w.steps.map((step,j)=>(
-                    <div key={j} style={{ display:"flex", gap:8, marginBottom:7 }}>
-                      <span style={{ width:20, height:20, borderRadius:"50%",
-                        background:"var(--steel)", color:"#fff", fontSize:10, fontWeight:700,
-                        display:"inline-flex", alignItems:"center", justifyContent:"center",
-                        flexShrink:0 }}>{j+1}</span>
-                      <span style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.5 }}>{step}</span>
+              {WALKTHROUGHS
+                .filter(w => !search ||
+                  w.title.toLowerCase().includes(search.toLowerCase()) ||
+                  w.steps.some(st => st.toLowerCase().includes(search.toLowerCase())))
+                .map(w=>{
+                const open = openWalk === w.id
+                return (
+                <div key={w.id} style={{ background:"#fff", border:"1px solid var(--border)",
+                  borderRadius:"var(--radius)", overflow:"hidden",
+                  borderLeft:`3px solid ${open ? "var(--steel)" : "var(--border)"}` }}>
+                  <button onClick={()=>setOpenWalk(open ? null : w.id)}
+                    aria-expanded={open}
+                    style={{ width:"100%", display:"flex", alignItems:"center", gap:8,
+                      padding:"12px 14px", background:"none", border:"none", cursor:"pointer",
+                      textAlign:"left", fontFamily:"var(--font)" }}>
+                    <span style={{ fontSize:15 }}>{w.icon}</span>
+                    <span style={{ fontSize:13.5, fontWeight:700, color:"var(--text)", flex:1 }}>{w.title}</span>
+                    <span aria-hidden style={{ fontSize:15, color:"var(--text-3)",
+                      transform: open ? "rotate(45deg)" : "none", transition:"transform .15s" }}>+</span>
+                  </button>
+                  {open && (
+                    <div style={{ padding:"0 14px 14px" }}>
+                      {w.steps.map((step,j)=>(
+                        <div key={j} style={{ display:"flex", gap:8, marginBottom:7 }}>
+                          <span style={{ width:20, height:20, borderRadius:"50%",
+                            background:"var(--steel)", color:"#fff", fontSize:10, fontWeight:700,
+                            display:"inline-flex", alignItems:"center", justifyContent:"center",
+                            flexShrink:0 }}>{j+1}</span>
+                          <span style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.55 }}>{step}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
 

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   const base        = process.env.NEXTAUTH_URL || new URL(req.url).origin
   const redirectUri = `${base.replace(/\/$/, "")}/api/m365/callback`
-  const tenant      = process.env.AZURE_AD_TENANT_ID || "common"
+  const tenant      = "common"   // must match the authorize endpoint
 
   try {
     const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       accessToken:    t.access_token,
       refreshToken:   t.refresh_token || null,
       tokenExpiresAt: expiresAt,
-      tenantId:       me?.id ? (process.env.AZURE_AD_TENANT_ID || null) : null,
+      tenantId:       null,   // set from the token claims if we ever need per-tenant routing
     }
 
     if (existing) {

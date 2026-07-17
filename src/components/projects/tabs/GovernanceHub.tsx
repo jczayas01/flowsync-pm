@@ -3,6 +3,7 @@
 // Unified PM Governance Best Practices Documents Hub
 // Team Charter · WBS Dictionary · Quality Plan · Requirements · Meeting Minutes · Handover Plan
 
+import { GuideButton } from "@/components/shared/GuideButton"
 import { FieldCard, EditToggle } from "@/components/shared/FieldCard"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
@@ -61,15 +62,18 @@ function TextArea({ label, value, onChange, rows=4, placeholder="" }: {
   )
 }
 
-function SectionHeader({ title, standardRef, icon }: { title:string; standardRef:string; icon:string }) {
+function SectionHeader({ title, standardRef, icon, guide }: {
+  title:string; standardRef:string; icon:string; guide?:string
+}) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16,
       paddingBottom:10, borderBottom:"2px solid var(--steel)" }}>
       <span style={{ fontSize:20 }}>{icon}</span>
-      <div>
+      <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>{title}</div>
         <div style={{ fontSize:10, color:"var(--text-4)" }}>{standardRef}</div>
       </div>
+      {guide && <GuideButton topic={guide} />}
     </div>
   )
 }
@@ -430,7 +434,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="charter" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="Team Charter" icon="🤝"
+              <SectionHeader title="Team Charter" guide="governance" icon="🤝"
                 standardRef="PM Standard — Team Performance Domain · Defines team norms, values, and working agreements" />
               <EditToggle editing={isEditing("charter")} onClick={()=>toggleEdit("charter")} />
 
@@ -691,7 +695,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="quality" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="Quality Management Plan" icon="✅"
+              <SectionHeader title="Quality Management Plan" guide="governance" icon="✅"
                 standardRef="PM Standard — Measurement — Delivery Domain · Quality standards, objectives, processes and metrics" />
               <EditToggle editing={isEditing("quality")} onClick={()=>toggleEdit("quality")} />
 
@@ -863,7 +867,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="handover" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="Transition & Handover Plan" icon="🔄"
+              <SectionHeader title="Transition & Handover Plan" guide="governance" icon="🔄"
                 standardRef="PM Best Practices — Closing Domain · Operational handover to sustaining organization" />
               <EditToggle editing={isEditing("handover")} onClick={()=>toggleEdit("handover")} />
 
