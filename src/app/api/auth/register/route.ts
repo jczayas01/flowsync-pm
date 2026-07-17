@@ -21,9 +21,25 @@ export async function POST(req: NextRequest) {
     }
     const { name, email, password } = parsed.data
 
-    const existing = await db.user.findUnique({ where: { email } })
+    const existing = await db.user.findUnique({
+      where: { email },
+      select: { id: true, accounts: { select: { provider: true } } },
+    })
     if (existing) {
-      return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 })
+      // A generic "already exists" strands people who signed up with Google or
+      // Microsoft and are now trying to set a password — name the right door.
+      const providers = existing.accounts.map(a => a.provider)
+      const hasPassword = providers.includes('EMAIL')
+      const oauth = providers.find(p => p !== 'EMAIL')
+      const label = oauth?.toLowerCase().includes('google') ? 'Google'
+                  : oauth ? 'Microsoft' : null
+      return NextResponse.json({
+        error: hasPassword
+          ? 'An account with this email already exists. Sign in instead — or use "Forgot password?" if you can\'t get in.'
+          : label
+            ? `This email already has an account that signs in with ${label}. Use the "${label}" button on the sign-in page.`
+            : 'An account with this email already exists. Sign in instead.',
+      }, { status: 409 })
     }
 
     const hashed = await hash(password, 12)

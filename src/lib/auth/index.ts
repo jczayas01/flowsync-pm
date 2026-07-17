@@ -125,10 +125,17 @@ export const authConfig: NextAuthConfig = {
       }
 
       // Fetch workspace memberships on sign-in, on explicit update, or whenever the
-      // token still has no workspace. That last case matters: a user who signs up
-      // before creating a workspace gets a token with no activeWorkspaceId, and
-      // without this it stays empty until they sign out and back in.
-      if (trigger === 'signIn' || trigger === 'update' || !token.activeWorkspaceId) {
+      // token still has no workspace (a user who signs up before onboarding).
+      //
+      // CRITICAL: this callback ALSO runs inside middleware, which is Edge runtime —
+      // where Prisma cannot execute. Running the query there threw on every request
+      // for any user without a workspace, which made every BRAND-NEW signup bounce
+      // between the app and the sign-in page forever. On Edge we skip the lookup and
+      // trust the token as-is; the Node runtime (route handlers, server components)
+      // performs the self-heal, and the API guard has its own DB fallback.
+      const isEdge = process.env.NEXT_RUNTIME === 'edge'
+      if (!isEdge && (trigger === 'signIn' || trigger === 'update' || !token.activeWorkspaceId)) {
+        try {
         const dbUser = await db.user.findUnique({
           where: { id: token.userId as string },
           select: {
@@ -167,6 +174,10 @@ export const authConfig: NextAuthConfig = {
           if (!token.activeWorkspaceId && dbUser.memberships[0]) {
             token.activeWorkspaceId = dbUser.memberships[0].workspace.id
           }
+        }
+        } catch (e) {
+          // A failure here must never invalidate the session — log and move on.
+          console.error('[auth] jwt enrichment failed (non-fatal)', e)
         }
       }
 
@@ -209,6 +220,7 @@ export const authConfig: NextAuthConfig = {
   events: {
     // Create audit log on sign-in
     async signIn({ user }) {
+      try {
       const memberships = await db.workspaceMember.findMany({
         where: { userId: user.id },
         select: { workspaceId: true },
@@ -225,6 +237,7 @@ export const authConfig: NextAuthConfig = {
           },
         }).catch(() => {})
       }
+      } catch (e) { console.error('[auth] signIn event failed (non-fatal)', e) }
     },
   },
 }
