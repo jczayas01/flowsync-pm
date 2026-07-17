@@ -10,7 +10,7 @@ const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 // the GTM kit. This page previously sold a retired model ($12/$22/Consultant).
 const TIERS = [
   { id:"TRIAL", name:"Trial", price:"$0", suffix:"2 months",
-    line:"The whole product, free. Converts to Starter unless cancelled." },
+    line:"The whole product, free for two months. No card required." },
   { id:"STARTER", name:"Starter", price:"$19", suffix:"/user/mo",
     line:"Flat per user. For small teams and independent PMs." },
   { id:"BUSINESS", name:"Business", price:"$39", suffix:"/user/mo",
@@ -99,8 +99,9 @@ export function BillingView({
           <div style={{ marginTop:14, padding:"10px 13px", background:"#EFF6FF",
             borderLeft:`3px solid ${STEEL}`, borderRadius:"0 8px 8px 0",
             fontSize:12.5, color:"#1E40AF", lineHeight:1.6 }}>
-            Your trial includes everything — no feature limits. When it ends it converts to
-            Starter automatically so nothing stops mid-project.
+            Your trial includes everything — no feature limits, no card required. Subscribe
+            below whenever you're ready: pay during the trial and your card isn't charged
+            until the trial actually ends.
           </div>
         )}
       </div>

@@ -4,7 +4,7 @@
 // features simply stay off until it's configured.
 //
 // PRICING MODEL (the one true version — matches landing, pricing page and GTM kit):
-//   Trial       — 2 months free, full product, card on file, converts to Starter
+//   Trial       — 2 months free, full product, no card; subscribe during trial → charged at trial end
 //   Starter     — $19/user/mo flat
 //   Business    — $39/user/mo for paid roles + $20/mo per 10-user contributor bundle
 //   Enterprise  — custom (never self-serve checkout)
@@ -117,7 +117,7 @@ export const PLANS: Record<PlanId, Plan> = {
   // Trial workspaces sit on FREE with trialEndsAt set — full product while it runs.
   FREE: p({
     id:"FREE", name:"Trial",
-    description:"Two months free, the whole product. Converts to Starter unless cancelled.",
+    description:"Two months free, the whole product. No card required.",
     limits: BUSINESS_LIMITS,
   }),
 

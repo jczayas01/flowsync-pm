@@ -65,7 +65,7 @@ const FEATURES = [
 const PLANS = [
   { name:"Trial", price:0, suffix:"", featured:false,
     tagline:"Two months free, the whole product.",
-    note:"Card at sign-up. Converts to Starter unless you cancel.",
+    note:"No card required. Subscribe any time during the trial — you keep every remaining free day.",
     features:["Everything unlocked","Unlimited projects","AI document import","Bilingual EN / ES"],
     cta:"Start free trial" },
   { name:"Starter", price:19, suffix:"/user/mo", featured:false,
@@ -82,7 +82,7 @@ const PLANS = [
 
 const FAQS = [
   { q:"Can I try it before paying?",
-    a:"Yes. Every account starts with a two-month free trial of the full product, with no feature limits. We ask for a card at sign-up so the trial converts to Starter automatically when it ends — cancel any time before then and you're not charged." },
+    a:"Yes. Every account starts with a two-month free trial of the full product, with no feature limits — and no credit card. When you're ready, subscribe from Settings → Billing; if you do it during the trial, your card isn't charged until the trial actually ends. If two months pass and you haven't subscribed, nothing is charged — your work stays safe and read-only until you do." },
   { q:"Do I pay for everyone on the team?",
     a:"No. On Business you pay per user only for the roles that drive and govern the work: sponsors, PMO directors, program and project managers, product owners, PMO analysts. Everyone who contributes or just needs visibility — team members, stakeholders, clients, external resources — comes in bundles at $20/mo per 10 people." },
   { q:"What can it actually read from my plan?",
@@ -214,8 +214,8 @@ export default function LandingPage() {
               </div>
 
               <p style={{ fontSize:12.5, color:"rgba(255,255,255,.35)", lineHeight:1.6 }}>
-                Card at sign-up so nothing breaks when the trial ends. Cancel before it converts and
-                you're not charged.
+                No credit card required. Two months of the full product, then subscribe only if
+                it earned it.
               </p>
             </div>
 

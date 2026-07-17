@@ -11,7 +11,7 @@ const GREEN = "#059669"
 const TIERS = [
   {
     name:"Trial", price:0, priceSuffix:"", annualPrice:0,
-    desc:"Two months free. Card on file at sign-up; converts to Starter automatically — cancel any time before then.",
+    desc:"Two months free, no credit card. Subscribe during the trial and you’re not charged until it ends.",
     color:"#059669", highlight:false,
     cta:"Start free trial", ctaHref:"/auth/signup",
     badge:"2 MONTHS FREE",
