@@ -26,7 +26,14 @@
     "redirectingToSignIn": "Taking you to sign in…",
     "resetFailed": "Could not reset the password. Please try again.",
     "resetLinkInvalid": "This reset link is missing or invalid. Please request a new one.",
-    "requestNewLink": "Request a new link"
+    "requestNewLink": "Request a new link",
+    "noAccountTitle": "No account found with this email",
+    "noAccountBody": "Looks like you're new here. Create your free account — the whole product, free for two months.",
+    "noAccountCta": "Start free trial →",
+    "oauthOnlyTitleGoogle": "This email signs in with Google",
+    "oauthOnlyBodyGoogle": "Your account was created with Google, so it has no password. Use the \"Google\" button below to sign in.",
+    "oauthOnlyTitleMicrosoft": "This email signs in with Microsoft",
+    "oauthOnlyBodyMicrosoft": "Your account was created with Microsoft, so it has no password. Use the \"Microsoft\" button below to sign in."
   },
   "nav": {
     "Dashboard": "Dashboard",

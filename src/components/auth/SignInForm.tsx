@@ -17,13 +17,31 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
   const [err, setErr]           = useState(error ? (ERROR_MESSAGES[error] || ERROR_MESSAGES.Default) : '')
+  // After a failed password attempt, we look the email up so the message can point
+  // at the right door: signup for unknown emails, the OAuth button for accounts
+  // that have no password. Wrong-password stays deliberately generic.
+  const [guide, setGuide]       = useState<null | { status:"none" } | { status:"oauth"; provider:string }>(null)
   const dest = callbackUrl || '/dashboard'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setErr('')
+    setGuide(null)
     const res = await signIn('credentials', { email, password, redirect:false })
-    if (res?.error) { setErr(ERROR_MESSAGES.CredentialsSignin); setLoading(false) }
+    if (res?.error) {
+      try {
+        const r = await fetch('/api/auth/lookup', {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ email }),
+        })
+        const d = await r.json().catch(() => ({}))
+        const status = d?.data?.status
+        if (status === 'none')       { setGuide({ status:'none' }); setErr('') }
+        else if (status === 'oauth') { setGuide({ status:'oauth', provider:d.data.provider }); setErr('') }
+        else                          setErr(ERROR_MESSAGES.CredentialsSignin)
+      } catch { setErr(ERROR_MESSAGES.CredentialsSignin) }
+      setLoading(false)
+    }
     else window.location.href = dest
   }
 
@@ -34,6 +52,34 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
           color:'#FCA5A5', padding:'10px 14px', borderRadius:'var(--radius)',
           fontSize:13, marginBottom:16 }}>
           {err}
+        </div>
+      )}
+      {guide?.status === 'none' && (
+        <div style={{ background:'rgba(245,158,11,.12)', border:'1px solid rgba(245,158,11,.35)',
+          padding:'12px 14px', borderRadius:'var(--radius)', marginBottom:16 }}>
+          <div style={{ fontSize:13, color:'#FDE68A', fontWeight:600, marginBottom:4 }}>
+            {t('noAccountTitle')}
+          </div>
+          <div style={{ fontSize:12.5, color:'rgba(255,255,255,.65)', lineHeight:1.55, marginBottom:10 }}>
+            {t('noAccountBody')}
+          </div>
+          <Link href={`/auth/signup?email=${encodeURIComponent(email)}`}
+            style={{ display:'inline-block', padding:'8px 16px', background:'#F59E0B',
+              color:'#0D1B2A', borderRadius:8, fontSize:12.5, fontWeight:700,
+              textDecoration:'none' }}>
+            {t('noAccountCta')}
+          </Link>
+        </div>
+      )}
+      {guide?.status === 'oauth' && (
+        <div style={{ background:'rgba(27,108,168,.15)', border:'1px solid rgba(27,108,168,.4)',
+          padding:'12px 14px', borderRadius:'var(--radius)', marginBottom:16 }}>
+          <div style={{ fontSize:13, color:'#93C5FD', fontWeight:600, marginBottom:4 }}>
+            {guide.provider === 'google' ? t('oauthOnlyTitleGoogle') : t('oauthOnlyTitleMicrosoft')}
+          </div>
+          <div style={{ fontSize:12.5, color:'rgba(255,255,255,.65)', lineHeight:1.55 }}>
+            {guide.provider === 'google' ? t('oauthOnlyBodyGoogle') : t('oauthOnlyBodyMicrosoft')}
+          </div>
         </div>
       )}
       <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>

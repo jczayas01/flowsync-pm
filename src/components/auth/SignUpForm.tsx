@@ -1,11 +1,15 @@
 // src/components/auth/SignUpForm.tsx
 "use client"
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export function SignUpForm() {
-  const [form, setForm]     = useState({ name:'', email:'', password:'' })
+  // Arriving from "no account found" on the sign-in page carries ?email= so the
+  // person doesn't type it a third time.
+  const params = useSearchParams()
+  const [form, setForm]     = useState({ name:'', email: params.get('email') || '', password:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
 

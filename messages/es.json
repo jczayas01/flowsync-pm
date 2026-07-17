@@ -26,7 +26,14 @@
     "redirectingToSignIn": "Llevándote a iniciar sesión…",
     "resetFailed": "No se pudo restablecer la contraseña. Inténtalo de nuevo.",
     "resetLinkInvalid": "Este enlace no es válido o está incompleto. Solicita uno nuevo.",
-    "requestNewLink": "Solicitar un enlace nuevo"
+    "requestNewLink": "Solicitar un enlace nuevo",
+    "noAccountTitle": "No hay ninguna cuenta con este correo",
+    "noAccountBody": "Parece que eres nuevo. Crea tu cuenta gratis — el producto completo, gratis por dos meses.",
+    "noAccountCta": "Comenzar prueba gratis →",
+    "oauthOnlyTitleGoogle": "Este correo inicia sesión con Google",
+    "oauthOnlyBodyGoogle": "Tu cuenta se creó con Google, así que no tiene contraseña. Usa el botón \"Google\" para entrar.",
+    "oauthOnlyTitleMicrosoft": "Este correo inicia sesión con Microsoft",
+    "oauthOnlyBodyMicrosoft": "Tu cuenta se creó con Microsoft, así que no tiene contraseña. Usa el botón \"Microsoft\" para entrar."
   },
   "nav": {
     "Dashboard": "Panel principal",
