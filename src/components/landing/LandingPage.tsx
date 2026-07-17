@@ -27,21 +27,21 @@ const FEATURES = [
 ]
 
 const PLANS = [
-  { name:"Free", price:0, ea:null, color:"var(--text)",
-    desc:"For solo PMs exploring the platform.",
-    features:["Up to 3 active projects","Waterfall methodology","Gantt chart + task management","Basic reporting"],
-    missing:["AI co-pilot","M365 integration"],
-    cta:"Get started free", ctaStyle:"outline" },
-  { name:"Pro", price:19, ea:11, color:"#fff", featured:true,
-    desc:"For active PMs running multiple concurrent projects.",
-    features:["Unlimited projects","All 3 methodologies","AI co-pilot & reports","Budget tracking + EVM","Risk register","Template marketplace"],
+  { name:"Trial", price:0, ea:null, color:"var(--text)",
+    desc:"Two months free, full product. Card on file; converts to Starter unless you cancel.",
+    features:["Everything unlocked","Unlimited projects","AI document import","Bilingual EN / ES"],
     missing:[],
-    cta:"Join waitlist — lock $11/mo", ctaStyle:"amber" },
-  { name:"Business", price:79, ea:47, color:"var(--text)",
-    desc:"For PMOs with compliance needs.",
-    features:["Everything in Pro","M365 deep integration","Portfolio & program hierarchy","Azure AD SSO + SCIM","Full audit log","Up to 10 seats"],
+    cta:"Start free trial", ctaStyle:"outline" },
+  { name:"Starter", price:19, ea:null, color:"#fff", featured:false,
+    desc:"For small teams and independent PMs. Flat per user, no tiers to decode.",
+    features:["Unlimited projects","All 3 methodologies","AI co-pilot & reports","Budget tracking + EVM","Risk register","Document templates"],
     missing:[],
-    cta:"Join waitlist — lock $47/mo", ctaStyle:"steel" },
+    cta:"Start free trial", ctaStyle:"steel" },
+  { name:"Business", price:39, ea:null, color:"var(--text)", featured:true,
+    desc:"For PMOs. Pay for the people who drive the work — everyone else comes in bundles.",
+    features:["Everything in Starter","$50/mo per 10 contributor seats","Portfolio & program hierarchy","SSO — Microsoft & Google","Executive dashboard","Full governance suite","Email support"],
+    missing:[],
+    cta:"Start free trial", ctaStyle:"amber" },
 ]
 
 const FAQS = [

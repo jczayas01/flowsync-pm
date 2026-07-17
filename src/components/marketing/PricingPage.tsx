@@ -10,69 +10,58 @@ const GREEN = "#059669"
 
 const TIERS = [
   {
-    name:"Free", price:0, priceSuffix:"", annualPrice:0,
-    desc:"For individual PMs and small experiments.",
-    color:"#64748B", highlight:false,
-    cta:"Get started free", ctaHref:"/auth/signup",
+    name:"Trial", price:0, priceSuffix:"", annualPrice:0,
+    desc:"Two months free. Card on file at sign-up; converts to Starter automatically — cancel any time before then.",
+    color:"#059669", highlight:false,
+    cta:"Start free trial", ctaHref:"/auth/signup",
+    badge:"2 MONTHS FREE",
     features:[
-      "1 project", "Up to 3 users", "Dashboard + Tasks + Gantt + Board",
-      "Basic risk & issue tracking", "1 GB file storage", "Community support",
-    ],
-    notIncluded:["EVM / budget tracking","Change requests","PM governance best practices","AI reports","Word export"],
-  },
-  {
-    name:"Starter", price:12, priceSuffix:"/user/mo", annualPrice:9.60,
-    desc:"For small teams getting structured.",
-    color:STEEL, highlight:false,
-    cta:"Start free trial", ctaHref:"/auth/signup?plan=starter",
-    features:[
-      "5 projects", "Up to 10 users", "All views: Dashboard, Gantt, Board, Tasks",
-      "Full risk & issue tracking", "Budget tracking", "Change request workflow",
-      "Excel import/export", "10 GB storage", "Email support",
-    ],
-    notIncluded:["PM Standard full governance","AI report generator","Word export","Executive Dashboard"],
-  },
-  {
-    name:"Professional", price:22, priceSuffix:"/user/mo", annualPrice:17.60,
-    desc:"Full PM Standard PMO platform. The sweet spot.",
-    color:GREEN, highlight:true,
-    cta:"Start free trial", ctaHref:"/auth/signup?plan=professional",
-    badge:"Most popular",
-    features:[
-      "Unlimited projects", "Unlimited users", "Complete PM governance best practices",
-      "Decisions + Lessons Learned + Benefits Realization",
-      "Baseline management (approve/lock)",
-      "Executive Dashboard", "Portfolio → Program → Project hierarchy",
-      "✨ AI Report Generator (5 report types)", "📄 Word document export",
-      "M365 integration", "API access", "100 GB storage",
-      "1-year audit log", "Email support",
-    ],
-    notIncluded:["SSO / Azure AD","White-label"],
-  },
-  {
-    name:"Enterprise", price:38, priceSuffix:"/user/mo", annualPrice:30.40,
-    desc:"For large PMOs with enterprise governance needs.",
-    color:"#1a3a5c", highlight:false,
-    cta:"Request a demo", ctaHref:"", demo:true,
-    features:[
-      "Everything in Professional",
-      "SSO / Azure AD / SAML", "White-label & custom domain",
-      "Unlimited file storage", "Unlimited audit log",
-      "Dedicated Customer Success Manager", "SLA guarantee",
-      "Custom onboarding", "Data Processing Agreement (DPA)",
+      "Everything in Starter", "Unlimited projects", "Full AI document import",
+      "Governance, EVM and reporting", "Bilingual (English / Español)", "No feature limits",
     ],
     notIncluded:[],
   },
   {
-    name:"Consultant", price:99, priceSuffix:"/mo flat", annualPrice:79,
-    desc:"1 consultant, unlimited client workspaces. Unique in the market.",
-    color:"#7C3AED", highlight:false,
-    cta:"Start free trial", ctaHref:"/auth/signup?plan=consultant",
+    name:"Starter", price:19, priceSuffix:"/user/mo", annualPrice:15.20,
+    desc:"For small teams and independent PMs. Simple, flat pricing — every user counts.",
+    color:"#1B6CA8", highlight:false,
+    cta:"Start free trial", ctaHref:"/auth/signup?plan=starter",
     features:[
-      "1 consultant user", "Unlimited client workspaces",
-      "Full Professional features per workspace",
-      "50 GB storage per workspace", "Client read-only access included",
-      "Buy & sell automation recipes", "Dedicated CSM",
+      "Unlimited projects", "All methodologies — Predictive, Agile, Hybrid",
+      "AI document import", "Gantt, Board, Tasks, Baselines",
+      "Budget tracking + EVM", "Risk, issue and change registers",
+      "Document template library", "Bilingual (EN / ES)", "Self-serve",
+    ],
+    notIncluded:["Bundle pricing for contributors","SSO","Portfolio & program hierarchy","Priority support"],
+  },
+  {
+    name:"Business", price:39, priceSuffix:"/user/mo", annualPrice:31.20,
+    desc:"For PMOs. Pay for the people who drive the work — everyone else comes in bundles.",
+    color:"#7C3AED", highlight:true,
+    cta:"Start free trial", ctaHref:"/auth/signup?plan=business",
+    badge:"MOST POPULAR",
+    features:[
+      "Everything in Starter",
+      "$50/mo per 10 contributor & viewer seats",
+      "Portfolio & program hierarchy",
+      "Executive dashboard & approvals",
+      "Resource workload engine",
+      "SSO — Microsoft & Google",
+      "Full governance suite",
+      "Branded exports — Word, PDF, PowerPoint",
+      "Email support",
+    ],
+    notIncluded:["White-labeling","Personal onboarding","DPA & custom terms"],
+  },
+  {
+    name:"Enterprise", price:null as any, priceSuffix:"", annualPrice:null as any,
+    desc:"For large organizations, regulated programs and portfolios. Priced to your shape.",
+    color:"#0D1B2A", highlight:false,
+    cta:"Request a demo", ctaHref:"", demo:true,
+    features:[
+      "Everything in Business", "Custom annual pricing", "Personal onboarding — by the founder",
+      "White-labeling", "Directory sync & advanced SSO", "Data Processing Agreement (DPA)",
+      "Custom terms & SLA", "Dedicated support",
     ],
     notIncluded:[],
   },
@@ -178,7 +167,7 @@ export function PricingPage() {
                 letterSpacing:".06em", marginBottom:6 }}>{tier.name}</div>
               <div style={{ display:"flex", alignItems:"flex-end", gap:4, marginBottom:6 }}>
                 <span style={{ fontSize:32, fontWeight:800, color:"#1E293B" }}>
-                  {tier.price===0?"Free":`$${annual&&tier.annualPrice?tier.annualPrice:tier.price}`}
+                  {tier.price===null?"Custom":tier.price===0?"Free":`$${annual&&tier.annualPrice?tier.annualPrice:tier.price}`}
                 </span>
                 {tier.price>0 && (
                   <span style={{ fontSize:12, color:"#64748B", marginBottom:6 }}>
