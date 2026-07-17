@@ -38,27 +38,33 @@ interface GraphToken {
  * Refreshes automatically if expired.
  */
 export async function getGraphToken(userId: string): Promise<GraphToken | null> {
+  // Two eras of rows live in this table. Sign-ins that predate the NextAuth adapter
+  // wrote provider "AZURE_AD"/"MICROSOFT" with camelCase token columns. The adapter
+  // writes "microsoft-entra-id"/"azure-ad" with the snake_case contract columns.
+  // Reading only the old shape is why M365 went quiet after SSO started working.
   const account = await db.account.findFirst({
     where: {
       userId,
-      provider: { in: ["AZURE_AD", "MICROSOFT"] },
+      provider: { in: ["microsoft-entra-id", "azure-ad", "AZURE_AD", "MICROSOFT"] },
     },
     orderBy: { updatedAt: "desc" },
   })
 
   if (!account) return null
 
-  // Check if token is still valid (with 5-min buffer)
-  if (account.tokenExpiresAt && account.tokenExpiresAt > new Date(Date.now() + 5 * 60000)) {
-    return {
-      accessToken:  account.accessToken!,
-      expiresAt:    account.tokenExpiresAt,
-      refreshToken: account.refreshToken,
-    }
+  const accessToken  = account.access_token  ?? account.accessToken
+  const refreshToken = account.refresh_token ?? account.refreshToken
+  const expiresAt    = account.expires_at
+    ? new Date(account.expires_at * 1000)          // adapter stores unix seconds
+    : account.tokenExpiresAt                        // legacy stores a DateTime
+
+  // Still valid, with a 5-minute buffer
+  if (accessToken && expiresAt && expiresAt > new Date(Date.now() + 5 * 60000)) {
+    return { accessToken, expiresAt, refreshToken }
   }
 
   // Refresh if we have a refresh token
-  if (!account.refreshToken) return null
+  if (!refreshToken) return null
 
   try {
     const res = await fetch(TOKEN_URL, {
@@ -68,7 +74,7 @@ export async function getGraphToken(userId: string): Promise<GraphToken | null> 
         client_id:     process.env.AZURE_AD_CLIENT_ID!,
         client_secret: process.env.AZURE_AD_CLIENT_SECRET!,
         grant_type:    "refresh_token",
-        refresh_token: account.refreshToken,
+        refresh_token: refreshToken,
         scope:         [...GRAPH_SCOPES.mail, ...GRAPH_SCOPES.teams,
                         ...GRAPH_SCOPES.calendar, ...GRAPH_SCOPES.planner,
                         "offline_access"].join(" "),
@@ -84,20 +90,23 @@ export async function getGraphToken(userId: string): Promise<GraphToken | null> 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
 
     // Persist refreshed tokens
+    const newRefresh = tokens.refresh_token || refreshToken
+
+    // Write both column shapes. The read prefers the adapter columns, so updating
+    // only the legacy ones would hand back a stale token on the next call.
     await db.account.update({
       where: { id: account.id },
       data: {
-        accessToken:     tokens.access_token,
-        refreshToken:    tokens.refresh_token || account.refreshToken,
-        tokenExpiresAt:  expiresAt,
+        access_token:   tokens.access_token,
+        refresh_token:  newRefresh,
+        expires_at:     Math.floor(expiresAt.getTime() / 1000),
+        accessToken:    tokens.access_token,
+        refreshToken:   newRefresh,
+        tokenExpiresAt: expiresAt,
       },
     })
 
-    return {
-      accessToken:  tokens.access_token,
-      expiresAt,
-      refreshToken: tokens.refresh_token || account.refreshToken,
-    }
+    return { accessToken: tokens.access_token, expiresAt, refreshToken: newRefresh }
   } catch (e) {
     console.error("[Graph] Token refresh error:", e)
     return null
