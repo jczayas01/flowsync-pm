@@ -13,7 +13,8 @@ import { randomBytes } from "crypto"
 import { auth } from "@/lib/auth"
 
 /** Scopes a normal user can grant themselves — no tenant admin required. */
-export const USER_CONSENT_SCOPES = [
+/* Not exported: Next.js route files may only export handlers and route config. */
+const USER_CONSENT_SCOPES = [
   "openid", "profile", "email", "offline_access",
   "User.Read",
   "Mail.Read",              // tag project email
