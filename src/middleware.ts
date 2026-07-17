@@ -12,6 +12,11 @@ const PUBLIC_PREFIXES = [
   "/_next", "/favicon", "/icon", "/apple-icon", "/opengraph", "/images", "/fonts",
   "/api/auth", "/intake/", "/api/health", "/invite/",
   "/legal",             // terms, privacy, DPA, DMCA, AI policy — must be readable by anyone
+  // Machine-to-machine callbacks: the caller is a server, not a signed-in person,
+  // so a session check can only ever say 401. Each route authenticates its own
+  // way — Stripe by webhook signature, Microsoft Graph by validation token.
+  "/api/stripe/webhook",
+  "/api/m365/webhook",
 ]
 
 const PUBLIC_ROUTES = new Set([

@@ -136,7 +136,7 @@ export async function createCheckoutSession(opts: CheckoutOptions): Promise<stri
     billing_address_collection: "auto",
     allow_promotion_codes: true,
     success_url: `${opts.successUrl}?success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:  `${opts.cancelUrl}?cancelled=true`,
+    cancel_url:  opts.cancelUrl,   // route already carries ?cancelled=true
   })
 
   return session.url!
