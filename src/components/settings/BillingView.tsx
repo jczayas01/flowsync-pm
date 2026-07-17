@@ -133,27 +133,178 @@ export function BillingView({
         })}
       </div>
 
-      {/* ── Changing plans — honest about the current state ── */}
-      <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
-        padding:"16px 18px" }}>
-        <div style={{ fontSize:13.5, fontWeight:700, color:NAVY, marginBottom:6 }}>
-          Want to change your plan?
+      {/* ── Checkout (when Stripe is configured) or the honest fallback ── */}
+      {stripeConfigured && canManage ? (
+        <Checkout memberCount={memberCount} onEnterprise={() => setDemoOpen(true)} />
+      ) : (
+        <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
+          padding:"16px 18px" }}>
+          <div style={{ fontSize:13.5, fontWeight:700, color:NAVY, marginBottom:6 }}>
+            Want to change your plan?
+          </div>
+          <div style={{ fontSize:12.5, color:SLATE, lineHeight:1.65, marginBottom:12 }}>
+            {canManage
+              ? "During early access we handle plan changes personally — usually the same day. Tell us what you need and it's done."
+              : "Plan changes need a workspace owner or admin."}
+          </div>
+          {canManage && (
+            <button onClick={() => setDemoOpen(true)}
+              style={{ padding:"10px 18px", background:STEEL, color:"#fff", border:"none",
+                borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+              Contact us
+            </button>
+          )}
         </div>
-        <div style={{ fontSize:12.5, color:SLATE, lineHeight:1.65, marginBottom:12 }}>
-          {stripeConfigured
-            ? "Self-serve plan changes are being finalized. In the meantime we handle changes personally — usually the same day."
-            : "During early access we handle plan changes personally — usually the same day. Tell us what you need and it's done."}
-        </div>
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-          <button onClick={() => setDemoOpen(true)}
-            style={{ padding:"10px 18px", background:STEEL, color:"#fff", border:"none",
-              borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
-            Contact us
-          </button>
+      )}
+
+      <RequestDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} source="app" />
+    </div>
+  )
+}
+
+
+// ── Self-serve checkout ───────────────────────────────────────────────────────
+const SEAT_PRICE   = { STARTER: 19, BUSINESS: 39 }
+const BUNDLE_PRICE = 20
+const ANNUAL_OFF   = 0.8   // 20% discount
+
+function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterprise:()=>void }) {
+  const [planId, setPlanId]   = useState<"STARTER"|"BUSINESS">("BUSINESS")
+  const [annual, setAnnual]   = useState(false)
+  const [seats, setSeats]     = useState(String(Math.max(1, Math.min(memberCount, 3))))
+  const [bundles, setBundles] = useState(String(Math.max(0, Math.ceil((memberCount - 3) / 10))))
+  const [busy, setBusy]       = useState(false)
+  const [err, setErr]         = useState("")
+
+  const nSeats   = Math.max(1, parseInt(seats)   || 1)
+  const nBundles = planId === "BUSINESS" ? Math.max(0, parseInt(bundles) || 0) : 0
+  const mult     = annual ? ANNUAL_OFF : 1
+  const monthly  = (SEAT_PRICE[planId] * nSeats + BUNDLE_PRICE * nBundles) * mult
+  const covered  = planId === "BUSINESS" ? nSeats + nBundles * 10 : nSeats
+
+  async function checkout() {
+    setBusy(true); setErr("")
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ planId, billing: annual ? "annual" : "monthly",
+          seats: nSeats, bundles: nBundles }),
+      })
+      const d = await res.json().catch(() => ({}))
+      const url = d?.data?.url || d?.url
+      if (res.ok && url) { window.location.href = url; return }
+      setErr(d?.error || "Couldn't start checkout. Try again.")
+    } catch { setErr("Couldn't start checkout. Try again.") }
+    finally { setBusy(false) }
+  }
+
+  return (
+    <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
+      padding:"18px 20px" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+        <div style={{ fontSize:13.5, fontWeight:700, color:NAVY, flex:1 }}>Subscribe</div>
+        <div style={{ display:"flex", background:"var(--surface-2,#F1F5F9)", borderRadius:8, padding:2 }}>
+          {(["monthly","annual"] as const).map(b => (
+            <button key={b} onClick={() => setAnnual(b === "annual")}
+              style={{ padding:"5px 12px", borderRadius:6, fontSize:11.5, fontWeight:600,
+                border:"none", cursor:"pointer", fontFamily:"inherit",
+                background: (b === "annual") === annual ? "#fff" : "transparent",
+                color: (b === "annual") === annual ? NAVY : SLATE,
+                boxShadow: (b === "annual") === annual ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>
+              {b === "monthly" ? "Monthly" : "Annual −20%"}
+            </button>
+          ))}
         </div>
       </div>
 
-      <RequestDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} source="app" />
+      {/* Plan choice */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
+        {(["STARTER","BUSINESS"] as const).map(id => (
+          <button key={id} onClick={() => setPlanId(id)}
+            style={{ textAlign:"left", padding:"11px 13px", borderRadius:9, cursor:"pointer",
+              fontFamily:"inherit", background:"#fff",
+              border: planId === id ? `2px solid ${STEEL}` : "1px solid var(--border)" }}>
+            <div style={{ fontSize:12.5, fontWeight:700, color:NAVY }}>
+              {id === "STARTER" ? "Starter" : "Business"}
+              <span style={{ fontFamily:MONO, fontSize:11, color:SLATE, marginLeft:6 }}>
+                ${Math.round(SEAT_PRICE[id] * mult * 100) / 100}/user/mo
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:SLATE, marginTop:3, lineHeight:1.5 }}>
+              {id === "STARTER"
+                ? "Every user is a paid seat."
+                : `Paid seats + $${Math.round(BUNDLE_PRICE * mult * 100) / 100}/mo per 10-user bundle.`}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Quantities */}
+      <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+        <label style={{ flex:1, minWidth:150 }}>
+          <div style={{ fontSize:10.5, fontWeight:700, color:SLATE, textTransform:"uppercase",
+            letterSpacing:".05em", marginBottom:4 }}>
+            {planId === "BUSINESS" ? "Paid seats (drive the work)" : "Users"}
+          </div>
+          <input value={seats} onChange={e => setSeats(e.target.value.replace(/\D/g,""))}
+            inputMode="numeric"
+            style={{ width:"100%", padding:"8px 11px", border:"1px solid var(--border)",
+              borderRadius:8, fontSize:13, fontFamily:"inherit", outline:"none" }} />
+        </label>
+        {planId === "BUSINESS" && (
+          <label style={{ flex:1, minWidth:150 }}>
+            <div style={{ fontSize:10.5, fontWeight:700, color:SLATE, textTransform:"uppercase",
+              letterSpacing:".05em", marginBottom:4 }}>
+              Contributor bundles (×10 users)
+            </div>
+            <input value={bundles} onChange={e => setBundles(e.target.value.replace(/\D/g,""))}
+              inputMode="numeric"
+              style={{ width:"100%", padding:"8px 11px", border:"1px solid var(--border)",
+                borderRadius:8, fontSize:13, fontFamily:"inherit", outline:"none" }} />
+          </label>
+        )}
+      </div>
+
+      {/* Total */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 13px",
+        background:"var(--surface-2,#F8FAFC)", borderRadius:9, marginBottom:12, flexWrap:"wrap" }}>
+        <div style={{ fontSize:12, color:SLATE, flex:1, minWidth:180 }}>
+          Covers <strong style={{ color:NAVY }}>{covered}</strong> {covered === 1 ? "person" : "people"}
+          {memberCount > covered && (
+            <span style={{ color:"#B45309" }}> · you have {memberCount} members — add {planId === "BUSINESS" ? "seats or bundles" : "users"}</span>
+          )}
+        </div>
+        <div style={{ fontFamily:MONO, fontSize:19, fontWeight:800, color:NAVY }}>
+          ${monthly.toFixed(2)}<span style={{ fontSize:11, color:SLATE, fontWeight:600 }}>/mo{annual ? " · billed annually" : ""}</span>
+        </div>
+      </div>
+
+      {err && (
+        <div style={{ marginBottom:10, padding:"8px 11px", background:"#FEF2F2",
+          border:"1px solid #FECACA", borderRadius:8, fontSize:12, color:"#B91C1C" }}>{err}</div>
+      )}
+
+      <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+        <button onClick={checkout} disabled={busy}
+          style={{ padding:"11px 20px", background:AMBER, color:NAVY, border:"none",
+            borderRadius:8, fontSize:13.5, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+          {busy ? "Opening checkout…" : "Continue to secure checkout →"}
+        </button>
+        <button onClick={onEnterprise}
+          style={{ padding:"11px 16px", background:"none", color:SLATE, border:"1px solid var(--border)",
+            borderRadius:8, fontSize:12.5, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+          Need Enterprise?
+        </button>
+      </div>
+
+      <div style={{ marginTop:12, fontSize:11, color:"var(--text-3)", lineHeight:1.6 }}>
+        If your trial is still running, your card goes on file now and the first charge lands when
+        the trial ends — exactly the date shown above. By subscribing you agree to the{" "}
+        <a href="/legal/billing" target="_blank" rel="noreferrer"
+          style={{ color:STEEL, textDecoration:"none", fontWeight:600 }}>
+          Billing &amp; Subscription Terms</a>. Payments are processed by Stripe; cancel any time
+        from Manage billing.
+      </div>
     </div>
   )
 }

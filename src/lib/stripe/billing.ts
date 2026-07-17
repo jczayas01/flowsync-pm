@@ -48,76 +48,82 @@ export async function getOrCreateCustomer(
 
 export interface CheckoutOptions {
   workspaceId: string
-  planId:      PlanId
+  planId:      "STARTER" | "BUSINESS"
   billing:     "monthly" | "annual"
+  seats:       number          // paid seats (both plans)
+  bundles?:    number          // Business only: 10-user contributor bundles
   userId:      string
   userEmail:   string
   userName:    string
-  seats?:      number
   successUrl:  string
   cancelUrl:   string
 }
 
 /**
- * Create a Stripe Checkout session for plan upgrade.
- * Supports per-seat pricing for Business plan.
+ * Create a Stripe Checkout session.
+ *
+ * The trial promise is honored here: if the workspace's trialEndsAt is still in
+ * the future, the subscription starts with trial_end at that exact moment — the
+ * card goes on file now and the first charge lands when the trial we advertised
+ * actually ends. No 14-day Stripe default, no double trial.
+ *
+ * Business is two line items: paid seats at $39 and contributor bundles at $20
+ * per 10. That structural split is the pricing model, not a discount.
  */
 export async function createCheckoutSession(opts: CheckoutOptions): Promise<string> {
   const plan = PLANS[opts.planId]
-  if (!plan) throw new Error(`Invalid plan: ${opts.planId}`)
+  if (!plan?.selfServe) throw new Error(`Plan ${opts.planId} is not available for checkout`)
 
-  const priceId = opts.billing === "annual"
-    ? plan.stripePriceIdAnnual
-    : plan.stripePriceId
+  const annual = opts.billing === "annual"
+  const seatPrice = annual ? plan.stripePriceIdAnnual : plan.stripePriceId
+  if (!seatPrice) throw new Error(`No Stripe price configured for ${opts.planId} ${opts.billing} — run scripts/stripe-setup.mjs`)
 
-  if (!priceId) throw new Error(`No Stripe price configured for ${opts.planId} ${opts.billing}`)
+  const line_items: { price:string; quantity:number }[] = [
+    { price: seatPrice, quantity: Math.max(1, opts.seats) },
+  ]
+
+  if (opts.planId === "BUSINESS" && (opts.bundles ?? 0) > 0) {
+    const bundlePrice = annual ? plan.stripeBundlePriceIdAnnual : plan.stripeBundlePriceId
+    if (!bundlePrice) throw new Error("No Stripe price configured for the Business bundle — run scripts/stripe-setup.mjs")
+    line_items.push({ price: bundlePrice, quantity: opts.bundles! })
+  }
 
   const customerId = await getOrCreateCustomer(opts.workspaceId, opts.userEmail, opts.userName)
 
-  // Check for existing subscription (upgrade flow)
-  const workspace = await db.workspace.findUnique({
+  // Honor the advertised trial: convert exactly when we said we would.
+  // Stripe requires trial_end ≥ 48h out; closer than that, charge now.
+  const ws = await db.workspace.findUnique({
     where:  { id: opts.workspaceId },
-    select: { stripeSubscriptionId: true },
+    select: { trialEndsAt: true },
   })
+  const trialEnd =
+    ws?.trialEndsAt && ws.trialEndsAt.getTime() > Date.now() + 48 * 3600 * 1000
+      ? Math.floor(ws.trialEndsAt.getTime() / 1000)
+      : undefined
 
-  // For Business plan — per-seat quantity
-  const quantity = (opts.planId as string) === "BUSINESS" ? (opts.seats || 10) : 1
+  const metadata = { workspaceId: opts.workspaceId, planId: opts.planId, userId: opts.userId }
 
   const session = await stripe.checkout.sessions.create({
-    customer:    customerId,
-    mode:        "subscription",
-    line_items: [{
-      price:    priceId,
-      quantity,
-    }],
-    // Collect tax automatically
-    automatic_tax: { enabled: true },
-    // Allow customer to adjust seats for Business plan
-    ...((opts.planId as string) === "BUSINESS" && {
-      subscription_data: {
-        metadata: { workspaceId: opts.workspaceId, planId: opts.planId },
-      },
-    }),
-    // Pre-fill email
-    customer_email: !customerId ? opts.userEmail : undefined,
-    // Trial for new workspaces on paid plans
+    customer: customerId,
+    mode:     "subscription",
+    line_items,
     subscription_data: {
-      trial_period_days: 14,
-      metadata: {
-        workspaceId: opts.workspaceId,
-        planId:      opts.planId,
-        userId:      opts.userId,
-      },
+      ...(trialEnd ? { trial_end: trialEnd } : {}),
+      metadata,
     },
-    metadata: {
-      workspaceId: opts.workspaceId,
-      planId:      opts.planId,
-      userId:      opts.userId,
-    },
-    success_url: `${opts.successUrl}?session_id={CHECKOUT_SESSION_ID}&upgraded=true`,
-    cancel_url:  opts.cancelUrl,
-    // Allow promo codes
+    metadata,
+    // Stripe Tax must be configured in the dashboard before this can be on,
+    // otherwise every checkout fails. Off by default; enable via env when ready.
+    ...(process.env.STRIPE_AUTOMATIC_TAX === "1" ? { automatic_tax: { enabled: true } } : {}),
+    // Billing terms consent (checkbox at checkout). Requires the ToS URL to be
+    // set in Stripe Dashboard → Settings → Public details; env-gated until then.
+    ...(process.env.STRIPE_REQUIRE_TOS === "1"
+      ? { consent_collection: { terms_of_service: "required" as const } }
+      : {}),
+    billing_address_collection: "auto",
     allow_promotion_codes: true,
+    success_url: `${opts.successUrl}?success=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url:  `${opts.cancelUrl}?cancelled=true`,
   })
 
   return session.url!

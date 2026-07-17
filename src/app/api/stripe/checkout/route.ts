@@ -7,13 +7,13 @@ import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"
 import { withWorkspace, ok, err, parseBody, ApiContext } from "@/lib/api"
-import { createCheckoutSession, checkPlanLimit } from "@/lib/stripe/client"
-import type { PlanId } from "@/lib/stripe/client"
+import { createCheckoutSession } from "@/lib/stripe/billing"
 
 const checkoutSchema = z.object({
-  planId:  z.enum(["PRO","CONSULTANT","BUSINESS","ENTERPRISE"]),
+  planId:  z.enum(["STARTER","BUSINESS"]),
+  seats:   z.number().int().min(1).max(10000).default(1),
+  bundles: z.number().int().min(0).max(1000).default(0),
   billing: z.enum(["monthly","annual"]).default("monthly"),
-  seats:   z.number().int().min(1).max(500).optional().default(10),
 })
 
 async function createCheckout(ctx: ApiContext) {
@@ -21,11 +21,7 @@ async function createCheckout(ctx: ApiContext) {
   const parsed = await parseBody(ctx.req, checkoutSchema)
   if ("error" in parsed) return parsed.error
 
-  const { planId, billing, seats } = parsed.data
-
-  if (planId === "ENTERPRISE") {
-    return ok({ redirect: "https://flowsyncpm.com/contact-sales" })
-  }
+  const { planId, billing, seats, bundles } = parsed.data
 
   // Get user details for Stripe
   const { db } = await import("@/lib/db")
@@ -39,8 +35,10 @@ async function createCheckout(ctx: ApiContext) {
 
   const url = await createCheckoutSession({
     workspaceId: ctx.workspaceId,
-    planId:      planId as PlanId,
+    planId,
     billing,
+    seats,
+    bundles,
     userId:      ctx.userId,
     userEmail:   user.email,
     userName:    user.name,

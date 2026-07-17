@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 const DOCS = [
   { title:"Terms of Service",      href:"/legal/terms",   icon:"📋",
     desc:"Usage rights, subscription terms, cancellation policy, and acceptable use guidelines." },
+  { title:"Billing & Subscription Terms", href:"/legal/billing", icon:"💳",
+    desc:"Plans and pricing, the two-month trial and automatic conversion, renewals, seat changes, cancellation, and refunds." },
   { title:"Privacy Policy",        href:"/legal/privacy", icon:"🔒",
     desc:"How we collect, store, and protect your data. GDPR and CCPA compliant." },
   { title:"Cookie Policy",         href:"/legal/cookies", icon:"🍪",

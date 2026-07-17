@@ -2,7 +2,7 @@
 // Plan feature guards — use in API routes to enforce plan limits
 
 import { NextResponse } from "next/server"
-import { checkPlanLimit, PLANS, PLAN_ORDER, type PlanId } from "./client"
+import { checkPlanLimit, PLANS, PLAN_ORDER, effectiveTier, type PlanId } from "./client"
 import { db } from "@/lib/db"
 
 /**
@@ -22,7 +22,7 @@ export async function requireFeature(
   const check  = checkPlanLimit(planId, feature, 0)
 
   if (!check.allowed) {
-    const idx     = PLAN_ORDER.indexOf(planId)
+    const idx     = PLAN_ORDER.indexOf(effectiveTier(planId))
     const upgrade = PLAN_ORDER[Math.min(idx + 1, PLAN_ORDER.length - 1)]
     return NextResponse.json({
       error:   "Plan limit reached",
