@@ -1,519 +1,548 @@
 "use client"
 // src/components/landing/LandingPage.tsx
-import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
-import { useState, useEffect, useRef } from "react"
+// Public landing page. The product is live — this page sells a free trial, not a waitlist.
+//
+// Thesis: the buyer already has a project plan, written in Word or Excel, that isn't
+// doing any work. The hero shows that document having become a running project, which
+// is both the strongest feature and the fastest thing to prove in a demo.
+
+import { useState } from "react"
 import Link from "next/link"
+import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
+
+// ── Tokens ───────────────────────────────────────────────────────────────────
+const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669"
+const INK = "#0F172A", SLATE = "#64748B", MUTED = "#94A3B8", LINE = "#E2E8F0", PAPER = "#F8FAFC"
+// Project work is coded — WBS numbers, milestone IDs, CPI values. The app renders
+// those in monospace; the page borrows the same vernacular rather than inventing one.
+const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
 
 const NAV_LINKS = [
-  { href:"#features", label:"Features" },
+  { href:"#import",   label:"How it works" },
   { href:"#who",      label:"Who it's for" },
+  { href:"#features", label:"Features" },
   { href:"#pricing",  label:"Pricing" },
   { href:"#faq",      label:"FAQ" },
 ]
 
+// What the AI pulls out of an uploaded plan — the counts are what a real import produces.
+const EXTRACTED = [
+  { code:"1.0",      label:"Phases & milestones", desc:"Every phase, its dates, and the milestone that closes it." },
+  { code:"TASK",     label:"Tasks with dates & effort", desc:"Names, start and finish, estimated hours, dependencies, owners." },
+  { code:"RISK-001", label:"Risks, scored",        desc:"Probability × impact, response strategy, and who owns it." },
+  { code:"$",        label:"Budget lines",         desc:"Cost categories and planned amounts, ready for EVM." },
+  { code:"REQ-001",  label:"Requirements",         desc:"Functional and non-functional, with acceptance criteria." },
+  { code:"GOV",      label:"Governance documents", desc:"Charter, WBS dictionary, quality plan, minutes, handover." },
+]
+
+const AUDIENCES = [
+  { role:"PMO directors", accent:STEEL,
+    line:"You need every project on one view, held to one standard.",
+    points:["Portfolio and program hierarchy","Phase gates that actually gate","Governance artifacts in one repository","Standards enforced, not suggested"] },
+  { role:"Project managers", accent:AMBER,
+    line:"You need the plan to stay true without living in a spreadsheet.",
+    points:["Gantt with critical path and baselines","Risk, issue, change and decision registers","AI-drafted status reports","Resource workload across projects"] },
+  { role:"Sponsors & executives", accent:GREEN,
+    line:"You need the answer before you have to ask for it.",
+    points:["Health, CPI and SPI at a glance","Approvals where you already are","Benefits tracked against the business case","No seat cost — you're in the bundle"] },
+]
+
 const FEATURES = [
-  { icon:"📊", title:"Interactive Gantt + critical path", color:"#EFF6FF", tag:"Waterfall", tagColor:"#1B6CA8",
+  { icon:"📊", title:"Interactive Gantt + critical path", color:"#EFF6FF", tag:"Predictive", tagColor:STEEL,
     desc:"Drag-and-drop scheduling with FS/SS/FF dependencies, baseline overlays, and critical path highlighting. Export to PDF or share a live link." },
-  { icon:"💰", title:"Budget tracking with EVM", color:"#ECFDF5", tag:"Built-in", tagColor:"#059669",
-    desc:"Planned value, earned value, CPI, SPI, EAC, and VAC calculated automatically from your task data. No spreadsheet required." },
-  { icon:"🤖", title:"AI status report generation", color:"#F5F3FF", tag:"AI-powered", tagColor:"#7C3AED",
-    desc:"One click produces a complete weekly status report — accomplishments, risks, milestones, budget — drafted by AI, reviewed by you." },
-  { icon:"📧", title:"M365 deep integration", color:"#ECFEFF", tag:"Microsoft 365", tagColor:"#0891B2",
-    desc:"Outlook emails auto-tagged to projects. Teams meetings logged as decisions. Planner tasks synced bidirectionally." },
-  { icon:"🔒", title:"Enterprise security & RBAC", color:"#FEF2F2", tag:"Enterprise", tagColor:"#DC2626",
-    desc:"8 role levels, 67 permissions, TOTP 2FA, SCIM provisioning, Azure AD SSO, IP allowlisting, and a full audit log ready for enterprise compliance reviews." },
-  { icon:"⚡", title:"No-code automation engine", color:"#FFFBEB", tag:"Automation", tagColor:"#92400E",
-    desc:"28 trigger types, 20 action types, 40+ recipe templates. WHEN a task is overdue → notify PM and flag the project amber. Build in minutes." },
+  { icon:"💰", title:"Budget tracking with EVM", color:"#ECFDF5", tag:"Built-in", tagColor:GREEN,
+    desc:"Planned value, earned value, CPI, SPI, EAC and VAC calculated from your task data. No spreadsheet required." },
+  { icon:"🤖", title:"AI status reports", color:"#F5F3FF", tag:"AI-powered", tagColor:"#7C3AED",
+    desc:"One click produces a weekly status report — accomplishments, risks, milestones, budget — drafted by AI, reviewed by you." },
+  { icon:"📄", title:"Document template library", color:"#FFFBEB", tag:"18 templates", tagColor:"#92400E",
+    desc:"Charter, WBS, risk register, minutes, handover and more, in Word and Excel. Fill one in, upload it, and it populates the project." },
+  { icon:"🔒", title:"Roles, permissions and audit", color:"#FEF2F2", tag:"Enterprise", tagColor:"#DC2626",
+    desc:"Granular role levels, two-factor auth, Microsoft and Google SSO, and a full audit log ready for a compliance review." },
+  { icon:"🌐", title:"Bilingual, end to end", color:"#ECFEFF", tag:"EN / ES", tagColor:"#0891B2",
+    desc:"Every screen, every report, every generated document works in English and Spanish. Switch language without losing your place." },
 ]
 
 const PLANS = [
-  { name:"Trial", price:0, ea:null, color:"var(--text)",
-    desc:"Two months free, full product. Card on file; converts to Starter unless you cancel.",
+  { name:"Trial", price:0, suffix:"", featured:false,
+    tagline:"Two months free, the whole product.",
+    note:"Card at sign-up. Converts to Starter unless you cancel.",
     features:["Everything unlocked","Unlimited projects","AI document import","Bilingual EN / ES"],
-    missing:[],
-    cta:"Start free trial", ctaStyle:"outline" },
-  { name:"Starter", price:19, ea:null, color:"#fff", featured:false,
-    desc:"For small teams and independent PMs. Flat per user, no tiers to decode.",
-    features:["Unlimited projects","All 3 methodologies","AI co-pilot & reports","Budget tracking + EVM","Risk register","Document templates"],
-    missing:[],
-    cta:"Start free trial", ctaStyle:"steel" },
-  { name:"Business", price:39, ea:null, color:"var(--text)", featured:true,
-    desc:"For PMOs. Pay for the people who drive the work — everyone else comes in bundles.",
-    features:["Everything in Starter","$20/mo per 10 contributor seats","Portfolio & program hierarchy","SSO — Microsoft & Google","Executive dashboard","Full governance suite","Email support"],
-    missing:[],
-    cta:"Start free trial", ctaStyle:"amber" },
+    cta:"Start free trial" },
+  { name:"Starter", price:19, suffix:"/user/mo", featured:false,
+    tagline:"For small teams and independent PMs.",
+    note:"Flat per user. No tiers to decode.",
+    features:["Unlimited projects","Predictive, Agile & Hybrid","AI import & status reports","Budget tracking + EVM","Risk & issue registers","Document templates"],
+    cta:"Start free trial" },
+  { name:"Business", price:39, suffix:"/user/mo", featured:true,
+    tagline:"For PMOs running a portfolio.",
+    note:"Paid seats for the roles that drive the work. Everyone else: $20/mo per 10.",
+    features:["Everything in Starter","$20/mo per 10 contributor seats","Portfolio & program hierarchy","SSO — Microsoft & Google","Executive dashboard & approvals","Resource workload engine","Full governance suite","Email support"],
+    cta:"Start free trial" },
 ]
 
 const FAQS = [
   { q:"Can I try it before paying?",
-    a:"Yes. Every account starts with a two-month free trial of the full product — no feature limits. We ask for a card at sign-up so the trial converts to Starter automatically when it ends; cancel any time before then and you're not charged." },
-  { q:"Does it really support Waterfall, Agile, and Scrum in one workspace?",
-    a:"Yes — all three share the same underlying data model. A Waterfall project shows phases and a Gantt. Agile shows a backlog and sprint board. Scrum adds ceremonies and velocity. You can run all three simultaneously." },
-  { q:"How deep is the Microsoft 365 integration?",
-    a:"FlowSync PM connects to Microsoft 365 via the Graph API — emails, Teams meetings, and Planner tasks sync automatically with your projects. This is a native integration, not a Zapier connector." },
-  { q:"Is it suitable for regulated industries?",
-    a:"Yes. The platform includes a comprehensive audit log, consent tracking, document watermarking, and role-based data controls. Pre-built compliance templates are available for Business and Enterprise plans." },
+    a:"Yes. Every account starts with a two-month free trial of the full product, with no feature limits. We ask for a card at sign-up so the trial converts to Starter automatically when it ends — cancel any time before then and you're not charged." },
   { q:"Do I pay for everyone on the team?",
-    a:"No. On Business you pay per user only for the roles that drive and govern the work — sponsors, PMO directors, program and project managers, product owners, PMO analysts. Everyone who contributes or just needs visibility — team members, stakeholders, clients, external resources — comes in bundles at $20/mo per 10 people." },
+    a:"No. On Business you pay per user only for the roles that drive and govern the work: sponsors, PMO directors, program and project managers, product owners, PMO analysts. Everyone who contributes or just needs visibility — team members, stakeholders, clients, external resources — comes in bundles at $20/mo per 10 people." },
+  { q:"What can it actually read from my plan?",
+    a:"Upload a project plan in Word, Excel or PDF and it extracts phases, milestones, tasks with dates and effort, risks with scoring, budget lines, and requirements. You review everything before it commits — nothing is written to your project until you approve it." },
+  { q:"Does it support Waterfall, Agile and Hybrid in one workspace?",
+    a:"Yes — all three share the same data model. A predictive project shows phases and a Gantt. An agile one shows a backlog and sprint board. Hybrid runs both. You can run all three at once, in one portfolio." },
+  { q:"Is it suitable for regulated or audited work?",
+    a:"The platform keeps a full audit log, role-based data controls, and a governance repository holding charter, quality plan, decisions, minutes and handover records. Enterprise adds a Data Processing Agreement and custom terms." },
 ]
 
 const GANTT_BARS = [
-  { name:"Initiation",    color:"#059669", start:0,  width:12, pct:100 },
-  { name:"Requirements",  color:"#1B6CA8", start:11, width:22, pct:100 },
-  { name:"Configuration", color:"#7C3AED", start:22, width:30, pct:80  },
-  { name:"Testing",       color:"#0891B2", start:52, width:20, pct:20  },
-  { name:"Go-live",       color:"#F59E0B", start:72, width:12, pct:0   },
+  { name:"Initiation",    code:"1.0", color:GREEN,  start:0,  width:12, pct:100 },
+  { name:"Requirements",  code:"2.0", color:STEEL,  start:11, width:22, pct:100 },
+  { name:"Configuration", code:"3.0", color:"#7C3AED", start:22, width:30, pct:80 },
+  { name:"Testing",       code:"4.0", color:"#0891B2", start:52, width:20, pct:20 },
+  { name:"Go-live",       code:"5.0", color:AMBER,  start:72, width:12, pct:0 },
 ]
 const TODAY_X = 64
 
 export default function LandingPage() {
   const [demoOpen, setDemoOpen] = useState(false)
-  const [email,    setEmail]    = useState("")
-  const [email2,   setEmail2]   = useState("")
-  const [joined,   setJoined]   = useState(false)
-  const [joined2,  setJoined2]  = useState(false)
-  const [openFaq,  setOpenFaq]  = useState<number|null>(null)
-  const [scrolled, setScrolled] = useState(false)
-  const [spots,    setSpots]    = useState(187)
-  const ganttRef  = useRef<boolean>(false)
-  const [barsReady,setBarsReady]= useState(false)
-
-  useEffect(()=>{
-    const onScroll=()=>setScrolled(window.scrollY>40)
-    window.addEventListener("scroll",onScroll,{passive:true})
-    return()=>window.removeEventListener("scroll",onScroll)
-  },[])
-
-  useEffect(()=>{
-    const t=setTimeout(()=>setBarsReady(true),400)
-    return()=>clearTimeout(t)
-  },[])
-
-  function handleWaitlist(e:React.FormEvent, which:"hero"|"cta") {
-    e.preventDefault()
-    if(which==="hero"){ setJoined(true); setSpots(s=>Math.max(0,s-1)) }
-    else { setJoined2(true); setSpots(s=>Math.max(0,s-1)) }
-  }
-
-  const nav: React.CSSProperties = {
-    position:"fixed", top:0, left:0, right:0, zIndex:200,
-    background:"rgba(13,27,42,.96)",
-    backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
-    borderBottom:"1px solid rgba(255,255,255,.06)",
-    boxShadow:scrolled?"0 4px 32px rgba(0,0,0,.4)":"none",
-    transition:"box-shadow .2s",
-  }
+  const [openFaq, setOpenFaq]   = useState<number | null>(0)
 
   return (
-    <div style={{fontFamily:"var(--font,system-ui,sans-serif)",color:"var(--text,#0F172A)",overflowX:"hidden"}}>
+    <div style={{ background:"#fff", color:INK, fontFamily:"var(--font)" }}>
+      <style>{`
+        .fs-hero { display:grid; grid-template-columns:1fr; gap:48px; align-items:center; }
+        .fs-grid3 { display:grid; grid-template-columns:1fr; gap:16px; }
+        .fs-grid2 { display:grid; grid-template-columns:1fr; gap:14px; }
+        .fs-band  { display:flex; flex-direction:column; gap:20px; }
+        @media (min-width:900px) {
+          .fs-hero  { grid-template-columns:1.05fr .95fr; gap:56px; }
+          .fs-grid3 { grid-template-columns:repeat(3,1fr); }
+          .fs-grid2 { grid-template-columns:repeat(2,1fr); }
+          .fs-band  { flex-direction:row; align-items:center; gap:36px; }
+        }
+        .fs-link:hover { color:#fff !important; }
+        .fs-card { transition:transform .18s ease, box-shadow .18s ease; }
+        .fs-card:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(13,27,42,.08); }
+        a:focus-visible, button:focus-visible, summary:focus-visible {
+          outline:2px solid ${AMBER}; outline-offset:3px; border-radius:6px;
+        }
+        @media (prefers-reduced-motion:reduce) {
+          .fs-card, .fs-card:hover { transition:none; transform:none; }
+        }
+      `}</style>
 
-      {/* NAV */}
-      <nav style={nav}>
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px",height:60,
-          display:"flex",alignItems:"center",gap:0}}>
-          <Link href="/" style={{display:"flex",alignItems:"center",gap:9,textDecoration:"none",marginRight:32}}>
-            <div style={{width:30,height:30,background:"#1B6CA8",borderRadius:8,position:"relative",flexShrink:0}}>
-              <div style={{position:"absolute",width:14,height:2.5,background:"#fff",top:8,left:8,borderRadius:2}}/>
-              <div style={{position:"absolute",width:9,height:2.5,background:"#F59E0B",top:13,left:8,borderRadius:2}}/>
-            </div>
-            <span style={{fontWeight:700,fontSize:15,color:"#fff"}}>
-              FlowSync <span style={{color:"#F59E0B"}}>PM</span>
-            </span>
+      {/* ── NAV ───────────────────────────────────────────────── */}
+      <nav style={{ position:"sticky", top:0, zIndex:100, background:"rgba(13,27,42,.92)",
+        backdropFilter:"blur(12px)", borderBottom:"1px solid rgba(255,255,255,.08)" }}>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px", height:60,
+          display:"flex", alignItems:"center", gap:8 }}>
+          <Link href="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", marginRight:14 }}>
+            <div style={{ width:26, height:26, borderRadius:7, background:STEEL, color:"#fff",
+              display:"grid", placeItems:"center", fontSize:13, fontWeight:800 }}>F</div>
+            <span style={{ color:"#fff", fontWeight:700, fontSize:15, letterSpacing:"-.01em" }}>FlowSync PM</span>
           </Link>
-          <div style={{display:"flex",flex:1}}>
-            {NAV_LINKS.map(l=>(
-              <a key={l.href} href={l.href}
-                style={{padding:"0 14px",height:60,display:"flex",alignItems:"center",
-                  fontSize:13,fontWeight:500,color:"rgba(255,255,255,.55)",textDecoration:"none",
-                  transition:"color .15s"}}>
+
+          <div style={{ display:"flex", gap:2, marginRight:"auto" }}>
+            {NAV_LINKS.map(l => (
+              <a key={l.href} href={l.href} className="fs-link"
+                style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
+                  padding:"6px 10px", borderRadius:6, whiteSpace:"nowrap" }}>
                 {l.label}
               </a>
             ))}
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <button onClick={() => setDemoOpen(true)}
-              style={{fontSize:13,color:"rgba(255,255,255,.5)",background:"none",border:"none",
-                cursor:"pointer",padding:"0 12px",fontFamily:"inherit"}}>
-              Request a demo
-            </button>
-            <Link href="/auth/signin"
-              style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none",padding:"0 12px"}}>
-              Sign in
-            </Link>
-            <Link href="/auth/signup"
-              style={{padding:"8px 16px",background:"#F59E0B",color:"#0D1B2A",borderRadius:8,
-                fontSize:13,fontWeight:700,textDecoration:"none"}}>
-              Start free trial
-            </Link>
-          </div>
+
+          <button onClick={() => setDemoOpen(true)} className="fs-link"
+            style={{ fontSize:13, color:"rgba(255,255,255,.5)", background:"none", border:"none",
+              cursor:"pointer", padding:"6px 10px", fontFamily:"inherit", whiteSpace:"nowrap" }}>
+            Request a demo
+          </button>
+          <Link href="/auth/signin" className="fs-link"
+            style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"6px 10px" }}>
+            Sign in
+          </Link>
+          <Link href="/auth/signup"
+            style={{ padding:"8px 16px", background:AMBER, color:NAVY, borderRadius:8,
+              fontSize:13, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
+            Start free
+          </Link>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section style={{background:"#0D1B2A",paddingTop:148,paddingBottom:80,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:0,
-          background:"radial-gradient(ellipse 80% 60% at 60% -10%,rgba(27,108,168,.22) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:64,alignItems:"center"}}>
-
+      {/* ── HERO ──────────────────────────────────────────────── */}
+      <section style={{ background:NAVY, padding:"84px 0 92px", position:"relative", overflow:"hidden" }}>
+        <div aria-hidden style={{ position:"absolute", inset:0,
+          background:`radial-gradient(ellipse 70% 60% at 75% 0%, rgba(27,108,168,.28) 0%, transparent 65%)`,
+          pointerEvents:"none" }} />
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px", position:"relative" }}>
+          <div className="fs-hero">
             {/* Left */}
             <div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:8,
-                background:"rgba(245,158,11,.12)",border:"1px solid rgba(245,158,11,.25)",
-                color:"#F59E0B",fontSize:12,fontWeight:600,padding:"5px 14px",
-                borderRadius:20,marginBottom:24,letterSpacing:".05em"}}>
-                <div style={{width:6,height:6,borderRadius:"50%",background:"#F59E0B",
-                  animation:"pulse 2s infinite"}}/>
-                Live now · Free for 2 months
+              <div style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:22,
+                padding:"5px 12px", borderRadius:100, background:"rgba(5,150,105,.14)",
+                border:"1px solid rgba(5,150,105,.3)" }}>
+                <span style={{ width:6, height:6, borderRadius:"50%", background:"#34D399" }} />
+                <span style={{ fontSize:11.5, fontWeight:600, color:"#34D399", letterSpacing:".02em" }}>
+                  Live now · Free for two months
+                </span>
               </div>
-              <h1 style={{fontFamily:"inherit",fontSize:"clamp(36px,5vw,62px)",fontWeight:700,
-                lineHeight:1.08,letterSpacing:"-.03em",color:"#fff",marginBottom:20}}>
-                Project management<br/>built for <span style={{color:"#F59E0B"}}>real</span> PMOs
+
+              <h1 style={{ fontSize:"clamp(34px,4.6vw,58px)", fontWeight:800, lineHeight:1.06,
+                letterSpacing:"-.035em", color:"#fff", marginBottom:20 }}>
+                Your plan is already written.<br />
+                <span style={{ color:AMBER }}>Turn it into a live project.</span>
               </h1>
-              <p style={{fontSize:17,lineHeight:1.7,color:"rgba(255,255,255,.55)",marginBottom:36,maxWidth:480}}>
-                Waterfall, Agile, and Scrum in one platform. Built-in M365 integration, EVM budget tracking, enterprise audit logs, and AI-generated status reports.
+
+              <p style={{ fontSize:17, lineHeight:1.65, color:"rgba(255,255,255,.6)",
+                marginBottom:30, maxWidth:490 }}>
+                FlowSync PM reads the project document you already have — Word, Excel, PDF — and
+                builds the whole thing: phases, tasks, dates, risks, budget. Then it keeps it
+                governed, with EVM, phase gates and reporting your sponsor will actually read.
               </p>
-              <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+
+              <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
                 <Link href="/auth/signup"
-                  style={{padding:"14px 26px",background:"#F59E0B",color:"#0D1B2A",
-                    borderRadius:10,fontSize:14,fontWeight:700,textDecoration:"none",
-                    whiteSpace:"nowrap"}}>
+                  style={{ padding:"14px 26px", background:AMBER, color:NAVY, borderRadius:10,
+                    fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
                   Start free trial →
                 </Link>
-                <button onClick={()=>setDemoOpen(true)}
-                  style={{padding:"14px 24px",background:"rgba(255,255,255,.06)",color:"#fff",
-                    border:"1.5px solid rgba(255,255,255,.15)",borderRadius:10,fontSize:14,
-                    fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                <button onClick={() => setDemoOpen(true)}
+                  style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
+                    border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
+                    fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
                   Request a demo
                 </button>
               </div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,.3)",display:"flex",alignItems:"center",gap:6}}>
-                🔒 No credit card. No spam. Unsubscribe any time.
-              </div>
-              {/* Stats */}
-              <div style={{display:"flex",gap:32,marginTop:40,paddingTop:32,
-                borderTop:"1px solid rgba(255,255,255,.08)"}}>
-                {[["3","Methodologies"],["47+","Templates"],["$0","Free tier"]].map(([v,l])=>(
-                  <div key={l}>
-                    <div style={{fontSize:26,fontWeight:700,color:"#fff",lineHeight:1}}>{v}</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,.4)",marginTop:4}}>{l}</div>
-                  </div>
-                ))}
-              </div>
+
+              <p style={{ fontSize:12.5, color:"rgba(255,255,255,.35)", lineHeight:1.6 }}>
+                Card at sign-up so nothing breaks when the trial ends. Cancel before it converts and
+                you're not charged.
+              </p>
             </div>
 
-            {/* Gantt widget */}
-            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",
-              borderRadius:14,overflow:"hidden",
-              boxShadow:"0 32px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06)"}}>
+            {/* Right — a project that visibly came from a document */}
+            <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+              boxShadow:"0 28px 70px rgba(0,0,0,.42)", border:"1px solid rgba(255,255,255,.1)" }}>
+              {/* Provenance — the whole pitch in one strip */}
+              <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 14px",
+                background:"#EFF6FF", borderBottom:`1px solid ${LINE}` }}>
+                <span style={{ fontSize:13 }}>📄</span>
+                <span style={{ fontFamily:MONO, fontSize:11, color:STEEL, fontWeight:600 }}>
+                  Project_Plan.docx
+                </span>
+                <span style={{ color:MUTED, fontSize:11 }}>→</span>
+                <span style={{ fontSize:11, color:SLATE }}>imported in</span>
+                <span style={{ fontFamily:MONO, fontSize:11, color:GREEN, fontWeight:700 }}>31s</span>
+                <span style={{ marginLeft:"auto", fontFamily:MONO, fontSize:10, color:MUTED }}>PRJ-006</span>
+              </div>
+
               {/* Title bar */}
-              <div style={{background:"rgba(255,255,255,.05)",borderBottom:"1px solid rgba(255,255,255,.07)",
-                padding:"10px 14px",display:"flex",alignItems:"center",gap:7}}>
-                {["#FF5F57","#FFBD2E","#28CA41"].map(c=>(
-                  <div key={c} style={{width:10,height:10,borderRadius:"50%",background:c}}/>
-                ))}
-                <span style={{fontSize:11,color:"rgba(255,255,255,.4)",marginLeft:6,fontWeight:500}}>
-                  Digital Transformation · PRJ-001
-                </span>
-                <span style={{marginLeft:"auto",fontSize:9,fontWeight:600,padding:"2px 7px",
-                  borderRadius:4,background:"rgba(5,150,105,.2)",color:"#34D399"}}>
-                  🟢 On track
-                </span>
+              <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${LINE}` }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ fontSize:13.5, fontWeight:700, color:INK }}>ERP Rollout — Phase 2</div>
+                  <span style={{ fontSize:9.5, fontWeight:700, padding:"2px 7px", borderRadius:4,
+                    background:"#FFFBEB", color:"#B45309", fontFamily:MONO }}>AT RISK</span>
+                </div>
+                <div style={{ fontSize:11, color:MUTED, marginTop:3 }}>
+                  5 phases · 47 tasks · 12 risks · $1.2M budget
+                </div>
               </div>
-              {/* Gantt bars */}
-              <div style={{padding:16}}>
-                {/* Month labels */}
-                <div style={{display:"flex",marginBottom:10,paddingLeft:110}}>
-                  {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"].map(m=>(
-                    <div key={m} style={{flex:1,fontSize:9,color:"rgba(255,255,255,.25)",
-                      fontWeight:500,textAlign:"center"}}>
-                      {m}
-                    </div>
+
+              {/* Gantt */}
+              <div style={{ padding:"12px 16px 6px" }}>
+                <div style={{ display:"flex", marginBottom:8, paddingLeft:96 }}>
+                  {["Jan","Mar","May","Jul","Sep"].map(m => (
+                    <div key={m} style={{ flex:1, fontSize:9, color:MUTED, fontFamily:MONO }}>{m}</div>
                   ))}
                 </div>
-                {/* Bars */}
-                {GANTT_BARS.map((bar,i)=>(
-                  <div key={bar.name} style={{display:"grid",gridTemplateColumns:"110px 1fr",
-                    gap:0,marginBottom:8,alignItems:"center"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6,paddingRight:8}}>
-                      <div style={{width:7,height:7,borderRadius:2,background:bar.color,flexShrink:0}}/>
-                      <span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,.6)",
-                        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                        {bar.name}
-                      </span>
+                {GANTT_BARS.map(b => (
+                  <div key={b.name} style={{ display:"flex", alignItems:"center", marginBottom:7 }}>
+                    <div style={{ width:96, display:"flex", alignItems:"center", gap:5, flexShrink:0 }}>
+                      <span style={{ fontFamily:MONO, fontSize:9, color:MUTED }}>{b.code}</span>
+                      <span style={{ fontSize:10.5, color:SLATE, whiteSpace:"nowrap",
+                        overflow:"hidden", textOverflow:"ellipsis" }}>{b.name}</span>
                     </div>
-                    <div style={{position:"relative",height:20,borderRadius:3,
-                      background:"rgba(255,255,255,.04)"}}>
-                      {/* Today marker */}
-                      <div style={{position:"absolute",top:0,bottom:0,left:`${TODAY_X}%`,
-                        width:1.5,background:"#F59E0B",opacity:.8,zIndex:5}}/>
-                      {/* Track */}
-                      <div style={{position:"absolute",top:3,height:14,borderRadius:3,
-                        background:`${bar.color}20`,border:`1px solid ${bar.color}40`,
-                        left:barsReady?`${bar.start}%`:"0%",
-                        width:barsReady?`${bar.width}%`:"0%",
-                        transition:"left 1.2s cubic-bezier(.25,.46,.45,.94), width 1.2s cubic-bezier(.25,.46,.45,.94)",
-                        transitionDelay:`${i*0.12}s`}}>
-                        <span style={{fontSize:9,fontWeight:600,color:bar.color,paddingLeft:5}}>
-                          {bar.pct>0?`${bar.pct}%`:""}
-                        </span>
-                      </div>
-                      {/* Progress */}
-                      {bar.pct>0&&(
-                        <div style={{position:"absolute",top:3,height:14,borderRadius:3,
-                          background:bar.color,opacity:.85,
-                          left:barsReady?`${bar.start}%`:"0%",
-                          width:barsReady?`${bar.width*bar.pct/100}%`:"0%",
-                          transition:"left 1.3s cubic-bezier(.25,.46,.45,.94), width 1.3s cubic-bezier(.25,.46,.45,.94)",
-                          transitionDelay:`${i*0.12+0.1}s`}}/>
-                      )}
+                    <div style={{ flex:1, height:16, background:PAPER, borderRadius:4, position:"relative" }}>
+                      <div aria-hidden style={{ position:"absolute", left:`${TODAY_X}%`, top:-3, bottom:-3,
+                        width:1.5, background:"#DC2626", opacity:.5 }} />
+                      <div style={{ position:"absolute", left:`${b.start}%`, width:`${b.width}%`,
+                        top:0, bottom:0, background:b.color, borderRadius:4, opacity:.22 }} />
+                      <div style={{ position:"absolute", left:`${b.start}%`, width:`${b.width * b.pct / 100}%`,
+                        top:0, bottom:0, background:b.color, borderRadius:4 }} />
                     </div>
+                    <div style={{ width:32, textAlign:"right", fontFamily:MONO, fontSize:9.5,
+                      color: b.pct === 100 ? GREEN : SLATE }}>{b.pct}%</div>
                   </div>
                 ))}
-                {/* Health strip */}
-                <div style={{borderTop:"1px solid rgba(255,255,255,.06)",marginTop:10,paddingTop:10,
-                  display:"flex",gap:12}}>
-                  {[["#059669","5 on track"],["#F59E0B","2 at risk"],["#DC2626","1 overdue"]].map(([c,l])=>(
-                    <div key={l} style={{display:"flex",alignItems:"center",gap:5,fontSize:10,color:"rgba(255,255,255,.4)"}}>
-                      <div style={{width:7,height:7,borderRadius:"50%",background:c}}/>
-                      {l}
-                    </div>
-                  ))}
-                </div>
-                {/* KPIs */}
-                <div style={{borderTop:"1px solid rgba(255,255,255,.06)",marginTop:10,paddingTop:10,
-                  display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
-                  {[["68%","Complete"],["CPI 0.94","Cost perf."],["$820K","Spent"],["Dec","On schedule"]].map(([v,l],i)=>(
-                    <div key={l} style={{textAlign:"center",borderRight:i<3?"1px solid rgba(255,255,255,.06)":"none",padding:"0 8px"}}>
-                      <div style={{fontSize:14,fontWeight:700,color:i===1?"#F59E0B":i===3?"#059669":"#fff"}}>{v}</div>
-                      <div style={{fontSize:9,color:"rgba(255,255,255,.3)",marginTop:2}}>{l}</div>
-                    </div>
-                  ))}
-                </div>
+              </div>
+
+              {/* KPI strip — the numbers a sponsor asks for */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", borderTop:`1px solid ${LINE}` }}>
+                {[["68%","Complete",INK],["0.94","CPI","#B45309"],["$820K","Spent",INK],["M3","Next gate",STEEL]].map(([v,l,c]) => (
+                  <div key={l} style={{ padding:"10px 8px", textAlign:"center", borderRight:`1px solid ${LINE}` }}>
+                    <div style={{ fontFamily:MONO, fontSize:14, fontWeight:700, color:c as string }}>{v}</div>
+                    <div style={{ fontSize:9, color:MUTED, textTransform:"uppercase", letterSpacing:".05em", marginTop:2 }}>{l}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
-        <style>{`@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}`}</style>
       </section>
 
-      {/* PROBLEM */}
-      <section style={{padding:"96px 0"}}>
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px"}}>
-          <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",
-            color:"#F59E0B",marginBottom:10}}>
-            Why teams choose FlowSync PM
+      {/* ── IMPORT ────────────────────────────────────────────── */}
+      <section id="import" style={{ padding:"84px 0", background:"#fff" }}>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
+          <div style={{ maxWidth:640, marginBottom:44 }}>
+            <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+              textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
+              How it works
+            </div>
+            <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+              letterSpacing:"-.025em", marginBottom:14 }}>
+              One document in. A governed project out.
+            </h2>
+            <p style={{ fontSize:16.5, color:SLATE, lineHeight:1.65 }}>
+              Most tools hand you an empty workspace and wish you luck. Upload the plan you already
+              wrote and FlowSync PM reads it, shows you exactly what it found, and waits for your
+              approval before writing a single row.
+            </p>
           </div>
-          <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,lineHeight:1.2,
-            letterSpacing:"-.02em",color:"var(--text,#0F172A)",marginBottom:48,maxWidth:560}}>
-            Most PM tools weren't built for how PMOs actually work
-          </h2>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1,
-            background:"#E2E8F0",border:"1px solid #E2E8F0",borderRadius:10,overflow:"hidden"}}>
-            {[
-              { n:"01", title:"One methodology per platform",
-                body:"Your Waterfall IT projects and Agile dev teams live in different tools. Status reports are assembled manually from three sources every Monday." },
-              { n:"02", title:"Budget tracking lives in Excel",
-                body:"Your PM tool tracks tasks. Earned value, CPI, and SPI live in a spreadsheet someone updates manually — when they remember to." },
-              { n:"03", title:"M365 is an afterthought",
-                body:"Project emails arrive in Outlook, meeting notes sit in Teams, tasks get duplicated in Planner. No system of record. Your PM tool doesn't know your calendar exists." },
-            ].map(c=>(
-              <div key={c.n} style={{background:"#fff",padding:"32px 28px"}}>
-                <div style={{fontSize:52,fontWeight:700,color:"#E2E8F0",lineHeight:1,marginBottom:12}}>{c.n}</div>
-                <div style={{fontSize:17,fontWeight:600,color:"var(--text,#0F172A)",marginBottom:8}}>{c.title}</div>
-                <p style={{fontSize:14,lineHeight:1.65,color:"#64748B",margin:0}}>{c.body}</p>
+
+          <div className="fs-grid3">
+            {EXTRACTED.map(e => (
+              <div key={e.label} className="fs-card"
+                style={{ border:`1px solid ${LINE}`, borderRadius:12, padding:"18px 18px 20px",
+                  borderLeft:`3px solid ${STEEL}` }}>
+                <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, color:STEEL,
+                  background:"#EFF6FF", display:"inline-block", padding:"2px 7px",
+                  borderRadius:4, marginBottom:10 }}>{e.code}</div>
+                <div style={{ fontSize:14.5, fontWeight:700, marginBottom:5 }}>{e.label}</div>
+                <div style={{ fontSize:13, color:SLATE, lineHeight:1.6 }}>{e.desc}</div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* FEATURES */}
-      <section style={{padding:"96px 0",background:"#F1F5F9"}} id="features">
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px"}}>
-          <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",color:"#F59E0B",marginBottom:10}}>
-            Platform capabilities
-          </div>
-          <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,lineHeight:1.2,letterSpacing:"-.02em",
-            color:"var(--text,#0F172A)",marginBottom:48}}>
-            Everything a PMO needs, nothing it doesn't
-          </h2>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-            {FEATURES.map(f=>(
-              <div key={f.title} style={{background:"#fff",border:"1px solid #E2E8F0",
-                borderRadius:10,padding:"28px 24px",transition:"all .2s"}}
-                onMouseOver={e=>{e.currentTarget.style.borderColor="#1B6CA8";e.currentTarget.style.boxShadow="0 8px 28px rgba(27,108,168,.1)";e.currentTarget.style.transform="translateY(-2px)"}}
-                onMouseOut={e=>{e.currentTarget.style.borderColor="#E2E8F0";e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none"}}>
-                <div style={{width:44,height:44,borderRadius:10,background:f.color,
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:20,marginBottom:16}}>
-                  {f.icon}
-                </div>
-                <div style={{fontSize:16,fontWeight:600,color:"var(--text,#0F172A)",marginBottom:7}}>{f.title}</div>
-                <p style={{fontSize:13,lineHeight:1.6,color:"#64748B",marginBottom:12,margin:"0 0 12px"}}>{f.desc}</p>
-                <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4,
-                  background:f.color,color:f.tagColor}}>
-                  {f.tag}
-                </span>
-              </div>
-            ))}
+          <div style={{ marginTop:26, padding:"16px 20px", background:PAPER,
+            borderRadius:12, border:`1px solid ${LINE}`, fontSize:13.5, color:SLATE, lineHeight:1.65 }}>
+            <strong style={{ color:INK }}>It works in reverse too.</strong>{" "}
+            Download a blank charter, WBS or quality plan from the template library, fill it in,
+            upload it, and the project updates itself. Eighteen templates, Word and Excel, English
+            and Spanish.
           </div>
         </div>
       </section>
 
-      {/* PRICING */}
-      <section style={{padding:"96px 0"}} id="pricing">
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px"}}>
-          <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",color:"#F59E0B",marginBottom:10}}>
-            Get started
-          </div>
-          <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,lineHeight:1.2,letterSpacing:"-.02em",
-            color:"var(--text,#0F172A)",marginBottom:12}}>
-            Start running projects properly
-          </h2>
-          <p style={{fontSize:17,color:"#64748B",marginBottom:40,maxWidth:520,lineHeight:1.7}}>
-            Two months free, the whole product. Import a real plan and see it working in 30 seconds.
-          </p>
-          {/* Early banner */}
-          <div style={{background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.2)",
-            borderRadius:10,padding:"14px 20px",display:"flex",alignItems:"center",gap:14,
-            marginBottom:36,flexWrap:"wrap"}}>
-            <span style={{fontSize:22}}>⚡</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:14,fontWeight:600,color:"var(--text,#0F172A)",marginBottom:2}}>
-                You only pay for the people who drive the work
-              </div>
-              <div style={{fontSize:13,color:"#64748B"}}>
-                Managers and sponsors are paid seats. Your team, stakeholders and clients come in bundles — $20/mo per 10.
-              </div>
+      {/* ── WHO ───────────────────────────────────────────────── */}
+      <section id="who" style={{ padding:"84px 0", background:PAPER, borderTop:`1px solid ${LINE}`, borderBottom:`1px solid ${LINE}` }}>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
+          <div style={{ maxWidth:640, marginBottom:40 }}>
+            <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+              textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
+              Who it's for
             </div>
-            <div style={{fontSize:12,fontWeight:700,padding:"5px 14px",borderRadius:6,
-              background:"#F59E0B",color:"#0D1B2A",flexShrink:0}}>
-              {spots} / 200 spots left
-            </div>
+            <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+              letterSpacing:"-.025em" }}>
+              Three people, one source of truth
+            </h2>
           </div>
-          {/* Plan cards */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-            {PLANS.map(plan=>(
-              <div key={plan.name} style={{borderRadius:12,padding:"32px 28px",
-                border:plan.featured?"1px solid rgba(255,255,255,.1)":"1px solid #E2E8F0",
-                background:plan.featured?"#0D1B2A":"#fff",position:"relative",
-                transition:"all .2s"}}>
-                {plan.featured&&(
-                  <div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",
-                    background:"#F59E0B",color:"#0D1B2A",fontSize:11,fontWeight:700,
-                    padding:"4px 14px",borderRadius:20,whiteSpace:"nowrap"}}>
-                    Most popular
-                  </div>
-                )}
-                <div style={{fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",
-                  color:plan.featured?"rgba(255,255,255,.5)":"#64748B",marginBottom:10}}>
-                  {plan.name}
-                </div>
-                <div style={{fontSize:38,fontWeight:700,lineHeight:1,color:plan.color,marginBottom:4}}>
-                  ${plan.ea||plan.price}
-                  {plan.price>0&&<span style={{fontSize:18,fontWeight:400,opacity:.6}}>/mo</span>}
-                </div>
-                {plan.price>0&&(
-                  <div style={{fontSize:12,color:plan.featured?"rgba(255,255,255,.4)":"#64748B",marginBottom:6}}>
-                    per user · billed monthly
-                  </div>
-                )}
-                {plan.name==="Trial"&&(
-                  <div style={{fontSize:12,fontWeight:600,padding:"3px 9px",borderRadius:5,
-                    background:"rgba(5,150,105,.1)",color:"#059669",
-                    display:"inline-block",marginBottom:16}}>
-                    2 months free, then $19/user
-                  </div>
-                )}
-                {!plan.ea&&<div style={{marginBottom:plan.featured?0:16}}/>}
-                <p style={{fontSize:13,color:plan.featured?"rgba(255,255,255,.5)":"#64748B",
-                  marginBottom:20,lineHeight:1.55}}>
-                  {plan.desc}
-                </p>
-                <ul style={{listStyle:"none",marginBottom:24,display:"flex",flexDirection:"column",gap:8}}>
-                  {plan.features.map(f=>(
-                    <li key={f} style={{fontSize:13,display:"flex",alignItems:"flex-start",gap:8,
-                      color:plan.featured?"rgba(255,255,255,.8)":"#334155"}}>
-                      <span style={{color:plan.featured?"#34D399":"#059669",flexShrink:0,marginTop:1}}>✓</span>
-                      {f}
-                    </li>
-                  ))}
-                  {plan.missing.map(f=>(
-                    <li key={f} style={{fontSize:13,display:"flex",alignItems:"flex-start",gap:8,color:"#94A3B8"}}>
-                      <span style={{flexShrink:0,marginTop:1}}>—</span>{f}
+
+          <div className="fs-grid3">
+            {AUDIENCES.map(a => (
+              <div key={a.role} style={{ background:"#fff", border:`1px solid ${LINE}`,
+                borderRadius:12, padding:"22px 20px", borderTop:`3px solid ${a.accent}` }}>
+                <div style={{ fontSize:15.5, fontWeight:700, marginBottom:7 }}>{a.role}</div>
+                <div style={{ fontSize:13.5, color:SLATE, lineHeight:1.6, marginBottom:16 }}>{a.line}</div>
+                <ul style={{ listStyle:"none", padding:0, margin:0, display:"flex",
+                  flexDirection:"column", gap:8 }}>
+                  {a.points.map(p => (
+                    <li key={p} style={{ display:"flex", gap:8, fontSize:13, color:INK, lineHeight:1.5 }}>
+                      <span style={{ color:a.accent, flexShrink:0, fontWeight:700 }}>·</span>{p}
                     </li>
                   ))}
                 </ul>
-                <Link href="/auth/signup"
-                  style={{display:"block",textAlign:"center",padding:"12px 20px",borderRadius:8,
-                    fontSize:13,fontWeight:600,textDecoration:"none",
-                    background:plan.ctaStyle==="amber"?"#F59E0B":plan.ctaStyle==="steel"?"#1B6CA8":"transparent",
-                    color:plan.ctaStyle==="amber"?"#0D1B2A":plan.ctaStyle==="steel"?"#fff":plan.featured?"rgba(255,255,255,.6)":"#334155",
-                    border:plan.ctaStyle==="outline"?"1px solid #E2E8F0":"none"}}>
-                  {plan.cta}
-                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ──────────────────────────────────────────── */}
+      <section id="features" style={{ padding:"84px 0", background:"#fff" }}>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
+          <div style={{ maxWidth:640, marginBottom:40 }}>
+            <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+              textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
+              Features
+            </div>
+            <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+              letterSpacing:"-.025em", marginBottom:14 }}>
+              The depth a PMO needs, without the enterprise tax
+            </h2>
+            <p style={{ fontSize:16.5, color:SLATE, lineHeight:1.65 }}>
+              Everything below ships today. No roadmap promises, no "coming soon" badges.
+            </p>
+          </div>
+
+          <div className="fs-grid3">
+            {FEATURES.map(f => (
+              <div key={f.title} className="fs-card"
+                style={{ border:`1px solid ${LINE}`, borderRadius:12, padding:"20px", background:"#fff" }}>
+                <div style={{ width:38, height:38, borderRadius:9, background:f.color,
+                  display:"grid", placeItems:"center", fontSize:18, marginBottom:14 }}>{f.icon}</div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, flexWrap:"wrap" }}>
+                  <div style={{ fontSize:14.5, fontWeight:700, lineHeight:1.3 }}>{f.title}</div>
+                  <span style={{ fontFamily:MONO, fontSize:9, fontWeight:700, padding:"2px 6px",
+                    borderRadius:4, background:`${f.tagColor}14`, color:f.tagColor,
+                    whiteSpace:"nowrap" }}>{f.tag}</span>
+                </div>
+                <div style={{ fontSize:13, color:SLATE, lineHeight:1.6 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ───────────────────────────────────────────── */}
+      <section id="pricing" style={{ padding:"84px 0", background:PAPER, borderTop:`1px solid ${LINE}` }}>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
+          <div style={{ maxWidth:640, marginBottom:32 }}>
+            <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+              textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
+              Pricing
+            </div>
+            <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+              letterSpacing:"-.025em", marginBottom:14 }}>
+              Pay for the people who drive the work
+            </h2>
+            <p style={{ fontSize:16.5, color:SLATE, lineHeight:1.65 }}>
+              Every other tool charges full price for the person who logs in twice a month to look at
+              a chart. We don't.
+            </p>
+          </div>
+
+          {/* The worked example — the argument, in numbers */}
+          <div className="fs-band" style={{ background:NAVY, borderRadius:14, padding:"24px 28px", marginBottom:24 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:"#fff", marginBottom:6 }}>
+                A PMO with 3 managers and 40 contributors
+              </div>
+              <div style={{ fontSize:13.5, color:"rgba(255,255,255,.55)", lineHeight:1.65 }}>
+                The three who run projects are paid seats. The other forty — team members,
+                stakeholders, clients, executives — come in four bundles of ten.
+              </div>
+            </div>
+            <div style={{ display:"flex", alignItems:"baseline", gap:10, flexShrink:0 }}>
+              <div style={{ fontFamily:MONO, fontSize:13, color:"rgba(255,255,255,.45)" }}>
+                3 × $39 + 4 × $20 =
+              </div>
+              <div style={{ fontFamily:MONO, fontSize:32, fontWeight:800, color:AMBER, lineHeight:1 }}>
+                $197
+              </div>
+              <div style={{ fontSize:13, color:"rgba(255,255,255,.45)" }}>/mo</div>
+            </div>
+          </div>
+
+          {/* Plans */}
+          <div className="fs-grid3">
+            {PLANS.map(p => (
+              <div key={p.name}
+                style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+                  border: p.featured ? `2px solid ${AMBER}` : `1px solid ${LINE}`,
+                  boxShadow: p.featured ? "0 12px 36px rgba(245,158,11,.14)" : "none",
+                  display:"flex", flexDirection:"column" }}>
+                {p.featured && (
+                  <div style={{ background:AMBER, color:NAVY, textAlign:"center", padding:"5px",
+                    fontSize:10.5, fontWeight:800, letterSpacing:".08em", textTransform:"uppercase" }}>
+                    Most popular
+                  </div>
+                )}
+                <div style={{ padding:"22px 22px 0" }}>
+                  <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, color:SLATE,
+                    textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>{p.name}</div>
+                  <div style={{ display:"flex", alignItems:"baseline", gap:3, marginBottom:6 }}>
+                    <span style={{ fontSize:40, fontWeight:800, letterSpacing:"-.03em", lineHeight:1 }}>
+                      ${p.price}
+                    </span>
+                    {p.suffix && <span style={{ fontSize:14, color:MUTED, fontWeight:500 }}>{p.suffix}</span>}
+                  </div>
+                  <div style={{ fontSize:13.5, fontWeight:600, color:INK, marginBottom:4 }}>{p.tagline}</div>
+                  <div style={{ fontSize:12.5, color:SLATE, lineHeight:1.55, marginBottom:18, minHeight:36 }}>
+                    {p.note}
+                  </div>
+                </div>
+                <div style={{ padding:"0 22px", flex:1 }}>
+                  <ul style={{ listStyle:"none", padding:0, margin:0, display:"flex",
+                    flexDirection:"column", gap:9 }}>
+                    {p.features.map(f => (
+                      <li key={f} style={{ display:"flex", gap:9, fontSize:13, lineHeight:1.5 }}>
+                        <span style={{ color:GREEN, flexShrink:0, fontWeight:700 }}>✓</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div style={{ padding:22 }}>
+                  <Link href="/auth/signup"
+                    style={{ display:"block", textAlign:"center", padding:"11px", borderRadius:9,
+                      background: p.featured ? AMBER : NAVY, color: p.featured ? NAVY : "#fff",
+                      fontSize:13.5, fontWeight:700, textDecoration:"none" }}>
+                    {p.cta}
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* ── Enterprise ── */}
-          <div style={{marginTop:28,background:"#0D1B2A",borderRadius:14,padding:"28px 32px",
-            display:"flex",alignItems:"center",justifyContent:"space-between",gap:24,flexWrap:"wrap"}}>
-            <div style={{flex:1,minWidth:260}}>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",
-                color:"#F59E0B",marginBottom:8}}>
-                Enterprise
+          {/* Enterprise */}
+          <div className="fs-band" style={{ marginTop:20, background:"#fff", border:`1px solid ${LINE}`,
+            borderLeft:`3px solid ${NAVY}`, borderRadius:14, padding:"24px 28px" }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".08em",
+                textTransform:"uppercase", color:NAVY, marginBottom:8 }}>Enterprise</div>
+              <div style={{ fontSize:17, fontWeight:700, marginBottom:8, lineHeight:1.3 }}>
+                Running a portfolio, or a regulated program?
               </div>
-              <div style={{fontSize:20,fontWeight:700,color:"#fff",marginBottom:8,lineHeight:1.3}}>
-                Running a PMO, a portfolio, or a regulated program?
-              </div>
-              <div style={{fontSize:13.5,color:"rgba(255,255,255,.65)",lineHeight:1.65,maxWidth:520}}>
-                Custom pricing, SSO and directory sync, white-labeling, a data processing agreement,
-                and personal onboarding — set up by the person who built the platform.
-                Your team and stakeholders come in bundles, so you only pay for the people who
-                actually drive the work.
+              <div style={{ fontSize:13.5, color:SLATE, lineHeight:1.65, maxWidth:560 }}>
+                Custom pricing, directory sync and advanced SSO, white-labeling, a Data Processing
+                Agreement, custom terms — and onboarding run by the person who built the platform.
               </div>
             </div>
             <button onClick={() => setDemoOpen(true)}
-              style={{padding:"13px 26px",background:"#F59E0B",color:"#0D1B2A",border:"none",
-                borderRadius:9,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
-                whiteSpace:"nowrap",flexShrink:0}}>
+              style={{ padding:"13px 26px", background:NAVY, color:"#fff", border:"none",
+                borderRadius:9, fontSize:14, fontWeight:700, cursor:"pointer",
+                fontFamily:"inherit", whiteSpace:"nowrap", flexShrink:0 }}>
               Request a demo →
             </button>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section style={{padding:"96px 0",background:"#F1F5F9"}} id="faq">
-        <div style={{maxWidth:740,margin:"0 auto",padding:"0 24px"}}>
-          <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",color:"#F59E0B",marginBottom:10}}>
-            Common questions
-          </div>
-          <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,letterSpacing:"-.02em",
-            color:"var(--text,#0F172A)",marginBottom:40}}>
+      {/* ── FAQ ───────────────────────────────────────────────── */}
+      <section id="faq" style={{ padding:"84px 0", background:"#fff" }}>
+        <div style={{ maxWidth:800, margin:"0 auto", padding:"0 24px" }}>
+          <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+            textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
             FAQ
+          </div>
+          <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+            letterSpacing:"-.025em", marginBottom:32 }}>
+            Questions worth answering
           </h2>
-          <div style={{border:"1px solid #E2E8F0",borderRadius:10,overflow:"hidden"}}>
-            {FAQS.map((faq,i)=>(
-              <div key={i} style={{borderBottom:i<FAQS.length-1?"1px solid #E2E8F0":"none"}}>
-                <button onClick={()=>setOpenFaq(openFaq===i?null:i)}
-                  style={{width:"100%",padding:"20px 24px",display:"flex",alignItems:"center",
-                    justifyContent:"space-between",gap:16,cursor:"pointer",fontFamily:"inherit",
-                    fontSize:15,fontWeight:500,color:"var(--text,#0F172A)",background:"#fff",
-                    border:"none",textAlign:"left",transition:"background .15s"}}
-                  onMouseOver={e=>(e.currentTarget.style.background="#F8FAFC")}
-                  onMouseOut={e=>(e.currentTarget.style.background="#fff")}>
-                  {faq.q}
-                  <span style={{fontSize:18,color:"#94A3B8",transition:"transform .2s",flexShrink:0,
-                    transform:openFaq===i?"rotate(180deg)":"none"}}>▾</span>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+            {FAQS.map((f, i) => (
+              <div key={f.q} style={{ borderBottom:`1px solid ${LINE}` }}>
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  style={{ width:"100%", display:"flex", alignItems:"center", gap:14,
+                    padding:"18px 4px", background:"none", border:"none", cursor:"pointer",
+                    textAlign:"left", fontFamily:"inherit" }}>
+                  <span style={{ fontSize:15, fontWeight:600, color:INK, flex:1, lineHeight:1.4 }}>{f.q}</span>
+                  <span aria-hidden style={{ fontSize:18, color:MUTED, flexShrink:0,
+                    transform: openFaq === i ? "rotate(45deg)" : "none", transition:"transform .18s" }}>+</span>
                 </button>
-                {openFaq===i&&(
-                  <div style={{fontSize:14,lineHeight:1.7,color:"#64748B",
-                    padding:"0 24px 20px",borderTop:"1px solid #F1F5F9"}}>
-                    {faq.a}
+                {openFaq === i && (
+                  <div style={{ padding:"0 4px 20px", fontSize:14, color:SLATE, lineHeight:1.7, maxWidth:680 }}>
+                    {f.a}
                   </div>
                 )}
               </div>
@@ -522,99 +551,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section style={{background:"#0D1B2A",padding:"96px 0",textAlign:"center",position:"relative",overflow:"hidden"}}
-        id="waitlist">
-        <div style={{position:"absolute",inset:0,
-          background:"radial-gradient(ellipse 60% 80% at 50% 100%,rgba(27,108,168,.2) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px",position:"relative"}}>
-          <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",
-            color:"#F59E0B",textAlign:"center",marginBottom:10}}>
-            Start free
-          </div>
-          <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,color:"#fff",
-            letterSpacing:"-.02em",marginBottom:12}}>
-            Your PMO deserves better tools
+      {/* ── FINAL CTA ─────────────────────────────────────────── */}
+      <section style={{ background:NAVY, padding:"84px 0", textAlign:"center",
+        position:"relative", overflow:"hidden" }}>
+        <div aria-hidden style={{ position:"absolute", inset:0,
+          background:"radial-gradient(ellipse 60% 80% at 50% 100%, rgba(27,108,168,.22) 0%, transparent 70%)",
+          pointerEvents:"none" }} />
+        <div style={{ maxWidth:640, margin:"0 auto", padding:"0 24px", position:"relative" }}>
+          <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, color:"#fff",
+            letterSpacing:"-.025em", marginBottom:14, lineHeight:1.18 }}>
+            Bring a real plan. See it running.
           </h2>
-          <p style={{fontSize:16,color:"rgba(255,255,255,.5)",marginBottom:32,lineHeight:1.65,
-            maxWidth:420,margin:"0 auto 32px"}}>
-            Two months free, the whole product. Import one of your real project plans and see it running in 30 seconds.
+          <p style={{ fontSize:16, color:"rgba(255,255,255,.5)", marginBottom:30, lineHeight:1.65 }}>
+            Two months free, the whole product. The fastest way to judge this is to upload a project
+            document you already have and watch what comes back.
           </p>
-          <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:14,flexWrap:"wrap"}}>
+          <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
             <Link href="/auth/signup"
-              style={{padding:"14px 28px",background:"#F59E0B",color:"#0D1B2A",borderRadius:10,
-                fontSize:14,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap"}}>
+              style={{ padding:"14px 28px", background:AMBER, color:NAVY, borderRadius:10,
+                fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
               Start free trial →
             </Link>
-            <button onClick={()=>setDemoOpen(true)}
-              style={{padding:"14px 24px",background:"rgba(255,255,255,.06)",color:"#fff",
-                border:"1.5px solid rgba(255,255,255,.15)",borderRadius:10,fontSize:14,
-                fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+            <button onClick={() => setDemoOpen(true)}
+              style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
+                border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
+                fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
               Request a demo
             </button>
           </div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.3)",textAlign:"center"}}>
-            Free for 2 months · Cancel any time before it converts · Bilingual EN / ES
-          </div>
+          <p style={{ fontSize:12.5, color:"rgba(255,255,255,.3)" }}>
+            Free for two months · Cancel before it converts · English and Español
+          </p>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{background:"#080F17",borderTop:"1px solid rgba(255,255,255,.05)",padding:"56px 0 32px"}}>
-        <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:40,marginBottom:48}}>
-            <div>
-              <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:12}}>
-                <div style={{width:28,height:28,background:"#1B6CA8",borderRadius:7,position:"relative",flexShrink:0}}>
-                  <div style={{position:"absolute",width:13,height:2,background:"#fff",top:8,left:7,borderRadius:2}}/>
-                  <div style={{position:"absolute",width:8,height:2,background:"#F59E0B",top:13,left:7,borderRadius:2}}/>
-                </div>
-                <span style={{fontWeight:700,fontSize:14,color:"#fff"}}>FlowSync <span style={{color:"#F59E0B"}}>PM</span></span>
-              </div>
-              <p style={{fontSize:13,color:"rgba(255,255,255,.35)",lineHeight:1.65,maxWidth:240,margin:"0 0 12px"}}>
-                Enterprise project management for PMOs, portfolios, and multi-project organizations.
-              </p>
-              <div style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:11,fontWeight:600,
-                padding:"4px 10px",borderRadius:5,background:"rgba(5,150,105,.15)",color:"#34D399"}}>
-                🔒 Enterprise-ready
-              </div>
-            </div>
-            {[
-              { title:"Product",  links:["Features","Pricing","Templates","Changelog","API docs"] },
-              { title:"Solutions",links:["PMO & Enterprise","Portfolio & Programs","Consultants","IT & Cloud"] },
-              { title:"Company",  links:["About","Contact sales","Support","Privacy policy","Terms"] },
-            ].map(col=>(
-              <div key={col.title}>
-                <div style={{fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",
-                  color:"rgba(255,255,255,.3)",marginBottom:14}}>
-                  {col.title}
-                </div>
-                {col.links.map(l=>(
-                  <a key={l} href="#"
-                    style={{display:"block",fontSize:13,color:"rgba(255,255,255,.45)",
-                      textDecoration:"none",marginBottom:10,transition:"color .15s"}}
-                    onMouseOver={e=>(e.currentTarget.style.color="rgba(255,255,255,.8)")}
-                    onMouseOut={e=>(e.currentTarget.style.color="rgba(255,255,255,.45)")}>
-                    {l}
-                  </a>
-                ))}
-              </div>
-            ))}
+      {/* ── FOOTER ────────────────────────────────────────────── */}
+      <footer style={{ background:NAVY, borderTop:"1px solid rgba(255,255,255,.08)", padding:"36px 0" }}>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px",
+          display:"flex", gap:20, alignItems:"center", flexWrap:"wrap" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <div style={{ width:22, height:22, borderRadius:6, background:STEEL, color:"#fff",
+              display:"grid", placeItems:"center", fontSize:11, fontWeight:800 }}>F</div>
+            <span style={{ color:"#fff", fontWeight:700, fontSize:13.5 }}>FlowSync PM</span>
           </div>
-          <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:24,
-            display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.25)"}}>© 2026 FlowSync PM. All rights reserved.</div>
-            <div style={{display:"flex",gap:20}}>
-              {["Privacy","Terms","Security","Status"].map(l=>(
-                <a key={l} href="#" style={{fontSize:12,color:"rgba(255,255,255,.25)",textDecoration:"none"}}>
-                  {l}
-                </a>
-              ))}
-            </div>
+          <div style={{ display:"flex", gap:18, marginLeft:"auto", flexWrap:"wrap" }}>
+            <Link href="/pricing" className="fs-link"
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Pricing</Link>
+            <Link href="/legal/terms" className="fs-link"
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Terms</Link>
+            <Link href="/legal/dpa" className="fs-link"
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>DPA</Link>
+            <Link href="/auth/signin" className="fs-link"
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Sign in</Link>
+          </div>
+          <div style={{ fontSize:11.5, color:"rgba(255,255,255,.25)", width:"100%" }}>
+            © 2026 FlowSync PM · Built for PMOs, in English and Español
           </div>
         </div>
       </footer>
+
       <RequestDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} source="landing" />
     </div>
   )

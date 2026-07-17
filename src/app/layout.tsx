@@ -2,11 +2,22 @@
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getMessages } from "next-intl/server"
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+
+// IBM Plex was commissioned for engineering and enterprise software — it carries
+// more character than a neutral grotesque without losing the register PMO buyers
+// expect. Plex Mono renders the artifacts project work is actually made of:
+// WBS codes, project codes, CPI figures.
+const plex = IBM_Plex_Sans({
+  subsets: ['latin'], weight: ['500','600','700'], variable: '--font-plex',
+})
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'], weight: ['400','500','600'], variable: '--font-plex-mono',
+})
 
 const SITE = process.env.NEXT_PUBLIC_APP_URL || 'https://flowsyncpm.com'
 const DESC = 'FlowSync PM is an enterprise project management platform for PMOs and multi-project organizations — plan with Gantt and WBS, track budgets and EVM, manage risks, and generate AI-powered status reports.'
@@ -46,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale()
   const messages = await getMessages()
   return (
-    <html lang={locale} translate="no" className={inter.variable}>
+    <html lang={locale} translate="no" className={`${inter.variable} ${plex.variable} ${plexMono.variable}`}>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
