@@ -39,22 +39,22 @@ const PLANS = [
     cta:"Start free trial", ctaStyle:"steel" },
   { name:"Business", price:39, ea:null, color:"var(--text)", featured:true,
     desc:"For PMOs. Pay for the people who drive the work — everyone else comes in bundles.",
-    features:["Everything in Starter","$50/mo per 10 contributor seats","Portfolio & program hierarchy","SSO — Microsoft & Google","Executive dashboard","Full governance suite","Email support"],
+    features:["Everything in Starter","$20/mo per 10 contributor seats","Portfolio & program hierarchy","SSO — Microsoft & Google","Executive dashboard","Full governance suite","Email support"],
     missing:[],
     cta:"Start free trial", ctaStyle:"amber" },
 ]
 
 const FAQS = [
-  { q:"When does FlowSync PM launch publicly?",
-    a:"We're in a limited early access program now. Waitlist members get access 4–6 weeks ahead of public launch with founding member pricing locked for life. Public launch is planned for Q4 2026." },
+  { q:"Can I try it before paying?",
+    a:"Yes. Every account starts with a two-month free trial of the full product — no feature limits. We ask for a card at sign-up so the trial converts to Starter automatically when it ends; cancel any time before then and you're not charged." },
   { q:"Does it really support Waterfall, Agile, and Scrum in one workspace?",
     a:"Yes — all three share the same underlying data model. A Waterfall project shows phases and a Gantt. Agile shows a backlog and sprint board. Scrum adds ceremonies and velocity. You can run all three simultaneously." },
   { q:"How deep is the Microsoft 365 integration?",
     a:"FlowSync PM connects to Microsoft 365 via the Graph API — emails, Teams meetings, and Planner tasks sync automatically with your projects. This is a native integration, not a Zapier connector." },
   { q:"Is it suitable for regulated industries?",
     a:"Yes. The platform includes a comprehensive audit log, consent tracking, document watermarking, and role-based data controls. Pre-built compliance templates are available for Business and Enterprise plans." },
-  { q:"What happens to my early access price at launch?",
-    a:"Your early access rate is locked for life — as long as your subscription stays active. This is a genuine founding member benefit confirmed in writing at signup." },
+  { q:"Do I pay for everyone on the team?",
+    a:"No. On Business you pay per user only for the roles that drive and govern the work — sponsors, PMO directors, program and project managers, product owners, PMO analysts. Everyone who contributes or just needs visibility — team members, stakeholders, clients, external resources — comes in bundles at $20/mo per 10 people." },
 ]
 
 const GANTT_BARS = [
@@ -140,11 +140,11 @@ export default function LandingPage() {
               style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none",padding:"0 12px"}}>
               Sign in
             </Link>
-            <a href="#waitlist"
+            <Link href="/auth/signup"
               style={{padding:"8px 16px",background:"#F59E0B",color:"#0D1B2A",borderRadius:8,
                 fontSize:13,fontWeight:700,textDecoration:"none"}}>
-              Get early access
-            </a>
+              Start free trial
+            </Link>
           </div>
         </div>
       </nav>
@@ -165,7 +165,7 @@ export default function LandingPage() {
                 borderRadius:20,marginBottom:24,letterSpacing:".05em"}}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:"#F59E0B",
                   animation:"pulse 2s infinite"}}/>
-                Early access now open
+                Live now · Free for 2 months
               </div>
               <h1 style={{fontFamily:"inherit",fontSize:"clamp(36px,5vw,62px)",fontWeight:700,
                 lineHeight:1.08,letterSpacing:"-.03em",color:"#fff",marginBottom:20}}>
@@ -174,29 +174,20 @@ export default function LandingPage() {
               <p style={{fontSize:17,lineHeight:1.7,color:"rgba(255,255,255,.55)",marginBottom:36,maxWidth:480}}>
                 Waterfall, Agile, and Scrum in one platform. Built-in M365 integration, EVM budget tracking, enterprise audit logs, and AI-generated status reports.
               </p>
-              {!joined?(
-                <form onSubmit={e=>handleWaitlist(e,"hero")}
-                  style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-                  <input type="email" required placeholder="you@organization.com" value={email}
-                    onChange={e=>setEmail(e.target.value)}
-                    style={{flex:1,minWidth:220,padding:"14px 18px",
-                      border:"1.5px solid rgba(255,255,255,.15)",borderRadius:10,
-                      background:"rgba(255,255,255,.06)",color:"#fff",fontSize:14,
-                      fontFamily:"inherit",outline:"none"}} />
-                  <button type="submit"
-                    style={{padding:"14px 24px",background:"#F59E0B",color:"#0D1B2A",border:"none",
-                      borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
-                      whiteSpace:"nowrap"}}>
-                    Join the waitlist →
-                  </button>
-                </form>
-              ):(
-                <div style={{background:"rgba(5,150,105,.15)",border:"1px solid rgba(5,150,105,.3)",
-                  borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:14,
-                  color:"#34D399",display:"flex",alignItems:"center",gap:8}}>
-                  🎉 You're on the list! We'll be in touch soon.
-                </div>
-              )}
+              <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+                <Link href="/auth/signup"
+                  style={{padding:"14px 26px",background:"#F59E0B",color:"#0D1B2A",
+                    borderRadius:10,fontSize:14,fontWeight:700,textDecoration:"none",
+                    whiteSpace:"nowrap"}}>
+                  Start free trial →
+                </Link>
+                <button onClick={()=>setDemoOpen(true)}
+                  style={{padding:"14px 24px",background:"rgba(255,255,255,.06)",color:"#fff",
+                    border:"1.5px solid rgba(255,255,255,.15)",borderRadius:10,fontSize:14,
+                    fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  Request a demo
+                </button>
+              </div>
               <div style={{fontSize:12,color:"rgba(255,255,255,.3)",display:"flex",alignItems:"center",gap:6}}>
                 🔒 No credit card. No spam. Unsubscribe any time.
               </div>
@@ -375,14 +366,14 @@ export default function LandingPage() {
       <section style={{padding:"96px 0"}} id="pricing">
         <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px"}}>
           <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",color:"#F59E0B",marginBottom:10}}>
-            Early access pricing
+            Get started
           </div>
           <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,lineHeight:1.2,letterSpacing:"-.02em",
             color:"var(--text,#0F172A)",marginBottom:12}}>
-            Lock in founding rates before we launch
+            Start running projects properly
           </h2>
           <p style={{fontSize:17,color:"#64748B",marginBottom:40,maxWidth:520,lineHeight:1.7}}>
-            Join the waitlist now and get early access pricing locked for life.
+            Two months free, the whole product. Import a real plan and see it working in 30 seconds.
           </p>
           {/* Early banner */}
           <div style={{background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.2)",
@@ -391,10 +382,10 @@ export default function LandingPage() {
             <span style={{fontSize:22}}>⚡</span>
             <div style={{flex:1}}>
               <div style={{fontSize:14,fontWeight:600,color:"var(--text,#0F172A)",marginBottom:2}}>
-                Early access is open now
+                You only pay for the people who drive the work
               </div>
               <div style={{fontSize:13,color:"#64748B"}}>
-                First 200 seats get founding member pricing — 40% below launch rates, locked for life.
+                Managers and sponsors are paid seats. Your team, stakeholders and clients come in bundles — $20/mo per 10.
               </div>
             </div>
             <div style={{fontSize:12,fontWeight:700,padding:"5px 14px",borderRadius:6,
@@ -424,16 +415,16 @@ export default function LandingPage() {
                   ${plan.ea||plan.price}
                   {plan.price>0&&<span style={{fontSize:18,fontWeight:400,opacity:.6}}>/mo</span>}
                 </div>
-                {plan.ea&&(
+                {plan.price>0&&(
                   <div style={{fontSize:12,color:plan.featured?"rgba(255,255,255,.4)":"#64748B",marginBottom:6}}>
-                    Early access · ${plan.price}/mo at launch
+                    per user · billed monthly
                   </div>
                 )}
-                {plan.ea&&(
+                {plan.name==="Trial"&&(
                   <div style={{fontSize:12,fontWeight:600,padding:"3px 9px",borderRadius:5,
-                    background:"rgba(245,158,11,.1)",color:"#D97706",
+                    background:"rgba(5,150,105,.1)",color:"#059669",
                     display:"inline-block",marginBottom:16}}>
-                    Save {Math.round((1-plan.ea/plan.price)*100)}% as founding member
+                    2 months free, then $19/user
                   </div>
                 )}
                 {!plan.ea&&<div style={{marginBottom:plan.featured?0:16}}/>}
@@ -540,7 +531,7 @@ export default function LandingPage() {
         <div style={{maxWidth:1180,margin:"0 auto",padding:"0 24px",position:"relative"}}>
           <div style={{fontSize:11,fontWeight:600,letterSpacing:".12em",textTransform:"uppercase",
             color:"#F59E0B",textAlign:"center",marginBottom:10}}>
-            Get early access
+            Start free
           </div>
           <h2 style={{fontSize:"clamp(24px,3.5vw,40px)",fontWeight:600,color:"#fff",
             letterSpacing:"-.02em",marginBottom:12}}>
@@ -548,34 +539,23 @@ export default function LandingPage() {
           </h2>
           <p style={{fontSize:16,color:"rgba(255,255,255,.5)",marginBottom:32,lineHeight:1.65,
             maxWidth:420,margin:"0 auto 32px"}}>
-            Join the waitlist. Get early access before public launch and lock in founding member pricing.
+            Two months free, the whole product. Import one of your real project plans and see it running in 30 seconds.
           </p>
-          {!joined2?(
-            <form onSubmit={e=>handleWaitlist(e,"cta")}
-              style={{display:"flex",gap:8,maxWidth:460,margin:"0 auto 12px",flexWrap:"wrap",justifyContent:"center"}}>
-              <input type="email" required placeholder="Work email address" value={email2}
-                onChange={e=>setEmail2(e.target.value)}
-                style={{flex:1,minWidth:200,padding:"14px 18px",
-                  border:"1.5px solid rgba(255,255,255,.15)",borderRadius:10,
-                  background:"rgba(255,255,255,.06)",color:"#fff",fontSize:14,
-                  fontFamily:"inherit",outline:"none"}} />
-              <button type="submit"
-                style={{padding:"14px 24px",background:"#F59E0B",color:"#0D1B2A",border:"none",
-                  borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
-                  whiteSpace:"nowrap"}}>
-                Reserve my spot →
-              </button>
-            </form>
-          ):(
-            <div style={{background:"rgba(5,150,105,.15)",border:"1px solid rgba(5,150,105,.3)",
-              borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:14,
-              color:"#34D399",maxWidth:460,margin:"0 auto 14px",display:"flex",alignItems:"center",gap:8,
-              justifyContent:"center"}}>
-              🎉 You're on the list! We'll be in touch soon.
-            </div>
-          )}
+          <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:14,flexWrap:"wrap"}}>
+            <Link href="/auth/signup"
+              style={{padding:"14px 28px",background:"#F59E0B",color:"#0D1B2A",borderRadius:10,
+                fontSize:14,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap"}}>
+              Start free trial →
+            </Link>
+            <button onClick={()=>setDemoOpen(true)}
+              style={{padding:"14px 24px",background:"rgba(255,255,255,.06)",color:"#fff",
+                border:"1.5px solid rgba(255,255,255,.15)",borderRadius:10,fontSize:14,
+                fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+              Request a demo
+            </button>
+          </div>
           <div style={{fontSize:12,color:"rgba(255,255,255,.3)",textAlign:"center"}}>
-            {spots} spots remaining at early access pricing · No credit card required
+            Free for 2 months · Cancel any time before it converts · Bilingual EN / ES
           </div>
         </div>
       </section>

@@ -42,7 +42,7 @@ const TIERS = [
     badge:"MOST POPULAR",
     features:[
       "Everything in Starter",
-      "$50/mo per 10 contributor & viewer seats",
+      "$20/mo per 10 contributor & viewer seats",
       "Portfolio & program hierarchy",
       "Executive dashboard & approvals",
       "Resource workload engine",
