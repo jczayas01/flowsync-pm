@@ -23,7 +23,20 @@ export async function getOrCreateCustomer(
     select: { stripeCustomerId: true, name: true },
   })
 
-  if (workspace?.stripeCustomerId) return workspace.stripeCustomerId
+  // A stored id is only trustworthy if it exists under the CURRENT key's mode.
+  // Test and live are separate universes: an id created under one key doesn't
+  // exist under the other. This happens in real life whenever keys are swapped —
+  // during setup like today, and again on the eventual test→live cutover — so we
+  // verify and self-heal instead of trusting the stored value blindly.
+  if (workspace?.stripeCustomerId) {
+    try {
+      const existing = await stripe.customers.retrieve(workspace.stripeCustomerId)
+      if (!(existing as { deleted?: boolean }).deleted) return workspace.stripeCustomerId
+    } catch (e: any) {
+      if (e?.code !== "resource_missing") throw e
+      console.warn(`[Stripe] customer ${workspace.stripeCustomerId} not in this mode — creating a fresh one`)
+    }
+  }
 
   const customer = await stripe.customers.create({
     email,
