@@ -102,7 +102,7 @@ export function PricingPage() {
       <nav style={{ background:"#1a3a5c", padding:"0 40px", height:60,
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Link href="/" style={{ fontSize:18, fontWeight:800, color:"#fff", textDecoration:"none" }}>
-          FlowSync <span style={{ color:"#60A5FA" }}>PM</span>
+          FlowSync <span style={{ color:"#F59E0B" }}>PM</span>
         </Link>
         <div style={{ display:"flex", gap:20, alignItems:"center" }}>
           <Link href="/dashboard" style={{ fontSize:13, color:"rgba(255,255,255,.7)", textDecoration:"none" }}>Dashboard</Link>

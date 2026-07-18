@@ -9,6 +9,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
+import { LogoMark, Wordmark } from "@/components/shared/Logo"
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669"
@@ -136,9 +137,8 @@ export default function LandingPage() {
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px", height:60,
           display:"flex", alignItems:"center", gap:8 }}>
           <Link href="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", marginRight:14 }}>
-            <div style={{ width:26, height:26, borderRadius:7, background:STEEL, color:"#fff",
-              display:"grid", placeItems:"center", fontSize:13, fontWeight:800 }}>F</div>
-            <span style={{ color:"#fff", fontWeight:700, fontSize:15, letterSpacing:"-.01em" }}>FlowSync PM</span>
+            <LogoMark size={26} radius={7} />
+            <Wordmark size={15} />
           </Link>
 
           <div style={{ display:"flex", gap:2, marginRight:"auto" }}>
@@ -590,9 +590,8 @@ export default function LandingPage() {
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px",
           display:"flex", gap:20, alignItems:"center", flexWrap:"wrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-            <div style={{ width:22, height:22, borderRadius:6, background:STEEL, color:"#fff",
-              display:"grid", placeItems:"center", fontSize:11, fontWeight:800 }}>F</div>
-            <span style={{ color:"#fff", fontWeight:700, fontSize:13.5 }}>FlowSync PM</span>
+            <LogoMark size={22} radius={6} />
+            <Wordmark size={13.5} />
           </div>
           <div style={{ display:"flex", gap:18, marginLeft:"auto", flexWrap:"wrap" }}>
             <Link href="/pricing" className="fs-link"

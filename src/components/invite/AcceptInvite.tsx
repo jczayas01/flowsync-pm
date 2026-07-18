@@ -1,5 +1,6 @@
 "use client"
 // src/components/invite/AcceptInvite.tsx
+import { LogoMark, Wordmark } from "@/components/shared/Logo"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, signIn } from "next-auth/react"
@@ -66,8 +67,10 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
   return (
     <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
       <div style={card}>
-        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4, color: "#0D1B2A" }}>
-          FlowSync <span style={{ color: "#F59E0B" }}>PM</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
+          gap: 9, marginBottom: 6 }}>
+          <LogoMark size={26} radius={7} />
+          <Wordmark size={18} tone="light" />
         </div>
 
         {state === "not_found" && (

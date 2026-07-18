@@ -1,4 +1,5 @@
 // src/components/auth/AuthShell.tsx
+import { LogoMark, Wordmark } from "@/components/shared/Logo"
 import Link from 'next/link'
 
 export function AuthShell({
@@ -12,16 +13,8 @@ export function AuthShell({
         <div style={{ width:'100%', maxWidth:400 }}>
           <Link href="/" style={{ display:'flex', alignItems:'center', gap:8,
             textDecoration:'none', marginBottom:40 }}>
-            <div style={{ width:32, height:32, background:'var(--steel)', borderRadius:8,
-              position:'relative', flexShrink:0 }}>
-              <div style={{ position:'absolute', width:15, height:3, background:'#fff',
-                top:9, left:8, borderRadius:2 }} />
-              <div style={{ position:'absolute', width:10, height:3, background:'var(--amber)',
-                top:15, left:8, borderRadius:2 }} />
-            </div>
-            <span style={{ fontWeight:700, fontSize:16, color:'#fff' }}>
-              FlowSync <span style={{ color:'var(--amber)' }}>PM</span>
-            </span>
+            <LogoMark size={32} radius={8} />
+            <Wordmark size={16} />
           </Link>
           <h1 style={{ fontSize:24, fontWeight:600, color:'#fff', marginBottom:8 }}>{title}</h1>
           <p style={{ fontSize:14, color:'rgba(255,255,255,.5)', marginBottom:32, lineHeight:1.6 }}>

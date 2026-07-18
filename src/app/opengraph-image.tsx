@@ -21,13 +21,19 @@ export default async function Image() {
       >
         {/* Wordmark */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* The mark from icon.svg — three staggered bars, a Gantt chart.
+              Rebuilt with divs because ImageResponse doesn't render <svg>. */}
           <div style={{
-            width: 52, height: 52, borderRadius: 13, background: '#1B6CA8',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 30, fontWeight: 800,
-          }}>F</div>
-          <div style={{ color: '#fff', fontSize: 30, fontWeight: 700, letterSpacing: -0.5 }}>
-            FlowSync PM
+            width: 52, height: 52, borderRadius: 13, background: '#132538',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            gap: 4, padding: '0 10px',
+          }}>
+            <div style={{ width: 23, height: 6, borderRadius: 3, background: '#F59E0B' }} />
+            <div style={{ width: 26, height: 6, borderRadius: 3, background: '#1B6CA8', marginLeft: 6 }} />
+            <div style={{ width: 16, height: 6, borderRadius: 3, background: '#E2E8F0' }} />
+          </div>
+          <div style={{ display: 'flex', color: '#fff', fontSize: 30, fontWeight: 700, letterSpacing: -0.5 }}>
+            FlowSync&nbsp;<span style={{ color: '#F59E0B' }}>PM</span>
           </div>
         </div>
 
