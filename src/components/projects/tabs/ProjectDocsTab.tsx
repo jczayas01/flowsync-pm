@@ -147,6 +147,9 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [aiResult, setAiResult] = useState<any>(null)
   const [aiError, setAiError] = useState("")
   const [aiUpsell, setAiUpsell] = useState(false)   // scanned PDF hit by a non-Business plan
+  const [aiApplySel, setAiApplySel] = useState<Set<number>>(new Set())
+  const [aiApplying, setAiApplying] = useState(false)
+  const [aiApplied, setAiApplied] = useState<null | { created: any[]; failed: any[] }>(null)
   const [aiUploading, setAiUploading] = useState(false)
 
   // ── Analyze stored project documents (multi-select) ──
@@ -234,6 +237,28 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   }
 
 
+  async function applySuggestions() {
+    if (!aiResult?.suggestions?.length || !aiApplySel.size) return
+    setAiApplying(true); setAiApplied(null)
+    try {
+      const items = aiResult.suggestions
+        .filter((_: any, i: number) => aiApplySel.has(i))
+        .map((sg: any) => ({
+          type: sg.type, title: sg.title, description: sg.description,
+          priority: sg.priority, suggested_due_date: sg.suggested_due_date,
+          suggested_assignee: sg.suggested_assignee,
+        }))
+      const res = await fetch(`/api/projects/${projectId}/ai-analyze/apply?workspaceId=${workspaceId}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setAiError(data?.error || `Couldn't add items (${res.status})`); return }
+      setAiApplied(data.data)
+    } catch { setAiError("Connection lost — try again") }
+    finally { setAiApplying(false) }
+  }
+
   // Report generator
   const weekStart = new Date()
   weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
@@ -260,6 +285,8 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       if (!res.ok) { setAiError(data?.error || `Request failed (${res.status}) — try again`); return }
       if (!data)   { setAiError("Empty response from server — try again"); return }
       setAiResult(data.data)
+      setAiApplySel(new Set((data.data?.suggestions || []).map((_: any, i: number) => i)))
+      setAiApplied(null)
     } catch { setAiError("Connection lost — check your internet and try again") }
     finally { setAiAnalyzing(false) }
   }
@@ -828,13 +855,22 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                         </div>
                         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                           {aiResult.suggestions.map((s: any, i: number) => (
-                            <div key={i} style={{ background:"#fff", border:"1px solid var(--border)",
-                              borderRadius:"var(--radius)", padding:"10px 14px",
+                            <div key={i} onClick={() => {
+                                const next = new Set(aiApplySel)
+                                next.has(i) ? next.delete(i) : next.add(i)
+                                setAiApplySel(next)
+                              }}
+                              style={{ background:"#fff",
+                              border: aiApplySel.has(i) ? "1px solid var(--steel)" : "1px solid var(--border)",
+                              borderRadius:"var(--radius)", padding:"10px 14px", cursor:"pointer",
+                              opacity: aiApplySel.has(i) ? 1 : .55,
                               borderLeft:`3px solid ${
                                 s.type==="risk"?"var(--red)":
                                 s.type==="task"?"var(--steel)":"var(--amber)"
                               }` }}>
                               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                                <input type="checkbox" readOnly checked={aiApplySel.has(i)}
+                                  style={{ accentColor:"var(--steel)", pointerEvents:"none" }} />
                                 <span style={{ fontSize:10, fontWeight:700, padding:"2px 7px",
                                   borderRadius:4, textTransform:"uppercase", letterSpacing:".05em",
                                   background:"var(--surface)", color:"var(--text-3)" }}>
@@ -867,6 +903,33 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                               )}
                             </div>
                           ))}
+                        </div>
+
+                        {/* Send the selected items into the project */}
+                        <div style={{ marginTop:12 }}>
+                          {aiApplied ? (
+                            <div style={{ background:"#F0FDF4", border:"1px solid #BBF7D0",
+                              borderRadius:"var(--radius)", padding:"11px 14px", fontSize:12.5,
+                              color:"#166534", lineHeight:1.6 }}>
+                              ✓ Added to this project:{" "}
+                              {aiApplied.created.map((c:any) => `${c.code} (${c.type})`).join(", ")}
+                              {aiApplied.failed.length > 0 &&
+                                ` — ${aiApplied.failed.length} couldn't be created`}
+                              <div style={{ color:"#15803D", marginTop:4, fontSize:11.5 }}>
+                                Find them in the Tasks, Risks, Issues and Decisions tabs.
+                              </div>
+                            </div>
+                          ) : (
+                            <button onClick={applySuggestions}
+                              disabled={aiApplying || !aiApplySel.size}
+                              style={{ padding:"10px 20px", background:"var(--steel)", color:"#fff",
+                                border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:600,
+                                cursor: aiApplying ? "wait" : "pointer",
+                                opacity: aiApplySel.size ? 1 : .5 }}>
+                              {aiApplying ? "Adding…" :
+                                `➕ Add ${aiApplySel.size} selected to project`}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
