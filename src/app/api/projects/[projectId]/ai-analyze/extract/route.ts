@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
 import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
+import { ocrScannedPdf, OCR_MONTHLY_PAGE_CAP } from "@/lib/ocr"
 
 const MAX_CHARS = 20000
 const PER_DOC_CHARS = 8000
@@ -36,6 +37,9 @@ export async function POST(
     const ids: string[] = Array.isArray(body?.documentIds) ? body.documentIds.filter(Boolean) : []
     if (!ids.length) return NextResponse.json({ error: "No documents selected" }, { status: 400 })
 
+    const ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+    const plan = ws?.plan || "FREE"
+
     const docs = await db.document.findMany({
       where: { projectId: params.projectId, id: { in: ids } },
       orderBy: { createdAt: "desc" },
@@ -59,15 +63,36 @@ export async function POST(
           failed.push({ name: d.name, reason: "couldn't download from storage" })
           continue
         }
-        const t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC_CHARS)
+        let t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC_CHARS)
+        let viaOcr = false
+        if (!t.trim() && d.name.toLowerCase().endsWith(".pdf")) {
+          // Scanned PDF — no text layer. Business+ gets AI transcription;
+          // Starter gets the upgrade moment.
+          const ocr = await ocrScannedPdf({
+            buf, docName: d.name, workspaceId, userId: session.user.id, plan,
+          })
+          if (ocr.ok) {
+            t = ocr.text.slice(0, PER_DOC_CHARS)
+            viaOcr = true
+          } else if (ocr.reason === "plan") {
+            failed.push({ name: d.name,
+              reason: "scanned PDF — AI reading of scans is included in the Business plan" })
+            ;(failed as any).upsell = true
+            continue
+          } else if (ocr.reason === "cap") {
+            failed.push({ name: d.name,
+              reason: `scanned PDF — this workspace has used its ${OCR_MONTHLY_PAGE_CAP} AI-read pages this month` })
+            continue
+          } else {
+            failed.push({ name: d.name, reason: "scanned PDF — AI couldn't read these pages" })
+            continue
+          }
+        }
         if (!t.trim()) {
-          failed.push({ name: d.name,
-            reason: d.name.toLowerCase().endsWith(".pdf")
-              ? "no text found — this PDF looks like a scan (images only)"
-              : "no readable text found" })
+          failed.push({ name: d.name, reason: "no readable text found" })
           continue
         }
-        chunks.push(`## Document: ${d.name}\n${t}`)
+        chunks.push(`## Document: ${d.name}${viaOcr ? " (read from scan by AI)" : ""}\n${t}`)
         used.push(d.name)
         total += t.length
       } catch (e) {
@@ -78,7 +103,8 @@ export async function POST(
     if (!chunks.length) {
       const detail = failed.map(f => `${f.name}: ${f.reason}`).join(" · ")
       return NextResponse.json(
-        { error: detail || "Could not read any of the selected documents", failed },
+        { error: detail || "Could not read any of the selected documents", failed,
+          upsell: !!(failed as any).upsell },
         { status: 422 })
     }
     return NextResponse.json({

@@ -77,7 +77,8 @@ const PLANS = [
   { name:"Business", price:39, suffix:"/user/mo", featured:true,
     tagline:"For PMOs running a portfolio.",
     note:"Paid seats for the roles that drive the work. Everyone else: $20/mo per 10.",
-    features:["Everything in Starter","$20/mo per 10 contributor seats","Portfolio & program hierarchy","SSO — Microsoft & Google","Executive dashboard & approvals","Resource workload engine","Full governance suite","Email support"],
+    features:["Everything in Starter","$20/mo per 10 contributor seats","Portfolio & program hierarchy",
+      "AI reads scanned documents (200 pages/mo)","SSO — Microsoft & Google","Executive dashboard & approvals","Resource workload engine","Full governance suite","Email support"],
     cta:"Start free trial" },
 ]
 

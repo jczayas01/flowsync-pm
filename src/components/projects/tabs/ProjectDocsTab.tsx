@@ -146,6 +146,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [aiAnalyzing, setAiAnalyzing] = useState(false)
   const [aiResult, setAiResult] = useState<any>(null)
   const [aiError, setAiError] = useState("")
+  const [aiUpsell, setAiUpsell] = useState(false)   // scanned PDF hit by a non-Business plan
   const [aiUploading, setAiUploading] = useState(false)
 
   // ── Analyze stored project documents (multi-select) ──
@@ -218,7 +219,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
         body: JSON.stringify({ documentIds: [...aiSelectedDocs] }),
       })
       const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`)
+      if (!res.ok) {
+        setAiUpsell(!!data?.upsell)
+        throw new Error(data?.error || `Request failed (${res.status})`)
+      }
+      setAiUpsell(false)
       setAiContent((data.text || "").slice(0, 12000))
       setAiContentType("document")
       setAiLoadedFrom((data.usedDocuments || []).join(", "))
@@ -761,6 +766,20 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                   <div style={{ background:"#FEF2F2", border:"1px solid #FECACA", color:"var(--red)",
                     padding:"9px 12px", borderRadius:"var(--radius)", fontSize:12, marginBottom:12 }}>
                     ✗ {aiError}
+                  </div>
+                )}
+                {aiUpsell && (
+                  <div style={{ background:"#FFFBEB", border:"1px solid #FDE68A",
+                    padding:"11px 13px", borderRadius:"var(--radius)", fontSize:12.5,
+                    marginBottom:12, lineHeight:1.6 }}>
+                    <strong style={{ color:"#92400E" }}>📄 That's a scanned document.</strong>{" "}
+                    <span style={{ color:"#78350F" }}>
+                      AI reading of scanned PDFs (up to 200 pages/month) is included in the
+                      Business plan.
+                    </span>{" "}
+                    <a href="/settings/billing" style={{ color:"#B45309", fontWeight:700 }}>
+                      Upgrade →
+                    </a>
                   </div>
                 )}
 

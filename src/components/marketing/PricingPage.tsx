@@ -32,7 +32,8 @@ const TIERS = [
       "Budget tracking + EVM", "Risk, issue and change registers",
       "Document template library", "Bilingual (EN / ES)", "Self-serve",
     ],
-    notIncluded:["Bundle pricing for contributors","SSO","Portfolio & program hierarchy","Priority support"],
+    notIncluded:["Bundle pricing for contributors","SSO","Portfolio & program hierarchy",
+      "AI reads scanned documents (200 pages/mo)","Priority support"],
   },
   {
     name:"Business", price:39, priceSuffix:"/user/mo", annualPrice:31.20,

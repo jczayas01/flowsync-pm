@@ -21,9 +21,6 @@
     "src/app/api/projects/**/ai-report/*.ts": {
       "maxDuration": 60
     },
-    "src/app/api/projects/**/ai-analyze/*.ts": {
-      "maxDuration": 60
-    },
     "src/app/api/projects/**/risks-scan/*.ts": {
       "maxDuration": 60
     },
@@ -46,6 +43,9 @@
       "maxDuration": 60
     },
     "src/app/api/help/**/*.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/projects/**/ai-analyze/**/*.ts": {
       "maxDuration": 60
     }
   },

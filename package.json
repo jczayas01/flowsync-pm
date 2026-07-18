@@ -21,6 +21,7 @@
     "@auth/prisma-adapter": "^2.0.0",
     "@kenjiuno/msgreader": "^1.28.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@napi-rs/canvas": "^0.1.100",
     "@next/third-parties": "^14.2.18",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.45.0",

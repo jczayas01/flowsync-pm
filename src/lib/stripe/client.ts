@@ -76,6 +76,7 @@ export interface Plan {
     sso:            boolean
     whiteLabel:     boolean
     m365:           boolean
+    ocr:            boolean   // AI reading of scanned documents
     apiAccess:      boolean
     auditLog:       string   // "30d" | "1y" | "unlimited"
     support:        string
@@ -86,7 +87,7 @@ const STARTER_LIMITS: Plan["limits"] = {
   projects:-1, users:-1, storage:"10 GB",
   aiReports:true, wordExport:true, evm:true, fullGovernance:true,
   executiveDash:false, portfolio:false, automations:5,
-  sso:false, whiteLabel:false, m365:false, apiAccess:false,
+  sso:false, whiteLabel:false, m365:false, ocr:false, apiAccess:false,
   auditLog:"30d", support:"Community & email",
 }
 
@@ -94,7 +95,7 @@ const BUSINESS_LIMITS: Plan["limits"] = {
   projects:-1, users:-1, storage:"100 GB",
   aiReports:true, wordExport:true, evm:true, fullGovernance:true,
   executiveDash:true, portfolio:true, automations:-1,
-  sso:true, whiteLabel:false, m365:true, apiAccess:true,
+  sso:true, whiteLabel:false, m365:true, ocr:true, apiAccess:true,
   auditLog:"1y", support:"Email",
 }
 

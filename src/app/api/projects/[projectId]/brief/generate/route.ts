@@ -13,6 +13,7 @@ import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
 import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
+import { ocrScannedPdf, OCR_MONTHLY_PAGE_CAP } from "@/lib/ocr"
 
 const PER_DOC_CHARS = 6000
 const TOTAL_CHARS   = 15000
@@ -41,6 +42,9 @@ export async function POST(
   const documentIds: string[] | undefined =
     Array.isArray(body?.documentIds) && body.documentIds.length ? body.documentIds : undefined
 
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+  const plan = ws?.plan || "FREE"
+
   const docs = await db.document.findMany({
     where: { projectId: params.projectId, ...(documentIds ? { id: { in: documentIds } } : {}) },
     orderBy: { createdAt: "desc" },
@@ -66,15 +70,26 @@ export async function POST(
         failed.push({ name: d.name, reason: "couldn't download from storage" })
         continue
       }
-      const t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC_CHARS)
-      if (!t.trim()) {
-        failed.push({ name: d.name,
-          reason: d.name.toLowerCase().endsWith(".pdf")
-            ? "no text found — this PDF looks like a scan (images only)"
-            : "no readable text found" })
-        continue
+      let t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC_CHARS)
+      let viaOcr = false
+      if (!t.trim() && d.name.toLowerCase().endsWith(".pdf")) {
+        const ocr = await ocrScannedPdf({
+          buf, docName: d.name, workspaceId, userId: session.user.id, plan,
+        })
+        if (ocr.ok) { t = ocr.text.slice(0, PER_DOC_CHARS); viaOcr = true }
+        else if (ocr.reason === "plan") {
+          failed.push({ name: d.name, reason: "scanned PDF — AI reading of scans is included in the Business plan" })
+          continue
+        } else if (ocr.reason === "cap") {
+          failed.push({ name: d.name, reason: `scanned PDF — monthly ${OCR_MONTHLY_PAGE_CAP}-page AI-read limit reached` })
+          continue
+        } else {
+          failed.push({ name: d.name, reason: "scanned PDF — AI couldn't read these pages" })
+          continue
+        }
       }
-      chunks.push(`## Document: ${d.name}\n${t}`)
+      if (!t.trim()) { failed.push({ name: d.name, reason: "no readable text found" }); continue }
+      chunks.push(`## Document: ${d.name}${viaOcr ? " (read from scan by AI)" : ""}\n${t}`)
       used.push(d.name)
       total += t.length
     } catch (e) {
