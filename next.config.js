@@ -5,6 +5,12 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 const nextConfig = {
   // Type errors now FAIL the build (retired the escape hatch — Jul 2026).
   typescript: { ignoreBuildErrors: false },
+  experimental: {
+    // Native modules must load at runtime, not be bundled — webpack chokes on
+    // .node binaries. @napi-rs/canvas renders PDF pages for the OCR feature;
+    // unpdf rides along because it dynamically imports the canvas.
+    serverComponentsExternalPackages: ["@napi-rs/canvas", "unpdf"],
+  },
   eslint: { ignoreDuringBuilds: true },
   images: {
     remotePatterns: [
