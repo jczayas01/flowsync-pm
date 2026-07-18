@@ -32,7 +32,6 @@ export const metadata: Metadata = {
     'Gantt chart', 'WBS', 'earned value management', 'EVM', 'risk management',
     'project portfolio management', 'AI status reports', 'project intake',
   ],
-  alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
     url: SITE,
@@ -41,7 +40,7 @@ export const metadata: Metadata = {
     description: DESC,
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'FlowSync PM — Enterprise Project & PMO Management',
     description: DESC,
   },
