@@ -26,6 +26,13 @@ const PUBLIC_ROUTES = new Set([
   "/auth/forgot-password", "/auth/reset-password",
   // Marketing — prospects must never hit a login wall.
   "/pricing", "/api/demo-request",
+  // Crawler + metadata files. These are served by Next's file conventions
+  // (src/app/robots.ts, sitemap.ts, opengraph-image.tsx, icon.svg) and are
+  // requested by clients that are NEVER signed in: Googlebot, Bingbot, and the
+  // link unfurlers behind LinkedIn, Slack, WhatsApp and Teams. Without this,
+  // every one of them gets a redirect to the sign-in page — the sitemap looks
+  // fine to a logged-in human and is invisible to search engines.
+  "/robots.txt", "/sitemap.xml", "/opengraph-image", "/icon.svg", "/manifest.webmanifest",
 ])
 
 // Routes that require 2FA to be set up (enforced for sensitive roles)
