@@ -54,22 +54,38 @@ export async function POST(
   // Pull and extract text from each document
   const chunks: string[] = []
   const used: string[] = []
+  const failed: { name: string; reason: string }[] = []
   let total = 0
   for (const d of docs) {
     if (total >= TOTAL_CHARS) break
     try {
+      if (!d.fileUrl) { failed.push({ name: d.name, reason: "no file attached" }); continue }
       const buf = await downloadBuffer(d.fileUrl)
-      if (!buf) continue
+      if (!buf) {
+        console.error("[brief] download failed", { doc: d.id, name: d.name, ref: d.fileUrl })
+        failed.push({ name: d.name, reason: "couldn't download from storage" })
+        continue
+      }
       const t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC_CHARS)
-      if (!t) continue
+      if (!t.trim()) {
+        failed.push({ name: d.name,
+          reason: d.name.toLowerCase().endsWith(".pdf")
+            ? "no text found — this PDF looks like a scan (images only)"
+            : "no readable text found" })
+        continue
+      }
       chunks.push(`## Document: ${d.name}\n${t}`)
       used.push(d.name)
       total += t.length
-    } catch { /* skip unreadable docs, keep going */ }
+    } catch (e) {
+      console.error("[brief] extraction crashed", { doc: d.id, name: d.name }, e)
+      failed.push({ name: d.name, reason: "file couldn't be parsed" })
+    }
   }
   if (!chunks.length) {
+    const detail = failed.map(f => `${f.name}: ${f.reason}`).join(" · ")
     return NextResponse.json(
-      { error: "Could not read any of the selected documents" },
+      { error: detail || "Could not read any of the selected documents", failed },
       { status: 422 },
     )
   }

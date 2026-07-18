@@ -21,6 +21,7 @@
     "@auth/prisma-adapter": "^2.0.0",
     "@kenjiuno/msgreader": "^1.28.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@next/third-parties": "^16.2.10",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.45.0",
     "@vercel/analytics": "^2.0.1",

@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import { Analytics } from '@vercel/analytics/react'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getMessages } from "next-intl/server"
@@ -68,6 +69,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             load after the page — zero effect on user-visible performance. */}
         <Analytics />
         <SpeedInsights />
+        {/* GA4. Also serves as Google Search Console site verification. */}
+        <GoogleAnalytics gaId="G-CC64VMWM73" />
       </body>
     </html>
   )

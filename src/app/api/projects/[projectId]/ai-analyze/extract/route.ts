@@ -45,21 +45,41 @@ export async function POST(
 
     const chunks: string[] = []
     const used: string[] = []
+    const failed: { name: string; reason: string }[] = []
     let total = 0
     for (const d of docs) {
       if (total >= MAX_CHARS) break
       try {
+        if (!d.fileUrl) { failed.push({ name: d.name, reason: "no file attached to this entry" }); continue }
         const buf = await downloadBuffer(d.fileUrl)
-        if (!buf) continue
+        if (!buf) {
+          // downloadBuffer is null for BOTH "storage env broken" and "object missing" —
+          // the log line below is what tells us which when this fires in prod.
+          console.error("[ai-extract] download failed", { doc: d.id, name: d.name, ref: d.fileUrl })
+          failed.push({ name: d.name, reason: "couldn't download from storage" })
+          continue
+        }
         const t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC_CHARS)
-        if (!t) continue
+        if (!t.trim()) {
+          failed.push({ name: d.name,
+            reason: d.name.toLowerCase().endsWith(".pdf")
+              ? "no text found — this PDF looks like a scan (images only)"
+              : "no readable text found" })
+          continue
+        }
         chunks.push(`## Document: ${d.name}\n${t}`)
         used.push(d.name)
         total += t.length
-      } catch { /* skip unreadable docs */ }
+      } catch (e) {
+        console.error("[ai-extract] extraction crashed", { doc: d.id, name: d.name }, e)
+        failed.push({ name: d.name, reason: "file couldn't be parsed" })
+      }
     }
     if (!chunks.length) {
-      return NextResponse.json({ error: "Could not read any of the selected documents" }, { status: 422 })
+      const detail = failed.map(f => `${f.name}: ${f.reason}`).join(" · ")
+      return NextResponse.json(
+        { error: detail || "Could not read any of the selected documents", failed },
+        { status: 422 })
     }
     return NextResponse.json({
       text: chunks.join("\n\n").slice(0, MAX_CHARS),
