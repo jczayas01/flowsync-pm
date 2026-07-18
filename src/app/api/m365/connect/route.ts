@@ -4,6 +4,7 @@
 
 export const dynamic = "force-dynamic"
 
+import { SITE_URL } from "@/lib/site-url"
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
@@ -48,7 +49,7 @@ async function getConnectionStatus(ctx: ApiContext) {
 
 async function registerWebhook(ctx: ApiContext) {
   const _g = await requirePermission(ctx as any, "workspace:manage_integrations"); if (_g) return _g
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL!
+  const appUrl = SITE_URL!
   const webhookUrl = `${appUrl}/api/m365/webhook`
 
   const subscriptionId = await subscribeToMailbox(ctx.userId, webhookUrl)

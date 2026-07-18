@@ -3,6 +3,7 @@
 
 export const dynamic = "force-dynamic"
 
+import { SITE_URL } from "@/lib/site-url"
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"
@@ -31,7 +32,7 @@ async function createCheckout(ctx: ApiContext) {
   })
   if (!user) return err("User not found", 404)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL!
+  const appUrl = SITE_URL!
 
   const url = await createCheckoutSession({
     workspaceId: ctx.workspaceId,

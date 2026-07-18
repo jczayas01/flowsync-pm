@@ -4,6 +4,7 @@
 // would turn this endpoint into an account-enumeration oracle.
 export const dynamic = "force-dynamic"
 
+import { SITE_URL } from "@/lib/site-url"
 import { NextRequest, NextResponse } from "next/server"
 import { createHash, randomBytes } from "crypto"
 import { z } from "zod"
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    const base = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://flowsyncpm.com"
+    const base = SITE_URL || process.env.NEXTAUTH_URL || "https://flowsyncpm.com"
     const resetUrl = `${base.replace(/\/$/, "")}/auth/reset-password?token=${token}`
 
     await sendEmail({

@@ -4,6 +4,7 @@
 //   await fireTrigger("task.status_changed", workspaceId, projectId, "task", taskId, userId, { from: "TODO", to: "DONE" })
 //   await fireTrigger("project.health_changed", workspaceId, projectId, "project", projectId, userId, { to: "RED" })
 
+import { SITE_URL } from "@/lib/site-url"
 import type { TriggerType } from "./types"
 
 export async function fireTrigger(
@@ -16,7 +17,7 @@ export async function fireTrigger(
   payload:     Record<string, unknown> = {}
 ): Promise<void> {
   // Fire-and-forget — don't block the caller
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  const appUrl = SITE_URL
 
   fetch(`${appUrl}/api/automation/execute`, {
     method:  "POST",

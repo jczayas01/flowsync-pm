@@ -4,6 +4,7 @@
 
 export const dynamic = "force-dynamic"
 
+import { SITE_URL } from "@/lib/site-url"
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
@@ -124,7 +125,7 @@ async function inviteUser(ctx: ApiContext) {
   // Send invitation email
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`
+    const acceptUrl = `${SITE_URL}/invite/${invitation.token}`
     const inviter = await db.user.findUnique({
       where:  { id: ctx.userId },
       select: { name: true },
@@ -165,7 +166,7 @@ async function inviteUser(ctx: ApiContext) {
   await audit(ctx.workspaceId, ctx.userId, "user.invited", "invitation", invitation.id,
     undefined, { email, role })
 
-  const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/invite/${invitation.token}`
+  const acceptUrl = `${SITE_URL || ""}/invite/${invitation.token}`
   return ok({ invitation: { id: invitation.id, email, role, expiresAt, acceptUrl } }, 201)
 }
 

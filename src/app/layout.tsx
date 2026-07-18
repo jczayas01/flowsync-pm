@@ -1,4 +1,5 @@
 // src/app/layout.tsx
+import { SITE_URL } from "@/lib/site-url"
 import { Analytics } from '@vercel/analytics/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -22,7 +23,7 @@ const plexMono = IBM_Plex_Mono({
   subsets: ['latin'], weight: ['400','500','600'], variable: '--font-plex-mono',
 })
 
-const SITE = process.env.NEXT_PUBLIC_APP_URL || 'https://flowsyncpm.com'
+const SITE = SITE_URL
 const DESC = 'FlowSync PM is an enterprise project management platform for PMOs and multi-project organizations — plan with Gantt and WBS, track budgets and EVM, manage risks, and generate AI-powered status reports.'
 
 export const metadata: Metadata = {

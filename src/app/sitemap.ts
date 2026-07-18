@@ -1,10 +1,11 @@
 // src/app/sitemap.ts — public, indexable pages only.
 // Auth pages are deliberately absent: they carry no search value and dilute the
 // crawl. App pages are behind login and disallowed in robots.ts.
+import { SITE_URL } from "@/lib/site-url"
 import type { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const site = (process.env.NEXT_PUBLIC_APP_URL || 'https://flowsyncpm.com').replace(/\/$/, '')
+  const site = SITE_URL
   const now = new Date()
 
   return [

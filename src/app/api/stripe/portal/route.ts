@@ -3,6 +3,7 @@
 
 export const dynamic = "force-dynamic"
 
+import { SITE_URL } from "@/lib/site-url"
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
@@ -10,7 +11,7 @@ import { createPortalSession } from "@/lib/stripe/billing"
 
 async function openPortal(ctx: ApiContext) {
   const _g = await requirePermission(ctx as any, "workspace:edit_settings"); if (_g) return _g
-  const appUrl    = process.env.NEXT_PUBLIC_APP_URL!
+  const appUrl    = SITE_URL!
   const returnUrl = `${appUrl}/settings/billing`
 
   try {

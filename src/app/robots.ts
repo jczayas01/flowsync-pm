@@ -1,8 +1,9 @@
 // src/app/robots.ts — search engine rules
+import { SITE_URL } from "@/lib/site-url"
 import type { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-  const site = (process.env.NEXT_PUBLIC_APP_URL || 'https://flowsyncpm.com').replace(/\/$/, '')
+  const site = SITE_URL
   return {
     rules: [
       {

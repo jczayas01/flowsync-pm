@@ -2,6 +2,7 @@
 // The automation rule engine — evaluates triggers, checks conditions,
 // executes action chains, and logs results
 
+import { SITE_URL } from "@/lib/site-url"
 import { db } from "@/lib/db"
 import type { AutomationRule, TriggerEvent, ExecutionResult, ExecutionLogEntry, Condition, Action } from "./types"
 
@@ -144,7 +145,7 @@ async function executeAction(
               subject: `FlowSync PM: ${message.slice(0, 60)}`,
               html:    `<div style="font-family:Inter,sans-serif;padding:20px;max-width:500px">
                 <p>${message}</p>
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display:inline-block;margin-top:12px;padding:8px 16px;background:#1B6CA8;color:#fff;border-radius:6px;text-decoration:none">View in FlowSync PM</a>
+                <a href="${SITE_URL}/dashboard" style="display:inline-block;margin-top:12px;padding:8px 16px;background:#1B6CA8;color:#fff;border-radius:6px;text-decoration:none">View in FlowSync PM</a>
               </div>`,
             }).catch(() => {})
           }

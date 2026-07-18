@@ -1,10 +1,11 @@
 // src/app/page.tsx
 // Root redirect — authenticated users go to dashboard, others see landing
+import { SITE_URL } from "@/lib/site-url"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import LandingPage from "@/components/landing/LandingPage"
 
-const SITE = process.env.NEXT_PUBLIC_APP_URL || "https://flowsyncpm.com"
+const SITE = SITE_URL
 
 export const metadata = {
   alternates: { canonical: '/' },

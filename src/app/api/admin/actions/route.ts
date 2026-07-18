@@ -7,6 +7,7 @@
 // reach every other customer's data. Fails closed on an empty allowlist.
 export const dynamic = "force-dynamic"
 
+import { SITE_URL } from "@/lib/site-url"
 import { NextRequest, NextResponse } from "next/server"
 import { createHash, randomBytes } from "crypto"
 import { z } from "zod"
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
             expiresAt: new Date(Date.now() + 60 * 60 * 1000),
           },
         })
-        const base = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://flowsyncpm.com"
+        const base = SITE_URL || process.env.NEXTAUTH_URL || "https://flowsyncpm.com"
         const resetUrl = `${base.replace(/\/$/, "")}/auth/reset-password?token=${token}`
         const sent = await sendEmail({
           to: u.email,

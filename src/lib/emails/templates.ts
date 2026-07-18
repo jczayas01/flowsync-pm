@@ -8,7 +8,7 @@ interface BaseCtx {
   appUrl?:        string
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://flowsyncpm.com'
+const APP_URL = SITE_URL
 
 function layout(content: string, previewText = ''): string {
   return `<!DOCTYPE html>
@@ -332,4 +332,5 @@ export async function sendEmail({ to, ...template }: {
     console.error('[Email] Send failed:', e)
     return false
   }
-}
+}import { SITE_URL } from "@/lib/site-url"
+
