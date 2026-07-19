@@ -1,5 +1,6 @@
 // src/components/marketing/RequestDemoModal.tsx
 "use client"
+import { sendGAEvent } from "@next/third-parties/google"
 import { useState, useEffect } from "react"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", GREEN = "#059669"
@@ -40,6 +41,7 @@ export function RequestDemoModal({
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) { setErr(d?.error || (es ? "Algo salió mal. Inténtalo de nuevo." : "Something went wrong. Please try again.")); setLoading(false); return }
+      sendGAEvent("event", "demo_request", { source })
       setDone(true)
     } catch {
       setErr(es ? "Algo salió mal. Inténtalo de nuevo." : "Something went wrong. Please try again.")

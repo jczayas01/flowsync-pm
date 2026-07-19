@@ -1,5 +1,6 @@
 // src/components/auth/SignUpForm.tsx
 "use client"
+import { sendGAEvent } from "@next/third-parties/google"
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
@@ -31,6 +32,7 @@ export function SignUpForm() {
         setError(d.error || 'Registration failed')
         setLoading(false); return
       }
+      sendGAEvent('event', 'sign_up', { method: 'password' })
       await signIn('credentials', { email:form.email, password:form.password, redirect:false })
       // Only allow same-site paths — an open redirect here would be a phishing gift.
       const dest = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')

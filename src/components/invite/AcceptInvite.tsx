@@ -1,5 +1,6 @@
 "use client"
 // src/components/invite/AcceptInvite.tsx
+import { sendGAEvent } from "@next/third-parties/google"
 import { LogoMark, Wordmark } from "@/components/shared/Logo"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -35,6 +36,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
         router.push("/auth/signin?callbackUrl=/dashboard")
         return
       }
+      sendGAEvent('event', 'invite_accepted', {})
       window.location.href = "/dashboard"
     } catch {
       setError("Connection lost — try again")

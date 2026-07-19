@@ -1,5 +1,6 @@
 // src/components/settings/BillingView.tsx
 "use client"
+import { sendGAEvent } from "@next/third-parties/google"
 import { useState } from "react"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 
@@ -184,6 +185,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
   const covered  = planId === "BUSINESS" ? nSeats + nBundles * 10 : nSeats
 
   async function checkout() {
+    sendGAEvent('event', 'begin_checkout', { plan: planId, cycle: annual })
     setBusy(true); setErr("")
     try {
       const res = await fetch("/api/stripe/checkout", {
