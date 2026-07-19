@@ -323,6 +323,9 @@ export async function sendEmail({ to, ...template }: {
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from:    process.env.RESEND_FROM_EMAIL || 'FlowSync PM <no-reply@flowsyncpm.com>',
+      // People reply to invites and resets more than you'd think. Those replies
+      // should land in the company inbox, not vanish into no-reply.
+      replyTo: process.env.RESEND_REPLY_TO || 'support@flowsyncpm.com',
       to,
       subject: template.subject,
       html:    template.html,

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Best-effort notifications — never block or fail the request.
-    const salesTo = process.env.SALES_EMAIL || process.env.RESEND_TO_EMAIL || "jc_zayas@hotmail.com"
+    const salesTo = process.env.SALES_EMAIL || process.env.RESEND_TO_EMAIL || "support@flowsyncpm.com"
     Promise.all([
       sendEmail({ to: salesTo, ...demoRequestNotification(lead) }),
       sendEmail({
