@@ -3,10 +3,13 @@
 // Public landing page. The product is live — this page sells a free trial, not a waitlist.
 //
 // Thesis: the buyer already has a project plan, written in Word or Excel, that isn't
-// doing any work. The hero shows that document having become a running project, which
-// is both the strongest feature and the fastest thing to prove in a demo.
+// doing any work. The hero shows that document BECOMING a running project — the import
+// sequence is choreographed on load: filename → bars draw themselves → KPIs land →
+// the AT RISK stamp. That animation is the signature; everything else stays quiet
+// (scroll reveals, glass nav, hover lifts) so the one bold thing carries the page.
+// prefers-reduced-motion disables all of it.
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 import { LogoMark, Wordmark } from "@/components/shared/Logo"
@@ -107,9 +110,47 @@ const TODAY_X = 64
 export default function LandingPage() {
   const [demoOpen, setDemoOpen] = useState(false)
   const [openFaq, setOpenFaq]   = useState<number | null>(0)
+  const [scrolled, setScrolled] = useState(false)
+  const [importSecs, setImportSecs] = useState(0)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // Glass nav after the page moves.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // Scroll reveals: one observer, elements opt in with the .rv class and
+  // stagger via --i. Fires once each — a page that keeps animating gets tiring.
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const els = rootRef.current?.querySelectorAll(".rv")
+    if (!els?.length) return
+    if (reduce) { els.forEach(el => el.classList.add("in")); return }
+    const ob = new IntersectionObserver(entries => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); ob.unobserve(e.target) }
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" })
+    els.forEach(el => ob.observe(el))
+    return () => ob.disconnect()
+  }, [])
+
+  // The one JS-driven number: the import counter ticking to 31s while the
+  // Gantt draws itself. Runs once, ~1.4s, synced to the bar choreography.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setImportSecs(31); return }
+    let v = 0
+    const id = setInterval(() => {
+      v += Math.ceil((31 - v) / 7) || 1
+      if (v >= 31) { v = 31; clearInterval(id) }
+      setImportSecs(v)
+    }, 60)
+    return () => clearInterval(id)
+  }, [])
 
   return (
-    <div style={{ background:"#fff", color:INK, fontFamily:"var(--font)" }}>
+    <div ref={rootRef} style={{ background:"#fff", color:INK, fontFamily:"var(--font)" }}>
       <style>{`
         .fs-hero { display:grid; grid-template-columns:1fr; gap:48px; align-items:center; }
         .fs-grid3 { display:grid; grid-template-columns:1fr; gap:16px; }
@@ -121,20 +162,70 @@ export default function LandingPage() {
           .fs-grid2 { grid-template-columns:repeat(2,1fr); }
           .fs-band  { flex-direction:row; align-items:center; gap:36px; }
         }
+        .fs-link { transition:color .15s ease; }
         .fs-link:hover { color:#fff !important; }
-        .fs-card { transition:transform .18s ease, box-shadow .18s ease; }
-        .fs-card:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(13,27,42,.08); }
+
+        /* ── Load choreography: hero copy rises in sequence ─────────────── */
+        @keyframes fsUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+        .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:0; animation:fsUp .7s cubic-bezier(.16,1,.3,1) forwards; }
+        .fs-l1 { animation-delay:.05s } .fs-l2 { animation-delay:.15s }
+        .fs-l3 { animation-delay:.28s } .fs-l4 { animation-delay:.42s } .fs-l5 { animation-delay:.55s }
+
+        /* ── The signature: the import sequence ─────────────────────────── */
+        @keyframes fsCard { from { opacity:0; transform:translateY(22px) scale(.985); }
+                            to   { opacity:1; transform:none; } }
+        .fs-shot { animation:fsCard .8s cubic-bezier(.16,1,.3,1) .25s both; }
+        @keyframes fsBar { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+        .fs-bar { transform-origin:left center; animation:fsBar .9s cubic-bezier(.16,1,.3,1) both; }
+        @keyframes fsPop { 0% { opacity:0; transform:scale(.6); } 70% { transform:scale(1.06); } 100% { opacity:1; transform:scale(1); } }
+        .fs-stamp { animation:fsPop .45s cubic-bezier(.16,1,.3,1) 2s both; }
+        @keyframes fsFade { from { opacity:0; } to { opacity:1; } }
+        .fs-kpi { opacity:0; animation:fsFade .6s ease forwards; }
+        @keyframes fsPulse { 0%,100% { opacity:.5; } 50% { opacity:.9; } }
+        .fs-today { animation:fsPulse 3.2s ease-in-out 2.4s infinite; }
+
+        /* ── Ambient aurora — brand colors, barely there, very slow ─────── */
+        @keyframes fsDriftA { 0%,100% { transform:translate(0,0); } 50% { transform:translate(4%,6%); } }
+        @keyframes fsDriftB { 0%,100% { transform:translate(0,0); } 50% { transform:translate(-5%,-4%); } }
+        .fs-auroraA { animation:fsDriftA 18s ease-in-out infinite; }
+        .fs-auroraB { animation:fsDriftB 22s ease-in-out infinite; }
+
+        /* ── Scroll reveals ─────────────────────────────────────────────── */
+        .rv { opacity:0; transform:translateY(18px);
+              transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+              transition-delay:calc(var(--i,0) * 90ms); }
+        .rv.in { opacity:1; transform:none; }
+
+        /* ── Micro-interactions ─────────────────────────────────────────── */
+        .fs-card { transition:transform .22s cubic-bezier(.16,1,.3,1), box-shadow .22s ease, border-color .22s ease; }
+        .fs-card:hover { transform:translateY(-4px); box-shadow:0 16px 36px rgba(13,27,42,.1); border-color:${STEEL}55 !important; }
+        .fs-cta { transition:transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s ease; }
+        .fs-cta:hover { transform:translateY(-1px) scale(1.02); box-shadow:0 8px 24px rgba(245,158,11,.35); }
+        .fs-ghost { transition:background .18s ease, border-color .18s ease; }
+        .fs-ghost:hover { background:rgba(255,255,255,.11) !important; border-color:rgba(255,255,255,.3) !important; }
+        .fs-faq-a { display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s cubic-bezier(.16,1,.3,1); }
+        .fs-faq-a.open { grid-template-rows:1fr; }
+        .fs-faq-a > div { overflow:hidden; }
+
         a:focus-visible, button:focus-visible, summary:focus-visible {
           outline:2px solid ${AMBER}; outline-offset:3px; border-radius:6px;
         }
         @media (prefers-reduced-motion:reduce) {
-          .fs-card, .fs-card:hover { transition:none; transform:none; }
+          .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5,.fs-shot,.fs-bar,.fs-stamp,.fs-kpi { animation:none; opacity:1; transform:none; }
+          .fs-today,.fs-auroraA,.fs-auroraB { animation:none; }
+          .rv { opacity:1; transform:none; transition:none; }
+          .fs-card,.fs-card:hover,.fs-cta,.fs-cta:hover { transition:none; transform:none; }
+          .fs-faq-a { transition:none; }
         }
       `}</style>
 
       {/* ── NAV ───────────────────────────────────────────────── */}
-      <nav style={{ position:"sticky", top:0, zIndex:100, background:"rgba(13,27,42,.92)",
-        backdropFilter:"blur(12px)", borderBottom:"1px solid rgba(255,255,255,.08)" }}>
+      <nav style={{ position:"sticky", top:0, zIndex:100,
+        background: scrolled ? "rgba(13,27,42,.88)" : "rgba(13,27,42,.35)",
+        backdropFilter: scrolled ? "blur(14px) saturate(1.4)" : "blur(4px)",
+        borderBottom: scrolled ? "1px solid rgba(255,255,255,.1)" : "1px solid transparent",
+        boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,.25)" : "none",
+        transition:"background .3s ease, border-color .3s ease, box-shadow .3s ease, backdrop-filter .3s ease" }}>
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px", height:60,
           display:"flex", alignItems:"center", gap:8 }}>
           <Link href="/" style={{ display:"flex", alignItems:"center", gap:9, textDecoration:"none", marginRight:14 }}>
@@ -161,7 +252,7 @@ export default function LandingPage() {
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"6px 10px" }}>
             Sign in
           </Link>
-          <Link href="/auth/signup"
+          <Link href="/auth/signup" className="fs-cta"
             style={{ padding:"8px 16px", background:AMBER, color:NAVY, borderRadius:8,
               fontSize:13, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
             Start free
@@ -170,15 +261,22 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ──────────────────────────────────────────────── */}
-      <section style={{ background:NAVY, padding:"84px 0 92px", position:"relative", overflow:"hidden" }}>
-        <div aria-hidden style={{ position:"absolute", inset:0,
-          background:`radial-gradient(ellipse 70% 60% at 75% 0%, rgba(27,108,168,.28) 0%, transparent 65%)`,
+      <section style={{ background:NAVY, padding:"92px 0 100px", position:"relative",
+        overflow:"hidden", marginTop:-60, paddingTop:152 }}>
+        {/* Ambient: two brand-color fields drifting almost imperceptibly */}
+        <div aria-hidden className="fs-auroraA" style={{ position:"absolute", top:"-20%", right:"-10%",
+          width:"70%", height:"80%", borderRadius:"50%", filter:"blur(80px)",
+          background:"radial-gradient(circle, rgba(27,108,168,.30) 0%, transparent 65%)",
+          pointerEvents:"none" }} />
+        <div aria-hidden className="fs-auroraB" style={{ position:"absolute", bottom:"-30%", left:"-8%",
+          width:"55%", height:"70%", borderRadius:"50%", filter:"blur(90px)",
+          background:"radial-gradient(circle, rgba(245,158,11,.10) 0%, transparent 60%)",
           pointerEvents:"none" }} />
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px", position:"relative" }}>
           <div className="fs-hero">
             {/* Left */}
             <div>
-              <div style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:22,
+              <div className="fs-l1" style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:22,
                 padding:"5px 12px", borderRadius:100, background:"rgba(5,150,105,.14)",
                 border:"1px solid rgba(5,150,105,.3)" }}>
                 <span style={{ width:6, height:6, borderRadius:"50%", background:"#34D399" }} />
@@ -189,41 +287,42 @@ export default function LandingPage() {
 
               <h1 style={{ fontSize:"clamp(34px,4.6vw,58px)", fontWeight:800, lineHeight:1.06,
                 letterSpacing:"-.035em", color:"#fff", marginBottom:20 }}>
-                Your plan is already written.<br />
-                <span style={{ color:AMBER }}>Turn it into a live project.</span>
+                <span className="fs-l2" style={{ display:"block" }}>Your plan is already written.</span>
+                <span className="fs-l3" style={{ display:"block", color:AMBER }}>Turn it into a live project.</span>
               </h1>
 
-              <p style={{ fontSize:17, lineHeight:1.65, color:"rgba(255,255,255,.6)",
+              <p className="fs-l4" style={{ fontSize:17, lineHeight:1.65, color:"rgba(255,255,255,.6)",
                 marginBottom:30, maxWidth:490 }}>
                 FlowSync PM reads the project document you already have — Word, Excel, PDF — and
                 builds the whole thing: phases, tasks, dates, risks, budget. Then it keeps it
                 governed, with EVM, phase gates and reporting your sponsor will actually read.
               </p>
 
-              <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
-                <Link href="/auth/signup"
-                  style={{ padding:"14px 26px", background:AMBER, color:NAVY, borderRadius:10,
-                    fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
-                  Start free trial →
-                </Link>
-                <button onClick={() => setDemoOpen(true)}
-                  style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
-                    border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
-                    fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
-                  Request a demo
-                </button>
+              <div className="fs-l5">
+                <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
+                  <Link href="/auth/signup" className="fs-cta"
+                    style={{ padding:"14px 26px", background:AMBER, color:NAVY, borderRadius:10,
+                      fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
+                    Start free trial →
+                  </Link>
+                  <button onClick={() => setDemoOpen(true)} className="fs-ghost"
+                    style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
+                      border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
+                      fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
+                    Request a demo
+                  </button>
+                </div>
+                <p style={{ fontSize:12.5, color:"rgba(255,255,255,.35)", lineHeight:1.6 }}>
+                  No credit card required. Two months of the full product, then subscribe only if
+                  it earned it.
+                </p>
               </div>
-
-              <p style={{ fontSize:12.5, color:"rgba(255,255,255,.35)", lineHeight:1.6 }}>
-                No credit card required. Two months of the full product, then subscribe only if
-                it earned it.
-              </p>
             </div>
 
-            {/* Right — a project that visibly came from a document */}
-            <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+            {/* Right — the signature: a document visibly BECOMING a project */}
+            <div className="fs-shot" style={{ background:"#fff", borderRadius:14, overflow:"hidden",
               boxShadow:"0 28px 70px rgba(0,0,0,.42)", border:"1px solid rgba(255,255,255,.1)" }}>
-              {/* Provenance — the whole pitch in one strip */}
+              {/* Provenance — the whole pitch in one strip, counter ticking */}
               <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 14px",
                 background:"#EFF6FF", borderBottom:`1px solid ${LINE}` }}>
                 <span style={{ fontSize:13 }}>📄</span>
@@ -232,7 +331,8 @@ export default function LandingPage() {
                 </span>
                 <span style={{ color:MUTED, fontSize:11 }}>→</span>
                 <span style={{ fontSize:11, color:SLATE }}>imported in</span>
-                <span style={{ fontFamily:MONO, fontSize:11, color:GREEN, fontWeight:700 }}>31s</span>
+                <span style={{ fontFamily:MONO, fontSize:11, color:GREEN, fontWeight:700,
+                  minWidth:26, display:"inline-block" }}>{importSecs}s</span>
                 <span style={{ marginLeft:"auto", fontFamily:MONO, fontSize:10, color:MUTED }}>PRJ-006</span>
               </div>
 
@@ -240,7 +340,7 @@ export default function LandingPage() {
               <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${LINE}` }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   <div style={{ fontSize:13.5, fontWeight:700, color:INK }}>ERP Rollout — Phase 2</div>
-                  <span style={{ fontSize:9.5, fontWeight:700, padding:"2px 7px", borderRadius:4,
+                  <span className="fs-stamp" style={{ fontSize:9.5, fontWeight:700, padding:"2px 7px", borderRadius:4,
                     background:"#FFFBEB", color:"#B45309", fontFamily:MONO }}>AT RISK</span>
                 </div>
                 <div style={{ fontSize:11, color:MUTED, marginTop:3 }}>
@@ -248,14 +348,14 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Gantt */}
+              {/* Gantt — bars draw themselves in, staggered like a real import */}
               <div style={{ padding:"12px 16px 6px" }}>
                 <div style={{ display:"flex", marginBottom:8, paddingLeft:96 }}>
                   {["Jan","Mar","May","Jul","Sep"].map(m => (
                     <div key={m} style={{ flex:1, fontSize:9, color:MUTED, fontFamily:MONO }}>{m}</div>
                   ))}
                 </div>
-                {GANTT_BARS.map(b => (
+                {GANTT_BARS.map((b, bi) => (
                   <div key={b.name} style={{ display:"flex", alignItems:"center", marginBottom:7 }}>
                     <div style={{ width:96, display:"flex", alignItems:"center", gap:5, flexShrink:0 }}>
                       <span style={{ fontFamily:MONO, fontSize:9, color:MUTED }}>{b.code}</span>
@@ -263,23 +363,26 @@ export default function LandingPage() {
                         overflow:"hidden", textOverflow:"ellipsis" }}>{b.name}</span>
                     </div>
                     <div style={{ flex:1, height:16, background:PAPER, borderRadius:4, position:"relative" }}>
-                      <div aria-hidden style={{ position:"absolute", left:`${TODAY_X}%`, top:-3, bottom:-3,
+                      <div aria-hidden className="fs-today" style={{ position:"absolute", left:`${TODAY_X}%`, top:-3, bottom:-3,
                         width:1.5, background:"#DC2626", opacity:.5 }} />
-                      <div style={{ position:"absolute", left:`${b.start}%`, width:`${b.width}%`,
-                        top:0, bottom:0, background:b.color, borderRadius:4, opacity:.22 }} />
-                      <div style={{ position:"absolute", left:`${b.start}%`, width:`${b.width * b.pct / 100}%`,
-                        top:0, bottom:0, background:b.color, borderRadius:4 }} />
+                      <div className="fs-bar" style={{ position:"absolute", left:`${b.start}%`, width:`${b.width}%`,
+                        top:0, bottom:0, background:b.color, borderRadius:4, opacity:.22,
+                        animationDelay:`${.55 + bi * .16}s` }} />
+                      <div className="fs-bar" style={{ position:"absolute", left:`${b.start}%`, width:`${b.width * b.pct / 100}%`,
+                        top:0, bottom:0, background:b.color, borderRadius:4,
+                        animationDelay:`${.7 + bi * .16}s` }} />
                     </div>
-                    <div style={{ width:32, textAlign:"right", fontFamily:MONO, fontSize:9.5,
-                      color: b.pct === 100 ? GREEN : SLATE }}>{b.pct}%</div>
+                    <div className="fs-kpi" style={{ width:32, textAlign:"right", fontFamily:MONO, fontSize:9.5,
+                      color: b.pct === 100 ? GREEN : SLATE, animationDelay:`${.9 + bi * .16}s` }}>{b.pct}%</div>
                   </div>
                 ))}
               </div>
 
-              {/* KPI strip — the numbers a sponsor asks for */}
+              {/* KPI strip — lands after the bars, like results arriving */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", borderTop:`1px solid ${LINE}` }}>
-                {[["68%","Complete",INK],["0.94","CPI","#B45309"],["$820K","Spent",INK],["M3","Next gate",STEEL]].map(([v,l,c]) => (
-                  <div key={l} style={{ padding:"10px 8px", textAlign:"center", borderRight:`1px solid ${LINE}` }}>
+                {[["68%","Complete",INK],["0.94","CPI","#B45309"],["$820K","Spent",INK],["M3","Next gate",STEEL]].map(([v,l,c], ki) => (
+                  <div key={l} className="fs-kpi" style={{ padding:"10px 8px", textAlign:"center",
+                    borderRight:`1px solid ${LINE}`, animationDelay:`${1.5 + ki * .12}s` }}>
                     <div style={{ fontFamily:MONO, fontSize:14, fontWeight:700, color:c as string }}>{v}</div>
                     <div style={{ fontSize:9, color:MUTED, textTransform:"uppercase", letterSpacing:".05em", marginTop:2 }}>{l}</div>
                   </div>
@@ -293,7 +396,7 @@ export default function LandingPage() {
       {/* ── IMPORT ────────────────────────────────────────────── */}
       <section id="import" style={{ padding:"84px 0", background:"#fff" }}>
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
-          <div style={{ maxWidth:640, marginBottom:44 }}>
+          <div className="rv" style={{ maxWidth:640, marginBottom:44 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
               How it works
@@ -310,9 +413,9 @@ export default function LandingPage() {
           </div>
 
           <div className="fs-grid3">
-            {EXTRACTED.map(e => (
-              <div key={e.label} className="fs-card"
-                style={{ border:`1px solid ${LINE}`, borderRadius:12, padding:"18px 18px 20px",
+            {EXTRACTED.map((e, i) => (
+              <div key={e.label} className="fs-card rv" 
+                style={{ ["--i" as any]: i % 3, border:`1px solid ${LINE}`, borderRadius:12, padding:"18px 18px 20px",
                   borderLeft:`3px solid ${STEEL}` }}>
                 <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, color:STEEL,
                   background:"#EFF6FF", display:"inline-block", padding:"2px 7px",
@@ -323,7 +426,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div style={{ marginTop:26, padding:"16px 20px", background:PAPER,
+          <div className="rv" style={{ marginTop:26, padding:"16px 20px", background:PAPER,
             borderRadius:12, border:`1px solid ${LINE}`, fontSize:13.5, color:SLATE, lineHeight:1.65 }}>
             <strong style={{ color:INK }}>It works in reverse too.</strong>{" "}
             Download a blank charter, WBS or quality plan from the template library, fill it in,
@@ -336,7 +439,7 @@ export default function LandingPage() {
       {/* ── WHO ───────────────────────────────────────────────── */}
       <section id="who" style={{ padding:"84px 0", background:PAPER, borderTop:`1px solid ${LINE}`, borderBottom:`1px solid ${LINE}` }}>
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
-          <div style={{ maxWidth:640, marginBottom:40 }}>
+          <div className="rv" style={{ maxWidth:640, marginBottom:40 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
               Who it's for
@@ -348,9 +451,10 @@ export default function LandingPage() {
           </div>
 
           <div className="fs-grid3">
-            {AUDIENCES.map(a => (
-              <div key={a.role} style={{ background:"#fff", border:`1px solid ${LINE}`,
-                borderRadius:12, padding:"22px 20px", borderTop:`3px solid ${a.accent}` }}>
+            {AUDIENCES.map((a, i) => (
+              <div key={a.role} className="fs-card rv"
+                style={{ ["--i" as any]: i, background:"#fff", border:`1px solid ${LINE}`,
+                  borderRadius:12, padding:"22px 20px", borderTop:`3px solid ${a.accent}` }}>
                 <div style={{ fontSize:15.5, fontWeight:700, marginBottom:7 }}>{a.role}</div>
                 <div style={{ fontSize:13.5, color:SLATE, lineHeight:1.6, marginBottom:16 }}>{a.line}</div>
                 <ul style={{ listStyle:"none", padding:0, margin:0, display:"flex",
@@ -370,7 +474,7 @@ export default function LandingPage() {
       {/* ── FEATURES ──────────────────────────────────────────── */}
       <section id="features" style={{ padding:"84px 0", background:"#fff" }}>
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
-          <div style={{ maxWidth:640, marginBottom:40 }}>
+          <div className="rv" style={{ maxWidth:640, marginBottom:40 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
               Features
@@ -385,9 +489,9 @@ export default function LandingPage() {
           </div>
 
           <div className="fs-grid3">
-            {FEATURES.map(f => (
-              <div key={f.title} className="fs-card"
-                style={{ border:`1px solid ${LINE}`, borderRadius:12, padding:"20px", background:"#fff" }}>
+            {FEATURES.map((f, i) => (
+              <div key={f.title} className="fs-card rv"
+                style={{ ["--i" as any]: i % 3, border:`1px solid ${LINE}`, borderRadius:12, padding:"20px", background:"#fff" }}>
                 <div style={{ width:38, height:38, borderRadius:9, background:f.color,
                   display:"grid", placeItems:"center", fontSize:18, marginBottom:14 }}>{f.icon}</div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, flexWrap:"wrap" }}>
@@ -406,7 +510,7 @@ export default function LandingPage() {
       {/* ── PRICING ───────────────────────────────────────────── */}
       <section id="pricing" style={{ padding:"84px 0", background:PAPER, borderTop:`1px solid ${LINE}` }}>
         <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
-          <div style={{ maxWidth:640, marginBottom:32 }}>
+          <div className="rv" style={{ maxWidth:640, marginBottom:32 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
               Pricing
@@ -422,7 +526,7 @@ export default function LandingPage() {
           </div>
 
           {/* The worked example — the argument, in numbers */}
-          <div className="fs-band" style={{ background:NAVY, borderRadius:14, padding:"24px 28px", marginBottom:24 }}>
+          <div className="fs-band rv" style={{ background:NAVY, borderRadius:14, padding:"24px 28px", marginBottom:24 }}>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:15, fontWeight:700, color:"#fff", marginBottom:6 }}>
                 A PMO with 3 managers and 40 contributors
@@ -445,9 +549,9 @@ export default function LandingPage() {
 
           {/* Plans */}
           <div className="fs-grid3">
-            {PLANS.map(p => (
-              <div key={p.name}
-                style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+            {PLANS.map((p, i) => (
+              <div key={p.name} className="fs-card rv"
+                style={{ ["--i" as any]: i, background:"#fff", borderRadius:14, overflow:"hidden",
                   border: p.featured ? `2px solid ${AMBER}` : `1px solid ${LINE}`,
                   boxShadow: p.featured ? "0 12px 36px rgba(245,158,11,.14)" : "none",
                   display:"flex", flexDirection:"column" }}>
@@ -482,7 +586,7 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <div style={{ padding:22 }}>
-                  <Link href="/auth/signup"
+                  <Link href="/auth/signup" className={p.featured ? "fs-cta" : undefined}
                     style={{ display:"block", textAlign:"center", padding:"11px", borderRadius:9,
                       background: p.featured ? AMBER : NAVY, color: p.featured ? NAVY : "#fff",
                       fontSize:13.5, fontWeight:700, textDecoration:"none" }}>
@@ -494,7 +598,7 @@ export default function LandingPage() {
           </div>
 
           {/* Enterprise */}
-          <div className="fs-band" style={{ marginTop:20, background:"#fff", border:`1px solid ${LINE}`,
+          <div className="fs-band rv" style={{ marginTop:20, background:"#fff", border:`1px solid ${LINE}`,
             borderLeft:`3px solid ${NAVY}`, borderRadius:14, padding:"24px 28px" }}>
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".08em",
@@ -520,16 +624,18 @@ export default function LandingPage() {
       {/* ── FAQ ───────────────────────────────────────────────── */}
       <section id="faq" style={{ padding:"84px 0", background:"#fff" }}>
         <div style={{ maxWidth:800, margin:"0 auto", padding:"0 24px" }}>
-          <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
-            textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
-            FAQ
+          <div className="rv">
+            <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+              textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
+              FAQ
+            </div>
+            <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+              letterSpacing:"-.025em", marginBottom:32 }}>
+              Questions worth answering
+            </h2>
           </div>
-          <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
-            letterSpacing:"-.025em", marginBottom:32 }}>
-            Questions worth answering
-          </h2>
 
-          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+          <div className="rv" style={{ display:"flex", flexDirection:"column", gap:2 }}>
             {FAQS.map((f, i) => (
               <div key={f.q} style={{ borderBottom:`1px solid ${LINE}` }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -539,13 +645,15 @@ export default function LandingPage() {
                     textAlign:"left", fontFamily:"inherit" }}>
                   <span style={{ fontSize:15, fontWeight:600, color:INK, flex:1, lineHeight:1.4 }}>{f.q}</span>
                   <span aria-hidden style={{ fontSize:18, color:MUTED, flexShrink:0,
-                    transform: openFaq === i ? "rotate(45deg)" : "none", transition:"transform .18s" }}>+</span>
+                    transform: openFaq === i ? "rotate(45deg)" : "none", transition:"transform .25s cubic-bezier(.16,1,.3,1)" }}>+</span>
                 </button>
-                {openFaq === i && (
-                  <div style={{ padding:"0 4px 20px", fontSize:14, color:SLATE, lineHeight:1.7, maxWidth:680 }}>
-                    {f.a}
+                <div className={`fs-faq-a${openFaq === i ? " open" : ""}`}>
+                  <div>
+                    <div style={{ padding:"0 4px 20px", fontSize:14, color:SLATE, lineHeight:1.7, maxWidth:680 }}>
+                      {f.a}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
@@ -555,10 +663,11 @@ export default function LandingPage() {
       {/* ── FINAL CTA ─────────────────────────────────────────── */}
       <section style={{ background:NAVY, padding:"84px 0", textAlign:"center",
         position:"relative", overflow:"hidden" }}>
-        <div aria-hidden style={{ position:"absolute", inset:0,
-          background:"radial-gradient(ellipse 60% 80% at 50% 100%, rgba(27,108,168,.22) 0%, transparent 70%)",
+        <div aria-hidden className="fs-auroraB" style={{ position:"absolute", bottom:"-40%", left:"20%",
+          width:"60%", height:"90%", borderRadius:"50%", filter:"blur(90px)",
+          background:"radial-gradient(circle, rgba(27,108,168,.25) 0%, transparent 65%)",
           pointerEvents:"none" }} />
-        <div style={{ maxWidth:640, margin:"0 auto", padding:"0 24px", position:"relative" }}>
+        <div className="rv" style={{ maxWidth:640, margin:"0 auto", padding:"0 24px", position:"relative" }}>
           <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, color:"#fff",
             letterSpacing:"-.025em", marginBottom:14, lineHeight:1.18 }}>
             Bring a real plan. See it running.
@@ -568,12 +677,12 @@ export default function LandingPage() {
             document you already have and watch what comes back.
           </p>
           <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
-            <Link href="/auth/signup"
+            <Link href="/auth/signup" className="fs-cta"
               style={{ padding:"14px 28px", background:AMBER, color:NAVY, borderRadius:10,
                 fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
               Start free trial →
             </Link>
-            <button onClick={() => setDemoOpen(true)}
+            <button onClick={() => setDemoOpen(true)} className="fs-ghost"
               style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
                 border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
                 fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
@@ -581,7 +690,7 @@ export default function LandingPage() {
             </button>
           </div>
           <p style={{ fontSize:12.5, color:"rgba(255,255,255,.3)" }}>
-            Free for two months · Cancel before it converts · English and Español
+            Free for two months · No credit card required · English and Español
           </p>
         </div>
       </section>
