@@ -60,6 +60,24 @@ export function ProjectSettingsModal({ projectId, onClose }: {
     } finally { setSavingAi(false) }
   }
 
+  async function movePhase(idx: number, dir: -1 | 1) {
+    const a = phases[idx], b = phases[idx + dir]
+    if (!a || !b) return
+    // Optimistic: swap locally first — the UI answers the click instantly.
+    const next = [...phases]
+    next[idx] = { ...b, order: a.order }
+    next[idx + dir] = { ...a, order: b.order }
+    setPhases(next.sort((x, y) => x.order - y.order))
+    // Persist both sides; on any failure, reload truth from the server.
+    const patch = (id: string, order: number) =>
+      fetch(`/api/projects/${projectId}/phases/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order }),
+      })
+    const [r1, r2] = await Promise.all([patch(a.id, b.order), patch(b.id, a.order)])
+    if (!r1.ok || !r2.ok) { setError("Reorder failed — refreshing"); await reload() }
+  }
+
   async function phasePatch(phaseId: string, body: any) {
     setBusy(phaseId); setError("")
     try {
@@ -209,13 +227,13 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                     {canManage && (
                       <>
                         <button disabled={idx === 0 || !!busy}
-                          onClick={() => phasePatch(ph.id, { order: phases[idx - 1].order })}
+                          onClick={() => movePhase(idx, -1)}
                           title="Move up"
                           style={{ padding: "3px 8px", background: "#fff", border: "1px solid var(--border)",
                             borderRadius: 6, fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer",
                             opacity: idx === 0 ? 0.4 : 1, fontFamily: "var(--font)" }}>↑</button>
                         <button disabled={idx === phases.length - 1 || !!busy}
-                          onClick={() => phasePatch(ph.id, { order: phases[idx + 1].order })}
+                          onClick={() => movePhase(idx, 1)}
                           title="Move down"
                           style={{ padding: "3px 8px", background: "#fff", border: "1px solid var(--border)",
                             borderRadius: 6, fontSize: 11,
