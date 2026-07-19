@@ -112,6 +112,8 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq]   = useState<number | null>(0)
   const [scrolled, setScrolled] = useState(false)
   const [importSecs, setImportSecs] = useState(0)
+  const [runId, setRunId] = useState(0)          // each increment replays the import
+  const [heroY, setHeroY] = useState(0)          // parallax depth on the hero card
   const rootRef = useRef<HTMLDivElement>(null)
 
   // Glass nav after the page moves.
@@ -133,20 +135,54 @@ export default function LandingPage() {
       for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); ob.unobserve(e.target) }
     }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" })
     els.forEach(el => ob.observe(el))
-    return () => ob.disconnect()
+
+    // $197 counts up the first time the pricing band reveals.
+    const priceEl = rootRef.current?.querySelector(".fs-197")
+    let priceOb: IntersectionObserver | null = null
+    if (priceEl && !reduce) {
+      priceOb = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return
+        priceOb?.disconnect()
+        let v = 0
+        const id = setInterval(() => {
+          v += Math.ceil((197 - v) / 6) || 1
+          if (v >= 197) { v = 197; clearInterval(id) }
+          priceEl.textContent = "$" + v
+        }, 40)
+      }, { threshold: .5 })
+      priceOb.observe(priceEl)
+    }
+    return () => { ob.disconnect(); priceOb?.disconnect() }
   }, [])
 
-  // The one JS-driven number: the import counter ticking to 31s while the
-  // Gantt draws itself. Runs once, ~1.4s, synced to the bar choreography.
+  // The import counter ticks to 31s while the Gantt draws itself, then the whole
+  // sequence replays every 9s — a demo reel. runId keys the card so CSS
+  // animations restart with each cycle.
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setImportSecs(31); return }
     let v = 0
+    setImportSecs(0)
     const id = setInterval(() => {
       v += Math.ceil((31 - v) / 7) || 1
       if (v >= 31) { v = 31; clearInterval(id) }
       setImportSecs(v)
     }, 60)
     return () => clearInterval(id)
+  }, [runId])
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const id = setInterval(() => setRunId(r => r + 1), 9000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Gentle parallax: the hero card drifts against the scroll, adding depth.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    let raf = 0
+    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setHeroY(window.scrollY * -0.06)) }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf) }
   }, [])
 
   return (
@@ -210,7 +246,44 @@ export default function LandingPage() {
         a:focus-visible, button:focus-visible, summary:focus-visible {
           outline:2px solid ${AMBER}; outline-offset:3px; border-radius:6px;
         }
+        /* Headline shimmer — amber with a slow light sweep */
+        .fs-shimmer {
+          background:linear-gradient(110deg, ${AMBER} 20%, #FFD57E 40%, ${AMBER} 60%);
+          background-size:220% 100%;
+          -webkit-background-clip:text; background-clip:text;
+          color:transparent; -webkit-text-fill-color:transparent;
+          animation:fsShimmer 5.5s ease-in-out infinite;
+        }
+        @keyframes fsShimmer { 0%,100% { background-position:110% 0; } 50% { background-position:-10% 0; } }
+
+        /* Floating vernacular chips around the hero card */
+        .fs-chip { position:absolute; z-index:2; font-family:${MONO}; font-size:10.5px; font-weight:700;
+          padding:6px 11px; border-radius:8px; background:rgba(13,27,42,.88); color:#E2E8F0;
+          border:1px solid rgba(255,255,255,.16); box-shadow:0 10px 26px rgba(0,0,0,.35);
+          backdrop-filter:blur(6px); pointer-events:none; display:none; }
+        @media (min-width:900px) { .fs-chip { display:block; } }
+        .fs-chipA { top:-14px; right:-22px; color:#FCA5A5; animation:fsFloatA 6.5s ease-in-out infinite; }
+        .fs-chipB { bottom:64px; left:-30px; color:#6EE7B7; animation:fsFloatB 7.5s ease-in-out 1s infinite; }
+        .fs-chipC { bottom:-12px; right:24px; color:#FCD34D; animation:fsFloatA 8s ease-in-out .5s infinite; }
+        @keyframes fsFloatA { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-9px); } }
+        @keyframes fsFloatB { 0%,100% { transform:translateY(0); } 50% { transform:translateY(8px); } }
+
+        /* Capability marquee */
+        .fs-marquee { display:flex; width:max-content; animation:fsMarquee 34s linear infinite; }
+        .fs-marquee:hover { animation-play-state:paused; }
+        @keyframes fsMarquee { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+
+        /* CTA shine sweep */
+        .fs-cta { position:relative; overflow:hidden; }
+        .fs-cta::after { content:""; position:absolute; top:0; bottom:0; left:-80%; width:50%;
+          background:linear-gradient(105deg, transparent, rgba(255,255,255,.55), transparent);
+          transform:skewX(-20deg); transition:left .5s ease; }
+        .fs-cta:hover::after { left:130%; }
+
         @media (prefers-reduced-motion:reduce) {
+          .fs-shimmer { animation:none; background:none; color:${AMBER}; -webkit-text-fill-color:${AMBER}; }
+          .fs-chip, .fs-marquee { animation:none; }
+          .fs-cta::after { display:none; }
           .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5,.fs-shot,.fs-bar,.fs-stamp,.fs-kpi { animation:none; opacity:1; transform:none; }
           .fs-today,.fs-auroraA,.fs-auroraB { animation:none; }
           .rv { opacity:1; transform:none; transition:none; }
@@ -288,7 +361,7 @@ export default function LandingPage() {
               <h1 style={{ fontSize:"clamp(34px,4.6vw,58px)", fontWeight:800, lineHeight:1.06,
                 letterSpacing:"-.035em", color:"#fff", marginBottom:20 }}>
                 <span className="fs-l2" style={{ display:"block" }}>Your plan is already written.</span>
-                <span className="fs-l3" style={{ display:"block", color:AMBER }}>Turn it into a live project.</span>
+                <span className="fs-l3 fs-shimmer" style={{ display:"block" }}>Turn it into a live project.</span>
               </h1>
 
               <p className="fs-l4" style={{ fontSize:17, lineHeight:1.65, color:"rgba(255,255,255,.6)",
@@ -319,8 +392,13 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right — the signature: a document visibly BECOMING a project */}
-            <div className="fs-shot" style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+            {/* Right — the signature: a document visibly BECOMING a project.
+                Replays every 9s (key={runId}); floats on scroll (parallax). */}
+            <div style={{ position:"relative", transform:`translateY(${heroY}px)`, willChange:"transform" }}>
+              <div aria-hidden className="fs-chip fs-chipA">RISK-001 · scored 15</div>
+              <div aria-hidden className="fs-chip fs-chipB">✓ 47 tasks imported</div>
+              <div aria-hidden className="fs-chip fs-chipC">$ 1.2M → EVM</div>
+            <div key={runId} className="fs-shot" style={{ background:"#fff", borderRadius:14, overflow:"hidden",
               boxShadow:"0 28px 70px rgba(0,0,0,.42)", border:"1px solid rgba(255,255,255,.1)" }}>
               {/* Provenance — the whole pitch in one strip, counter ticking */}
               <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 14px",
@@ -389,6 +467,27 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Capability marquee — the product's vocabulary, in motion */}
+        <div style={{ marginTop:64, borderTop:"1px solid rgba(255,255,255,.08)",
+          borderBottom:"1px solid rgba(255,255,255,.08)", overflow:"hidden", position:"relative" }}>
+          <div className="fs-marquee">
+            {[0,1].map(dup => (
+              <div key={dup} aria-hidden={dup === 1} style={{ display:"flex", flexShrink:0 }}>
+                {["AI document import","Gantt + critical path","EVM built-in","Phase gates","Risk registers",
+                  "AI status reports","Reads scanned PDFs","English · Español","Microsoft & Google SSO",
+                  "Portfolio hierarchy","18 templates","Full audit log"].map(t => (
+                  <span key={t} style={{ fontFamily:MONO, fontSize:11, letterSpacing:".08em",
+                    textTransform:"uppercase", color:"rgba(255,255,255,.38)", padding:"13px 0",
+                    whiteSpace:"nowrap", display:"inline-flex", alignItems:"center" }}>
+                    {t}<span style={{ color:AMBER, margin:"0 22px", opacity:.6 }}>·</span>
+                  </span>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -540,7 +639,7 @@ export default function LandingPage() {
               <div style={{ fontFamily:MONO, fontSize:13, color:"rgba(255,255,255,.45)" }}>
                 3 × $39 + 4 × $20 =
               </div>
-              <div style={{ fontFamily:MONO, fontSize:32, fontWeight:800, color:AMBER, lineHeight:1 }}>
+              <div className="fs-197" style={{ fontFamily:MONO, fontSize:32, fontWeight:800, color:AMBER, lineHeight:1 }}>
                 $197
               </div>
               <div style={{ fontSize:13, color:"rgba(255,255,255,.45)" }}>/mo</div>
