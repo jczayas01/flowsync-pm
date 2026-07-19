@@ -181,9 +181,19 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
-      // Handle workspace switch
+      // Handle workspace switch — VALIDATED. The client can send any id here;
+      // honoring it blindly would let any signed-in user switch into any tenant.
+      // token.workspaces was just re-read from the DB above (update triggers run
+      // in the Node runtime), so membership is checked against fresh data.
       if (trigger === 'update' && session?.activeWorkspaceId) {
-        token.activeWorkspaceId = session.activeWorkspaceId
+        const target = (token.workspaces as any[] | undefined)
+          ?.find(w => w.id === session.activeWorkspaceId)
+        if (target) {
+          token.activeWorkspaceId = target.id
+          token.workspaceRole     = target.role
+        } else {
+          console.warn('[auth] refused switch to non-member workspace', session.activeWorkspaceId)
+        }
       }
 
       return token

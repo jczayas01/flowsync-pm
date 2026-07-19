@@ -9,8 +9,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
 
-  // Resolve active workspace
-  const membership = await db.workspaceMember.findFirst({
+  // Resolve active workspace: the one the session points at, if the user is
+  // still a member of it; otherwise fall back to their first membership.
+  const activeId = (session.user as any).activeWorkspaceId as string | undefined
+  const membership = (activeId
+    ? await db.workspaceMember.findFirst({
+        where:   { userId: session.user.id, workspaceId: activeId },
+        include: { workspace: true },
+      })
+    : null) || await db.workspaceMember.findFirst({
     where:   { userId: session.user.id },
     include: { workspace: true },
     orderBy: { joinedAt: 'asc' },

@@ -5,7 +5,7 @@ import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import { HelpCenter } from "@/components/help/HelpCenter"
 import { can as rbacCan, mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
 import { PermissionsProvider } from "@/lib/rbac/usePermissions"
@@ -53,6 +53,20 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
   user:User; workspace:Workspace; workspaces:Workspace[]; userRole:string
   isPlatformAdmin?:boolean; children:React.ReactNode
 }) {
+  const { update } = useSession()
+  const [wsOpen, setWsOpen] = useState(false)
+  const [wsBusy, setWsBusy] = useState(false)
+
+  async function switchWorkspace(id: string) {
+    if (id === workspace.id || wsBusy) { setWsOpen(false); return }
+    setWsBusy(true)
+    try {
+      // The jwt callback validates membership before honoring this — a rogue id
+      // is refused server-side, so the client stays simple.
+      await update({ activeWorkspaceId: id })
+      window.location.href = "/dashboard"   // full reload: every layout re-resolves
+    } catch { setWsBusy(false); setWsOpen(false) }
+  }
   const pathname    = usePathname()
   const [menu, setMenu] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -99,13 +113,58 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
               FlowSync <span style={{color:"var(--amber,#F59E0B)"}}>PM</span>
             </span>
           </Link>
-          <div style={{background:"rgba(255,255,255,.07)",borderRadius:5,padding:"5px 9px",
-            fontSize:11,color:"rgba(255,255,255,.5)",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
-            <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
-              fontWeight:500,color:"rgba(255,255,255,.75)",flex:1,fontSize:11}}>
-              {workspace.name}
-            </span>
-            <span style={{fontSize:9,opacity:.5,marginLeft:4}}>▾</span>
+          <div style={{ position:"relative" }}>
+            <button onClick={() => setWsOpen(o => !o)} aria-expanded={wsOpen}
+              aria-label="Switch workspace"
+              style={{width:"100%",background:"rgba(255,255,255,.07)",borderRadius:5,padding:"5px 9px",
+                fontSize:11,color:"rgba(255,255,255,.5)",display:"flex",alignItems:"center",
+                justifyContent:"space-between",cursor:"pointer",border:"none",fontFamily:"inherit",
+                textAlign:"left"}}>
+              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                fontWeight:500,color:"rgba(255,255,255,.75)",flex:1,fontSize:11}}>
+                {wsBusy ? "Switching…" : workspace.name}
+              </span>
+              <span style={{fontSize:9,opacity:.5,marginLeft:4,
+                transform: wsOpen ? "rotate(180deg)" : "none", transition:"transform .15s"}}>▾</span>
+            </button>
+
+            {wsOpen && (
+              <>
+                {/* click-away layer */}
+                <div onClick={() => setWsOpen(false)}
+                  style={{ position:"fixed", inset:0, zIndex:120 }} />
+                <div role="listbox" style={{ position:"absolute", top:"calc(100% + 5px)", left:0, right:0,
+                  zIndex:121, background:"#13273B", border:"1px solid rgba(255,255,255,.14)",
+                  borderRadius:8, boxShadow:"0 16px 40px rgba(0,0,0,.5)", overflow:"hidden",
+                  maxHeight:280, overflowY:"auto" }}>
+                  {(workspaces || []).map(w => {
+                    const current = w.id === workspace.id
+                    return (
+                      <button key={w.id} role="option" aria-selected={current}
+                        onClick={() => switchWorkspace(w.id)}
+                        style={{ width:"100%", display:"flex", alignItems:"center", gap:8,
+                          padding:"9px 10px", background: current ? "rgba(255,255,255,.08)" : "none",
+                          border:"none", cursor: current ? "default" : "pointer",
+                          fontFamily:"inherit", textAlign:"left" }}>
+                        <span style={{ width:22, height:22, borderRadius:6, flexShrink:0,
+                          background:"rgba(27,108,168,.35)", display:"grid", placeItems:"center",
+                          fontSize:10, fontWeight:800, color:"#fff" }}>
+                          {w.name.slice(0,1).toUpperCase()}
+                        </span>
+                        <span style={{ flex:1, minWidth:0 }}>
+                          <span style={{ display:"block", fontSize:11.5, fontWeight:600,
+                            color:"rgba(255,255,255,.85)", overflow:"hidden",
+                            textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{w.name}</span>
+                          <span style={{ fontSize:9, color:"rgba(255,255,255,.4)",
+                            textTransform:"uppercase", letterSpacing:".04em" }}>{w.plan}</span>
+                        </span>
+                        {current && <span style={{ color:"var(--amber,#F59E0B)", fontSize:11 }}>✓</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
