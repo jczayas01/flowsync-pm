@@ -10,6 +10,10 @@ const schema = z.object({
   name:     z.string().min(1).max(200),
   email:    z.string().email(),
   password: z.string().min(8),
+  // Consent is not a formality: required client-side AND here; the timestamp
+  // is the legal record of when they agreed.
+  acceptLegal: z.literal(true, { errorMap: () => ({ message: "You must accept the Terms of Service and Privacy Policy." }) }),
+  newsletter:  z.boolean().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -19,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
     }
-    const { name, email, password } = parsed.data
+    const { name, email, password, newsletter } = parsed.data
 
     const existing = await db.user.findUnique({
       where: { email },
@@ -46,6 +50,8 @@ export async function POST(req: NextRequest) {
     const user   = await db.user.create({
       data: {
         name, email, isActive: true,
+        legalAcceptedAt: new Date(),
+        newsletterOptIn: !!newsletter,
         accounts: { create: { provider: "EMAIL", providerAccountId: email, accessToken: hashed } },
       },
       select: { id: true, email: true, name: true },

@@ -67,6 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
           name,
           email,
           emailVerified: new Date(),   // the invite email proved control of the address
+          legalAcceptedAt: new Date(), // the join form shows the terms notice
           accounts: {
             // Same shape /api/auth/register writes — authorize() looks for
             // provider EMAIL and compares against accessToken.

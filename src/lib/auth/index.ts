@@ -218,6 +218,13 @@ export const authConfig: NextAuthConfig = {
   },
 
   events: {
+    // OAuth signups never see a checkbox — the notice under the provider buttons
+    // ("By continuing, you agree…") is the consent, recorded here at creation.
+    async createUser({ user }) {
+      try {
+        await db.user.update({ where: { id: user.id }, data: { legalAcceptedAt: new Date() } })
+      } catch { /* non-fatal — consent text was still shown */ }
+    },
     // Create audit log on sign-in
     async signIn({ user }) {
       try {

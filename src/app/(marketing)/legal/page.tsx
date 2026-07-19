@@ -55,7 +55,7 @@ export default function LegalHub() {
           ))}
         </div>
         <div style={{ marginTop:40, fontSize:12, color:"#94A3B8", textAlign:"center" }}>
-          Questions? Contact us at <a href="mailto:legal@flowsyncpm.com" style={{ color:"#1B6CA8" }}>legal@flowsyncpm.com</a>
+          Flow Sync PM · Registered merchant, Puerto Rico (Reg. 1552654-0010) · Questions? Contact us at <a href="mailto:legal@flowsyncpm.com" style={{ color:"#1B6CA8" }}>legal@flowsyncpm.com</a>
         </div>
       </div>
       <div style={{ textAlign:"center", padding:"20px", fontSize:12, color:"#94A3B8" }}>

@@ -137,7 +137,9 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
                   Continue with Microsoft
                 </button>
                 <p style={{ fontSize: 11, color: "#94A3B8", textAlign: "center", marginTop: 4, lineHeight: 1.5 }}>
-                  Use the same email the invitation was sent to.
+                  Use the same email the invitation was sent to. By joining, you agree to the{" "}
+                  <a href="/legal/terms" target="_blank" rel="noopener" style={{ color: "#1B6CA8" }}>Terms</a> and{" "}
+                  <a href="/legal/privacy" target="_blank" rel="noopener" style={{ color: "#1B6CA8" }}>Privacy Policy</a>.
                 </p>
               </form>
             )}

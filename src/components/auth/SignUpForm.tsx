@@ -13,6 +13,8 @@ export function SignUpForm() {
   const params = useSearchParams()
   const callbackUrl = params.get('callbackUrl') || ''
   const [form, setForm]     = useState({ name:'', email: params.get('email') || '', password:'' })
+  const [acceptLegal, setAcceptLegal] = useState(false)
+  const [newsletter, setNewsletter]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
 
@@ -22,7 +24,7 @@ export function SignUpForm() {
     try {
       const res = await fetch('/api/auth/register', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, acceptLegal, newsletter }),
       })
       if (!res.ok) {
         const d = await res.json()
@@ -64,6 +66,28 @@ export function SignUpForm() {
         <input type="password" placeholder="Password (8+ characters)" required minLength={8}
           value={form.password} onChange={e => setForm({...form, password:e.target.value})}
           style={inputStyle} />
+        {/* Consent: required legal acceptance, optional newsletter. */}
+        <label style={{ display:'flex', gap:9, alignItems:'flex-start', fontSize:12.5,
+        color:'rgba(255,255,255,.65)', lineHeight:1.55, cursor:'pointer', marginTop:2 }}>
+        <input type="checkbox" required checked={acceptLegal}
+          onChange={e => setAcceptLegal(e.target.checked)}
+          style={{ marginTop:2, accentColor:'var(--amber)' }} />
+        <span>
+          I agree to the{' '}
+          <a href="/legal/terms" target="_blank" rel="noopener"
+            style={{ color:'var(--amber)', textDecoration:'none', fontWeight:600 }}>Terms of Service</a>
+          {' '}and{' '}
+          <a href="/legal/privacy" target="_blank" rel="noopener"
+            style={{ color:'var(--amber)', textDecoration:'none', fontWeight:600 }}>Privacy Policy</a>.
+        </span>
+      </label>
+        <label style={{ display:'flex', gap:9, alignItems:'flex-start', fontSize:12.5,
+        color:'rgba(255,255,255,.5)', lineHeight:1.55, cursor:'pointer', marginBottom:6 }}>
+        <input type="checkbox" checked={newsletter}
+          onChange={e => setNewsletter(e.target.checked)}
+          style={{ marginTop:2, accentColor:'var(--amber)' }} />
+        <span>Send me occasional product updates and PM resources. No spam, unsubscribe any time.</span>
+      </label>
         <button type="submit" disabled={loading} style={{
           width:'100%', padding:12, background:'var(--amber)', color:'var(--navy)', border:'none',
           borderRadius:'var(--radius)', fontSize:14, fontWeight:700, cursor:'pointer',
