@@ -48,6 +48,10 @@ export const metadata: Metadata = {
     title: 'FlowSync PM — Enterprise Project & PMO Management',
     description: DESC,
   },
+  // Google Search Console ownership — the meta-tag method. The GA-based check
+  // failed because the verifier wants the token in <head>; this renders exactly
+  // there. Keep permanently: removing it un-verifies the property.
+  verification: { google: 'mpu7hOLFYxOxwmazBzHVVx_Vyp5YPjbG3Il9gFPXhS0' },
   robots: {
     index: true, follow: true,
     googleBot: { index: true, follow: true, 'max-snippet': -1, 'max-image-preview': 'large' },
