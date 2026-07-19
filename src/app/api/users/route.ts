@@ -11,6 +11,7 @@ import { db } from "@/lib/db"
 import {
   withWorkspace, ok, okList, err, parseBody,
   getSearchParams, audit, ApiContext,
+  assertWorkspaceWritable,
 } from "@/lib/api"
 import {
   requirePermission, requireCanAssignRole, mapDbRoleToRbac,
@@ -77,6 +78,7 @@ async function listUsers(ctx: ApiContext) {
 }
 
 async function inviteUser(ctx: ApiContext) {
+  { const lockRes = await assertWorkspaceWritable(ctx.workspaceId); if (lockRes) return lockRes }
   const guard = await requirePermission(ctx as any, "users:invite")
   if (guard) return guard
 

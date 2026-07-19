@@ -220,6 +220,25 @@ export async function verifyProjectAccess(
   return { ok: true, role, locked }
 }
 
+/**
+ * Workspace-level write guard. Project-scoped routes get trial enforcement via
+ * verifyProjectAccess, but creating projects, committing imports, and inviting
+ * users are workspace-level — they never pass through that check, which is how
+ * an expired workspace could still create projects (found in testing, Jul 2026).
+ * Returns a 402 response to send back, or null when writes are allowed.
+ */
+export async function assertWorkspaceWritable(workspaceId: string): Promise<NextResponse | null> {
+  const ws = await db.workspace.findUnique({
+    where: { id: workspaceId }, select: { plan: true, trialEndsAt: true },
+  })
+  if (ws && trialLocked(ws)) {
+    return NextResponse.json(
+      { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+      { status: 402 })
+  }
+  return null
+}
+
 // ─────────────────────────────────────────────
 // AUDIT LOG HELPER
 // ─────────────────────────────────────────────

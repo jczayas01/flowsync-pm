@@ -41,6 +41,9 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
   const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length }
 
   return (
+    // AppShell's <main> is overflow:hidden — every page provides its own scroll
+    // container. This one didn't, so rows past the viewport were simply clipped.
+    <div style={{ flex:1, minHeight:0, overflowY:"auto", width:"100%" }}>
     <div style={{ padding:"20px 16px", maxWidth:1280, margin:"0 auto", fontFamily:"var(--font)" }}>
       <div style={{ marginBottom:4, display:"flex", alignItems:"center", gap:10 }}>
         <h1 style={{ fontSize:19, fontWeight:700, color:NAVY }}>⚡ Platform Admin</h1>
@@ -94,6 +97,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
           {tab === "leads"      && <LeadTable rows={lds} />}
         </div>
       </div>
+    </div>
     </div>
   )
 }

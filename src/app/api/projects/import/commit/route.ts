@@ -5,7 +5,7 @@ export const maxDuration = 30
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { withWorkspace, ok, err, parseBody, ApiContext } from "@/lib/api"
+import { withWorkspace, ok, err, parseBody, ApiContext , assertWorkspaceWritable } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
 
 const iso = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional()
@@ -49,6 +49,7 @@ const I_SCORE: Record<string, number> = { NEGLIGIBLE: 1, MINOR: 2, MODERATE: 3, 
 
 async function commit(ctx: ApiContext) {
   { const g = await requirePermission(ctx as any, "projects:create" as any); if (g) return g }
+  { const lockRes = await assertWorkspaceWritable(ctx.workspaceId); if (lockRes) return lockRes }
   const parsed = await parseBody(ctx.req, commitSchema)
   if ("error" in parsed) return parsed.error
   const d = parsed.data

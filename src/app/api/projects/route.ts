@@ -4,6 +4,7 @@
 
 export const dynamic = "force-dynamic"
 
+import { assertWorkspaceWritable } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
@@ -134,6 +135,9 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext) => {
   try {
     const guard = await requirePermission(ctx as any, "projects:create")
     if (guard) return guard
+
+    const lockRes = await assertWorkspaceWritable(ctx.workspaceId)
+    if (lockRes) return lockRes
 
     const body = await req.json()
     const data = validate(body, createProjectSchema)
