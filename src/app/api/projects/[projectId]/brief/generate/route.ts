@@ -38,6 +38,11 @@ export async function POST(
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    if (access.locked) {
+      return NextResponse.json(
+        { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+        { status: 402 })
+    }
   const body = await req.json().catch(() => ({}))
   const documentIds: string[] | undefined =
     Array.isArray(body?.documentIds) && body.documentIds.length ? body.documentIds : undefined

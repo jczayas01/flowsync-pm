@@ -25,6 +25,11 @@ export async function PATCH(
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    if (access.locked) {
+      return NextResponse.json(
+        { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+        { status: 402 })
+    }
   // Only users who can edit the project may change client-sharing
   const member = await db.workspaceMember.findFirst({
     where: { userId: session.user.id, workspaceId }, select: { role: true },
@@ -104,6 +109,11 @@ export async function DELETE(
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    if (access.locked) {
+      return NextResponse.json(
+        { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+        { status: 402 })
+    }
   const doc = await db.document.findUnique({ where: { id: params.documentId } })
   if (!doc || doc.projectId !== params.projectId) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 })

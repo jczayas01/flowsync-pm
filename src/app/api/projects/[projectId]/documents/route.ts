@@ -69,6 +69,11 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    if (access.locked) {
+      return NextResponse.json(
+        { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+        { status: 402 })
+    }
   const uMember = await db.workspaceMember.findFirst({
     where: { userId: session.user.id, workspaceId }, select: { role: true },
   })

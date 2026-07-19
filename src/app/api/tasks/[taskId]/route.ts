@@ -4,7 +4,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { dispatchEvent } from "@/lib/automation/dispatch"
@@ -184,6 +184,11 @@ async function deleteTask(ctx: ApiContext, params?: Record<string,string>) {
   const access = await verifyProjectAccess(task.projectId, ctx.userId, ctx.workspaceId)
   if (!access.ok) return forbidden()
 
+    if (access.locked) {
+      return NextResponse.json(
+        { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+        { status: 402 })
+    }
   await db.$transaction(async tx => {
     // Promote any subtasks up to this task's parent so they are not orphaned
     await tx.task.updateMany({ where: { parentId: id }, data: { parentId: task.parentId ?? null } })

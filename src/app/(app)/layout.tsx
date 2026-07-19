@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // All workspaces for switcher
   const allMemberships = await db.workspaceMember.findMany({
     where:   { userId: session.user.id },
-    include: { workspace: { select: { id:true, name:true, logoUrl:true, plan:true } } },
+    include: { workspace: { select: { id:true, name:true, logoUrl:true, plan:true, trialEndsAt:true } } },
     orderBy: { joinedAt: 'asc' },
   })
 

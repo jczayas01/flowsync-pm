@@ -11,7 +11,7 @@ import { can as rbacCan, mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
 import { PermissionsProvider } from "@/lib/rbac/usePermissions"
 import { NotificationBell } from "@/components/layout/NotificationBell"
 
-interface Workspace { id:string; name:string; logoUrl?:string|null; plan:string }
+interface Workspace { id:string; name:string; logoUrl?:string|null; plan:string; trialEndsAt?:Date|string|null }
 interface User      { id:string; name:string; email:string; avatarUrl?:string }
 
 const NAV = [
@@ -259,6 +259,33 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
       {helpOpen && <HelpCenter onClose={()=>setHelpOpen(false)} />}
 
       <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
+        {(() => {
+          // Trial banner — countdown for the last 14 days, hard bar when expired.
+          // Paid plans and legacy no-date workspaces render nothing.
+          if (workspace.plan !== "FREE" || !workspace.trialEndsAt) return null
+          const days = Math.ceil((new Date(workspace.trialEndsAt).getTime() - Date.now()) / 86400000)
+          if (days > 14) return null
+          if (days >= 0) return (
+            <div style={{ background:"#FFFBEB", borderBottom:"1px solid #FDE68A",
+              padding:"9px 20px", fontSize:13, color:"#92400E", display:"flex",
+              alignItems:"center", gap:10, justifyContent:"center" }}>
+              <span>⏳ Your free trial ends {days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}. Nothing is charged unless you subscribe.</span>
+              <a href="/settings/billing" style={{ background:"#F59E0B", color:"#0D1B2A",
+                padding:"5px 14px", borderRadius:7, fontWeight:700, fontSize:12.5,
+                textDecoration:"none", whiteSpace:"nowrap" }}>Subscribe</a>
+            </div>
+          )
+          return (
+            <div style={{ background:"#FEF2F2", borderBottom:"1px solid #FECACA",
+              padding:"9px 20px", fontSize:13, color:"#991B1B", display:"flex",
+              alignItems:"center", gap:10, justifyContent:"center" }}>
+              <span>🔒 Your trial has ended — this workspace is read-only. Your data is safe, and you can still view and export everything.</span>
+              <a href="/settings/billing" style={{ background:"#DC2626", color:"#fff",
+                padding:"5px 14px", borderRadius:7, fontWeight:700, fontSize:12.5,
+                textDecoration:"none", whiteSpace:"nowrap" }}>Subscribe to continue</a>
+            </div>
+          )
+        })()}
         <div className="fs-mobilebar">
           <button onClick={() => setMobileNav(true)} aria-label="Menu"
             style={{background:"none",border:"none",color:"#fff",fontSize:20,cursor:"pointer",

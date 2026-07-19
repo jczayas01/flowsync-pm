@@ -53,6 +53,11 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    if (access.locked) {
+      return NextResponse.json(
+        { error: "Your trial has ended — this workspace is read-only until you subscribe in Settings → Billing.", locked: true },
+        { status: 402 })
+    }
   const formData = await req.formData()
   const file = formData.get("file") as File | null
   if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 })

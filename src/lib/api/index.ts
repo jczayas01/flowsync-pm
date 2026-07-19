@@ -1,6 +1,7 @@
 // src/lib/api.ts
 // Shared API utilities — used by all route handlers
 
+import { trialLocked } from "@/lib/trial"
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
@@ -176,17 +177,26 @@ export async function withWorkspace(
 export async function verifyProjectAccess(
   projectId: string,
   userId: string,
-  workspaceId: string
-): Promise<{ ok: boolean; role?: UserRole }> {
+  workspaceId: string,
+): Promise<{ ok: boolean; role?: UserRole; locked?: boolean }> {
   // First check workspace membership
   const wsm = await db.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
   })
   if (!wsm) return { ok: false }
 
+  // Trial state rides along on every access check. Mutating routes reject when
+  // locked (an expired, unsubscribed workspace is read-only); reads and exports
+  // keep working — the legal terms promise data access. Billing/auth routes
+  // don't pass through here, so subscribing is always possible.
+  const ws = await db.workspace.findUnique({
+    where: { id: workspaceId }, select: { plan: true, trialEndsAt: true },
+  })
+  const locked = !!(ws && trialLocked(ws))
+
   // Workspace owners and admins can access all projects
   if (['OWNER', 'ADMIN', 'SUPER_ADMIN'].includes(wsm.role)) {
-    return { ok: true, role: wsm.role }
+    return { ok: true, role: wsm.role, locked }
   }
 
   // Check project membership
@@ -207,7 +217,7 @@ export async function verifyProjectAccess(
   if (!project) return { ok: false }
 
   const role = project.members[0]?.role || wsm.role
-  return { ok: true, role }
+  return { ok: true, role, locked }
 }
 
 // ─────────────────────────────────────────────
