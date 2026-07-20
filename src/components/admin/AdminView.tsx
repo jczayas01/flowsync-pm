@@ -97,7 +97,45 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
           {tab === "leads"      && <LeadTable rows={lds} />}
         </div>
       </div>
+
+      <SalesKit />
     </div>
+    </div>
+  )
+}
+
+// ── Sales Kit ──
+// Static collateral shipped in /public/sales-kit — customer-facing documents,
+// nothing secret, so plain static links are fine. Update a doc by replacing
+// the file in the repo; Vercel serves the new version on next deploy.
+const KIT: { file:string; label:string; note:string }[] = [
+  { file:"FlowSync_Demo_Deck_ES.pptx",                        label:"Demo deck (ES)",                  note:"11 slides · speaker notes" },
+  { file:"FlowSync_Guia_de_Usuario_ES.docx",                  label:"Guía de Usuario (ES)",            note:"role-based user guide" },
+  { file:"FlowSync_Business_Information_Security.docx",       label:"Business Info & Security",        note:"for IT / compliance review" },
+  { file:"FlowSync_Service_Policies.docx",                    label:"Service Policies",                note:"SLA · uptime · retention" },
+  { file:"FlowSync_Enterprise_vs_Business.docx",              label:"Enterprise vs Business",          note:"plan justification" },
+  { file:"FlowSync_Sample_Enterprise_Invoice.docx",           label:"Sample Enterprise Invoice",       note:"NET-30 template" },
+  { file:"FlowSync_EntraID_SSO_OnePager.docx",                label:"Entra ID / AD One-Pager",         note:"SSO for customer IT" },
+  { file:"FlowSync_Master_Subscription_Agreement_DRAFT.docx", label:"Master Subscription Agreement",   note:"DRAFT — attorney review" },
+]
+
+function SalesKit() {
+  return (
+    <div style={{ marginTop:18, background:"#fff", border:"1px solid #E2E8F0", borderRadius:10, padding:"14px 16px" }}>
+      <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:10 }}>
+        <h2 style={{ fontSize:14, fontWeight:700, color:NAVY }}>📦 Sales &amp; Enterprise Kit</h2>
+        <span style={{ fontSize:11, color:"#94A3B8" }}>customer-facing collateral · Jul 2026</span>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(240px, 1fr))", gap:8 }}>
+        {KIT.map(d => (
+          <a key={d.file} href={`/sales-kit/${d.file}`} download
+            style={{ display:"block", padding:"9px 12px", border:"1px solid #E2E8F0", borderRadius:8,
+              textDecoration:"none", background:"#F8FAFC" }}>
+            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY }}>{d.label}</div>
+            <div style={{ fontSize:10.5, color:"#64748B" }}>{d.note}</div>
+          </a>
+        ))}
+      </div>
     </div>
   )
 }
