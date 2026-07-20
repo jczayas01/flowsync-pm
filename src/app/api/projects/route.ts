@@ -167,7 +167,7 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext) => {
       if (template?.isPremium) {
         const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspaceId }, select: { plan: true } })
         if (!ws || !["PRO","PROFESSIONAL","CONSULTANT","BUSINESS","ENTERPRISE"].includes(String(ws.plan))) {
-          return err("This is a premium template — included with the Business plan. Upgrade in Settings → Billing to use it.", 402)
+          return err(402, "PAYMENT_REQUIRED", "This is a premium template — included with the Business plan. Upgrade in Settings → Billing to use it.")
         }
       }
       templateData = template?.templateData
