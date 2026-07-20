@@ -58,6 +58,19 @@ const installSchema = z.object({
   })).optional().default([]),
 })
 
+
+// Plans that include premium templates. FREE (incl. trial) and STARTER must
+// upgrade — the template's price tag is honored by plan entitlement, not a
+// per-template checkout.
+const PREMIUM_TEMPLATE_PLANS = ["PRO", "PROFESSIONAL", "CONSULTANT", "BUSINESS", "ENTERPRISE"]
+
+async function assertPremiumTemplateAllowed(workspaceId: string, isPremium: boolean) {
+  if (!isPremium) return null
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+  if (ws && PREMIUM_TEMPLATE_PLANS.includes(String(ws.plan))) return null
+  return err("This is a premium template — included with the Business plan. Upgrade in Settings → Billing to use it.", 402)
+}
+
 async function installTemplate(ctx: ApiContext) {
   const _g = await requirePermission(ctx as any, "projects:create"); if (_g) return _g
   const parsed = await parseBody(ctx.req, installSchema)
@@ -65,11 +78,17 @@ async function installTemplate(ctx: ApiContext) {
   const { data } = parsed
 
   const template = getTemplate(data.templateId)
+  let wt: any = null
   if (!template) {
     // Try workspace template
-    const wt = await db.template.findFirst({ where: { id: data.templateId } })
+    wt = await db.template.findFirst({ where: { id: data.templateId } })
     if (!wt) return err("Template not found", 404)
   }
+
+  // Premium gate — server-side, so the marketplace UI can't bypass payment.
+  const premiumBlock = await assertPremiumTemplateAllowed(
+    ctx.workspaceId, !!(template as any)?.isPremium || !!wt?.isPremium)
+  if (premiumBlock) return premiumBlock
 
   const td = template?.phases || (await db.template.findFirst({ where: { id: data.templateId } }))?.templateData as any
 
