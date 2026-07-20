@@ -11,6 +11,9 @@ import { isIPAllowed } from "@/lib/security/ip-allowlist"
 const PUBLIC_PREFIXES = [
   "/_next", "/favicon", "/icon", "/apple-icon", "/opengraph", "/images", "/fonts",
   "/api/auth", "/intake/", "/api/health", "/invite/",
+  // Invitation APIs are reached by people who by definition have no session
+  // yet (accept + register). Each route validates the invitation token itself.
+  "/api/invite/",
   "/legal",             // terms, privacy, DPA, DMCA, AI policy — must be readable by anyone
   // Machine-to-machine callbacks: the caller is a server, not a signed-in person,
   // so a session check can only ever say 401. Each route authenticates its own
