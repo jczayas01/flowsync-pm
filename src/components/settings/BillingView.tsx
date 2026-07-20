@@ -3,6 +3,7 @@
 import { sendGAEvent } from "@next/third-parties/google"
 import { useState } from "react"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
+import { STARTER_LIMITS, BUSINESS_LIMITS, ENTERPRISE_LIMITS } from "@/lib/stripe/plan-limits"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", SLATE = "#64748B"
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
@@ -24,6 +25,77 @@ const TIERS = [
 const PLAN_LABEL: Record<string,string> = {
   FREE:"Trial", STARTER:"Starter", PRO:"Business", PROFESSIONAL:"Business",
   BUSINESS:"Business", CONSULTANT:"Starter", ENTERPRISE:"Enterprise",
+}
+
+
+// ── Compare plans — rows read straight from PLANS limits so the table can
+// never drift from what the gates actually enforce.
+const COMPARE_ROWS: { label:string; get:(l:any)=>string|boolean }[] = [
+  { label:"Projects & users",            get:l => "Unlimited" },
+  { label:"Storage",                     get:l => l.storage },
+  { label:"AI plan import & reports",    get:l => l.aiReports },
+  { label:"Earned value (EVM) & budget", get:l => l.evm },
+  { label:"Full governance suite",       get:l => l.fullGovernance },
+  { label:"OCR of scanned documents",    get:l => l.ocr },
+  { label:"Portfolio & programs view",   get:l => l.portfolio },
+  { label:"Executive dashboard",         get:l => l.executiveDash },
+  { label:"Automations",                 get:l => l.automations === -1 ? "Unlimited" : `${l.automations} rules` },
+  { label:"SSO (Microsoft / Google)",    get:l => l.sso },
+  { label:"Microsoft 365 integration",   get:l => l.m365 },
+  { label:"API access & webhooks",       get:l => l.apiAccess },
+  { label:"White-label branding",        get:l => l.whiteLabel },
+  { label:"Audit log retention",         get:l => l.auditLog === "unlimited" ? "Unlimited" : l.auditLog },
+  { label:"Support",                     get:l => l.support },
+]
+
+function ComparePlans() {
+  const cols: { name:string; limits:any }[] = [
+    { name:"Starter",    limits: STARTER_LIMITS },
+    { name:"Business",   limits: BUSINESS_LIMITS },
+    { name:"Enterprise", limits: ENTERPRISE_LIMITS },
+  ]
+  const cell = (v: string|boolean) =>
+    v === true  ? <span style={{ color:"#047857", fontWeight:700 }}>✓</span> :
+    v === false ? <span style={{ color:"#CBD5E1" }}>—</span> :
+    <span style={{ color:NAVY }}>{v}</span>
+  return (
+    <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
+      marginBottom:14, overflow:"hidden" }}>
+      <div style={{ padding:"14px 20px 10px", fontSize:13.5, fontWeight:700, color:NAVY }}>
+        Compare plans
+      </div>
+      <div style={{ overflowX:"auto" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+          <thead>
+            <tr style={{ borderTop:"1px solid var(--border)" }}>
+              <th style={{ textAlign:"left", padding:"8px 20px", color:SLATE, fontWeight:600 }}></th>
+              {cols.map(c => (
+                <th key={c.name} style={{ padding:"8px 12px", color: c.name==="Business" ? STEEL : SLATE,
+                  fontWeight:700, whiteSpace:"nowrap" }}>{c.name}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARE_ROWS.map((r,i) => (
+              <tr key={r.label} style={{ borderTop:"1px solid #F1F5F9",
+                background: i % 2 ? "#FAFBFC" : "#fff" }}>
+                <td style={{ padding:"7px 20px", color:SLATE }}>{r.label}</td>
+                {cols.map(c => (
+                  <td key={c.name} style={{ padding:"7px 12px", textAlign:"center", whiteSpace:"nowrap" }}>
+                    {cell(r.get(c.limits))}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding:"9px 20px 13px", fontSize:10.5, color:"var(--text-3)" }}>
+        Trial includes everything in Business for two months. Enterprise adds custom terms, DPA,
+        personal onboarding, and priority SLA — see "Need Enterprise?".
+      </div>
+    </div>
+  )
 }
 
 export function BillingView({
@@ -134,6 +206,8 @@ export function BillingView({
           )
         })}
       </div>
+
+      <ComparePlans />
 
       {/* ── Checkout (when Stripe is configured) or the honest fallback ── */}
       {stripeConfigured && canManage ? (

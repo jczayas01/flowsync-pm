@@ -15,6 +15,8 @@
 // BUSINESS.
 
 import Stripe from "stripe"
+import { STARTER_LIMITS, BUSINESS_LIMITS, ENTERPRISE_LIMITS } from "./plan-limits"
+export { STARTER_LIMITS, BUSINESS_LIMITS, ENTERPRISE_LIMITS }
 
 let _stripe: Stripe | null = null
 
@@ -83,27 +85,6 @@ export interface Plan {
   }
 }
 
-const STARTER_LIMITS: Plan["limits"] = {
-  projects:-1, users:-1, storage:"10 GB",
-  aiReports:true, wordExport:true, evm:true, fullGovernance:true,
-  executiveDash:false, portfolio:false, automations:5,
-  sso:false, whiteLabel:false, m365:false, ocr:false, apiAccess:false,
-  auditLog:"30d", support:"Community & email",
-}
-
-const BUSINESS_LIMITS: Plan["limits"] = {
-  projects:-1, users:-1, storage:"100 GB",
-  aiReports:true, wordExport:true, evm:true, fullGovernance:true,
-  executiveDash:true, portfolio:true, automations:-1,
-  sso:true, whiteLabel:false, m365:true, ocr:true, apiAccess:true,
-  auditLog:"1y", support:"Email",
-}
-
-const ENTERPRISE_LIMITS: Plan["limits"] = {
-  ...BUSINESS_LIMITS,
-  storage:"Unlimited", whiteLabel:true, auditLog:"unlimited",
-  support:"Dedicated",
-}
 
 const p = (over: Partial<Plan> & Pick<Plan,"id"|"name"|"description"|"limits">): Plan => ({
   priceMonthly:0, priceAnnual:0,
