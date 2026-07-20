@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import { canViewAllProjects } from '@/lib/security/project-visibility'
 import { PortfolioView } from '@/components/portfolio/PortfolioView'
 
 export const metadata: Metadata = { title: 'Portfolio' }
@@ -16,6 +17,9 @@ export default async function PortfolioPage() {
     select: { workspaceId:true, role:true },
   })
   if (!membership) redirect('/onboarding')
+  // Portfolio is a workspace-wide view — restricted to roles with
+  // projects:view_all (matrix). Everyone else goes to their project list.
+  if (!canViewAllProjects(membership.role)) redirect('/projects')
 
   const portfolios = await db.portfolio.findMany({
     where: { workspaceId: membership.workspaceId },

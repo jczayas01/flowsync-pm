@@ -23,7 +23,7 @@ const NAV = [
   { href:"/goals",      icon:"🎯",  label:"Goals",     minLevel:50, section:"Executive" },
 
   // Portfolio — high-level project structure (the hierarchy)
-  { href:"/portfolio",  icon:"📊",  label:"Portfolio",  perm:"programs:view", section:"Portfolio", children:[
+  { href:"/portfolio",  icon:"📊",  label:"Portfolio",  perm:"projects:view_all", section:"Portfolio", children:[
     { href:"/programs", icon:"🗂",  label:"Programs", perm:"programs:view" },
     { href:"/projects", icon:"📁",  label:"Projects"   },
   ]},

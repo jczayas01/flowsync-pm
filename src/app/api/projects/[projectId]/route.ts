@@ -73,7 +73,10 @@ async function updateProject(ctx: ApiContext, params?: Record<string,string>) {
 
   const access = await verifyProjectAccess(id, ctx.userId, ctx.workspaceId)
   if (!access.ok) return forbidden()
-  if (!['OWNER','ADMIN','PM'].includes(access.role!)) return forbidden()
+  // access.role is the workspace role for admin-like users, otherwise the
+  // PROJECT role (PM, SPONSOR, TEAM_MEMBER…). Edit: workspace admins + PMO
+  // director + program managers + the project's PM.
+  if (!['SUPER_ADMIN','OWNER','ADMIN','PMO_DIRECTOR','PROGRAM_MANAGER','PM'].includes(access.role!)) return forbidden()
 
   const parsed = await parseBody(ctx.req, updateSchema)
   if ('error' in parsed) return parsed.error
@@ -124,7 +127,7 @@ async function deleteProject(ctx: ApiContext, params?: Record<string,string>) {
 
   const access = await verifyProjectAccess(id, ctx.userId, ctx.workspaceId)
   if (!access.ok) return forbidden()
-  if (!['OWNER','ADMIN'].includes(access.role!)) return forbidden()
+  if (!['SUPER_ADMIN','OWNER','ADMIN'].includes(access.role!)) return forbidden()
 
   await db.project.update({ where: { id }, data: { status: 'ARCHIVED' } })
   await audit(ctx.workspaceId, ctx.userId, 'project.archived', 'project', id)

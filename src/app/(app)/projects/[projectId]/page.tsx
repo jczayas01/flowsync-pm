@@ -6,13 +6,17 @@ import { ProjectDashboardTab } from '@/components//projects/tabs/ProjectDashboar
 export default async function ProjectDashboardPage({ params }: { params: { projectId: string } }) {
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
+  const activeWs = (session.user as any).activeWorkspaceId as string | undefined
   const membership = await db.workspaceMember.findFirst({
-    where: { userId: session.user.id }, select: { workspaceId:true }
+    where: { userId: session.user.id, ...(activeWs ? { workspaceId: activeWs } : {}) },
+    select: { workspaceId:true }
   })
 
   const [project, tasks, risks, milestones, budgetItems, members, statusUpdates, phases, portfolios, programs, goalLinks] = await Promise.all([
-    db.project.findUnique({
-      where:  { id: params.projectId },
+    db.project.findFirst({
+      // Scoped to the member's workspace — the layout gate is the primary
+      // check; this keeps a stray query from ever crossing tenants.
+      where:  { id: params.projectId, workspaceId: membership?.workspaceId || '__none__' },
       select: {
         id:true, name:true, code:true, description:true,
         objective:true, scope:true, outOfScope:true, background:true,

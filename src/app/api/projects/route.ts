@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic"
 
 import { assertWorkspaceWritable } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
+import { projectVisibilityWhere } from '@/lib/security/project-visibility'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
@@ -77,19 +78,13 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext) => {
       }),
     }
 
-    // Non-admins only see projects they're members of
-    if (!['OWNER', 'ADMIN', 'SUPER_ADMIN'].includes((ctx as any).userRole || (ctx as any).role)) {
-      where.members = { some: { userId: ctx.userId } }
-    }
-
-    // Confidential projects: only visible to members + admins
-    // If user is not admin, exclude confidential projects they're not a member of
-    if (!['OWNER', 'ADMIN', 'SUPER_ADMIN', 'PMO_DIRECTOR'].includes((ctx as any).userRole || (ctx as any).role)) {
-      where.OR = [
-        { isConfidential: false },
-        { isConfidential: true, members: { some: { userId: ctx.userId } } },
-      ]
-    }
+    // RBAC visibility (single source of truth in lib/security/project-visibility):
+    // view-all roles see everything; everyone else only what they created,
+    // belong to, or (PROGRAM_MANAGER) manage via a program. Kept inside AND so
+    // it can't collide with the search OR built above — the previous version
+    // assigned where.OR here and silently clobbered search results.
+    const role = (ctx as any).userRole || (ctx as any).role
+    where.AND = [projectVisibilityWhere(ctx.userId, role)]
 
     const [projects, total] = await Promise.all([
       prisma.project.findMany({

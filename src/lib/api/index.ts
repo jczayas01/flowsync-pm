@@ -194,20 +194,24 @@ export async function verifyProjectAccess(
   })
   const locked = !!(ws && trialLocked(ws))
 
-  // Workspace owners and admins can access all projects
-  if (['OWNER', 'ADMIN', 'SUPER_ADMIN'].includes(wsm.role)) {
+  // Workspace owners, admins, and PMO directors can access all projects
+  // (matrix: projects:view_all + projects:edit for these roles).
+  if (['OWNER', 'ADMIN', 'SUPER_ADMIN', 'PMO_DIRECTOR'].includes(wsm.role)) {
     return { ok: true, role: wsm.role, locked }
   }
 
-  // Check project membership
+  // Check project membership — creators, members, and (for PROGRAM_MANAGER)
+  // projects inside a program they manage.
+  const doors: any[] = [
+    { createdById: userId },
+    { members: { some: { userId } } },
+  ]
+  if (wsm.role === 'PROGRAM_MANAGER') doors.push({ program: { managerId: userId } })
   const project = await db.project.findFirst({
     where: {
       id:          projectId,
       workspaceId,
-      OR: [
-        { createdById: userId },
-        { members: { some: { userId } } },
-      ],
+      OR: doors,
     },
     include: {
       members: { where: { userId }, select: { role: true } },

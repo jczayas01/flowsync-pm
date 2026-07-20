@@ -2,6 +2,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { projectVisibilityWhere } from '@/lib/security/project-visibility'
 import { ProjectShell } from '@/components/projects/ProjectShell'
 import { TaskProvider } from '@/lib/context/TaskContext'
 
@@ -23,14 +24,25 @@ export default async function ProjectLayout({
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
 
+  // Prefer the active workspace from the session (workspace switcher); fall
+  // back to first membership for single-workspace users.
+  const activeWs = (session.user as any).activeWorkspaceId as string | undefined
   const membership = await db.workspaceMember.findFirst({
-    where:  { userId: session.user.id },
+    where:  { userId: session.user.id, ...(activeWs ? { workspaceId: activeWs } : {}) },
     select: { workspaceId:true, role:true },
   })
   if (!membership) redirect('/onboarding')
 
+  // ACCESS GATE for every project sub-page (this layout wraps them all).
+  // Workspace membership alone is NOT enough — visibility follows the RBAC
+  // matrix via projectVisibilityWhere. notFound() (not forbidden) so the
+  // project's existence isn't leaked to people outside it.
   const project = await db.project.findFirst({
-    where: { id: params.projectId, workspaceId: membership.workspaceId },
+    where: {
+      id: params.projectId,
+      workspaceId: membership.workspaceId,
+      ...projectVisibilityWhere(session.user.id, membership.role),
+    },
     include: {
       phases:  { orderBy: { order:'asc' }, select: { id:true, name:true, status:true, order:true } },
       members: {

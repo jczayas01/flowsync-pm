@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import { projectVisibilityWhere } from '@/lib/security/project-visibility'
 import { DashboardView } from '@/components/dashboard/DashboardView'
 import { mapDbRoleToRbac, ROLE_LEVEL } from '@/lib/rbac/roles'
 
@@ -22,11 +23,14 @@ export default async function DashboardPage() {
   if ((ROLE_LEVEL[mapDbRoleToRbac(membership.role)] ?? 0) < 30) redirect('/my-tasks')
 
   const workspaceId = membership.workspaceId
+  // RBAC: dashboard aggregates respect the same visibility as /projects —
+  // a MEMBER's dashboard only counts the projects they belong to.
+  const vis = projectVisibilityWhere(session.user.id, membership.role)
 
   // Parallel data fetching
   const [projects, upcomingMilestones, openRisks, recentActivity] = await Promise.all([
     db.project.findMany({
-      where:   { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] } },
+      where:   { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] }, AND: [vis] },
       include: {
         _count: { select: { tasks: true, risks: true } },
         members: {
@@ -41,7 +45,7 @@ export default async function DashboardPage() {
 
     db.milestone.findMany({
       where: {
-        project: { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] } },
+        project: { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] }, AND: [vis] },
         status:  { in: ['UPCOMING','AT_RISK'] },
         dueDate: { gte: new Date(), lte: new Date(Date.now() + 30*86400000) },
       },
@@ -51,7 +55,7 @@ export default async function DashboardPage() {
     }),
 
     db.risk.findMany({
-      where:  { project: { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] } }, status: 'OPEN', score: { gte: 9 } },
+      where:  { project: { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] }, AND: [vis] }, status: 'OPEN', score: { gte: 9 } },
       include:{ project: { select: { id:true, code:true, name:true } } },
       orderBy:{ score: 'desc' },
       take: 8,
