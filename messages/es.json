@@ -53,7 +53,17 @@
     "Automation": "Automatización",
     "Settings": "Configuración",
     "Help & Guide": "Ayuda y guía",
-    "Operations": "Operaciones"
+    "Operations": "Operaciones",
+    "Workspace": "Espacio de trabajo",
+    "Team": "Equipo",
+    "Billing": "Facturación",
+    "Security": "Seguridad",
+    "Roles": "Roles",
+    "Custom fields": "Campos personalizados",
+    "Report templates": "Plantillas de reportes",
+    "White-label": "Marca blanca",
+    "Webhooks": "Webhooks",
+    "API & integrations": "API e integraciones"
   },
   "tabs": {
     "dashboard": "Panel",

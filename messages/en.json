@@ -53,7 +53,17 @@
     "Automation": "Automation",
     "Settings": "Settings",
     "Help & Guide": "Help & Guide",
-    "Operations": "Operations"
+    "Operations": "Operations",
+    "Workspace": "Workspace",
+    "Team": "Team",
+    "Billing": "Billing",
+    "Security": "Security",
+    "Roles": "Roles",
+    "Custom fields": "Custom fields",
+    "Report templates": "Report templates",
+    "White-label": "White-label",
+    "Webhooks": "Webhooks",
+    "API & integrations": "API & integrations"
   },
   "tabs": {
     "dashboard": "Dashboard",

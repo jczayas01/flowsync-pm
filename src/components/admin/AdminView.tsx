@@ -329,7 +329,12 @@ const miniBtn: React.CSSProperties = {
   fontSize:11, fontWeight:600, color:"#475569", cursor:"pointer", fontFamily:"inherit",
 }
 
-const PLAN_OPTIONS = ["FREE","STARTER","PRO","PROFESSIONAL","CONSULTANT","BUSINESS","ENTERPRISE"]
+// Only the plans we actually sell (Trial=FREE, Starter, Business, Enterprise).
+// PRO / PROFESSIONAL / CONSULTANT remain valid DB enum values for legacy rows
+// but are no longer assignable — offering them here caused plan-picker
+// inconsistency with the Billing page.
+const PLAN_OPTIONS = ["FREE","STARTER","BUSINESS","ENTERPRISE"]
+const PLAN_LABELS: Record<string,string> = { FREE: "FREE (Trial tier)" }
 
 function ManageDrawer({ w, onClose, onAction, busy }: {
   w:any; onClose:()=>void; onAction:(b:any)=>void; busy:boolean
@@ -356,7 +361,9 @@ function ManageDrawer({ w, onClose, onAction, busy }: {
 
         <Row label="Plan">
           <select value={plan} onChange={e=>setPlan(e.target.value)} style={sel}>
-            {PLAN_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+            {/* keep a legacy plan selectable if this workspace already has one */}
+            {(PLAN_OPTIONS.includes(w.plan) ? PLAN_OPTIONS : [w.plan, ...PLAN_OPTIONS]).map(p =>
+              <option key={p} value={p}>{PLAN_LABELS[p] || p}</option>)}
           </select>
           <button disabled={busy || plan===w.plan}
             onClick={()=>onAction({ action:"setPlan", workspaceId:w.id, plan })}
