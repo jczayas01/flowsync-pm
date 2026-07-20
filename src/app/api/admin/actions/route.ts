@@ -25,6 +25,8 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("toggleWorkspace"), workspaceId: z.string(), isActive: z.boolean() }),
   z.object({ action: z.literal("toggleUser"),  userId: z.string(), isActive: z.boolean() }),
   z.object({ action: z.literal("sendReset"),   userId: z.string() }),
+  z.object({ action: z.literal("deleteWorkspace"), workspaceId: z.string(), confirmName: z.string() }),
+  z.object({ action: z.literal("deleteUser"),      userId: z.string(), confirmEmail: z.string() }),
 ])
 
 async function requireAdmin() {
@@ -90,6 +92,52 @@ export async function POST(req: NextRequest) {
           where: { id: a.workspaceId }, data: { isActive: a.isActive }, select: { name: true },
         })
         return NextResponse.json({ data: { message: `${ws.name} ${a.isActive ? "enabled" : "disabled"}.` } })
+      }
+
+      case "deleteWorkspace": {
+        // PERMANENT. Everything inside cascades (projects → tasks/risks/budget…).
+        // The two relations without a cascade (templates, audit logs) are cleared
+        // explicitly, inside the same transaction.
+        const ws = await db.workspace.findUnique({
+          where: { id: a.workspaceId },
+          select: { name: true, _count: { select: { projects: true, members: true } } },
+        })
+        if (!ws) return NextResponse.json({ error: "Workspace not found" }, { status: 404 })
+        if (a.confirmName !== ws.name)
+          return NextResponse.json({ error: `Confirmation must match the workspace name exactly ("${ws.name}").` }, { status: 400 })
+
+        await db.$transaction([
+          db.template.deleteMany({ where: { workspaceId: a.workspaceId } }),
+          db.auditLog.deleteMany({ where: { workspaceId: a.workspaceId } }),
+          db.workspace.delete({ where: { id: a.workspaceId } }),
+        ])
+        return NextResponse.json({ data: {
+          message: `Workspace "${ws.name}" deleted permanently (${ws._count.projects} projects, ${ws._count.members} memberships).`,
+        } })
+      }
+
+      case "deleteUser": {
+        // PERMANENT. Refuses if the user still owns content (created projects,
+        // decisions, uploads…) — Postgres FK constraints make that a hard stop,
+        // and the right fix is deleting their test workspace first.
+        if (a.userId === session.user.id)
+          return NextResponse.json({ error: "You can't delete your own account from here." }, { status: 400 })
+        const u = await db.user.findUnique({ where: { id: a.userId }, select: { email: true, name: true } })
+        if (!u) return NextResponse.json({ error: "User not found" }, { status: 404 })
+        if (a.confirmEmail.toLowerCase() !== u.email.toLowerCase())
+          return NextResponse.json({ error: "Confirmation must match the user's email exactly." }, { status: 400 })
+
+        try {
+          await db.user.delete({ where: { id: a.userId } })
+        } catch (e: any) {
+          if (e?.code === "P2003") {
+            return NextResponse.json({ error:
+              `${u.email} still owns content (projects, tasks, documents…). Delete their workspace first, or use Disable instead.`,
+            }, { status: 409 })
+          }
+          throw e
+        }
+        return NextResponse.json({ data: { message: `User ${u.email} deleted permanently.` } })
       }
 
       case "toggleUser": {

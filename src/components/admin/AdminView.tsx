@@ -264,6 +264,16 @@ function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>voi
                   style={{ ...miniBtn, marginLeft:4, color: u.isActive ? "#B91C1C" : GREEN }}>
                   {u.isActive ? "Disable" : "Enable"}
                 </button>
+                <button disabled={busy}
+                  title="Permanent. Refused while the user still owns content — delete their workspace first."
+                  onClick={() => {
+                    const typed = prompt(`Type the user's email exactly to delete them permanently:\n\n${u.email}`)
+                    if (typed === null) return
+                    onAction({ action:"deleteUser", userId:u.id, confirmEmail: typed })
+                  }}
+                  style={{ ...miniBtn, marginLeft:4, background:"#B91C1C", color:"#fff", border:"none" }}>
+                  Delete
+                </button>
               </td>
             </tr>
           )
@@ -375,6 +385,24 @@ function ManageDrawer({ w, onClose, onAction, busy }: {
           <button disabled={busy}
             onClick={()=>onAction({ action:"toggleWorkspace", workspaceId:w.id, isActive:false })}
             style={{ ...miniBtn, color:"#B91C1C", marginLeft:"auto" }}>Disable workspace</button>
+        </div>
+
+        <div style={{ marginTop:14, paddingTop:12, borderTop:"1px solid #FECACA" }}>
+          <div style={{ fontSize:10.5, fontWeight:700, color:"#B91C1C", textTransform:"uppercase",
+            letterSpacing:".05em", marginBottom:4 }}>Danger zone</div>
+          <div style={{ fontSize:10.5, color:"#7F1D1D", lineHeight:1.5, marginBottom:8 }}>
+            Deletes the workspace and everything in it — projects, tasks, budget, documents,
+            memberships. Users themselves survive and can be deleted separately afterwards.
+          </div>
+          <button disabled={busy}
+            onClick={() => {
+              const typed = prompt(`Type the workspace name exactly to delete it permanently:\n\n${w.name}`)
+              if (typed === null) return
+              onAction({ action:"deleteWorkspace", workspaceId:w.id, confirmName: typed })
+            }}
+            style={{ ...miniBtn, background:"#B91C1C", color:"#fff", border:"none" }}>
+            Delete workspace permanently
+          </button>
         </div>
 
         <div style={{ marginTop:14, fontSize:10.5, color:"#94A3B8", lineHeight:1.5 }}>
