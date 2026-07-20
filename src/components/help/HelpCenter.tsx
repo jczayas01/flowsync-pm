@@ -223,6 +223,23 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
               color:"var(--text)", outline:"none" }} />
         </div>
 
+        {/* User Guide downloads — EN + ES, always visible */}
+        <div style={{ display:"flex", gap:8, padding:"10px 16px",
+          borderBottom:"1px solid var(--border)", flexShrink:0, background:"#F0FDF4" }}>
+          <a href="/guides/FlowSync_User_Guide_EN.pdf" target="_blank" rel="noopener"
+            style={{ flex:1, textAlign:"center", padding:"7px 10px", fontSize:12, fontWeight:600,
+              color:"#047857", background:"#fff", border:"1px solid #A7F3D0", borderRadius:8,
+              textDecoration:"none", fontFamily:"var(--font)" }}>
+            📘 User Guide (EN)
+          </a>
+          <a href="/guides/FlowSync_Guia_de_Usuario_ES.pdf" target="_blank" rel="noopener"
+            style={{ flex:1, textAlign:"center", padding:"7px 10px", fontSize:12, fontWeight:600,
+              color:"#047857", background:"#fff", border:"1px solid #A7F3D0", borderRadius:8,
+              textDecoration:"none", fontFamily:"var(--font)" }}>
+            📗 Guía de Usuario (ES)
+          </a>
+        </div>
+
         {/* Tabs */}
         <div style={{ display:"flex", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
           {[
