@@ -3,6 +3,7 @@
 
 "use client"
 
+import { DeleteRolesPanel } from "@/components/settings/DeleteRolesPanel"
 import { PERMISSIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_LEVEL, type AnyRole, type Permission } from "@/lib/rbac/roles"
 
 // Derived from the RBAC module — any role added there shows up here automatically,
@@ -91,6 +92,9 @@ export default function RolesPage() {
           </div>
         </div>
       </div>
+
+      {/* Configurable deletion permissions (admins only see data) */}
+      <DeleteRolesPanel />
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>

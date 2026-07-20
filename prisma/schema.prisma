@@ -188,6 +188,9 @@ model Workspace {
   defaultCurrency      String                @default("USD")
   weekStartsOn         Int                   @default(1)
   fiscalYearStartMonth Int                   @default(1)
+  // Workspace-level configuration blob (e.g. which roles may delete
+  // projects/programs/portfolios). Keys are namespaced, additive-only.
+  settings             Json                  @default("{}")
   isActive             Boolean               @default(true)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt

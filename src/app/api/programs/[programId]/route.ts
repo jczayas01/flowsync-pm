@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest } from "next/server"
+import { canDelete } from "@/lib/security/delete-permissions"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, parseBody, ApiContext } from "@/lib/api"
@@ -46,8 +47,9 @@ async function updateProgram(ctx: ApiContext, params?: Record<string, string>) {
 }
 
 async function deleteProgram(ctx: ApiContext, params?: Record<string, string>) {
-  const guard = await requirePermission(ctx as any, "programs:create")
-  if (guard) return guard
+  // Deletion roles are workspace-configurable (Settings → Roles → Deletion
+  // permissions); defaults to workspace admins.
+  if (!(await canDelete(ctx.workspaceId, ctx.userRole, 'program'))) return err("Not allowed", 403)
   const { program, error } = await load(ctx, params?.programId)
   if (error) return error
   try {

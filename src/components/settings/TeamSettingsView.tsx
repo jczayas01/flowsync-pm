@@ -182,6 +182,26 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
               <Badge variant="amber">{ROLE_LABELS[inv.role] || inv.role}</Badge>
               <span style={{ fontSize:11, color:"var(--text-3)" }}>Pending</span>
               <button
+                onClick={async (e) => {
+                  const btn = e.currentTarget
+                  btn.disabled = true; btn.textContent = "Sending…"
+                  const res = await fetch(`/api/settings/invitations/${inv.id}/resend`, {
+                    method:"POST", headers:{"x-workspace-id":workspaceId},
+                  })
+                  if (!res.ok) {
+                    const d = await res.json().catch(()=>({}))
+                    alert(d?.error || "Could not resend")
+                    btn.disabled = false; btn.textContent = "Resend"; return
+                  }
+                  btn.textContent = "Sent ✓"
+                  router.refresh()
+                }}
+                style={{ padding:"4px 10px", background:"#fff", border:"1px solid #A7F3D0",
+                  borderRadius:"var(--radius)", fontSize:11, color:"#047857",
+                  cursor:"pointer", fontFamily:"var(--font)" }}>
+                Resend
+              </button>
+              <button
                 onClick={async () => {
                   if (!confirm(`Revoke the invitation to ${inv.email}?`)) return
                   const res = await fetch(`/api/settings/invitations/${inv.id}`, {

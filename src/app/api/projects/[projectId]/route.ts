@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic"
 
 import { requirePermission } from "@/lib/rbac/guards"
 import { mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
+import { canDelete } from "@/lib/security/delete-permissions"
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib//db'
@@ -127,11 +128,30 @@ async function deleteProject(ctx: ApiContext, params?: Record<string,string>) {
 
   const access = await verifyProjectAccess(id, ctx.userId, ctx.workspaceId)
   if (!access.ok) return forbidden()
-  if (!['SUPER_ADMIN','OWNER','ADMIN'].includes(access.role!)) return forbidden()
+
+  // Deletion roles are workspace-configurable (Settings → Roles → Deletion
+  // permissions). Checked against the WORKSPACE role, not the project role.
+  if (!(await canDelete(ctx.workspaceId, ctx.userRole, 'project'))) return forbidden()
+
+  const project = await db.project.findFirst({
+    where: { id, workspaceId: ctx.workspaceId }, select: { status: true },
+  })
+  if (!project) return notFound('Project')
+
+  // Two-step destruction: archive first (default), then ?permanent=1 hard-
+  // deletes an ARCHIVED project — no way to vaporize live work in one click.
+  const permanent = new URL(ctx.req.url).searchParams.get('permanent') === '1'
+  if (permanent) {
+    if (project.status !== 'ARCHIVED')
+      return err('Archive the project first, then delete permanently.', 409)
+    await db.project.delete({ where: { id } })  // children cascade per schema
+    await audit(ctx.workspaceId, ctx.userId, 'project.deleted', 'project', id)
+    return ok({ deleted: true })
+  }
 
   await db.project.update({ where: { id }, data: { status: 'ARCHIVED' } })
   await audit(ctx.workspaceId, ctx.userId, 'project.archived', 'project', id)
-  return ok({ success: true })
+  return ok({ success: true, archived: true })
 }
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
@@ -141,5 +161,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
   return withWorkspace(req, updateProject, params)
 }
 export async function DELETE(req: NextRequest, { params }: { params: { projectId: string } }) {
-  return withWorkspace(req, deleteProject, params, ['OWNER','ADMIN'])
+  // Role gate lives inside deleteProject (configurable) — no static list here.
+  return withWorkspace(req, deleteProject, params)
 }

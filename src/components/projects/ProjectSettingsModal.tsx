@@ -20,6 +20,8 @@ export function ProjectSettingsModal({ projectId, onClose }: {
   const router = useRouter()
   const [loading, setLoading]   = useState(true)
   const [canManage, setCanManage] = useState(false)
+  const [projStatus, setProjStatus] = useState<string>("")
+  const [dangerBusy, setDangerBusy] = useState(false)
   const [phases, setPhases]     = useState<any[]>([])
   const [aiStyle, setAiStyle]   = useState("PROFESSIONAL")
   const [aiLanguage, setAiLanguage] = useState("AUTO")
@@ -39,6 +41,11 @@ export function ProjectSettingsModal({ projectId, onClose }: {
     if (res.ok) {
       setPhases(d?.data?.phases || [])
       setCanManage(!!d?.data?.canManage)
+      try {
+        const pr = await fetch(`/api/projects/${projectId}`)
+        const pd = await pr.json().catch(() => ({}))
+        setProjStatus(pd?.data?.status || "")
+      } catch {}
       const st = d?.data?.settings || {}
       setAiStyle(st.aiStyle || "PROFESSIONAL")
       setAiLanguage(st.aiLanguage || "AUTO")
@@ -301,6 +308,47 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                 </div>
               )}
             </section>
+
+            {canManage && (
+              <section style={{ marginTop: 8, border: "1px solid #FECACA", borderRadius: 10, padding: "12px 14px", background: "#FEF2F2" }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#B91C1C", marginBottom: 6 }}>Danger zone</div>
+                <div style={{ fontSize: 11.5, color: "#7F1D1D", lineHeight: 1.5, marginBottom: 10 }}>
+                  {projStatus === "ARCHIVED"
+                    ? "This project is archived. Permanent deletion removes the project and ALL its data (tasks, risks, budget, documents, reports). This cannot be undone."
+                    : "Archiving hides the project from active views. It can be deleted permanently afterwards. Only roles granted deletion rights in Settings → Roles can do this."}
+                </div>
+                {projStatus !== "ARCHIVED" ? (
+                  <button disabled={dangerBusy}
+                    onClick={async () => {
+                      if (!confirm("Archive this project? It disappears from active views but keeps all data.")) return
+                      setDangerBusy(true)
+                      const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" })
+                      setDangerBusy(false)
+                      if (!res.ok) { const d = await res.json().catch(()=>({})); setError(d?.error || "Not allowed to archive"); return }
+                      setProjStatus("ARCHIVED"); router.refresh()
+                    }}
+                    style={{ padding: "7px 14px", background: "#fff", border: "1px solid #FCA5A5", borderRadius: "var(--radius)",
+                      fontSize: 12, fontWeight: 600, color: "#B91C1C", cursor: "pointer", fontFamily: "var(--font)" }}>
+                    Archive project
+                  </button>
+                ) : (
+                  <button disabled={dangerBusy}
+                    onClick={async () => {
+                      const word = prompt('Type DELETE to permanently remove this project and all its data:')
+                      if (word !== "DELETE") return
+                      setDangerBusy(true)
+                      const res = await fetch(`/api/projects/${projectId}?permanent=1`, { method: "DELETE" })
+                      setDangerBusy(false)
+                      if (!res.ok) { const d = await res.json().catch(()=>({})); setError(d?.error || "Not allowed to delete"); return }
+                      window.location.href = "/projects"
+                    }}
+                    style={{ padding: "7px 14px", background: "#B91C1C", border: "none", borderRadius: "var(--radius)",
+                      fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "var(--font)" }}>
+                    Delete permanently
+                  </button>
+                )}
+              </section>
+            )}
 
             {error && <div style={{ fontSize: 12, color: "#B91C1C" }}>✗ {error}</div>}
           </div>
