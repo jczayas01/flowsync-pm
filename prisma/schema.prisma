@@ -27,6 +27,7 @@ model User {
   updatedAt            DateTime                @updatedAt
   accounts             Account[]
   passwordResets       PasswordResetToken[]
+  emailVerifications   EmailVerificationToken[]
   auditLogs            AuditLog[]
   approvalRequests     Project[]             @relation("ApprovalRequester")
   baselinesApproved    Baseline[]              @relation("BaselinesApproved")
@@ -98,6 +99,19 @@ model DemoRequest {
   @@index([status])
   @@index([createdAt])
   @@map("demo_requests")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique          // sha256 of the emailed token — raw token is never stored
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 model PasswordResetToken {

@@ -18,6 +18,7 @@ export function SignUpForm() {
   const [newsletter, setNewsletter]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+  const [sent, setSent]       = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,12 +34,10 @@ export function SignUpForm() {
         setLoading(false); return
       }
       sendGAEvent('event', 'sign_up', { method: 'password' })
-      await signIn('credentials', { email:form.email, password:form.password, redirect:false })
-      // Only allow same-site paths — an open redirect here would be a phishing gift.
-      const dest = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
-        ? callbackUrl
-        : '/onboarding'
-      window.location.href = dest
+      // Account exists but can't sign in until the email is confirmed —
+      // show the check-your-inbox panel instead of signing in.
+      setSent(true)
+      setLoading(false)
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
@@ -49,6 +48,26 @@ export function SignUpForm() {
     width:'100%', padding:'11px 14px', background:'rgba(255,255,255,.07)',
     border:'1.5px solid rgba(255,255,255,.12)', borderRadius:'var(--radius)',
     color:'#fff', fontSize:14, fontFamily:'var(--font)', outline:'none',
+  }
+
+  if (sent) {
+    return (
+      <div style={{ textAlign:'center', padding:'8px 0' }}>
+        <div style={{ fontSize:40, marginBottom:12 }}>📬</div>
+        <div style={{ fontSize:16, fontWeight:700, color:'#fff', marginBottom:8 }}>
+          Check your email · Revise su correo
+        </div>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.75)', lineHeight:1.6, marginBottom:16 }}>
+          We sent a confirmation link to <strong>{form.email}</strong>. Click it to
+          activate your workspace, then sign in.<br/>
+          <em>Le enviamos un enlace de confirmación. Haga clic para activar su
+          workspace y luego inicie sesión.</em>
+        </p>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.5)' }}>
+          Didn&apos;t get it? Check spam, or resend from the sign-in page.
+        </p>
+      </div>
+    )
   }
 
   return (

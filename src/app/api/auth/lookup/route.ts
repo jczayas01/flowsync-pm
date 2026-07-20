@@ -32,13 +32,19 @@ export async function POST(req: NextRequest) {
 
   const user = await db.user.findUnique({
     where:  { email: parsed.data.email.toLowerCase() },
-    select: { accounts: { select: { provider: true } } },
+    select: { emailVerified: true, accounts: { select: { provider: true } } },
   })
 
   if (!user) return NextResponse.json({ data: { status: "none" } })
 
   const providers = user.accounts.map(a => a.provider)
   if (providers.includes("EMAIL")) {
+    // Password account that never confirmed its address — the form shows a
+    // "verify your email" guide with a resend button instead of a dead
+    // "incorrect password" loop.
+    if (!user.emailVerified) {
+      return NextResponse.json({ data: { status: "unverified" } })
+    }
     return NextResponse.json({ data: { status: "password" } })
   }
 

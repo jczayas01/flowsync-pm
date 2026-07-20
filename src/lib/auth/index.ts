@@ -73,6 +73,11 @@ export const authConfig: NextAuthConfig = {
         const valid = await compare(parsed.data.password, account.accessToken)
         if (!valid) return null
 
+        // Unverified addresses can't sign in with a password. OAuth users are
+        // exempt (the provider already verified the address). The sign-in form
+        // learns the reason via /api/auth/lookup and offers a resend button.
+        if (!user.emailVerified) return null
+
         return {
           id:       user.id,
           email:    user.email,
@@ -232,7 +237,10 @@ export const authConfig: NextAuthConfig = {
     // ("By continuing, you agree…") is the consent, recorded here at creation.
     async createUser({ user }) {
       try {
-        await db.user.update({ where: { id: user.id }, data: { legalAcceptedAt: new Date() } })
+        // OAuth-only path: the provider (Google / Microsoft) already verified
+        // the address, so mark it verified here — no email round-trip needed.
+        await db.user.update({ where: { id: user.id },
+          data: { legalAcceptedAt: new Date(), emailVerified: new Date() } })
       } catch { /* non-fatal — consent text was still shown */ }
     },
     // Create audit log on sign-in

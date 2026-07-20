@@ -61,6 +61,8 @@ export const authConfig: NextAuthConfig = {
         )
         if (!valid) return null
 
+        if (!user.emailVerified) return null // unverified — resend via /api/auth/resend-verification
+
         return {
           id: user.id,
           email: user.email,

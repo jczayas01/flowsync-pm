@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic"
 
 import { sendEmail } from "@/lib/emails/templates"
+import { createVerificationToken, sendVerificationEmail } from "@/lib/auth/verification"
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { hash } from 'bcryptjs'
@@ -58,19 +59,18 @@ export async function POST(req: NextRequest) {
       select: { id: true, email: true, name: true },
     })
 
-    // Welcome email — fire-and-forget; a mail hiccup must never block signup.
-    sendEmail({
-      to: email,
-      subject: "Welcome to FlowSync PM — your first project in 60 seconds",
-      html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px">
-        <div style="font-size:18px;font-weight:700;color:#0D1B2A;margin-bottom:12px">Welcome, ${name.split(" ")[0]} 👋</div>
-        <p style="font-size:14px;color:#334155;line-height:1.65">Your two-month free trial of the full product just started. The fastest way to see what FlowSync PM can do: <strong>upload a project plan you already have</strong> — Word, Excel, or even a scanned PDF — and watch it become a live project with tasks, risks, and a Gantt.</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL ? "https://flowsyncpm.com" : "https://flowsyncpm.com"}/dashboard" style="display:inline-block;background:#F59E0B;color:#0D1B2A;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;margin:10px 0">Open your workspace →</a>
-        <p style="font-size:12px;color:#94A3B8;line-height:1.6">Questions? Just reply — a human reads this inbox.<br/>— Juan, founder of FlowSync PM</p>
-      </div>`,
-    }).catch(() => {})
+    // Verification email — the account exists but can't sign in until the
+    // address is confirmed. Welcome email is sent after verification instead.
+    try {
+      const raw = await createVerificationToken(user.id)
+      await sendVerificationEmail(user.email, user.name, raw)
+    } catch (e) {
+      // Mail hiccup must not strand the signup — they can use "resend" on the
+      // sign-in screen, which the unverified guide offers.
+      console.error('[Register] verification email failed', e)
+    }
 
-    return NextResponse.json({ data: user }, { status: 201 })
+    return NextResponse.json({ data: { ...user, requiresVerification: true } }, { status: 201 })
   } catch (e: any) {
     console.error('[Register]', e)
     return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 })
