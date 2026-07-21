@@ -28,11 +28,11 @@ export async function createVerificationToken(userId: string): Promise<string> {
 }
 
 /** Send the bilingual verify-your-email message. Fire-and-forget at call sites. */
-export async function sendVerificationEmail(to: string, name: string, rawToken: string) {
+export async function sendVerificationEmail(to: string, name: string, rawToken: string): Promise<boolean> {
   const base = process.env.NEXT_PUBLIC_APP_URL || "https://flowsyncpm.com"
   const url  = `${base}/api/auth/verify-email?token=${rawToken}`
   const first = (name || "").split(" ")[0] || "there"
-  await sendEmail({
+  return sendEmail({
     to,
     subject: "Confirm your email · Confirme su correo — FlowSync PM",
     html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px">

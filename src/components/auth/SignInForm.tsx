@@ -160,11 +160,6 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
           <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M13 1h10v10H13z"/><path fill="#00A4EF" d="M1 13h10v10H1z"/><path fill="#FFB900" d="M13 13h10v10H13z"/></svg>
           {t("continueMicrosoft")}
         </button>
-      <p style={{ fontSize:11, color:'rgba(255,255,255,.35)', textAlign:'center', marginTop:10, lineHeight:1.5 }}>
-        By continuing with Google or Microsoft, you agree to the{' '}
-        <a href="/legal/terms" target="_blank" rel="noopener" style={{ color:'rgba(255,255,255,.55)' }}>Terms</a> and{' '}
-        <a href="/legal/privacy" target="_blank" rel="noopener" style={{ color:'rgba(255,255,255,.55)' }}>Privacy Policy</a>.
-      </p>
       </div>
       <p style={{ fontSize:11.5, color:'rgba(255,255,255,.38)', lineHeight:1.6,
         textAlign:'center', marginTop:12 }}>

@@ -321,7 +321,9 @@ export async function sendEmail({ to, ...template }: {
   try {
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
+    // The Resend SDK does NOT throw on API rejections — it returns { error }.
+    // Ignoring it made failed sends look successful and left no trace anywhere.
+    const { data, error } = await resend.emails.send({
       from:    process.env.RESEND_FROM_EMAIL || 'FlowSync PM <no-reply@flowsyncpm.com>',
       // People reply to invites and resets more than you'd think. Those replies
       // should land in the company inbox, not vanish into no-reply.
@@ -330,6 +332,11 @@ export async function sendEmail({ to, ...template }: {
       subject: template.subject,
       html:    template.html,
     })
+    if (error) {
+      console.error('[Email] Resend rejected send to', to, '—', JSON.stringify(error))
+      return false
+    }
+    console.log('[Email] sent', data?.id, 'to', to)
     return true
   } catch (e) {
     console.error('[Email] Send failed:', e)

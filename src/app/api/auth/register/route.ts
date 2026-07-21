@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
     // address is confirmed. Welcome email is sent after verification instead.
     try {
       const raw = await createVerificationToken(user.id)
-      await sendVerificationEmail(user.email, user.name, raw)
+      const sent = await sendVerificationEmail(user.email, user.name, raw)
+      if (!sent) console.error('[Register] verification email NOT sent to', user.email, '— see [Email] log above')
     } catch (e) {
       // Mail hiccup must not strand the signup — they can use "resend" on the
       // sign-in screen, which the unverified guide offers.
