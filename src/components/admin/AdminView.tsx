@@ -108,23 +108,15 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
 // Static collateral shipped in /public/sales-kit — customer-facing documents,
 // nothing secret, so plain static links are fine. Update a doc by replacing
 // the file in the repo; Vercel serves the new version on next deploy.
-const KIT: { label:string; note:string; en?:string; es?:string }[] = [
-  { label:"Demo deck",                 note:"11 slides · speaker notes",
-    en:"FlowSync_Demo_Deck_EN.pptx",   es:"FlowSync_Demo_Deck_ES.pptx" },
-  { label:"User Guide",                note:"role-based user guide",
-    en:"FlowSync_User_Guide_EN.docx",  es:"FlowSync_Guia_de_Usuario_ES.docx" },
-  { label:"Business Info & Security",  note:"for IT / compliance review",
-    en:"FlowSync_Business_Information_Security.docx", es:"FlowSync_Informacion_Comercial_Seguridad_ES.docx" },
-  { label:"Service Policies",          note:"SLA · uptime · retention",
-    en:"FlowSync_Service_Policies.docx", es:"FlowSync_Politicas_de_Servicio_ES.docx" },
-  { label:"Enterprise vs Business",    note:"plan justification",
-    en:"FlowSync_Enterprise_vs_Business.docx", es:"FlowSync_Enterprise_vs_Business_ES.docx" },
-  { label:"Sample Enterprise Invoice", note:"NET-30 template",
-    en:"FlowSync_Sample_Enterprise_Invoice.docx", es:"FlowSync_Factura_Enterprise_Muestra_ES.docx" },
-  { label:"Entra ID / AD One-Pager",   note:"SSO for customer IT",
-    en:"FlowSync_EntraID_SSO_OnePager.docx", es:"FlowSync_EntraID_SSO_ES.docx" },
-  { label:"Master Subscription Agreement", note:"DRAFT — attorney review",
-    en:"FlowSync_Master_Subscription_Agreement_DRAFT.docx", es:"FlowSync_Acuerdo_Maestro_Suscripcion_BORRADOR_ES.docx" },
+const KIT: { file:string; label:string; note:string }[] = [
+  { file:"FlowSync_Demo_Deck_ES.pptx",                        label:"Demo deck (ES)",                  note:"11 slides · speaker notes" },
+  { file:"FlowSync_Guia_de_Usuario_ES.docx",                  label:"Guía de Usuario (ES)",            note:"role-based user guide" },
+  { file:"FlowSync_Business_Information_Security.docx",       label:"Business Info & Security",        note:"for IT / compliance review" },
+  { file:"FlowSync_Service_Policies.docx",                    label:"Service Policies",                note:"SLA · uptime · retention" },
+  { file:"FlowSync_Enterprise_vs_Business.docx",              label:"Enterprise vs Business",          note:"plan justification" },
+  { file:"FlowSync_Sample_Enterprise_Invoice.docx",           label:"Sample Enterprise Invoice",       note:"NET-30 template" },
+  { file:"FlowSync_EntraID_SSO_OnePager.docx",                label:"Entra ID / AD One-Pager",         note:"SSO for customer IT" },
+  { file:"FlowSync_Master_Subscription_Agreement_DRAFT.docx", label:"Master Subscription Agreement",   note:"DRAFT — attorney review" },
 ]
 
 function SalesKit() {
@@ -136,27 +128,12 @@ function SalesKit() {
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(240px, 1fr))", gap:8 }}>
         {KIT.map(d => (
-          <div key={d.label}
-            style={{ padding:"9px 12px", border:"1px solid #E2E8F0", borderRadius:8, background:"#F8FAFC" }}>
+          <a key={d.file} href={`/sales-kit/${d.file}`} download
+            style={{ display:"block", padding:"9px 12px", border:"1px solid #E2E8F0", borderRadius:8,
+              textDecoration:"none", background:"#F8FAFC" }}>
             <div style={{ fontSize:12.5, fontWeight:600, color:NAVY }}>{d.label}</div>
-            <div style={{ fontSize:10.5, color:"#64748B", marginBottom:6 }}>{d.note}</div>
-            <div style={{ display:"flex", gap:6 }}>
-              {d.en && (
-                <a href={`/sales-kit/${d.en}`} download
-                  style={{ padding:"3px 12px", fontSize:10.5, fontWeight:700, color:"#1B6CA8",
-                    background:"#fff", border:"1px solid #BFDBFE", borderRadius:6, textDecoration:"none" }}>
-                  EN
-                </a>
-              )}
-              {d.es && (
-                <a href={`/sales-kit/${d.es}`} download
-                  style={{ padding:"3px 12px", fontSize:10.5, fontWeight:700, color:"#047857",
-                    background:"#fff", border:"1px solid #A7F3D0", borderRadius:6, textDecoration:"none" }}>
-                  ES
-                </a>
-              )}
-            </div>
-          </div>
+            <div style={{ fontSize:10.5, color:"#64748B" }}>{d.note}</div>
+          </a>
         ))}
       </div>
     </div>

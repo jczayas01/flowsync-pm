@@ -31,7 +31,6 @@ const NAV = [
 
   // Operations — low-level, day-to-day project work
   { href:"/my-tasks",   icon:"✔",  label:"My Tasks",   section:"Operations" },
-  { href:"/inbox",      icon:"📥", label:"Inbox",      planFeature:"m365", section:"Operations" },
   { href:"/intake",     icon:"💡",  label:"Intake",     minLevel:10, section:"Operations" },
   { href:"/resources",  icon:"👥",  label:"Resources",  minLevel:50, section:"Operations" },
   { href:"/skills",     icon:"🎓",  label:"Skills",     minLevel:50, section:"Operations" },

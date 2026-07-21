@@ -172,29 +172,6 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         }
         evidence = chunks.join("\n\n")
       } catch { /* docs are optional context */ }
-
-      // Status updates logged in the period — including meeting minutes and
-      // email notes applied from the Microsoft 365 Smart Inbox — join the
-      // evidence alongside uploaded documents.
-      try {
-        const periodUpdates = await db.statusUpdate.findMany({
-          where:   { projectId: params.projectId, createdAt: { gte: pStart, lte: pEnd } },
-          orderBy: { createdAt: "desc" },
-          take: 8,
-          select:  { summary: true, type: true, createdAt: true },
-        })
-        const noteChunks: string[] = []
-        for (const u of periodUpdates) {
-          const t = (u.summary || "").slice(0, 2500)
-          if (!t) continue
-          const label = `Logged update (${new Date(u.createdAt).toLocaleDateString()})`
-          noteChunks.push(`### ${label}\n${t}`)
-          evidenceNames.push(label)
-        }
-        if (noteChunks.length) {
-          evidence = [evidence, ...noteChunks].filter(Boolean).join("\n\n").slice(0, 14000)
-        }
-      } catch { /* updates are optional context */ }
     }
 
     period = {

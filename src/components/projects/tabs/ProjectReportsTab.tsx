@@ -63,7 +63,7 @@ function ReportSection({ title, children }: { title:string; children:React.React
     <div style={{ marginBottom:20 }}>
       <div style={{ fontSize:11, fontWeight:700, color:"#1E293B", textTransform:"uppercase",
         letterSpacing:".06em", marginBottom:8, paddingBottom:4,
-        borderBottom:"2px solid var(--r-accent, #1B6CA8)" }}>
+        borderBottom:`2px solid ${accent}` }}>
         {title}
       </div>
       {children}
@@ -74,7 +74,7 @@ function ReportSection({ title, children }: { title:string; children:React.React
 function ReportBullet({ text }: { text:string }) {
   return (
     <div style={{ display:"flex", gap:8, marginBottom:5 }}>
-      <span style={{ color:"var(--r-accent, #1B6CA8)", flexShrink:0, marginTop:1 }}>•</span>
+      <span style={{ color:accent, flexShrink:0, marginTop:1 }}>•</span>
       <span style={{ fontSize:13, color:"#374151", lineHeight:1.6 }}>{text}</span>
     </div>
   )
@@ -102,8 +102,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
   return (
-    <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden",
-      ["--r-accent" as any]: accent, ["--r-accent2" as any]: accent2 }}>
+    <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden" }}>
       {/* Header */}
       <div style={{ background:`linear-gradient(135deg,${accent} 0%, ${accent2} 140%)`, padding:"20px 24px", color:"#fff" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
@@ -760,7 +759,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                       color:"var(--text-2)", cursor:"pointer" }}>
                       <input type="checkbox" checked={includeWeekDocs}
                         onChange={e => setIncludeWeekDocs(e.target.checked)} />
-                      Use this week's documents & logged updates (incl. Microsoft 365) as context
+                      Use this week's documents as context
                     
                       {projDocs && (() => {
                         const ws = new Date(reportWeek).getTime()
