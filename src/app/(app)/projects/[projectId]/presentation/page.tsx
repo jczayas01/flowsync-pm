@@ -13,7 +13,7 @@ export default async function ProjectPresentationPage({ params }: { params: { pr
     select: {
       id: true, name: true, code: true, health: true, percentComplete: true,
       budgetTotal: true, budgetSpent: true,
-      workspace: { select: { id: true, name: true, primaryColor: true } },
+      workspace: { select: { id: true, name: true, primaryColor: true, secondaryColor: true } },
       _count: { select: { tasks: true, risks: true, milestones: true } },
     },
   })
@@ -24,6 +24,8 @@ export default async function ProjectPresentationPage({ params }: { params: { pr
       projectId={project.id}
       workspaceId={project.workspace.id}
       project={JSON.parse(JSON.stringify(project))}
+      accent={(project.workspace as any).primaryColor || undefined}
+      accent2={(project.workspace as any).secondaryColor || undefined}
     />
   )
 }

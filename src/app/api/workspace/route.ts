@@ -18,6 +18,7 @@ const createSchema = z.object({
   plan:        z.enum(['FREE','PRO','CONSULTANT','BUSINESS','ENTERPRISE']).default('FREE'),
   logoUrl:     z.string().url().optional().nullable(),
   primaryColor:z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#1B6CA8'),
+  secondaryColor:z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#F59E0B'),
 })
 
 export async function POST(req: NextRequest) {
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { name, timezone, currency, plan, logoUrl, primaryColor } = parsed.data
+  const { name, timezone, currency, plan, logoUrl, primaryColor, secondaryColor } = parsed.data
 
   // Generate unique slug
   const baseSlug = name
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       defaultCurrency: currency,
       logoUrl:         logoUrl || null,
       primaryColor,
+      secondaryColor,
       members: {
         create: {
           userId: session.user.id,
@@ -119,6 +121,7 @@ const updateSchema = z.object({
   currency:     z.string().length(3).optional(),
   logoUrl:      z.string().url().nullable().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   accentColor:  z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 }).strict()
 
@@ -153,6 +156,7 @@ export async function PATCH(req: NextRequest) {
   if (parsed.data.currency)     updates.defaultCurrency  = parsed.data.currency
   if (parsed.data.logoUrl !== undefined) updates.logoUrl = parsed.data.logoUrl
   if (parsed.data.primaryColor) updates.primaryColor     = parsed.data.primaryColor
+  if (parsed.data.secondaryColor) updates.secondaryColor = parsed.data.secondaryColor
   if (parsed.data.accentColor)  updates.accentColor      = parsed.data.accentColor
 
   const workspace = await db.workspace.update({

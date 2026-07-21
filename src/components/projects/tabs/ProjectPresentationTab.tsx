@@ -16,7 +16,8 @@ const AUDIENCES = [
   },
 ]
 
-export function ProjectPresentationTab({ projectId, workspaceId, project }: {
+export function ProjectPresentationTab({ accent = "#1B6CA8", accent2 = "#F59E0B", projectId, workspaceId, project }: {
+  accent?: string; accent2?: string;
   projectId: string; workspaceId: string; project: any
 }) {
   const t = useTranslations("present")
@@ -51,7 +52,7 @@ export function ProjectPresentationTab({ projectId, workspaceId, project }: {
   return (
     <div style={{ padding: 24, maxWidth: 980 }}>
       <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: "var(--radius)",
-        padding: "10px 14px", fontSize: 12, color: "#1B6CA8", marginBottom: 18 }}>
+        padding: "10px 14px", fontSize: 12, color: accent, marginBottom: 18 }}>
         PM Standard — Communications Management · Generate a branded PowerPoint deck from live project data
       </div>
 

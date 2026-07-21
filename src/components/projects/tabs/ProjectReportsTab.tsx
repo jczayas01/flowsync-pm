@@ -63,7 +63,7 @@ function ReportSection({ title, children }: { title:string; children:React.React
     <div style={{ marginBottom:20 }}>
       <div style={{ fontSize:11, fontWeight:700, color:"#1E293B", textTransform:"uppercase",
         letterSpacing:".06em", marginBottom:8, paddingBottom:4,
-        borderBottom:"2px solid #1B6CA8" }}>
+        borderBottom:`2px solid ${accent}` }}>
         {title}
       </div>
       {children}
@@ -74,7 +74,7 @@ function ReportSection({ title, children }: { title:string; children:React.React
 function ReportBullet({ text }: { text:string }) {
   return (
     <div style={{ display:"flex", gap:8, marginBottom:5 }}>
-      <span style={{ color:"#1B6CA8", flexShrink:0, marginTop:1 }}>•</span>
+      <span style={{ color:accent, flexShrink:0, marginTop:1 }}>•</span>
       <span style={{ fontSize:13, color:"#374151", lineHeight:1.6 }}>{text}</span>
     </div>
   )
@@ -93,9 +93,9 @@ function ReportMetric({ label, value, color }: { label:string; value:string; col
 
 // ── Report view ─────────────────────────────────────────────────────────────
 
-function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, onDownload, downloading, onDownloadPdf, downloadingPdf }: {
+function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, accent = "#1B6CA8", accent2 = "#F59E0B", onDownload, downloading, onDownloadPdf, downloadingPdf }: {
   report:any; reportType:string; audience:string; generatedAt:string;
-  project:any; workspaceName:string; workspaceLogo?:string;
+  project:any; workspaceName:string; workspaceLogo?:string; accent?:string; accent2?:string;
   onDownload:()=>void; downloading:boolean
   onDownloadPdf:()=>void; downloadingPdf:boolean
 }) {
@@ -104,7 +104,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
   return (
     <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden" }}>
       {/* Header */}
-      <div style={{ background:"linear-gradient(135deg,#1a3a5c,#1B6CA8)", padding:"20px 24px", color:"#fff" }}>
+      <div style={{ background:`linear-gradient(135deg,${accent} 0%, ${accent2} 140%)`, padding:"20px 24px", color:"#fff" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
@@ -198,7 +198,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </ReportSection>
             </div>
             <ReportSection title="Financial Snapshot"><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.financialSnapshot}</p></ReportSection>
-            {report.nextMilestone && <ReportSection title="Next Key Milestone"><p style={{ fontSize:13,color:"#1B6CA8",lineHeight:1.6,margin:0,fontWeight:500 }}>◇ {report.nextMilestone}</p></ReportSection>}
+            {report.nextMilestone && <ReportSection title="Next Key Milestone"><p style={{ fontSize:13,color:accent2,lineHeight:1.6,margin:0,fontWeight:500 }}>◇ {report.nextMilestone}</p></ReportSection>}
             {(report.recommendedActions||[]).length>0 && (
               <ReportSection title="Actions Requested">
                 <div style={{ background:"#EFF6FF",borderRadius:6,padding:"10px 14px" }}>
@@ -265,7 +265,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             <div style={{ display:"flex",gap:12,marginBottom:20,alignItems:"center" }}>
               <div style={{ padding:"8px 16px",borderRadius:8,fontSize:13,fontWeight:700,
                 background:{"CRITICAL":"#FEF2F2","HIGH":"#FFFBEB","MEDIUM":"#EFF6FF","LOW":"#ECFDF5"}[report.overallRiskRating as string]||"#F8FAFC",
-                color:{"CRITICAL":"#DC2626","HIGH":"#D97706","MEDIUM":"#1B6CA8","LOW":"#059669"}[report.overallRiskRating as string]||"#64748B" }}>
+                color:{"CRITICAL":"#DC2626","HIGH":"#D97706","MEDIUM":accent,"LOW":"#059669"}[report.overallRiskRating as string]||"#64748B" }}>
                 Risk: {report.overallRiskRating}
               </div>
               <p style={{ fontSize:13,color:"#374151",margin:0 }}>{report.riskRatingRationale}</p>
@@ -287,7 +287,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             <ReportSection title="Top Actions">
               {(report.topThreeActions||[]).map((a:string,i:number)=>(
                 <div key={i} style={{ display:"flex",gap:8,marginBottom:8 }}>
-                  <span style={{ width:20,height:20,borderRadius:"50%",background:"#1B6CA8",
+                  <span style={{ width:20,height:20,borderRadius:"50%",background:accent,
                     color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",
                     justifyContent:"center",flexShrink:0 }}>{i+1}</span>
                   <span style={{ fontSize:13,color:"#374151",lineHeight:1.5 }}>{a}</span>
@@ -301,7 +301,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         <div style={{ marginTop:20,paddingTop:16,borderTop:"1px solid #E2E8F0",
           display:"flex",gap:10,alignItems:"center",justifyContent:"flex-end" }}>
           <button onClick={onDownload} disabled={downloading}
-            style={{ padding:"8px 18px",background:"#1B6CA8",color:"#fff",border:"none",
+            style={{ padding:"8px 18px",background:accent,color:"#fff",border:"none",
               borderRadius:6,fontSize:12,fontWeight:500,cursor:downloading?"wait":"pointer",
               fontFamily:"var(--font)",display:"flex",alignItems:"center",gap:6 }}>
             {downloading ? "Generating…" : "📄 Download Word (.docx)"}
@@ -325,8 +325,8 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function ProjectReportsTab({ project, projectId, workspaceName, workspaceLogo, statusUpdates, members, reportTemplates=[] }: {
-  project:any; projectId:string; workspaceName:string; workspaceLogo?:string;
+export function ProjectReportsTab({ project, projectId, workspaceName, workspaceLogo, accent = "#1B6CA8", accent2 = "#F59E0B", statusUpdates, members, reportTemplates=[] }: {
+  project:any; projectId:string; workspaceName:string; workspaceLogo?:string; accent?:string; accent2?:string;
   statusUpdates:any[]; members:any[]; reportTemplates?:any[]
 }) {
   const tr = useTranslations("reports")
@@ -900,7 +900,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                 </div>
               </div>
             ) : (
-            <ReportView
+            <ReportView accent={accent} accent2={accent2}
               report={generatedReport}
               reportType={reportType}
               audience={audience}

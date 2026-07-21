@@ -10,6 +10,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
     timezone:     workspace.defaultTimezone || "UTC",
     currency:     workspace.defaultCurrency || "USD",
     primaryColor: workspace.primaryColor || "#1B6CA8",
+    secondaryColor: (workspace as any).secondaryColor || "#F59E0B",
     logoUrl:      workspace.logoUrl      || "",
   })
   const [saving, setSaving]   = useState(false)
@@ -27,6 +28,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
           timezone:     form.timezone,
           currency:     form.currency,
           primaryColor: form.primaryColor,
+          secondaryColor: form.secondaryColor,
           logoUrl:      form.logoUrl || null,
         }),
       })
@@ -127,6 +129,25 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
                 setForm(f => ({ ...f, primaryColor:e.target.value }))} />
             <div style={{ width:36, height:36, borderRadius:6, background:form.primaryColor,
               border:"1px solid var(--border)", flexShrink:0 }} />
+          </div>
+          <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>
+            Primary — headers and accents on generated reports and Present mode.
+          </div>
+          <label style={{ ...s.label, marginTop:12, display:"block" }}>Secondary color</label>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <input type="color" value={form.secondaryColor} disabled={!canEdit}
+              onChange={e => setForm(f => ({ ...f, secondaryColor:e.target.value }))}
+              style={{ width:40, height:36, border:"1px solid var(--border)", borderRadius:6,
+                cursor:canEdit?"pointer":"default", padding:2 }} />
+            <input style={{ ...s.input, flex:1, fontFamily:"monospace" }}
+              value={form.secondaryColor} disabled={!canEdit} maxLength={7}
+              onChange={e => /^#[0-9A-Fa-f]{0,6}$/.test(e.target.value) &&
+                setForm(f => ({ ...f, secondaryColor:e.target.value }))} />
+            <div style={{ width:36, height:36, borderRadius:6, background:form.secondaryColor,
+              border:"1px solid var(--border)", flexShrink:0 }} />
+          </div>
+          <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>
+            Secondary — highlights (milestones, callouts) on the same outputs.
           </div>
         </div>
       </div>

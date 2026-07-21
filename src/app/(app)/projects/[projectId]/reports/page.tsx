@@ -17,7 +17,7 @@ export default async function ProjectReportsPage({ params }: { params: { project
         budgetTotal:true, budgetSpent:true, currency:true,
         objective:true, scope:true, outOfScope:true,
         background:true, assumptions:true, constraints:true, economicImpact:true,
-        workspace: { select: { id:true, name:true, logoUrl:true, primaryColor:true } },
+        workspace: { select: { id:true, name:true, logoUrl:true, primaryColor:true, secondaryColor:true } },
       },
     }),
     db.statusUpdate.findMany({
@@ -51,6 +51,8 @@ export default async function ProjectReportsPage({ params }: { params: { project
       projectId={params.projectId}
       workspaceName={project?.workspace?.name || 'FlowSync PM'}
       workspaceLogo={project?.workspace?.logoUrl || undefined}
+      accent={(project?.workspace as any)?.primaryColor || undefined}
+      accent2={(project?.workspace as any)?.secondaryColor || undefined}
       statusUpdates={statusUpdates as any}
       members={members as any}
       reportTemplates={reportTemplates as any}

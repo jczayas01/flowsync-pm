@@ -175,6 +175,7 @@ model Workspace {
   plan                 Plan                  @default(FREE)
   logoUrl              String?
   primaryColor         String                @default("#1B6CA8")
+  secondaryColor       String                @default("#F59E0B")
   accentColor          String                @default("#F59E0B")
   stripeCustomerId     String?               @unique
   stripeSubscriptionId String?               @unique
