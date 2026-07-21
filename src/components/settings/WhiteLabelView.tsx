@@ -5,7 +5,8 @@ import { isWorkspaceAdmin } from "@/lib/rbac/roles"
 
 export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string }) {
   const canEdit = isWorkspaceAdmin(role)
-  const isPro   = ["BUSINESS","ENTERPRISE"].includes(workspace?.plan)
+  // White-label is ENTERPRISE-only per the plan matrix. Trial (FREE) previews it.
+  const isPro   = ["ENTERPRISE","FREE"].includes(workspace?.plan)
 
   const [form, setForm] = useState({
     customDomain:   workspace?.customDomain   || "",
@@ -76,7 +77,7 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
           <span style={{fontSize:24,flexShrink:0}}>⭐</span>
           <div>
             <div style={{fontSize:13,fontWeight:600,color:"#92400E",marginBottom:3}}>
-              Business or Enterprise plan required
+              Enterprise plan required
             </div>
             <div style={{fontSize:12,color:"#92400E"}}>
               White-label features and custom domains are available on Business ($47/mo) and Enterprise plans.

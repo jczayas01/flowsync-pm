@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
+import { requireFeature } from "@/lib/stripe/guards"
 import { runFullSync, acceptSuggestion } from "@/lib/m365/sync"
 import { z } from "zod"
 
@@ -19,6 +20,10 @@ const acceptSchema = z.object({
 })
 
 async function syncM365(ctx: ApiContext) {
+  // Plan gate: Microsoft 365 integration is Business-tier (trial included).
+  const m365Guard = await requireFeature(ctx.workspaceId, "m365")
+  if (m365Guard) return m365Guard
+
   const _g = await requirePermission(ctx as any, "workspace:manage_integrations"); if (_g) return _g
   if (process.env.ENABLE_M365_INTEGRATION !== "true") {
     return err("M365 integration is not enabled", 503)

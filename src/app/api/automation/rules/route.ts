@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
+import { checkPlanLimit } from "@/lib/stripe/client"
 import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 
 import { AUTO_ADMIN_ROLES, toView } from "@/lib/api/handlers/automation"
@@ -25,6 +26,15 @@ async function listRules(ctx: ApiContext) {
 
 async function createRule(ctx: ApiContext) {
   if (!AUTO_ADMIN_ROLES.includes(ctx.userRole as any)) return forbidden()
+
+  // Plan cap: Starter allows a limited number of rules; Business+ unlimited.
+  const ws = await db.workspace.findUnique({ where: { id: ctx.workspaceId }, select: { plan: true } })
+  const current = await db.automationRule.count({ where: { workspaceId: ctx.workspaceId } })
+  const cap = checkPlanLimit((ws?.plan ?? "FREE") as any, "automations", current)
+  if (!cap.allowed) {
+    return err(`Your plan includes ${cap.limit} automation rules. Upgrade to Business for unlimited rules (Settings → Billing).`, 402)
+  }
+
   const parsed = await parseBody(ctx.req, createSchema)
   if ("error" in parsed) return parsed.error
   const d = parsed.data

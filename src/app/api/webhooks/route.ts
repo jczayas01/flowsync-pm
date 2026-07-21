@@ -6,6 +6,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { randomBytes } from "crypto"
 import { db } from "@/lib/db"
+import { requireFeature } from "@/lib/stripe/guards"
 import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
 
 import { WH_ADMIN_ROLES, toView } from "@/lib/api/handlers/webhooks"
@@ -23,6 +24,9 @@ async function listWebhooks(ctx: ApiContext) {
 
 async function createWebhook(ctx: ApiContext) {
   if (!WH_ADMIN_ROLES.includes(ctx.userRole as any)) return forbidden()
+  // Plan gate: API access & webhooks are Business-tier.
+  const apiGuard = await requireFeature(ctx.workspaceId, "apiAccess")
+  if (apiGuard) return apiGuard
   const parsed = await parseBody(ctx.req, createSchema)
   if ("error" in parsed) return parsed.error
   const secret = `whsec_${randomBytes(20).toString("hex")}`

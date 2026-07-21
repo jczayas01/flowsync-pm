@@ -9,6 +9,7 @@ import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
+import { requireFeature } from "@/lib/stripe/guards"
 import { getUserPlannerPlans, syncFromPlanner, pushTaskToPlanner } from "@/lib/m365/planner"
 
 const syncSchema = z.object({
@@ -23,6 +24,10 @@ const pushSchema = z.object({
 })
 
 async function listPlans(ctx: ApiContext) {
+  // Plan gate: Microsoft 365 integration is Business-tier (trial included).
+  const m365Guard = await requireFeature(ctx.workspaceId, "m365")
+  if (m365Guard) return m365Guard
+
   const plans = await getUserPlannerPlans(ctx.userId)
   return ok(plans)
 }

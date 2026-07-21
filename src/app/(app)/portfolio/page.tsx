@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { canViewAllProjects } from '@/lib/security/project-visibility'
+import { workspaceHasFeature } from '@/lib/security/plan-gates'
 import { PortfolioView } from '@/components/portfolio/PortfolioView'
 
 export const metadata: Metadata = { title: 'Portfolio' }
@@ -20,6 +21,8 @@ export default async function PortfolioPage() {
   // Portfolio is a workspace-wide view — restricted to roles with
   // projects:view_all (matrix). Everyone else goes to their project list.
   if (!canViewAllProjects(membership.role)) redirect('/projects')
+  // Plan gate: portfolio is a Business-tier feature (trial includes it).
+  if (!(await workspaceHasFeature(membership.workspaceId, 'portfolio'))) redirect('/settings/billing')
 
   const portfolios = await db.portfolio.findMany({
     where: { workspaceId: membership.workspaceId },

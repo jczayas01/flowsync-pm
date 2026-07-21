@@ -6,6 +6,7 @@ import { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import { workspaceHasFeature } from '@/lib/security/plan-gates'
 import { ExecutiveDashboard } from '@/components/executive/ExecutiveDashboard'
 import { can, mapDbRoleToRbac } from '@/lib/rbac/roles'
 
@@ -29,6 +30,9 @@ export default async function ExecutivePage() {
   if (!can(mapDbRoleToRbac(membership.role), 'projects:view_all')) {
     redirect('/dashboard')
   }
+
+  // Plan gate: executive dashboard is a Business-tier feature (trial included).
+  if (!(await workspaceHasFeature(membership.workspaceId, 'executiveDash'))) redirect('/settings/billing')
 
   const workspaceId = membership.workspaceId
   const now = new Date()
