@@ -6,7 +6,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { checkPlanLimit } from "@/lib/stripe/client"
-import { withWorkspace, ok, forbidden, parseBody, ApiContext } from "@/lib/api"
+import { withWorkspace, ok, err, forbidden, parseBody, ApiContext } from "@/lib/api"
 
 import { AUTO_ADMIN_ROLES, toView } from "@/lib/api/handlers/automation"
 
