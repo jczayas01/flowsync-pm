@@ -760,7 +760,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                       color:"var(--text-2)", cursor:"pointer" }}>
                       <input type="checkbox" checked={includeWeekDocs}
                         onChange={e => setIncludeWeekDocs(e.target.checked)} />
-                      Use this week's documents as context
+                      Use this week's documents & logged updates (incl. Microsoft 365) as context
                     
                       {projDocs && (() => {
                         const ws = new Date(reportWeek).getTime()
