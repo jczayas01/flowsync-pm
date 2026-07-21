@@ -90,7 +90,19 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
   const planLimits = limitsForPlan((workspace as any)?.plan)
   const hasFeature = (f?:string) => !f || !!(planLimits as any)[f]
   const passes = (i:any) => can(i.perm) && (!i.minLevel || myLevel >= i.minLevel) && hasFeature(i.planFeature)
-  const navItems = NAV.filter(passes)
+  // When a parent is hidden ONLY by plan (e.g. Portfolio on Starter), its
+  // children that pass on their own are promoted to top-level so core links
+  // like Projects never disappear with their group.
+  const navItems = NAV.flatMap((i:any) => {
+    if (passes(i)) return [i]
+    const roleOk = can(i.perm) && (!i.minLevel || myLevel >= i.minLevel)
+    if (roleOk && !hasFeature(i.planFeature) && i.children?.length) {
+      return i.children
+        .filter((c:any) => can(c.perm) && hasFeature(c.planFeature))
+        .map((c:any) => ({ ...c, section: i.section }))
+    }
+    return []
+  })
   // Emit a section header only when the section changes among *visible* items,
   // so a section that's entirely filtered out for a role leaves no orphan header.
   let __lastSection = ""
