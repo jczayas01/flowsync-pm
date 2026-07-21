@@ -67,7 +67,9 @@ export async function acceptSuggestion(
             periodStart:    data.meetingStart ? new Date(data.meetingStart) : new Date(),
             periodEnd:      data.meetingEnd   ? new Date(data.meetingEnd)   : new Date(),
             health:         "GREEN",
-            summary:        data.minutes || data.content || "",
+            // Prefixed so reports and readers can see where this came from.
+            summary:        `[From Microsoft 365${data.subject ? `: ${data.subject}` : ""}] ` +
+                            (data.minutes || data.content || ""),
             aiGenerated:    false,
             createdById:    userId,
           },

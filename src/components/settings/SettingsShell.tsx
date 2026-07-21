@@ -21,8 +21,15 @@ const TABS = [
   { href:"/settings/api",          label:"API",             icon:"🔑", perm:"workspace:manage_integrations", planFeature:"apiAccess" },
 ] as any[]
 
-export function SettingsShell({ children }:{ children:React.ReactNode }) {
+export function SettingsShell({ children, role = "", plan = "" }:{
+  children:React.ReactNode; role?:string; plan?:string
+}) {
   const pathname = usePathname()
+  const rbacRole = mapDbRoleToRbac(role as any)
+  const limits   = limitsForPlan(plan)
+  const visible  = TABS.filter(t =>
+    (!t.perm || rbacCan(rbacRole, t.perm)) &&
+    (!t.planFeature || !!(limits as any)[t.planFeature]))
   return (
     <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"0 24px",flexShrink:0}}>
