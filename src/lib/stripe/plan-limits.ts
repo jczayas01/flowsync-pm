@@ -43,3 +43,15 @@ export const ENTERPRISE_LIMITS: PlanLimits = {
   storage:"Unlimited", whiteLabel:true, auditLog:"unlimited",
   support:"Dedicated",
 }
+
+/** Client-safe: limits for a raw Workspace.plan value. Trial (FREE) carries
+ *  Business limits; legacy PRO/PROFESSIONAL/CONSULTANT map to Business. */
+export function limitsForPlan(plan?: string | null): PlanLimits {
+  switch (plan) {
+    case "STARTER":    return STARTER_LIMITS
+    case "ENTERPRISE": return ENTERPRISE_LIMITS
+    case "FREE": case "PRO": case "PROFESSIONAL": case "CONSULTANT":
+    case "BUSINESS": default:
+      return BUSINESS_LIMITS
+  }
+}

@@ -1,6 +1,7 @@
 "use client"
 // src/components/layout/AppShell.tsx — Phase 3 final nav
 import { useTranslations } from "next-intl"
+import { limitsForPlan } from "@/lib/stripe/plan-limits"
 import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher"
 import { useState, useEffect } from "react"
 import Link from "next/link"
@@ -19,11 +20,11 @@ const NAV = [
   { href:"/dashboard",  icon:"⊞",  label:"Dashboard", minLevel:30 },
 
   // Executive — strategic oversight
-  { href:"/executive",  icon:"👔",  label:"Executive",  perm:"projects:view_all", section:"Executive" },
+  { href:"/executive",  icon:"👔",  label:"Executive",  perm:"projects:view_all", planFeature:"executiveDash", section:"Executive" },
   { href:"/goals",      icon:"🎯",  label:"Goals",     minLevel:50, section:"Executive" },
 
   // Portfolio — high-level project structure (the hierarchy)
-  { href:"/portfolio",  icon:"📊",  label:"Portfolio",  perm:"projects:view_all", section:"Portfolio", children:[
+  { href:"/portfolio",  icon:"📊",  label:"Portfolio",  perm:"projects:view_all", planFeature:"portfolio", section:"Portfolio", children:[
     { href:"/programs", icon:"🗂",  label:"Programs", perm:"programs:view" },
     { href:"/projects", icon:"📁",  label:"Projects"   },
   ]},
@@ -44,9 +45,9 @@ const SETTINGS_NAV = [
   { href:"/settings/security",     label:"Security",        perm:"workspace:view_settings" },
   { href:"/settings/roles",        label:"Roles"            },
   { href:"/settings/custom-fields",label:"Custom fields",   perm:"workspace:edit_settings" },
-  { href:"/settings/white-label",  label:"White-label",     perm:"workspace:edit_branding" },
-  { href:"/settings/webhooks",     label:"Webhooks",        perm:"workspace:manage_integrations" },
-  { href:"/settings/api",          label:"API & integrations", perm:"workspace:manage_integrations" },
+  { href:"/settings/white-label",  label:"White-label",     perm:"workspace:edit_branding", planFeature:"whiteLabel" },
+  { href:"/settings/webhooks",     label:"Webhooks",        perm:"workspace:manage_integrations", planFeature:"apiAccess" },
+  { href:"/settings/api",          label:"API & integrations", perm:"workspace:manage_integrations", planFeature:"apiAccess" },
 ] as any[]
 
 export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmin = false, children }:{
@@ -83,7 +84,12 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
   const rbacRole = mapDbRoleToRbac(userRole)
   const myLevel  = ROLE_LEVEL[rbacRole] ?? 0
   const can = (p?:string) => !p || rbacCan(rbacRole, p as any)
-  const passes = (i:any) => can(i.perm) && (!i.minLevel || myLevel >= i.minLevel)
+  // Plan-aware nav: items tagged with planFeature disappear when the
+  // workspace's plan doesn't include that feature (same limits the server
+  // gates enforce — a Starter workspace shows no Executive/Portfolio links).
+  const planLimits = limitsForPlan((workspace as any)?.plan)
+  const hasFeature = (f?:string) => !f || !!(planLimits as any)[f]
+  const passes = (i:any) => can(i.perm) && (!i.minLevel || myLevel >= i.minLevel) && hasFeature(i.planFeature)
   const navItems = NAV.filter(passes)
   // Emit a section header only when the section changes among *visible* items,
   // so a section that's entirely filtered out for a role leaves no orphan header.
