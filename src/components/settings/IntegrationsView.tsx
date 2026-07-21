@@ -1,6 +1,7 @@
 // src/components/settings/IntegrationsView.tsx
 "use client"
 import { useState, useEffect } from "react"
+import { M365SmartInbox } from "./M365SmartInbox"
 import { useSearchParams, useRouter } from "next/navigation"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", GREEN = "#059669", SLATE = "#64748B", RED = "#DC2626"
@@ -150,6 +151,8 @@ export function IntegrationsView({
           </div>
         </div>
       </div>
+
+      <M365SmartInbox connected={connected} />
 
       {!canManage && (
         <div style={{ marginTop:12, fontSize:11.5, color:SLATE }}>

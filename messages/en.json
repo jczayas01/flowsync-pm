@@ -63,7 +63,8 @@
     "Report templates": "Report templates",
     "White-label": "White-label",
     "Webhooks": "Webhooks",
-    "API & integrations": "API & integrations"
+    "API & integrations": "API & integrations",
+    "Inbox": "Inbox"
   },
   "tabs": {
     "dashboard": "Dashboard",
