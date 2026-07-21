@@ -1083,7 +1083,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
 
             {matchingCount === 0 && (
               <tr>
-                <td colSpan={10} style={{ padding:"60px 20px", textAlign:"center",
+                <td colSpan={11} style={{ padding:"60px 20px", textAlign:"center",
                   fontSize:13, color:"var(--text-3)" }}>
                   {localTasks.length === 0
                     ? "No tasks yet — click \"+ Add task\" to get started."
@@ -1128,7 +1128,7 @@ function Phase({ phase, isCollapsed, rowCount, pct = 0, onToggle, onAddTask, chi
   return (
     <>
       <tr style={{ background:"#EFF6FF", cursor:"pointer" }} onClick={onToggle}>
-        <td colSpan={10} style={{ padding:"0" }}>
+        <td colSpan={11} style={{ padding:"0" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10,
             padding:"8px 14px", borderBottom:"1px solid #BFDBFE",
             borderLeft:"4px solid #1B6CA8" }}>

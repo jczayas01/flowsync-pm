@@ -14,6 +14,15 @@ export function computeCriticalPath(tasks: any[]): Set<string> {
   const byId: Record<string, any> = {}
   for (const t of tasks) byId[t.id] = t
 
+  // No dependency network → no path. CPM on unlinked tasks degenerates into
+  // "whatever ends last", which litters imported plans with meaningless ⚡.
+  // Honor manual flags only until at least one dependency exists.
+  const hasDeps = tasks.some(t => (t.dependencies || []).length > 0)
+  if (!hasDeps) {
+    for (const t of tasks) if (t.isCriticalPath) critical.add(t.id)
+    return critical
+  }
+
   const DAY = 86400000
   const ms = (d: any) => (d ? new Date(d).getTime() : null)
   const startsAll = tasks.map(t => ms(t.startDate)).filter((v): v is number => v != null)
