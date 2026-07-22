@@ -41,7 +41,8 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
   const [showCreate, setShowCreate]   = useState(false)
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState("")
-  const [collapsed, setCollapsed]     = useState<Set<string>>(new Set())
+  // Collapsed by default (same as Portfolio) — summary rows first, expand on demand.
+  const [collapsed, setCollapsed]     = useState<Set<string>>(new Set(programsProp.map((p:any)=>p.id)))
   const [assigning, setAssigning]     = useState<string|null>(null)
   const [editingProg, setEditingProg] = useState<any|null>(null)
   const [editForm, setEditForm]       = useState({ name:"", description:"" })
