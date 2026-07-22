@@ -120,7 +120,10 @@
     "spent": "spent",
     "score ≥ 9": "score ≥ 9",
     "No milestones in the next 30 days": "No milestones in the next 30 days",
-    "View all": "View all"
+    "View all": "View all",
+    "activeProjectsSection": "Active projects",
+    "milestones30": "Milestones — next 30 days",
+    "highScoreRisks": "High-score risks"
   },
   "projects": {
     "+ New project": "+ New project",

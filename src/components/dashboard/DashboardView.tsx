@@ -46,6 +46,9 @@ export function DashboardView({ projects, milestones, risks, activity,
   const lvl  = ROLE_LEVEL[rbac] ?? 0
   const can  = (p:string) => rbacCan(rbac, p as any)
   const t = useTranslations("dashboard")
+  // Budget figures are permission-gated (TEAM_MEMBER/VIEWER/CLIENT have
+  // budget:view DENY in the matrix) — the dashboard must honor it too.
+  const canSeeBudget = rbacCan(mapDbRoleToRbac(userRole as any), "budget:view")
   const quickActions = [
     { href:'/my-tasks',  label:t('myTasks'),       icon:'✔',  show:true },
     { href:'/projects',  label:t('newProject'),    icon:'＋', show:can('projects:create') },
@@ -126,7 +129,7 @@ export function DashboardView({ projects, milestones, risks, activity,
           { label:t('Open high risks'), value:risks.length, sub:t('score ≥ 9'),
             hint:'Risks with probability × impact score of 9 or higher',
             subColor: risks.length > 0 ? 'var(--amber)' : 'var(--text-3)', icon:'⚠' },
-        ].map((kpi:any) => (
+        ].filter((kpi:any) => canSeeBudget || kpi.icon !== '💰').map((kpi:any) => (
           <div key={kpi.label} title={kpi.hint || undefined} style={{ ...card, padding:'14px 16px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
               <span style={{ fontSize:18 }}>{kpi.icon}</span>
@@ -234,7 +237,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                 <div/>
                 <div>Project</div>
                 <div>Progress</div>
-                <div>Budget</div>
+                <div>{canSeeBudget ? 'Budget' : ''}</div>
                 <div>Health</div>
               </div>
               {shownProjects.slice(0, 8).map(p => {
@@ -274,7 +277,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                     </div>
                     <div style={{ fontSize:11,
                       color: budgetPct > 90 ? 'var(--red)' : budgetPct > 75 ? 'var(--amber)' : 'var(--text-3)' }}>
-                      {budgetPct}% spent
+                      {canSeeBudget ? `${budgetPct}% spent` : '—'}
                     </div>
                     <div>
                       <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px',

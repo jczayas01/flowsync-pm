@@ -96,10 +96,13 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
   // like Projects never disappear with their group.
   const navItems = NAV.flatMap((i:any) => {
     if (passes(i)) return [i]
-    const roleOk = can(i.perm) && (!i.minLevel || myLevel >= i.minLevel)
-    if (roleOk && !hasFeature(i.planFeature) && i.children?.length) {
+    // Parent hidden (by role OR plan) — promote children that pass on their
+    // own so core links like Projects never disappear with their group.
+    // (A PM can't see the Portfolio dashboard, but must still reach Projects.)
+    if (i.children?.length) {
       return i.children
-        .filter((c:any) => can(c.perm) && hasFeature(c.planFeature))
+        .filter((c:any) => can(c.perm) && hasFeature(c.planFeature) &&
+          (!c.minLevel || myLevel >= c.minLevel))
         .map((c:any) => ({ ...c, section: i.section }))
     }
     return []

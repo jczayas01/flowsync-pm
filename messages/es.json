@@ -120,7 +120,10 @@
     "spent": "gastado",
     "score ≥ 9": "puntuación ≥ 9",
     "No milestones in the next 30 days": "Sin hitos en los próximos 30 días",
-    "View all": "Ver todo"
+    "View all": "Ver todo",
+    "activeProjectsSection": "Proyectos activos",
+    "milestones30": "Hitos — próximos 30 días",
+    "highScoreRisks": "Riesgos de puntuación alta"
   },
   "projects": {
     "+ New project": "+ Nuevo proyecto",
