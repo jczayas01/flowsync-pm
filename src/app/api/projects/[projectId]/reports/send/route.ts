@@ -45,7 +45,11 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     return NextResponse.json({ error: parsed.error.errors[0]?.message || "Invalid request" }, { status: 400 })
   }
   const { reportData, subject, recipients, note, attachPdf } = parsed.data
-  const r = reportData?.report || {}
+  // The client sends the docx/PDF shape (fields at top level); older callers
+  // might wrap it as { report }. Accept both and both naming schemes.
+  const r = reportData?.report || reportData || {}
+  const asList = (v: any) => Array.isArray(v) ? v
+    : typeof v === "string" && v.trim() ? v.split("\n").map((x: string) => x.trim()).filter(Boolean) : []
 
   const project = await db.project.findFirst({
     where: { id: params.projectId, workspaceId },
@@ -66,10 +70,12 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     <div style="padding:20px 22px;background:#fff">
       ${note ? `<p style="font-size:13px;color:#334155;border-left:3px solid ${esc(accent)};padding-left:10px;margin:0 0 14px">${esc(note)}</p>` : ""}
       ${r.executiveSummary ? `<p style="font-size:13px;color:#334155;line-height:1.7;margin:0">${esc(r.executiveSummary)}</p>` : ""}
-      ${sectionHtml("Accomplishments", r.accomplishments)}
-      ${sectionHtml("Planned next", r.upcoming || r.nextSteps)}
-      ${sectionHtml("Risks & issues", (r.risks || []).map((x: any) => typeof x === "string" ? x : x?.title))}
-      ${sectionHtml("Decisions needed", r.decisionsNeeded)}
+      ${sectionHtml("Accomplishments", asList(r.accomplishmentsThisWeek ?? r.accomplishments))}
+      ${sectionHtml("Planned next", asList(r.plannedNextWeek ?? r.upcoming ?? r.nextSteps))}
+      ${r.budgetStatus ? sectionHtml("Budget", [r.budgetStatus]) : ""}
+      ${r.scheduleStatus ? sectionHtml("Schedule", [r.scheduleStatus]) : ""}
+      ${sectionHtml("Risks & issues", asList(r.risksAndIssues ?? r.risks).map((x: any) => typeof x === "string" ? x : x?.title))}
+      ${sectionHtml("Decisions needed", asList(r.decisionsNeeded))}
       <p style="font-size:11px;color:#94A3B8;margin-top:22px">
         Sent from FlowSync PM by ${esc(senderName)}.${attachPdf ? " Full report attached as PDF." : ""}
         AI-assisted content — review before acting on it.
