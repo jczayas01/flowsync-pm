@@ -133,6 +133,10 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   const [hoverXY,        setHoverXY]        = useState({ x:0, y:0 })
   const [dragging,       setDragging]       = useState<{taskId:string;startX:number;origStart:Date;origEnd:Date;mode:"move"|"resize-start"|"resize-end"}|null>(null)
   const [dragDays,       setDragDays]       = useState(0)
+  // Timeline panning: grab empty canvas and slide through the whole schedule
+  // (no Prev/Next needed). Bars still own their own drag handlers.
+  const pan = useRef<{startX:number; origView:Date; moved:boolean}|null>(null)
+  const [panning, setPanning] = useState(false)
   const [saving,         setSaving]         = useState(false)
   const today = new Date(); today.setHours(0,0,0,0)
 
@@ -344,6 +348,37 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   })
   const SEP = <div style={{ width:1, height:24, background:"#E2E8F0", margin:"0 4px" }} />
 
+  // ── Timeline pan (drag empty canvas / horizontal wheel) ──────────────────
+  function onCanvasPanStart(e: React.MouseEvent) {
+    if (dragging) return
+    // Only the timeline area (right of the label gutter); bars stopPropagation.
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect || e.clientX - rect.left < LEFT_W) return
+    pan.current = { startX: e.clientX, origView: new Date(viewStart), moved: false }
+    setPanning(true)
+  }
+  useEffect(() => {
+    if (!panning) return
+    const move = (e: MouseEvent) => {
+      if (!pan.current) return
+      const dx = e.clientX - pan.current.startX
+      const days = Math.round(-dx / Math.max(dayW, 0.001))
+      if (days !== 0) pan.current.moved = true
+      setViewStart(addDays(pan.current.origView, days))
+    }
+    const up = () => { setPanning(false); pan.current = null }
+    window.addEventListener("mousemove", move)
+    window.addEventListener("mouseup", up)
+    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up) }
+  }, [panning, dayW])
+  function onCanvasWheel(e: React.WheelEvent) {
+    // Horizontal trackpad wheel (or Shift+wheel) slides the window.
+    const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0)
+    if (!dx) return
+    e.preventDefault()
+    setViewStart(v => addDays(v, Math.round(dx / Math.max(dayW, 0.001)) || (dx > 0 ? 1 : -1)))
+  }
+
   // ── Today x position ─────────────────────────────────────────────────────
   const todayX = dayX(today)
 
@@ -453,7 +488,9 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
       <div ref={wrapRef} style={{ flex:1, overflow:"auto", position:"relative" }}
         onScroll={syncSticky}>
         <svg ref={svgRef} width={svgWidth} height={totalH}
-          style={{ display:"block", userSelect:"none", fontFamily:"var(--font)" }}>
+          onMouseDown={onCanvasPanStart} onWheel={onCanvasWheel}
+          style={{ display:"block", userSelect:"none", fontFamily:"var(--font)",
+            cursor: panning ? "grabbing" : "default" }}>
 
           <defs>
             {/* Baseline stripe pattern */}
