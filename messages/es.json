@@ -123,7 +123,8 @@
     "View all": "Ver todo",
     "activeProjectsSection": "Proyectos activos",
     "milestones30": "Hitos — próximos 30 días",
-    "highScoreRisks": "Riesgos de puntuación alta"
+    "highScoreRisks": "Riesgos de puntuación alta",
+    "recentActivity": "Actividad reciente"
   },
   "projects": {
     "+ New project": "+ Nuevo proyecto",

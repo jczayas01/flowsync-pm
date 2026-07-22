@@ -123,7 +123,8 @@
     "View all": "View all",
     "activeProjectsSection": "Active projects",
     "milestones30": "Milestones — next 30 days",
-    "highScoreRisks": "High-score risks"
+    "highScoreRisks": "High-score risks",
+    "recentActivity": "Recent activity"
   },
   "projects": {
     "+ New project": "+ New project",

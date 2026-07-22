@@ -645,7 +645,7 @@ export const PERMISSIONS: Record<AnyRole, Partial<Record<Permission, boolean>>> 
     "projects:view_confidential":DENY,
     "projects:manage_members":   DENY,
     "projects:export":           DENY,
-    "programs:view":             YES,
+    "programs:view":             DENY,       // members work inside projects, not the program layer
     "programs:create":           DENY,
     "programs:edit":             DENY,
     "programs:manage_projects":  DENY,

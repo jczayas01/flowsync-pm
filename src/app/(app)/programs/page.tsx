@@ -4,6 +4,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import { can, mapDbRoleToRbac } from '@/lib/rbac/roles'
 import { projectVisibilityWhere } from '@/lib/security/project-visibility'
 import { ProgramsView } from '@/components/programs/ProgramsView'
 
@@ -17,6 +18,8 @@ export default async function ProgramsPage() {
     select: { workspaceId:true, role:true },
   })
   if (!membership) redirect('/onboarding')
+  // Role gate mirrors the sidebar: programs:view (members are redirected).
+  if (!can(mapDbRoleToRbac(membership.role), 'programs:view')) redirect('/projects')
 
   const programs = await db.program.findMany({
     where:   { portfolio:{ workspaceId: membership.workspaceId } },
