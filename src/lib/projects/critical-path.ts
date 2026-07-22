@@ -41,9 +41,12 @@ export function computeCriticalPath(tasks: any[]): Set<string> {
     if (ef[t.id] != null) return ef[t.id]
     if (stack.has(t.id)) return 0            // guard against cycles
     stack.add(t.id)
-    const deps = (t.dependencies || []).map((x: any) => byId[x.precedingTaskId]).filter(Boolean)
+    const deps = (t.dependencies || [])
+      .map((x: any) => ({ pred: byId[x.precedingTaskId], lag: Number(x.lagDays) || 0 }))
+      .filter((d: any) => d.pred)
     let es: number
-    if (deps.length) es = Math.max(...deps.map((p: any) => calc(p, stack)))
+    // Lag shifts the successor's earliest start: FS + lag (lead = negative lag).
+    if (deps.length) es = Math.max(...deps.map((d: any) => calc(d.pred, stack) + d.lag))
     else es = ms(t.startDate) != null ? Math.round((ms(t.startDate)! - projStart) / DAY) : 0
     ef[t.id] = es + durDays(t)
     stack.delete(t.id)
@@ -58,10 +61,13 @@ export function computeCriticalPath(tasks: any[]): Set<string> {
     if (seen.has(t.id)) return
     seen.add(t.id)
     critical.add(t.id)
-    const deps = (t.dependencies || []).map((x: any) => byId[x.precedingTaskId]).filter(Boolean)
+    const deps = (t.dependencies || [])
+      .map((x: any) => ({ pred: byId[x.precedingTaskId], lag: Number(x.lagDays) || 0 }))
+      .filter((d: any) => d.pred)
     if (deps.length) {
-      const driver = deps.reduce((a: any, b: any) => (ef[b.id] >= ef[a.id] ? b : a))
-      trace(driver, seen)
+      const driver = deps.reduce((a: any, b: any) =>
+        (ef[b.pred.id] + b.lag >= ef[a.pred.id] + a.lag ? b : a))
+      trace(driver.pred, seen)
     }
   }
   for (const t of tasks) if (projectEnd - ef[t.id] <= 2) trace(t)

@@ -27,7 +27,7 @@ export default async function ProjectTasksPage({
           include: { projectMember: { include: { user: { select:{ id:true, name:true, avatarUrl:true } } } } }
         },
         phase:        { select:{ id:true, name:true } },
-        dependencies: { include: { precedingTask: { select:{ id:true, code:true, title:true, status:true } } } },
+        dependencies: { select: { id:true, precedingTaskId:true, lagDays:true, dependencyType:true, precedingTask: { select:{ id:true, code:true, title:true, status:true } } } },
         _count:       { select:{ comments:true } },
       },
     }),

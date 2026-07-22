@@ -147,6 +147,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   const [saving,  setSaving]  = useState(false)
   const [error,   setError]   = useState("")
   const [depPickerOpen, setDepPickerOpen] = useState(false)
+  const [depLag, setDepLag] = useState(0)  // lag days for the next added dependency (lead = negative)
   const [depSearch,     setDepSearch]     = useState("")
   const [activeTab,     setActiveTab]     = useState<"details"|"deps"|"activity">("details")
   const [visible, setVisible] = useState(false)
@@ -228,12 +229,12 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
     try {
       await fetch(`/api/tasks/${taskId}/dependencies`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ precedingTaskId, dependencyType:"FS" }),
+        body: JSON.stringify({ precedingTaskId, dependencyType:"FS", lagDays: depLag || 0 }),
       })
       const r = await fetch(`/api/tasks/${taskId}`)
       const d = await r.json()
       setTask(d.data)
-      setDepPickerOpen(false); setDepSearch(""); router.refresh()
+      setDepPickerOpen(false); setDepSearch(""); setDepLag(0); router.refresh()
     } finally { setSaving(false) }
   }
 
@@ -545,6 +546,13 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                             fontWeight:600, color:"#92400E" }}>blocked by</span>
                           <span style={{ fontSize:11, fontFamily:"monospace",
                             color:"var(--text-3)" }}>{dep.precedingTask?.code}</span>
+                          {Number(dep.lagDays) !== 0 && (
+                            <span title={Number(dep.lagDays) > 0 ? "Lag — mandatory wait after predecessor" : "Lead — overlap with predecessor"}
+                              style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:4,
+                              background:"#EFF6FF", color:"#1D4ED8", flexShrink:0 }}>
+                              {Number(dep.lagDays) > 0 ? `+${dep.lagDays}d` : `${dep.lagDays}d`}
+                            </span>
+                          )}
                           <span style={{ flex:1, fontSize:12, color:"var(--text)",
                             overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                             {dep.precedingTask?.title}
@@ -575,10 +583,21 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                   {depPickerOpen && (
                     <div style={{ border:"1px solid var(--border)", borderRadius:"var(--radius)",
                       overflow:"hidden", marginTop:4 }}>
-                      <input placeholder="Search tasks…" value={depSearch} autoFocus
-                        onChange={e => setDepSearch(e.target.value)}
-                        style={{ ...inp, border:"none", borderBottom:"1px solid var(--border)",
-                          borderRadius:0 }} />
+                      <div style={{ display:"flex", alignItems:"center", gap:8,
+                        borderBottom:"1px solid var(--border)" }}>
+                        <input placeholder="Search tasks…" value={depSearch} autoFocus
+                          onChange={e => setDepSearch(e.target.value)}
+                          style={{ ...inp, border:"none", borderRadius:0, flex:1 }} />
+                        <label title="Lag: wait N days after the predecessor finishes (negative = lead/overlap)"
+                          style={{ display:"flex", alignItems:"center", gap:4, paddingRight:10,
+                          fontSize:11, color:"var(--text-3)", whiteSpace:"nowrap" }}>
+                          Lag
+                          <input type="number" min={-30} max={90} value={depLag}
+                            onChange={e => setDepLag(parseInt(e.target.value || "0", 10) || 0)}
+                            style={{ ...inp, width:56, padding:"4px 6px", fontSize:12 }} />
+                          d
+                        </label>
+                      </div>
                       <div style={{ maxHeight:200, overflowY:"auto" }}>
                         {availableForDeps.length === 0 ? (
                           <div style={{ padding:14, fontSize:12, color:"var(--text-3)", textAlign:"center" }}>

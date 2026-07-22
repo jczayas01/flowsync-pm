@@ -1288,7 +1288,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
   const assigneeUser = assignee?.projectMember?.user || assignee?.user
   const depCount     = (t.dependencies||[]).length
   const depLabel     = depCount > 0
-    ? `Blocked by ${(t.dependencies||[]).map((d:any) => d.precedingTask?.code||"?").join(", ")}`
+    ? `Blocked by ${(t.dependencies||[]).map((d:any) => (d.precedingTask?.code||"?") + (Number(d.lagDays) ? ` ${Number(d.lagDays)>0?"+":""}${d.lagDays}d` : "")).join(", ")}`
     : null
 
   // ── Inline cell save ─────────────────────────────────────────────
