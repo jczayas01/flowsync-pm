@@ -13,7 +13,7 @@ const CAPABILITIES = [
     desc:"Emails about a project get tagged to it, so the thread lives with the work instead of in one person's inbox." },
   { scope:"Calendars.Read",      icon:"📅", label:"Meetings",
     desc:"Project meetings are detected from your calendar and can be logged as minutes." },
-  { scope:"OnlineMeetings.Read", icon:"💬", label:"Teams meetings",
+  { scope:"OnlineMeetings.Read", icon:"💬", label:"Teams meetings", hint:"Work/school (Entra ID) accounts only — personal Microsoft accounts can\u2019t grant this scope.",
     desc:"Teams meeting details attach to the project record." },
   { scope:"Tasks.ReadWrite",     icon:"✅", label:"Planner & To Do",
     desc:"Tasks stay in step between FlowSync PM and Microsoft Planner." },
@@ -65,7 +65,14 @@ export function IntegrationsView({
         <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", gap:13 }}>
           <div style={{ width:40, height:40, borderRadius:9, background:"#EFF6FF",
-            display:"grid", placeItems:"center", fontSize:20, flexShrink:0 }}>🪟</div>
+            display:"grid", placeItems:"center", flexShrink:0 }}>
+            <svg width="20" height="20" viewBox="0 0 21 21" aria-hidden="true">
+              <rect x="0"  y="0"  width="10" height="10" fill="#F25022"/>
+              <rect x="11" y="0"  width="10" height="10" fill="#7FBA00"/>
+              <rect x="0"  y="11" width="10" height="10" fill="#00A4EF"/>
+              <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+            </svg>
+          </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:15, fontWeight:700, color:NAVY }}>Microsoft 365</div>
             <div style={{ fontSize:12, color:SLATE, marginTop:2 }}>
@@ -110,6 +117,9 @@ export function IntegrationsView({
                       {on && <span style={{ fontSize:11, color:GREEN, fontWeight:700 }}>✓</span>}
                     </div>
                     <div style={{ fontSize:12, color:SLATE, lineHeight:1.55, marginTop:3 }}>{c.desc}</div>
+                    {connected && !on && (c as any).hint && (
+                      <div style={{ fontSize:10.5, color:"#B45309", marginTop:3 }}>{(c as any).hint}</div>
+                    )}
                   </div>
                 </div>
               )
