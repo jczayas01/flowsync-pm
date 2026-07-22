@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { suggestionFingerprint } from "../route"
+import { suggestionFingerprint } from "@/lib/ai/fingerprint"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
 
