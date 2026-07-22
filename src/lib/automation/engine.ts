@@ -158,12 +158,16 @@ async function executeAction(
       case "notify.email": {
         const { Resend } = await import("resend")
         const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
-          from:    process.env.RESEND_FROM_EMAIL!,
+        const { error: emailErr } = await resend.emails.send({
+          from:    process.env.RESEND_FROM_EMAIL || "FlowSync PM <no-reply@flowsyncpm.com>",
           to:      params.to as string,
           subject: params.subject as string,
           html:    `<div style="font-family:Inter,sans-serif;padding:20px">${params.body}</div>`,
         })
+        if (emailErr) {
+          log.push({ actionType: action.type, success: false, message: `Email rejected: ${JSON.stringify(emailErr)}`, timestamp: ts })
+          return false
+        }
         log.push({ actionType: action.type, success: true, message: `Email sent to ${params.to}`, timestamp: ts })
         return true
       }
@@ -477,4 +481,130 @@ export async function processTrigger(event: TriggerEvent): Promise<ExecutionResu
   }
 
   return results
+}
+
+// ─────────────────────────────────────────────
+// SCHEDULED SCANS (called by the daily cron)
+// Emit synthetic trigger events for time-based recipes: overdue tasks,
+// approaching due dates, approaching milestones, and the Monday report.
+// ─────────────────────────────────────────────
+
+export async function runScheduledScans(now: Date = new Date()): Promise<{
+  overdue: number; dueSoon: number; milestones: number; weekly: number
+}> {
+  const counts = { overdue: 0, dueSoon: 0, milestones: 0, weekly: 0 }
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const isMonday = now.getUTCDay() === 1
+
+  // Which workspaces even have active time-based rules? Scan only those.
+  const activeRules = await db.$queryRaw<any[]>`
+    SELECT DISTINCT workspace_id, trigger_type FROM automation_rules WHERE is_active = true
+  `.catch(() => [])
+  const wsWith = (t: string) => new Set(activeRules.filter(r => r.trigger_type === t).map(r => r.workspace_id))
+
+  const overdueWs   = wsWith("task.overdue")
+  const dueSoonWs   = wsWith("task.due_date_approaching")
+  const milestoneWs = wsWith("project.milestone_approaching")
+  const weeklyWs    = wsWith("schedule.weekly")
+
+  // ── Overdue tasks ──
+  if (overdueWs.size) {
+    const tasks = await db.task.findMany({
+      where: {
+        dueDate: { lt: startOfToday },
+        status:  { notIn: ["DONE", "CANCELLED"] },
+        project: { workspaceId: { in: [...overdueWs] } },
+      },
+      select: { id: true, projectId: true, project: { select: { workspaceId: true } } },
+      take: 500,
+    })
+    for (const t of tasks) {
+      await processTrigger({
+        type: "task.overdue", workspaceId: t.project.workspaceId, projectId: t.projectId,
+        entityType: "task", entityId: t.id, triggeredBy: undefined, payload: {},
+      }).catch(() => {})
+      counts.overdue++
+    }
+  }
+
+  // ── Due-date approaching (rule param decides how many days; scan a 7-day window) ──
+  if (dueSoonWs.size) {
+    const horizon = new Date(startOfToday); horizon.setUTCDate(horizon.getUTCDate() + 7)
+    const tasks = await db.task.findMany({
+      where: {
+        dueDate: { gte: startOfToday, lte: horizon },
+        status:  { notIn: ["DONE", "CANCELLED"] },
+        project: { workspaceId: { in: [...dueSoonWs] } },
+      },
+      select: { id: true, projectId: true, dueDate: true, project: { select: { workspaceId: true } } },
+      take: 500,
+    })
+    for (const t of tasks) {
+      const daysUntil = Math.round(((t.dueDate as Date).getTime() - startOfToday.getTime()) / 86400000)
+      await processTrigger({
+        type: "task.due_date_approaching", workspaceId: t.project.workspaceId, projectId: t.projectId,
+        entityType: "task", entityId: t.id, triggeredBy: undefined, payload: { days_until: daysUntil },
+      }).catch(() => {})
+      counts.dueSoon++
+    }
+  }
+
+  // ── Milestones approaching (within 7 days) ──
+  if (milestoneWs.size) {
+    const horizon = new Date(startOfToday); horizon.setUTCDate(horizon.getUTCDate() + 7)
+    const ms = await db.milestone.findMany({
+      where: {
+        dueDate: { gte: startOfToday, lte: horizon },
+        status:  { notIn: ["COMPLETED", "CANCELLED"] },
+        project: { workspaceId: { in: [...milestoneWs] } },
+      },
+      select: { id: true, projectId: true, dueDate: true, project: { select: { workspaceId: true } } },
+      take: 300,
+    })
+    for (const m of ms) {
+      const daysUntil = Math.round(((m.dueDate as Date).getTime() - startOfToday.getTime()) / 86400000)
+      await processTrigger({
+        type: "project.milestone_approaching", workspaceId: m.project.workspaceId, projectId: m.projectId,
+        entityType: "milestone", entityId: m.id, triggeredBy: undefined, payload: { days_until: daysUntil },
+      }).catch(() => {})
+      counts.milestones++
+    }
+  }
+
+  // ── Budget threshold — spend as % of total crosses a rule's threshold ──
+  const budgetWs = wsWith("project.budget_threshold")
+  if (budgetWs.size) {
+    const projects = await db.project.findMany({
+      where: { workspaceId: { in: [...budgetWs] }, status: { in: ["ACTIVE", "ON_HOLD"] },
+               budgetTotal: { gt: 0 } },
+      select: { id: true, workspaceId: true, budgetTotal: true, budgetSpent: true },
+      take: 500,
+    })
+    for (const p of projects) {
+      const pct = Math.round((Number(p.budgetSpent || 0) / Number(p.budgetTotal || 1)) * 100)
+      await processTrigger({
+        type: "project.budget_threshold", workspaceId: p.workspaceId, projectId: p.id,
+        entityType: "project", entityId: p.id, triggeredBy: undefined,
+        payload: { budget_pct: pct, spent: Number(p.budgetSpent || 0), total: Number(p.budgetTotal || 0) },
+      }).catch(() => {})
+    }
+  }
+
+  // ── Weekly report (Mondays) — one event per active project in each workspace ──
+  if (isMonday && weeklyWs.size) {
+    const projects = await db.project.findMany({
+      where: { workspaceId: { in: [...weeklyWs] }, status: { in: ["ACTIVE", "ON_HOLD"] } },
+      select: { id: true, workspaceId: true },
+      take: 500,
+    })
+    for (const p of projects) {
+      await processTrigger({
+        type: "schedule.weekly", workspaceId: p.workspaceId, projectId: p.id,
+        entityType: "project", entityId: p.id, triggeredBy: undefined, payload: {},
+      }).catch(() => {})
+      counts.weekly++
+    }
+  }
+
+  return counts
 }

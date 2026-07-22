@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
+import { fireTrigger } from "@/lib/automation/trigger"
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import {
   withWorkspace, ok, okList, err, parseBody,
@@ -108,7 +109,9 @@ async function createRisk(ctx: ApiContext) {
     })
   }
 
-  await audit(ctx.workspaceId, ctx.userId, "risk.created", "risk", risk.id,
+  fireTrigger("risk.created", ctx.workspaceId, data.projectId, "risk", risk.id, ctx.userId,
+    { score: (risk as any).score, probability: (risk as any).probability, impact: (risk as any).impact })
+    await audit(ctx.workspaceId, ctx.userId, "risk.created", "risk", risk.id,
     undefined, { code, title: data.title, score })
 
   dispatchEvent(ctx.workspaceId, "RISK_CREATED", {

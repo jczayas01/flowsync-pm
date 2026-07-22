@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
+import { fireTrigger } from "@/lib/automation/trigger"
 import { ok, err } from "@/lib/api"
 import { auth } from "@/lib/auth"
 
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       data:  { acceptedAt: new Date() },
     })
   })
+
+  fireTrigger("workspace.member_added", invitation.workspaceId, undefined, "user", session.user.id, invitation.invitedBy || undefined,
+    { role: invitation.role, email: invitation.email })
 
   return ok({
     workspaceId:   invitation.workspaceId,

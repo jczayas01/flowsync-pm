@@ -137,7 +137,7 @@ export const RECIPES: RecipeTemplate[] = [
     popular: true,
     methodology: "ALL",
     trigger:    { type: "project.budget_threshold", params: { threshold_pct: 80 } },
-    conditions: [],
+    conditions: [{ field: "budget_pct", operator: "greater_than", value: 79 }],
     actions: [
       { type: "notify.role",  params: { role: "PROJECT_MANAGER", message: "Budget alert: {{project.name}} has consumed 80% of its budget (${{project.budgetSpent}} of ${{project.budgetTotal}}).", channel: "both" } },
       { type: "notify.role",  params: { role: "SUPER_USER",      message: "Budget alert: {{project.name}} at 80% (${{project.budgetSpent}} spent).", channel: "email" } },
@@ -152,7 +152,7 @@ export const RECIPES: RecipeTemplate[] = [
     popular: false,
     methodology: "ALL",
     trigger:    { type: "project.budget_threshold", params: { threshold_pct: 95 } },
-    conditions: [],
+    conditions: [{ field: "budget_pct", operator: "greater_than", value: 94 }],
     actions: [
       { type: "project.set_health", params: { health: "RED", reason: "Budget at 95%" } },
       { type: "notify.role",        params: { role: "PROJECT_MANAGER", message: "CRITICAL: {{project.name}} has consumed 95% of budget. Immediate action required.", channel: "both" } },

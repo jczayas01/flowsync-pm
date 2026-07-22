@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
+import { fireTrigger } from "@/lib/automation/trigger"
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import {
   withWorkspace, ok, err, notFound, forbidden,
@@ -138,6 +139,14 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
   })
 
   await audit(ctx.workspaceId, ctx.userId, "task.updated", "task", id, task as any, updated as any)
+
+  // Fire automations for status changes (and completion).
+  if (rest.status !== undefined && rest.status !== task.status) {
+    fireTrigger("task.status_changed", ctx.workspaceId, task.projectId, "task", id, ctx.userId,
+      { from: task.status, to: rest.status })
+    if (rest.status === "DONE")
+      fireTrigger("task.completed", ctx.workspaceId, task.projectId, "task", id, ctx.userId, {})
+  }
 
   // Notify newly-assigned users
   if (assigneeIds !== undefined) {

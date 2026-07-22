@@ -106,6 +106,12 @@ async function updateProject(ctx: ApiContext, params?: Record<string,string>) {
   })
 
   await audit(ctx.workspaceId, ctx.userId, 'project.updated', 'project', id, before as any, updated as any)
+
+  // Automations: health transitions.
+  if (parsed.data.health && parsed.data.health !== (before as any)?.health) {
+    fireTrigger("project.health_changed", ctx.workspaceId, id, "project", id, ctx.userId,
+      { from: (before as any)?.health, to: parsed.data.health })
+  }
   dispatchEvent(ctx.workspaceId, "PROJECT_UPDATED", {
     projectId: id, actorId: ctx.userId,
     title: `Project updated: ${updated.name}`, link: `/projects/${id}`,

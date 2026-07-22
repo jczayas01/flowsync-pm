@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
+import { fireTrigger } from "@/lib/automation/trigger"
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import { withWorkspace, ok, err, notFound, parseBody, audit, verifyProjectAccess, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
@@ -82,6 +83,15 @@ async function updateChangeRequest(ctx: ApiContext, params?: Record<string,strin
 
   await audit(ctx.workspaceId, ctx.userId, "change_request.updated", "project", projectId,
     existing as any, updated as any)
+
+  if (data.status === "APPROVED" && existing.status !== "APPROVED") {
+    fireTrigger("change.approved", ctx.workspaceId, projectId, "change_request", updated.id, ctx.userId,
+      { title: updated.title, budgetImpact: updated.budgetImpact ? Number(updated.budgetImpact) : 0 })
+  }
+  if (data.status === "SUBMITTED" && existing.status !== "SUBMITTED") {
+    fireTrigger("change.submitted", ctx.workspaceId, projectId, "change_request", updated.id, ctx.userId,
+      { title: updated.title, budgetImpact: updated.budgetImpact ? Number(updated.budgetImpact) : 0 })
+  }
 
   if (data.status === "APPROVED") {
     dispatchEvent(ctx.workspaceId, "CHANGE_APPROVED", {

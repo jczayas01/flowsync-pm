@@ -76,6 +76,7 @@ export type ActionType =
   | "project.set_health"
   | "project.set_status"
   | "project.add_member"
+  | "workspace.member_added"
   // Notifications
   | "notify.user"              // specific user
   | "notify.role"              // all users with role X in project
