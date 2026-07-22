@@ -93,11 +93,11 @@ function ReportMetric({ label, value, color }: { label:string; value:string; col
 
 // ── Report view ─────────────────────────────────────────────────────────────
 
-function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, accent = "#1B6CA8", accent2 = "#F59E0B", onDownload, downloading, onDownloadPdf, downloadingPdf }: {
+function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, accent = "#1B6CA8", accent2 = "#F59E0B", onDownload, downloading, onDownloadPdf, downloadingPdf, onEmail }: {
   report:any; reportType:string; audience:string; generatedAt:string;
   project:any; workspaceName:string; workspaceLogo?:string; accent?:string; accent2?:string;
   onDownload:()=>void; downloading:boolean
-  onDownloadPdf:()=>void; downloadingPdf:boolean
+  onDownloadPdf:()=>void; downloadingPdf:boolean; onEmail?:()=>void
 }) {
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
@@ -313,6 +313,14 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
             {downloadingPdf ? "Generating…" : "📕 PDF"}
           </button>
+          {onEmail && (
+            <button onClick={onEmail}
+              style={{ padding:"9px 18px", background:"#fff", color:"var(--text-2)",
+                border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:13,
+                fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
+              ✉️ Email report
+            </button>
+          )}
           <button onClick={() => window.print()}
             style={{ padding:"8px 16px",background:"#fff",border:"1px solid #E2E8F0",
               borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"var(--font)" }}>
@@ -589,6 +597,38 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   }
   const splitLines = (s?: string | null) =>
     (s || "").split("\n").map(t => t.trim()).filter(Boolean)
+
+  // ── Email the report (team + external contacts) ──────────────────────────
+  const [emailOpen, setEmailOpen]   = useState(false)
+  const [emailSel, setEmailSel]     = useState<Set<string>>(new Set())
+  const [emailExtra, setEmailExtra] = useState("")
+  const [emailNote, setEmailNote]   = useState("")
+  const [emailPdf, setEmailPdf]     = useState(true)
+  const [emailBusy, setEmailBusy]   = useState(false)
+  const [emailMsg, setEmailMsg]     = useState("")
+
+  async function sendReportEmail() {
+    if (!generatedReport) return
+    const extras = emailExtra.split(/[,;\s]+/).map(x => x.trim()).filter(x => /.+@.+\..+/.test(x))
+    const recipients = Array.from(new Set([...emailSel, ...extras]))
+    if (!recipients.length) { setEmailMsg("Pick at least one recipient."); return }
+    setEmailBusy(true); setEmailMsg("")
+    try {
+      const res = await fetch(`/api/projects/${projectId}/reports/send`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          reportData: toDocxShape(generatedReport),
+          subject: `[${project?.code}] ${generatedReport?.report?.reportTitle || reportType.replace("_"," ").toLowerCase()} — ${new Date().toLocaleDateString()}`,
+          recipients, note: emailNote || null, attachPdf: emailPdf,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setEmailMsg(d?.error || "Send failed."); return }
+      const ok = d?.data?.sent?.length || 0, bad = d?.data?.failed?.length || 0
+      setEmailMsg(`Sent to ${ok} recipient${ok===1?"":"s"}${bad ? ` — ${bad} failed` : ""}.`)
+      if (!bad) setTimeout(() => setEmailOpen(false), 1200)
+    } finally { setEmailBusy(false) }
+  }
 
   async function downloadPdf() {
     if (!generatedReport) return
@@ -912,8 +952,72 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               onDownload={downloadDocx}
               downloading={downloading}
               onDownloadPdf={downloadPdf}
+              onEmail={() => { setEmailSel(new Set()); setEmailMsg(""); setEmailOpen(true) }}
               downloadingPdf={downloadingPdf}
             />
+            )}
+
+            {emailOpen && (
+              <div onClick={() => !emailBusy && setEmailOpen(false)}
+                style={{ position:"fixed", inset:0, background:"rgba(15,23,42,.45)", zIndex:80,
+                  display:"grid", placeItems:"center" }}>
+                <div onClick={e => e.stopPropagation()}
+                  style={{ width:"min(520px, 92vw)", background:"#fff", borderRadius:12,
+                    padding:"20px 22px", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+                  <div style={{ fontSize:15, fontWeight:800, color:"var(--text)", marginBottom:2 }}>
+                    ✉️ Email this report
+                  </div>
+                  <div style={{ fontSize:11.5, color:"var(--text-3)", marginBottom:12 }}>
+                    Sends an email summary{emailPdf ? " with the PDF attached" : ""}. Replies go to your address.
+                  </div>
+                  <div style={{ fontSize:11, fontWeight:700, color:"var(--text-2)", marginBottom:6 }}>Team</div>
+                  <div style={{ maxHeight:150, overflowY:"auto", border:"1px solid var(--border)",
+                    borderRadius:8, padding:"6px 10px", marginBottom:10 }}>
+                    {(members||[]).filter((m:any)=>m.user?.email).map((m:any) => (
+                      <label key={m.id} style={{ display:"flex", gap:8, alignItems:"center",
+                        fontSize:12.5, padding:"4px 0", cursor:"pointer" }}>
+                        <input type="checkbox" checked={emailSel.has(m.user.email)}
+                          onChange={() => { const n = new Set(emailSel);
+                            n.has(m.user.email) ? n.delete(m.user.email) : n.add(m.user.email); setEmailSel(n) }} />
+                        <span style={{ color:"var(--text)" }}>{m.user?.name || m.user.email}</span>
+                        <span style={{ color:"var(--text-3)", fontSize:11 }}>{m.user.email}</span>
+                      </label>
+                    ))}
+                    {!(members||[]).some((m:any)=>m.user?.email) && (
+                      <div style={{ fontSize:11.5, color:"var(--text-3)", padding:"4px 0" }}>No team members with emails.</div>
+                    )}
+                  </div>
+                  <div style={{ fontSize:11, fontWeight:700, color:"var(--text-2)", marginBottom:4 }}>
+                    Other recipients <span style={{ fontWeight:400, color:"var(--text-3)" }}>(comma-separated)</span>
+                  </div>
+                  <input value={emailExtra} onChange={e => setEmailExtra(e.target.value)}
+                    placeholder="sponsor@client.com, pmo@client.com"
+                    style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)",
+                      borderRadius:8, fontSize:12.5, marginBottom:10, fontFamily:"var(--font)" }} />
+                  <textarea value={emailNote} onChange={e => setEmailNote(e.target.value)}
+                    placeholder="Optional note shown at the top of the email…" rows={2}
+                    style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)",
+                      borderRadius:8, fontSize:12.5, marginBottom:8, fontFamily:"var(--font)", resize:"vertical" }} />
+                  <label style={{ display:"flex", gap:8, alignItems:"center", fontSize:12.5,
+                    color:"var(--text-2)", marginBottom:12, cursor:"pointer" }}>
+                    <input type="checkbox" checked={emailPdf} onChange={e => setEmailPdf(e.target.checked)} />
+                    Attach PDF
+                  </label>
+                  {emailMsg && <div style={{ fontSize:12, color: emailMsg.startsWith("Sent") ? "#047857" : "#B91C1C",
+                    marginBottom:10 }}>{emailMsg}</div>}
+                  <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+                    <button onClick={() => setEmailOpen(false)} disabled={emailBusy}
+                      style={{ padding:"8px 16px", background:"#fff", border:"1px solid var(--border)",
+                        borderRadius:8, fontSize:12.5, cursor:"pointer", fontFamily:"var(--font)" }}>Cancel</button>
+                    <button onClick={sendReportEmail} disabled={emailBusy}
+                      style={{ padding:"8px 18px", background: emailBusy ? "#94A3B8" : "var(--steel,#1B6CA8)",
+                        color:"#fff", border:"none", borderRadius:8, fontSize:12.5, fontWeight:700,
+                        cursor:"pointer", fontFamily:"var(--font)" }}>
+                      {emailBusy ? "Sending…" : "Send"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
