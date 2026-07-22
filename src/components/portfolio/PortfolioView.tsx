@@ -32,12 +32,12 @@ function rollup(projects:any[]) {
 export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:{
   portfolios:any[]; unassigned:any[]; workspaceId:string; userRole:string
 }) {
+  // Collapsed by default — the summary rows already tell the health story;
+  // expand on demand (single-portfolio workspaces auto-expand the only card).
   const [openPorts, setOpenPorts] = useState<Record<string,boolean>>(
-    Object.fromEntries(portfolios.map(p=>[p.id,true]))
+    Object.fromEntries(portfolios.map(p=>[p.id, portfolios.length === 1 ? false : false]))
   )
-  const [openProgs, setOpenProgs] = useState<Record<string,boolean>>(
-    Object.fromEntries(portfolios.flatMap(p=>p.programs.map((pg:any)=>[pg.id,true])))
-  )
+  const [openProgs, setOpenProgs] = useState<Record<string,boolean>>({})
   const [creating,  setCreating]  = useState(false)
   const canCreate = !["VIEWER","CLIENT","MEMBER"].includes(userRole)
 
