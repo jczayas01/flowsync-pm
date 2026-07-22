@@ -27,6 +27,12 @@ const schema = z.discriminatedUnion("action", [
   }),
 ])
 
+import { createHash } from "crypto"
+export function suggestionFingerprint(type: string, title: string) {
+  const norm = `${(type||"").toLowerCase().trim()}|${(title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}`
+  return createHash("sha1").update(norm).digest("hex")
+}
+
 function buildAnalyzePrompt(content: string, contentType: string, project: any) {
   return `You are a PMO assistant for ${project.name} (${project.code}).
 
@@ -42,17 +48,20 @@ Project context:
 - Health: ${project.health}
 - % Complete: ${project.percentComplete}%
 
-Analyze this content and extract structured information. Include at most the 8 most important suggestions, and keep every string value under 30 words. Respond ONLY with valid JSON matching this schema exactly:
+Analyze this content and extract structured information. Include at most the 8 most important suggestions, and keep every string value under 30 words.
+If the content is a meeting transcript or meeting notes, include exactly ONE suggestion of type "meeting_minutes" (title = meeting name, description = 2-3 sentence discussion summary, meeting_date and attendees filled from the content) so the meeting itself is filed, in addition to any tasks/risks it produced. Respond ONLY with valid JSON matching this schema exactly:
 {
   "summary": "2-3 sentence summary of what this content is about",
   "suggestions": [
     {
-      "type": "task|risk|status_update|document|action_item",
+      "type": "task|risk|status_update|document|action_item|meeting_minutes",
       "title": "concise title",
       "description": "what should be created or recorded",
       "priority": "CRITICAL|HIGH|MEDIUM|LOW",
       "suggested_assignee": "name if mentioned, else null",
-      "suggested_due_date": "YYYY-MM-DD if mentioned, else null"
+      "suggested_due_date": "YYYY-MM-DD if mentioned, else null",
+      "meeting_date": "YYYY-MM-DD (meeting_minutes only) if mentioned, else null",
+      "attendees": ["names (meeting_minutes only)"] 
     }
   ],
   "key_decisions": ["decision 1", "decision 2"],
@@ -185,6 +194,24 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     }
 
     const result = JSON.parse(jsonMatch[0])
+
+    // Distribution ledger check: mark suggestions that were already applied
+    // to this project (from this or any other document) so the UI can show
+    // NEW vs. already-distributed and skip duplicates by default.
+    if (parsed.data.action === "analyze_content" && Array.isArray(result.suggestions)) {
+      for (const sg of result.suggestions) sg.fingerprint = suggestionFingerprint(sg.type, sg.title)
+      const fps = result.suggestions.map((sg: any) => sg.fingerprint)
+      const existing = fps.length ? await db.documentExtraction.findMany({
+        where: { projectId: params.projectId, fingerprint: { in: fps } },
+        select: { fingerprint: true, itemCode: true, itemType: true, sourceLabel: true },
+      }) : []
+      const byFp = new Map(existing.map(e => [e.fingerprint, e]))
+      for (const sg of result.suggestions) {
+        const hit = byFp.get(sg.fingerprint)
+        sg.existing = hit ? { code: hit.itemCode, type: hit.itemType, source: hit.sourceLabel } : null
+      }
+    }
+
     return NextResponse.json({ data: result, action: parsed.data.action })
 
   } catch (e: any) {

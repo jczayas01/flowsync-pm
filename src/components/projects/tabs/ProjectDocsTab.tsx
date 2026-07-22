@@ -149,7 +149,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [aiUpsell, setAiUpsell] = useState(false)   // scanned PDF hit by a non-Business plan
   const [aiApplySel, setAiApplySel] = useState<Set<number>>(new Set())
   const [aiApplying, setAiApplying] = useState(false)
-  const [aiApplied, setAiApplied] = useState<null | { created: any[]; failed: any[] }>(null)
+  const [aiApplied, setAiApplied] = useState<null | { created: any[]; failed: any[]; skipped?: any[] }>(null)
   const [aiUploading, setAiUploading] = useState(false)
 
   // ── Analyze stored project documents (multi-select) ──
@@ -247,10 +247,17 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
           type: sg.type, title: sg.title, description: sg.description,
           priority: sg.priority, suggested_due_date: sg.suggested_due_date,
           suggested_assignee: sg.suggested_assignee,
+          fingerprint: sg.fingerprint,
+          meeting_date: sg.meeting_date, attendees: sg.attendees,
         }))
       const res = await fetch(`/api/projects/${projectId}/ai-analyze/apply?workspaceId=${workspaceId}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          items,
+          // Attribute to the source document when exactly one was loaded.
+          sourceDocumentId: aiSelectedDocs.size === 1 ? [...aiSelectedDocs][0] : null,
+          sourceLabel: aiLoadedFrom || "Pasted content",
+        }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) { setAiError(data?.error || `Couldn't add items (${res.status})`); return }
@@ -285,7 +292,8 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       if (!res.ok) { setAiError(data?.error || `Request failed (${res.status}) — try again`); return }
       if (!data)   { setAiError("Empty response from server — try again"); return }
       setAiResult(data.data)
-      setAiApplySel(new Set((data.data?.suggestions || []).map((_: any, i: number) => i)))
+      setAiApplySel(new Set((data.data?.suggestions || [])
+        .map((sg: any, i: number) => sg.existing ? -1 : i).filter((i: number) => i >= 0)))
       setAiApplied(null)
     } catch { setAiError("Connection lost — check your internet and try again") }
     finally { setAiAnalyzing(false) }
@@ -856,6 +864,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                           {aiResult.suggestions.map((s: any, i: number) => (
                             <div key={i} onClick={() => {
+                                if (s.existing) return  // already distributed — nothing to apply
                                 const next = new Set(aiApplySel)
                                 next.has(i) ? next.delete(i) : next.add(i)
                                 setAiApplySel(next)
@@ -876,6 +885,12 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                                   background:"var(--surface)", color:"var(--text-3)" }}>
                                   {s.type.replace("_"," ")}
                                 </span>
+                                {s.existing && (
+                                  <span style={{ fontSize:10, fontWeight:700, padding:"2px 7px",
+                                    borderRadius:4, background:"#F1F5F9", color:"#64748B" }}>
+                                    ✓ ALREADY ADDED{s.existing.code ? ` · ${s.existing.code}` : ""}
+                                  </span>
+                                )}
                                 {s.priority && (
                                   <span style={{ fontSize:10, fontWeight:700, padding:"2px 7px",
                                     borderRadius:4, textTransform:"uppercase",
@@ -915,8 +930,10 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                               {aiApplied.created.map((c:any) => `${c.code} (${c.type})`).join(", ")}
                               {aiApplied.failed.length > 0 &&
                                 ` — ${aiApplied.failed.length} couldn't be created`}
+                              {(aiApplied.skipped?.length || 0) > 0 &&
+                                ` — ${aiApplied.skipped!.length} already existed (${aiApplied.skipped!.map((k:any)=>k.code).filter(Boolean).join(", ")})`}
                               <div style={{ color:"#15803D", marginTop:4, fontSize:11.5 }}>
-                                Find them in the Tasks, Risks, Issues and Decisions tabs.
+                                Find them in the Tasks, Risks, Issues, Decisions and Meetings tabs.
                               </div>
                             </div>
                           ) : (

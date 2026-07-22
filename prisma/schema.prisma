@@ -288,6 +288,7 @@ model Project {
   issues            Issue[]
   lessons           LessonLearned[]
   meetingMinutes    MeetingMinutes[]
+  docExtractions    DocumentExtraction[]
   milestones        Milestone[]
   phases            Phase[]
   procurement       ProcurementItem[]
@@ -970,6 +971,26 @@ model Report {
   @@map("reports")
 }
 
+model DocumentExtraction {
+  id          String    @id @default(cuid())
+  projectId   String
+  documentId  String?
+  sourceLabel String?
+  fingerprint String                       // sha1(type|normalized title) — dedupe key
+  itemType    String                       // task|risk|issue|decision|meeting|status_update|document
+  itemId      String?
+  itemCode    String?
+  title       String
+  createdById String
+  createdAt   DateTime  @default(now())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  document    Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, fingerprint])
+  @@index([documentId])
+  @@map("document_extractions")
+}
+
 model Document {
   id               String          @id @default(cuid())
   projectId        String
@@ -985,6 +1006,7 @@ model Document {
   weekOf           DateTime?
   shares           DocumentShare[]
   project          Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  extractions      DocumentExtraction[]
   uploadedBy       User            @relation("UploadedDocuments", fields: [uploadedById], references: [id])
 
   @@map("documents")
