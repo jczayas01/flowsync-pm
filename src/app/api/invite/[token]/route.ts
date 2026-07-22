@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     })
   })
 
-  fireTrigger("workspace.member_added", invitation.workspaceId, undefined, "user", session.user.id, invitation.invitedBy || undefined,
+  fireTrigger("project.add_member", invitation.workspaceId, undefined, "user", session.user.id, invitation.invitedBy || undefined,
     { role: invitation.role, email: invitation.email })
 
   return ok({
