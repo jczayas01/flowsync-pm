@@ -555,7 +555,7 @@ export async function runScheduledScans(now: Date = new Date()): Promise<{
     const ms = await db.milestone.findMany({
       where: {
         dueDate: { gte: startOfToday, lte: horizon },
-        status:  { notIn: ["COMPLETED", "CANCELLED"] },
+        status:  { in: ["UPCOMING", "AT_RISK"] },
         project: { workspaceId: { in: [...milestoneWs] } },
       },
       select: { id: true, projectId: true, dueDate: true, project: { select: { workspaceId: true } } },

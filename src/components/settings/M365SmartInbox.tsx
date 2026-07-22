@@ -138,7 +138,6 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
         <div style={{ padding:"18px", fontSize:12.5, color:SLATE }}>
           Nothing project-related detected in the recent window. Tip: include the project code
           (e.g. "PRJ-001") or the exact project name in email subjects and meeting titles.
-          Only Active or On-hold projects where you are a team member are matched.
         </div>
       )}
 

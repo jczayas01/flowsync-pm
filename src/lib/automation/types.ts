@@ -42,6 +42,9 @@ export type TriggerType =
   | "intake.submitted"
   | "intake.approved"
   | "intake.rejected"
+  // Team
+  | "project.add_member"
+  | "workspace.member_added"
 
 // ─────────────────────────────────────────────
 // CONDITIONS
@@ -75,8 +78,6 @@ export type ActionType =
   // Project actions
   | "project.set_health"
   | "project.set_status"
-  | "project.add_member"
-  | "workspace.member_added"
   // Notifications
   | "notify.user"              // specific user
   | "notify.role"              // all users with role X in project
@@ -149,7 +150,7 @@ export interface TriggerEvent {
   entityId:    string
   triggeredBy?: string         // userId who caused the event
   payload:     Record<string, unknown>  // the changed data
-  timestamp:   Date
+  timestamp?:  Date | string
 }
 
 export interface ExecutionResult {

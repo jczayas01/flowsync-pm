@@ -16,7 +16,7 @@ const TABS = [
   { href:"/settings/custom-fields",label:"Custom fields",   icon:"⚙️", perm:"workspace:edit_settings" },
   { href:"/settings/report-templates", label:"Report Templates", icon:"📈", perm:"projects:create" },
   { href:"/settings/white-label",  label:"White-label",     icon:"🎨", perm:"workspace:edit_branding", planFeature:"whiteLabel" },
-  { href:"/settings/integrations", label:"Integrations",    icon:"🧩", perm:"workspace:manage_integrations", planFeature:"m365" },
+  { href:"/settings/integrations", label:"Integrations",    icon:"🪟", perm:"workspace:manage_integrations", planFeature:"m365" },
   { href:"/settings/webhooks",     label:"Webhooks",        icon:"🔗", perm:"workspace:manage_integrations", planFeature:"apiAccess" },
   { href:"/settings/api",          label:"API",             icon:"🔑", perm:"workspace:manage_integrations", planFeature:"apiAccess" },
 ] as any[]

@@ -12,6 +12,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib//db'
 import { dispatchEvent } from "@/lib/automation/dispatch"
+import { fireTrigger } from "@/lib/automation/trigger"
 import {
   withWorkspace, ok, err, notFound, forbidden, serverError,
   parseBody, audit, verifyProjectAccess, ApiContext,
