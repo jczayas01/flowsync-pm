@@ -31,6 +31,27 @@ function wrap(text: string, font: PDFFont, size: number, maxW: number): string[]
   return out
 }
 
+// pdf-lib's standard fonts are WinAnsi (cp1252) — characters like >=, checkmarks
+// or arrows crash encoding. Map common symbols to ASCII and strip anything else
+// outside cp1252, applied to every string before drawing.
+const SYMBOL_MAP: Record<string, string> = {
+  "\u2265": ">=", "\u2264": "<=", "\u2260": "!=", "\u2248": "~",
+  "\u2713": "[ok]", "\u2714": "[ok]", "\u2717": "x", "\u2718": "x",
+  "\u2192": "->", "\u2190": "<-", "\u2194": "<->",
+  "\u00d7": "x", "\u00b1": "+/-", "\u26a1": "",
+}
+const CP1252_EXTRA = "\u20ac\u201a\u0192\u201e\u2026\u2020\u2021\u02c6\u2030\u0160\u2039\u0152\u017d\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u02dc\u2122\u0161\u203a\u0153\u017e\u0178"
+function pdfSafe(input: any): string {
+  let t = String(input ?? "")
+  for (const [k, v] of Object.entries(SYMBOL_MAP)) t = t.split(k).join(v)
+  let out = ""
+  for (const ch of t) {
+    const c = ch.codePointAt(0) || 0
+    out += (c <= 0xFF || CP1252_EXTRA.includes(ch)) ? ch : "?"
+  }
+  return out
+}
+
 export async function generateReportPdf(opts: {
   org: string
   color?: string
@@ -47,6 +68,13 @@ export async function generateReportPdf(opts: {
     decisionsNeeded?: string[]
   }
 }): Promise<Uint8Array> {
+  // Sanitize every string in the payload once, up front.
+  const __deep = (v: any): any => typeof v === "string" ? pdfSafe(v)
+    : Array.isArray(v) ? v.map(__deep)
+    : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, __deep(x)]))
+    : v
+  opts = __deep(opts)
+
   const { org, projectName, projectCode, report } = opts
   const brand = hexToRgb(opts.color)
 
