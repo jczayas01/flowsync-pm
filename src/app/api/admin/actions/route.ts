@@ -25,6 +25,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("toggleWorkspace"), workspaceId: z.string(), isActive: z.boolean() }),
   z.object({ action: z.literal("toggleUser"),  userId: z.string(), isActive: z.boolean() }),
   z.object({ action: z.literal("sendReset"),   userId: z.string() }),
+  z.object({ action: z.literal("deleteDemoRequest"), demoRequestId: z.string() }),
   z.object({ action: z.literal("deleteWorkspace"), workspaceId: z.string(), confirmName: z.string() }),
   z.object({ action: z.literal("deleteUser"),      userId: z.string(), confirmEmail: z.string() }),
 ])
@@ -138,6 +139,11 @@ export async function POST(req: NextRequest) {
           throw e
         }
         return NextResponse.json({ data: { message: `User ${u.email} deleted permanently.` } })
+      }
+
+      case "deleteDemoRequest": {
+        await db.demoRequest.delete({ where: { id: a.demoRequestId } }).catch(() => {})
+        return NextResponse.json({ data: { message: "Demo request deleted." } })
       }
 
       case "toggleUser": {

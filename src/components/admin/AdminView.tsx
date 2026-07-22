@@ -94,7 +94,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
         <div style={{ overflowX:"auto" }}>
           {tab === "workspaces" && <WorkspaceTable rows={ws} onManage={setManage} />}
           {tab === "users"      && <UserTable rows={us} onAction={run} busy={busy} />}
-          {tab === "leads"      && <LeadTable rows={lds} />}
+          {tab === "leads"      && <LeadTable rows={lds} onAction={run} busy={busy} />}
         </div>
       </div>
 
@@ -308,7 +308,7 @@ function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>voi
   )
 }
 
-function LeadTable({ rows }: { rows:any[] }) {
+function LeadTable({ rows, onAction, busy }: { rows:any[]; onAction:(a:any)=>void; busy:boolean }) {
   if (!rows.length) return <Empty text="No demo requests yet. They'll appear here the moment someone asks." />
   const statusColor: Record<string,string> = {
     NEW: RED, CONTACTED: AMBER, QUALIFIED: STEEL, WON: GREEN, LOST: "#94A3B8",
@@ -316,7 +316,7 @@ function LeadTable({ rows }: { rows:any[] }) {
   return (
     <table style={{ width:"100%", borderCollapse:"collapse", minWidth:900 }}>
       <thead><tr>
-        {["Status","Contact","Company","Team size","Message","Source","Received"].map(h =>
+        {["Status","Contact","Company","Team size","Message","Source","Received",""].map(h =>
           <th key={h} style={th}>{h}</th>)}
       </tr></thead>
       <tbody>
@@ -337,6 +337,12 @@ function LeadTable({ rows }: { rows:any[] }) {
             </td>
             <td style={td}><Pill text={d.source} color="#64748B" /></td>
             <td style={{ ...td, color:"#64748B" }}>{ago(d.createdAt)}</td>
+            <td style={td}>
+              <button disabled={busy}
+                onClick={() => { if (confirm(`Delete demo request from ${d.name}? This cannot be undone.`))
+                  onAction({ action:"deleteDemoRequest", demoRequestId:d.id }) }}
+                style={{ ...miniBtn, color:"#B91C1C", borderColor:"#FCA5A5" }}>Delete</button>
+            </td>
           </tr>
         ))}
       </tbody>
