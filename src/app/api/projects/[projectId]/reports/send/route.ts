@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   if (attachPdf) {
     try {
       const { generateReportPdf } = await import("@/lib/pdf-report")
-      const pdf: Buffer = await generateReportPdf({
+      const pdf = await generateReportPdf({
         org:         project.workspace?.name || "FlowSync PM",
         color:       accent,
         projectName: project.name,
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       } as any)
       attachments = [{
         filename: `${project.code}_report_${new Date().toISOString().split("T")[0]}.pdf`,
-        content: pdf.toString("base64"),
+        content: Buffer.from(pdf).toString("base64"),
       }]
     } catch (e) {
       console.error("[ReportSend] PDF generation failed — sending without attachment", e)
