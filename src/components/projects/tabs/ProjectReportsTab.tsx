@@ -970,23 +970,54 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                   <div style={{ fontSize:11.5, color:"var(--text-3)", marginBottom:12 }}>
                     Sends an email summary{emailPdf ? " with the PDF attached" : ""}. Replies go to your address.
                   </div>
-                  <div style={{ fontSize:11, fontWeight:700, color:"var(--text-2)", marginBottom:6 }}>Team</div>
-                  <div style={{ maxHeight:150, overflowY:"auto", border:"1px solid var(--border)",
-                    borderRadius:8, padding:"6px 10px", marginBottom:10 }}>
-                    {(members||[]).filter((m:any)=>m.user?.email).map((m:any) => (
-                      <label key={m.id} style={{ display:"flex", gap:8, alignItems:"center",
-                        fontSize:12.5, padding:"4px 0", cursor:"pointer" }}>
-                        <input type="checkbox" checked={emailSel.has(m.user.email)}
-                          onChange={() => { const n = new Set(emailSel);
-                            n.has(m.user.email) ? n.delete(m.user.email) : n.add(m.user.email); setEmailSel(n) }} />
-                        <span style={{ color:"var(--text)" }}>{m.user?.name || m.user.email}</span>
-                        <span style={{ color:"var(--text-3)", fontSize:11 }}>{m.user.email}</span>
-                      </label>
-                    ))}
-                    {!(members||[]).some((m:any)=>m.user?.email) && (
-                      <div style={{ fontSize:11.5, color:"var(--text-3)", padding:"4px 0" }}>No team members with emails.</div>
-                    )}
-                  </div>
+                  {(() => {
+                    const EXEC = new Set(["SPONSOR","EXECUTIVE_SPONSOR","STEERING_COMMITTEE","STAKEHOLDER","CLIENT"])
+                    const PMOG = new Set(["PMO","PMO_DIRECTOR","PROGRAM_MANAGER","PM"])
+                    const withEmail = (members||[]).filter((m:any)=>m.user?.email)
+                    const groups = [
+                      { label:"Executive & governance", list: withEmail.filter((m:any)=>EXEC.has(String(m.role))) },
+                      { label:"PMO & management",       list: withEmail.filter((m:any)=>PMOG.has(String(m.role))) },
+                      { label:"Team",                   list: withEmail.filter((m:any)=>!EXEC.has(String(m.role)) && !PMOG.has(String(m.role))) },
+                    ].filter(g => g.list.length)
+                    const roleLabel = (r:string) => r ? r.replace(/_/g," ").toLowerCase()
+                      .replace(/\b\w/g, (c:string)=>c.toUpperCase()) : ""
+                    return (
+                      <div style={{ maxHeight:210, overflowY:"auto", border:"1px solid var(--border)",
+                        borderRadius:8, padding:"6px 10px", marginBottom:10 }}>
+                        {groups.map(g => {
+                          const emails = g.list.map((m:any)=>m.user.email)
+                          const allOn = emails.every((e:string)=>emailSel.has(e))
+                          return (
+                            <div key={g.label} style={{ marginBottom:6 }}>
+                              <label style={{ display:"flex", gap:8, alignItems:"center", fontSize:11,
+                                fontWeight:700, color:"var(--text-2)", textTransform:"uppercase",
+                                letterSpacing:".05em", padding:"4px 0", cursor:"pointer" }}>
+                                <input type="checkbox" checked={allOn}
+                                  onChange={() => { const n = new Set(emailSel);
+                                    allOn ? emails.forEach((e:string)=>n.delete(e)) : emails.forEach((e:string)=>n.add(e));
+                                    setEmailSel(n) }} />
+                                {g.label}
+                              </label>
+                              {g.list.map((m:any) => (
+                                <label key={m.id} style={{ display:"flex", gap:8, alignItems:"center",
+                                  fontSize:12.5, padding:"3px 0 3px 20px", cursor:"pointer" }}>
+                                  <input type="checkbox" checked={emailSel.has(m.user.email)}
+                                    onChange={() => { const n = new Set(emailSel);
+                                      n.has(m.user.email) ? n.delete(m.user.email) : n.add(m.user.email); setEmailSel(n) }} />
+                                  <span style={{ color:"var(--text)" }}>{m.user?.name || m.user.email}</span>
+                                  <span style={{ color:"var(--text-3)", fontSize:10.5 }}>{roleLabel(String(m.role||""))}</span>
+                                  <span style={{ color:"var(--text-3)", fontSize:10.5, marginLeft:"auto" }}>{m.user.email}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )
+                        })}
+                        {!withEmail.length && (
+                          <div style={{ fontSize:11.5, color:"var(--text-3)", padding:"4px 0" }}>No team members with emails.</div>
+                        )}
+                      </div>
+                    )
+                  })()}
                   <div style={{ fontSize:11, fontWeight:700, color:"var(--text-2)", marginBottom:4 }}>
                     Other recipients <span style={{ fontWeight:400, color:"var(--text-3)" }}>(comma-separated)</span>
                   </div>

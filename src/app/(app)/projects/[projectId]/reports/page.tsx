@@ -27,7 +27,7 @@ export default async function ProjectReportsPage({ params }: { params: { project
     }),
     db.projectMember.findMany({
       where:   { projectId: params.projectId },
-      include: { user: { select:{ id:true, name:true } } },
+      include: { user: { select:{ id:true, name:true, email:true } } },
     }),
   ])
 
