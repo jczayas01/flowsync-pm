@@ -4,14 +4,16 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import { projectVisibilityWhere } from '@/lib/security/project-visibility'
 import { ProgramsView } from '@/components/programs/ProgramsView'
 
 export default async function ProgramsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
 
+  const activeWs = (session.user as any).activeWorkspaceId as string | undefined
   const membership = await db.workspaceMember.findFirst({
-    where:  { userId: session.user.id },
+    where:  { userId: session.user.id, ...(activeWs ? { workspaceId: activeWs } : {}) },
     select: { workspaceId:true, role:true },
   })
   if (!membership) redirect('/onboarding')
@@ -22,6 +24,9 @@ export default async function ProgramsPage() {
       portfolio: { select:{ id:true, name:true, color:true } },
       manager:   { select:{ id:true, name:true, avatarUrl:true } },
       projects:  {
+        // RBAC: inside each program, non view-all roles only see their own
+        // projects — names, health, and budget of others stay hidden.
+        where: projectVisibilityWhere(session.user.id, membership.role),
         select: {
           id:true, code:true, name:true, health:true, status:true,
           percentComplete:true, budgetTotal:true, budgetSpent:true,

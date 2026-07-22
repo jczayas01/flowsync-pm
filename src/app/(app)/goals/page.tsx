@@ -49,7 +49,8 @@ export default async function GoalsPage() {
 
   // Workspace projects available to link (for the picker).
   const projects = await db.project.findMany({
-    where:   { workspaceId: membership.workspaceId, status: { in: ["ACTIVE", "ON_HOLD", "DRAFT"] } },
+    where:   { workspaceId: membership.workspaceId, status: { in: ["ACTIVE", "ON_HOLD", "DRAFT"] },
+               AND: [projectVisibilityWhere(session.user.id, membership.role)] },
     select:  { id: true, code: true, name: true },
     orderBy: { code: "asc" },
   })
