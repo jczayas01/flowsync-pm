@@ -59,9 +59,16 @@ export async function POST(req: NextRequest) {
     .slice(0, 40)
   const slug = `${baseSlug}-${Date.now().toString(36)}`
 
+  // Every self-serve workspace starts a 2-month full-product trial.
+  // The trial lifecycle (banner, T-7/T-0 reminder emails, read-only at expiry)
+  // keys off trialEndsAt — without it a workspace silently lives outside the funnel.
+  const trialEndsAt = new Date()
+  trialEndsAt.setMonth(trialEndsAt.getMonth() + 2)
+
   const workspace = await db.workspace.create({
     data: {
       name, slug, plan,
+      trialEndsAt,
       defaultTimezone: timezone,
       defaultCurrency: currency,
       logoUrl:         logoUrl || null,

@@ -76,6 +76,7 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
   const [syncing, setSyncing] = useState(false)
   const [error, setError]     = useState("")
   const [applied, setApplied] = useState<Record<string,string>>({})
+  const [connLost, setConnLost] = useState(false)
   const [syncedAt, setSyncedAt] = useState<string>("")
 
   async function syncNow() {
@@ -90,6 +91,7 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
         setItems(null); return
       }
       setItems(mapPayload(d.data))
+      setConnLost(!!d.data?.connectionError)
       setSyncedAt(new Date().toLocaleTimeString())
     } catch {
       setError("Sync failed — network error.")
@@ -134,10 +136,19 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
           borderRadius:8, fontSize:12.5, color:"#B91C1C" }}>{error}</div>
       )}
 
-      {items && items.length === 0 && !error && (
+      {connLost && (
+        <div style={{ margin:14, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FDE68A",
+          borderRadius:8, fontSize:12.5, color:"#92400E" }}>
+          Your Microsoft connection has expired — nothing could be read. Use <b>Reconnect</b> above,
+          then sync again.
+        </div>
+      )}
+
+      {items && items.length === 0 && !error && !connLost && (
         <div style={{ padding:"18px", fontSize:12.5, color:SLATE }}>
           Nothing project-related detected in the recent window. Tip: include the project code
           (e.g. "PRJ-001") or the exact project name in email subjects and meeting titles.
+          Only Active or On-hold projects where you are a team member are matched.
         </div>
       )}
 

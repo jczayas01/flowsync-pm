@@ -4,6 +4,7 @@
 
 import { detectProjectEmails } from "./outlook"
 import { detectProjectMeetings, detectProjectChatMentions } from "./teams"
+import { getGraphToken } from "./graph-client"
 import { db } from "@/lib/db"
 
 export interface SyncPayload {
@@ -12,6 +13,9 @@ export interface SyncPayload {
   chats:    Awaited<ReturnType<typeof detectProjectChatMentions>>
   total:    number
   syncedAt: Date
+  /** True when no valid Microsoft token could be obtained — the UI should
+   *  say "reconnect", never "nothing detected". */
+  connectionError?: boolean
 }
 
 /**
@@ -19,6 +23,13 @@ export interface SyncPayload {
  * Returns structured data for the "Smart inbox" UI.
  */
 export async function runFullSync(userId: string): Promise<SyncPayload> {
+  // Honest failure: if the token is dead (expired, revoked, no refresh token),
+  // say so instead of returning an empty result that reads as "no mail".
+  const token = await getGraphToken(userId)
+  if (!token) {
+    return { emails: [], meetings: [], chats: [], total: 0, syncedAt: new Date(), connectionError: true }
+  }
+
   const [emails, meetings, chats] = await Promise.allSettled([
     detectProjectEmails(userId),
     detectProjectMeetings(userId),
