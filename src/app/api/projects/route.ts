@@ -10,6 +10,7 @@ import { projectVisibilityWhere } from '@/lib/security/project-visibility'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db/prisma'
+import { fireTrigger } from '@/lib/automation/trigger'
 import { dispatchEvent } from '@/lib/automation/dispatch'
 import {
   withAuth, ok, err, handleApiError,
@@ -167,7 +168,7 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext) => {
       if (template?.isPremium) {
         const ws = await prisma.workspace.findUnique({ where: { id: ctx.workspaceId }, select: { plan: true } })
         if (!ws || !["PRO","PROFESSIONAL","CONSULTANT","BUSINESS","ENTERPRISE"].includes(String(ws.plan))) {
-          return err("This is a premium template — included with the Business plan. Upgrade in Settings → Billing to use it.", 402)
+          return err(402, "PAYMENT_REQUIRED", "This is a premium template — included with the Business plan. Upgrade in Settings → Billing to use it.")
         }
       }
       templateData = template?.templateData
@@ -205,6 +206,9 @@ export const POST = withAuth(async (req: NextRequest, ctx: AuthContext) => {
         members: { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
       },
     })
+
+    fireTrigger("project.created", ctx.workspaceId, project.id, "project", project.id, ctx.userId,
+      { name: project.name, code: project.code })
 
     // Seed from template if provided
     if (templateData) {
