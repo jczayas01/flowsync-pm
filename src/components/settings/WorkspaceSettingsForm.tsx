@@ -2,6 +2,7 @@
 // src/components/settings/WorkspaceSettingsForm.tsx
 import { useState } from "react"
 import { isWorkspaceAdmin } from "@/lib/rbac/roles"
+import { LogoUploader } from "./LogoUploader"
 
 export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; role: string }) {
   const canEdit = isWorkspaceAdmin(role)
@@ -112,8 +113,11 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
           <input style={s.input} placeholder="https://your-org.com/logo.png"
             value={form.logoUrl} disabled={!canEdit}
             onChange={e => setForm(f => ({ ...f, logoUrl:e.target.value }))} />
+          <LogoUploader disabled={!canEdit}
+            onUploaded={url => setForm(f => ({ ...f, logoUrl: url }))} />
           <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>
             Used in reports and client-facing exports. Recommended: 200×50px PNG.
+            Uploading stores the image and fills the URL for you — remember to Save.
           </div>
         </div>
         <div>

@@ -63,13 +63,14 @@ export async function uploadFile(
   file: Blob,
   path: string,
   contentType: string,
+  opts?: { upsert?: boolean },
 ): Promise<{ path: string; error?: string }> {
   const notReady = storageReady()
   if (notReady) return { path: "", error: notReady }
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { contentType, upsert: false })
+    .upload(path, file, { contentType, upsert: opts?.upsert ?? false })
 
   if (error) return { path: "", error: error.message }
   return { path }

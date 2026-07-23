@@ -2,6 +2,7 @@
 // src/components/settings/WhiteLabelView.tsx
 import { useState } from "react"
 import { isWorkspaceAdmin } from "@/lib/rbac/roles"
+import { LogoUploader } from "./LogoUploader"
 
 export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string }) {
   const canEdit = isWorkspaceAdmin(role)
@@ -163,6 +164,8 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
             onChange={e=>setForm(f=>({...f,logoUrl:e.target.value}))}
             placeholder="https://yourcompany.com/logo.png"
             style={inp} />
+          <LogoUploader disabled={!canEdit||!isPro}
+            onUploaded={url=>setForm(f=>({...f,logoUrl:url}))} />
           {form.logoUrl&&(
             <div style={{marginTop:8,padding:"8px 12px",background:"var(--navy,#0D1B2A)",
               borderRadius:"var(--radius)",display:"inline-block"}}>
