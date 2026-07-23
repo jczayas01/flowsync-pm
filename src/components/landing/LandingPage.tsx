@@ -11,8 +11,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { Space_Grotesk } from "next/font/google"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 import { LogoMark, Wordmark } from "@/components/shared/Logo"
+
+const displayFont = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"] })
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669"
@@ -51,18 +54,35 @@ const AUDIENCES = [
     points:["Health, CPI and SPI at a glance","Approvals where you already are","Benefits tracked against the business case","No seat cost — you're in the bundle"] },
 ]
 
+// Crisp line icons — 20px, stroke inherits the feature's tag color.
+const FeatureIcon = ({ name, color }: { name: string; color: string }) => {
+  const paths: Record<string, JSX.Element> = {
+    gantt:  <><rect x="3" y="5"  width="11" height="3.2" rx="1.6"/><rect x="7" y="10.4" width="14" height="3.2" rx="1.6"/><rect x="3" y="15.8" width="8" height="3.2" rx="1.6"/></>,
+    evm:    <><path d="M3 20h18" strokeLinecap="round"/><path d="M4 15l4.5-4.5 3.5 3L20 5" strokeLinecap="round" strokeLinejoin="round" fill="none"/><path d="M15.5 5H20v4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
+    ai:     <><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" strokeLinejoin="round" fill="none"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" fill="currentColor" stroke="none"/></>,
+    doc:    <><path d="M7 3h7l4 4v14H7V3z" strokeLinejoin="round" fill="none"/><path d="M14 3v4h4" strokeLinejoin="round" fill="none"/><path d="M10 12h5M10 15.5h5" strokeLinecap="round"/></>,
+    shield: <><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3z" strokeLinejoin="round" fill="none"/><path d="M9 12l2.2 2.2L15.5 9.7" strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
+    globe:  <><circle cx="12" cy="12" r="9" fill="none"/><path d="M3 12h18M12 3c2.6 2.5 4 5.6 4 9s-1.4 6.5-4 9c-2.6-2.5-4-5.6-4-9s1.4-6.5 4-9z" fill="none"/></>,
+  }
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" stroke={color} fill={color} strokeWidth="1.8" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  )
+}
+
 const FEATURES = [
-  { icon:"📊", title:"Interactive Gantt + critical path", color:"#EFF6FF", tag:"Predictive", tagColor:STEEL,
+  { icon:"gantt", title:"Interactive Gantt + critical path", tag:"Predictive", tagColor:STEEL,
     desc:"Drag-and-drop scheduling with FS/SS/FF dependencies, baseline overlays, and critical path highlighting. Export to PDF or share a live link." },
-  { icon:"💰", title:"Budget tracking with EVM", color:"#ECFDF5", tag:"Built-in", tagColor:GREEN,
+  { icon:"evm", title:"Budget tracking with EVM", tag:"Built-in", tagColor:GREEN,
     desc:"Planned value, earned value, CPI, SPI, EAC and VAC calculated from your task data. No spreadsheet required." },
-  { icon:"🤖", title:"AI status reports", color:"#F5F3FF", tag:"AI-powered", tagColor:"#7C3AED",
+  { icon:"ai", title:"AI status reports", tag:"AI-powered", tagColor:"#7C3AED",
     desc:"One click produces a weekly status report — accomplishments, risks, milestones, budget — drafted by AI, reviewed by you." },
-  { icon:"📄", title:"Document template library", color:"#FFFBEB", tag:"18 templates", tagColor:"#92400E",
+  { icon:"doc", title:"Document template library", tag:"18 templates", tagColor:"#92400E",
     desc:"Charter, WBS, risk register, minutes, handover and more, in Word and Excel. Fill one in, upload it, and it populates the project." },
-  { icon:"🔒", title:"Roles, permissions and audit", color:"#FEF2F2", tag:"Enterprise", tagColor:"#DC2626",
+  { icon:"shield", title:"Roles, permissions and audit", tag:"Enterprise", tagColor:"#DC2626",
     desc:"Granular role levels, two-factor auth, Microsoft and Google SSO, and a full audit log ready for a compliance review." },
-  { icon:"🌐", title:"Bilingual, end to end", color:"#ECFEFF", tag:"EN / ES", tagColor:"#0891B2",
+  { icon:"globe", title:"Bilingual, end to end", tag:"EN / ES", tagColor:"#0891B2",
     desc:"Every screen, every report, every generated document works in English and Spanish. Switch language without losing your place." },
 ]
 
@@ -188,6 +208,7 @@ export default function LandingPage() {
   return (
     <div ref={rootRef} style={{ background:"#fff", color:INK, fontFamily:"var(--font)" }}>
       <style>{`
+        h1, h2, .fs-display { font-family: ${displayFont.style.fontFamily}, var(--font); }
         .fs-hero { display:grid; grid-template-columns:1fr; gap:48px; align-items:center; }
         .fs-grid3 { display:grid; grid-template-columns:1fr; gap:16px; }
         .fs-grid2 { display:grid; grid-template-columns:1fr; gap:14px; }
@@ -591,8 +612,11 @@ export default function LandingPage() {
             {FEATURES.map((f, i) => (
               <div key={f.title} className="fs-card rv"
                 style={{ ["--i" as any]: i % 3, border:`1px solid ${LINE}`, borderRadius:12, padding:"20px", background:"#fff" }}>
-                <div style={{ width:38, height:38, borderRadius:9, background:f.color,
-                  display:"grid", placeItems:"center", fontSize:18, marginBottom:14 }}>{f.icon}</div>
+                <div style={{ width:38, height:38, borderRadius:9, background:`${f.tagColor}10`,
+                  border:`1px solid ${f.tagColor}22`,
+                  display:"grid", placeItems:"center", marginBottom:14 }}>
+                  <FeatureIcon name={f.icon} color={f.tagColor} />
+                </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, flexWrap:"wrap" }}>
                   <div style={{ fontSize:14.5, fontWeight:700, lineHeight:1.3 }}>{f.title}</div>
                   <span style={{ fontFamily:MONO, fontSize:9, fontWeight:700, padding:"2px 6px",
@@ -602,6 +626,95 @@ export default function LandingPage() {
                 <div style={{ fontSize:13, color:SLATE, lineHeight:1.6 }}>{f.desc}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── UNDER THE HOOD — dark band: security + AI report mock ───────── */}
+      <section style={{ background:NAVY, padding:"84px 0", position:"relative", overflow:"hidden" }}>
+        <div aria-hidden style={{ position:"absolute", inset:0, opacity:.5, pointerEvents:"none",
+          background:`radial-gradient(600px 320px at 85% 0%, ${STEEL}26, transparent 70%),
+                      radial-gradient(520px 300px at 0% 100%, ${AMBER}14, transparent 70%)` }}/>
+        <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px", position:"relative" }}>
+          <div className="fs-band" style={{ alignItems:"flex-start" }}>
+
+            <div className="rv" style={{ flex:"1 1 0", minWidth:0 }}>
+              <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
+                textTransform:"uppercase", color:AMBER, marginBottom:12 }}>
+                Under the hood
+              </div>
+              <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
+                letterSpacing:"-.025em", marginBottom:14, color:"#fff" }}>
+                Enterprise-grade from day one
+              </h2>
+              <p style={{ fontSize:16.5, color:"#94A3B8", lineHeight:1.65, marginBottom:28, maxWidth:520 }}>
+                The controls your IT and compliance review will ask about are already in
+                the platform — not on a roadmap, not an add-on.
+              </p>
+              <div className="fs-grid2" style={{ gap:10, maxWidth:560 }}>
+                {[
+                  "Microsoft & Google SSO",
+                  "Two-factor authentication",
+                  "Full audit log",
+                  "Role-based access control",
+                  "Encrypted in transit & at rest",
+                  "Hosted on AWS (US East)",
+                ].map((s, i) => (
+                  <div key={s} className="rv" style={{ ["--i" as any]: i % 2,
+                    display:"flex", alignItems:"center", gap:10,
+                    border:"1px solid rgba(226,232,240,.14)", borderRadius:9,
+                    padding:"11px 14px", background:"rgba(255,255,255,.03)" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" stroke={GREEN} strokeWidth="2.4"
+                      fill="none" aria-hidden="true">
+                      <path d="M4.5 12.5l5 5L19.5 7" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span style={{ fontSize:13.5, color:"#E2E8F0", fontWeight:500 }}>{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rv" style={{ flex:"1 1 0", minWidth:0, width:"100%" }}>
+              <div style={{ border:"1px solid rgba(226,232,240,.16)", borderRadius:14,
+                background:"rgba(255,255,255,.035)", backdropFilter:"blur(6px)",
+                boxShadow:"0 24px 60px rgba(0,0,0,.35)", overflow:"hidden" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                  padding:"13px 18px", borderBottom:"1px solid rgba(226,232,240,.12)" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                    <span style={{ width:8, height:8, borderRadius:99, background:AMBER }}/>
+                    <span style={{ fontFamily:MONO, fontSize:11.5, fontWeight:700, color:"#E2E8F0",
+                      letterSpacing:".04em" }}>WEEKLY STATUS — PRJ-006</span>
+                  </div>
+                  <span style={{ fontFamily:MONO, fontSize:10, fontWeight:700, padding:"3px 8px",
+                    borderRadius:5, background:`${"#7C3AED"}2b`, color:"#C4B5FD" }}>AI DRAFT</span>
+                </div>
+                <div style={{ padding:"18px 18px 6px" }}>
+                  {[
+                    ["Accomplishments", "Configuration reached 80% — integration test environment provisioned ahead of gate M3."],
+                    ["Risks", "RISK-001 (vendor delivery) held at score 15; mitigation owner assigned, review Friday."],
+                    ["Budget", "Spend $820K of $1.2M. CPI 0.94 — efficiency dip traced to Testing phase rework."],
+                  ].map(([h, body]) => (
+                    <div key={h} style={{ marginBottom:15 }}>
+                      <div style={{ fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:".09em",
+                        textTransform:"uppercase", color:"#7DA9CC", marginBottom:5 }}>{h}</div>
+                      <div style={{ fontSize:13, color:"#CBD5E1", lineHeight:1.6 }}>{body}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap",
+                  padding:"12px 18px 16px", borderTop:"1px solid rgba(226,232,240,.1)" }}>
+                  {[["CPI 0.94", AMBER], ["SPI 0.97", GREEN], ["AT RISK", "#F87171"]].map(([t, c]) => (
+                    <span key={t as string} style={{ fontFamily:MONO, fontSize:10.5, fontWeight:700,
+                      padding:"4px 9px", borderRadius:6, border:`1px solid ${c}55`,
+                      color:c as string, background:`${c}14` }}>{t}</span>
+                  ))}
+                  <span style={{ marginLeft:"auto", fontSize:11.5, color:"#64748B" }}>
+                    Drafted by AI · Reviewed by you
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
