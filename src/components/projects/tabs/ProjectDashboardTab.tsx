@@ -5,6 +5,12 @@ import { useState } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
 import { useRouter } from "next/navigation"
+import nextDynamic from "next/dynamic"
+
+const ProjectPerformanceCharts = nextDynamic(
+  () => import("@/components/charts/ProjectCharts"),
+  { ssr: false, loading: () => <div style={{ height: 200 }} /> },
+)
 
 const HEALTH_COLOR: Record<string,string> = {
   GREEN:"#059669", YELLOW:"#F59E0B", AMBER:"#F59E0B", RED:"#DC2626", ON_HOLD:"#94A3B8"
@@ -635,6 +641,16 @@ export function ProjectDashboardTab({
           </div>
         ))}
       </div>
+
+      {/* ── Performance charts ── */}
+      <ProjectPerformanceCharts
+        tasks={tasks}
+        budgetItems={budgetItems || []}
+        project={project}
+        brandColor={null}
+        brandColor2={null}
+        t={td}
+      />
 
       {/* ── Methodology-Aware Panel ── */}
       {project?.methodology === "SCRUM" || project?.methodology === "AGILE" ? (

@@ -7,6 +7,12 @@
 import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import nextDynamic from "next/dynamic"
+
+const ExecutivePerformanceCharts = nextDynamic(
+  () => import("@/components/charts/ExecutiveCharts"),
+  { ssr: false, loading: () => <div style={{ height: 200 }} /> },
+)
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
 
@@ -245,6 +251,22 @@ export function ExecutiveDashboard({ projects, risks, milestones,
       </div>
 
       <div style={{ padding:20, display:"flex", flexDirection:"column", gap:16 }}>
+
+      {/* ── Performance charts ── */}
+      <ExecutivePerformanceCharts
+        healthCounts={{
+          GREEN: healthCounts.GREEN || 0,
+          AMBER: (healthCounts.AMBER || 0) + ((healthCounts as any).YELLOW || 0),
+          RED:   healthCounts.RED || 0,
+        }}
+        totalProjects={projects.length}
+        scatter={projects.map((p: any) => ({
+          name: p.name, code: p.code, health: p.health,
+          cpi: projectEVM[p.id]?.cpi ?? 1,
+          spi: projectEVM[p.id]?.spi ?? 1,
+        }))}
+        t={tx}
+      />
 
       {/* ── Awaiting approval ── */}
       {(() => {
