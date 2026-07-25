@@ -231,14 +231,14 @@
     "Portfolio health": "Portfolio health",
     "PROJECTS": "PROJECTS",
     "Cost vs schedule performance": "Cost vs schedule performance",
-    "Top-right = under budget and ahead of schedule. Values clamped to 0.5–1.5.": "Top-right = under budget and ahead of schedule. Values clamped to 0.5–1.5.",
     "Portfolio budget burn": "Portfolio budget burn",
     "Planned": "Planned",
     "Actual": "Actual",
     "Milestones ahead": "Milestones ahead",
     "Today": "Today",
     "Projects — budget vs progress (bubble = risk)": "Projects — budget vs progress (bubble = risk)",
-    "risk": "risk"
+    "risk": "risk",
+    "Scatter hint": "Top-right = under budget and ahead of schedule (values clamped to 0.5–1.5)"
   },
   "resources": {
     "Resource management": "Resource management",
@@ -342,6 +342,10 @@
     "Burnup — scope vs completed": "Burnup — scope vs completed",
     "Completed": "Completed",
     "Total scope": "Total scope",
-    "Ideal pace": "Ideal pace"
+    "Ideal pace": "Ideal pace",
+    "Done": "Done",
+    "In review": "In review",
+    "To do": "To do",
+    "TASKS": "TASKS"
   }
 }

@@ -231,14 +231,14 @@
     "Portfolio health": "Salud del portafolio",
     "PROJECTS": "PROYECTOS",
     "Cost vs schedule performance": "Desempeño de costo vs cronograma",
-    "Top-right = under budget and ahead of schedule. Values clamped to 0.5–1.5.": "Arriba a la derecha = bajo presupuesto y adelantado. Valores acotados a 0.5–1.5.",
     "Portfolio budget burn": "Consumo presupuestario del portafolio",
     "Planned": "Planificado",
     "Actual": "Real",
     "Milestones ahead": "Próximos hitos",
     "Today": "Hoy",
     "Projects — budget vs progress (bubble = risk)": "Proyectos — presupuesto vs avance (burbuja = riesgo)",
-    "risk": "riesgo"
+    "risk": "riesgo",
+    "Scatter hint": "Arriba a la derecha = bajo presupuesto y adelantado (valores acotados a 0.5–1.5)"
   },
   "resources": {
     "Resource management": "Gestión de recursos",
@@ -342,6 +342,10 @@
     "Burnup — scope vs completed": "Burnup — alcance vs completado",
     "Completed": "Completadas",
     "Total scope": "Alcance total",
-    "Ideal pace": "Ritmo ideal"
+    "Ideal pace": "Ritmo ideal",
+    "Done": "Completada",
+    "In review": "En revisión",
+    "To do": "Por hacer",
+    "TASKS": "TAREAS"
   }
 }

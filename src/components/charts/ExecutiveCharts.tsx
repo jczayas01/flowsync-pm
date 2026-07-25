@@ -109,7 +109,7 @@ function CpiSpiScatter({ points, t }: {
         </ScatterChart>
       </ResponsiveContainer>
       <div style={{ fontSize: 11, color: SLATE, padding: "2px 4px 8px" }}>
-        {t("Top-right = under budget and ahead of schedule. Values clamped to 0.5–1.5.")}
+        {t("Scatter hint")}
       </div>
     </div>
   )
@@ -126,7 +126,7 @@ function PortfolioBurn({ budgetItems, t }: { budgetItems: any[]; t: (k: string) 
   const series = buildPortfolioBurnSeries(budgetItems)
   if (series.length < 2) return null
   return (
-    <div style={{ ...card, gridColumn: "1 / -1" }}>
+    <div style={card}>
       <div style={cardTitle}>{t("Portfolio budget burn")}</div>
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={series} margin={{ top: 4, right: 12, left: 4, bottom: 0 }}>
@@ -173,7 +173,7 @@ function MilestoneTimeline({ milestones, windowDays, t }: {
   const fmtTick = (v: number) =>
     new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
   return (
-    <div style={{ ...card, gridColumn: "1 / -1", paddingBottom: 2 }}>
+    <div style={{ ...card, paddingBottom: 2 }}>
       <div style={cardTitle}>{t("Milestones ahead")} · {windowDays}d</div>
       <ResponsiveContainer width="100%" height={110}>
         <ScatterChart margin={{ top: 12, right: 20, left: 8, bottom: 4 }}>
@@ -269,11 +269,13 @@ export default function ExecutivePerformanceCharts({
   t: (k: string) => string
 }) {
   return (
-    <div style={{ display: "grid", gap: 14, marginBottom: 18,
-      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-      <HealthDonut counts={healthCounts} total={totalProjects} t={t} />
-      <CpiSpiScatter points={scatter} t={t} />
-      {bubbles && <PortfolioBubble points={bubbles} t={t} />}
+    <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18 }}>
+      <div style={{ display: "grid", gap: 14,
+        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+        <HealthDonut counts={healthCounts} total={totalProjects} t={t} />
+        <CpiSpiScatter points={scatter} t={t} />
+        {bubbles && <PortfolioBubble points={bubbles} t={t} />}
+      </div>
       {budgetItems && budgetItems.length > 0 && <PortfolioBurn budgetItems={budgetItems} t={t} />}
       {milestones && milestones.length > 0 && (
         <MilestoneTimeline milestones={milestones} windowDays={milestoneWindow || 90} t={t} />

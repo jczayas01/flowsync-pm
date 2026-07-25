@@ -101,9 +101,9 @@ const STATUS_META: [string, string, string][] = [
   ["TODO",        "To do",       SLATE],
 ]
 
-function StatusDonut({ tasks, title }: { tasks: any[]; title: string }) {
+function StatusDonut({ tasks, title, t }: { tasks: any[]; title: string; t: (k: string) => string }) {
   const data = STATUS_META
-    .map(([key, name, color]) => ({ name, color, value: tasks.filter(t => t.status === key).length }))
+    .map(([key, name, color]) => ({ name: t(name), color, value: tasks.filter(x => x.status === key).length }))
     .filter(s => s.value > 0)
   if (!data.length) return null
   return (
@@ -122,7 +122,7 @@ function StatusDonut({ tasks, title }: { tasks: any[]; title: string }) {
         </ResponsiveContainer>
         <div style={{ position: "absolute", top: 88, left: 0, right: 0, textAlign: "center", pointerEvents: "none" }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: "var(--text-1,#0F172A)" }}>{tasks.length}</div>
-          <div style={{ fontSize: 10.5, color: SLATE, letterSpacing: ".05em" }}>TASKS</div>
+          <div style={{ fontSize: 10.5, color: SLATE, letterSpacing: ".05em" }}>{t("TASKS")}</div>
         </div>
       </div>
     </div>
@@ -205,28 +205,28 @@ export default function ProjectPerformanceCharts({
   if (!hasCurve && !tasks.length && !hasBudget) return null
 
   return (
-    <div style={{ display: "grid", gap: 14, marginBottom: 18,
-      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18 }}>
       {hasCurve && (
-        <div style={{ gridColumn: "1 / -1" }}>
-          <SCurve series={series} brand={brand} brand2={brand2}
-            labels={{ title: t("Earned value S-curve"), pv: t("Planned value"),
-              ev: t("Earned value"), ac: t("Actual cost"), today: t("Today") }} />
-        </div>
+        <SCurve series={series} brand={brand} brand2={brand2}
+          labels={{ title: t("Earned value S-curve"), pv: t("Planned value"),
+            ev: t("Earned value"), ac: t("Actual cost"), today: t("Today") }} />
       )}
-      {tasks.length > 0 && (() => {
-        const bs = buildBurnupSeries({ tasks, projectStart: project?.startDate, projectEnd: project?.endDate })
-        return bs.length >= 2 ? (
-          <Burnup series={bs} brand={brand}
-            labels={{ title: t("Burnup — scope vs completed"), done: t("Completed"),
-              scope: t("Total scope"), ideal: t("Ideal pace") }} />
-        ) : null
-      })()}
-      <StatusDonut tasks={tasks} title={t("Tasks by status")} />
-      {hasBudget && (
-        <BudgetBullet bac={budgetTotal} ac={ac} eac={eac} title={t("Budget performance")}
-          labels={{ spent: t("Spent"), eac: "EAC", budget: t("Budget") }} />
-      )}
+      <div style={{ display: "grid", gap: 14,
+        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+        {tasks.length > 0 && (() => {
+          const bs = buildBurnupSeries({ tasks, projectStart: project?.startDate, projectEnd: project?.endDate })
+          return bs.length >= 2 ? (
+            <Burnup series={bs} brand={brand}
+              labels={{ title: t("Burnup — scope vs completed"), done: t("Completed"),
+                scope: t("Total scope"), ideal: t("Ideal pace") }} />
+          ) : null
+        })()}
+        <StatusDonut tasks={tasks} title={t("Tasks by status")} t={t} />
+        {hasBudget && (
+          <BudgetBullet bac={budgetTotal} ac={ac} eac={eac} title={t("Budget performance")}
+            labels={{ spent: t("Spent"), eac: "EAC", budget: t("Budget") }} />
+        )}
+      </div>
     </div>
   )
 }
