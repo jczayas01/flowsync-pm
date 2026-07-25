@@ -103,31 +103,44 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const [viewingPdf, setViewingPdf]     = useState<{name:string;url:string;kind:"pdf"|"docx";html?:string;loading?:boolean;error?:string}|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const [dragOver, setDragOver] = useState(false)
+
+  // Uploads any number of files sequentially; used by the picker (now
+  // multi-select) and by drag-and-drop onto the Files area.
+  async function uploadMany(list: FileList | File[]) {
+    const items = Array.from(list)
+    if (!items.length) return
     setUploading(true); setUploadError(""); setUploadSuccess("")
-    try {
-      const fd = new FormData()
-      fd.append("file", file)
-      const res = await fetch(`/api/projects/${projectId}/documents`, {
-        method:"POST", body: fd,
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setUploadError(data.error || "Upload failed")
-      } else {
-        setFiles(f => [data.data, ...f])
-        setUploadSuccess(`${file.name} uploaded successfully`)
-        setTimeout(() => setUploadSuccess(""), 4000)
-        router.refresh()
+    let okCount = 0
+    const errors: string[] = []
+    for (let i = 0; i < items.length; i++) {
+      const file = items[i]
+      setUploadSuccess(items.length > 1 ? `Uploading ${i + 1}/${items.length} — ${file.name}` : "")
+      try {
+        const fd = new FormData()
+        fd.append("file", file)
+        const res = await fetch(`/api/projects/${projectId}/documents`, {
+          method: "POST", body: fd,
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) errors.push(`${file.name}: ${data.error || `failed (${res.status})`}`)
+        else { setFiles(f => [data.data, ...f]); okCount++ }
+      } catch {
+        errors.push(`${file.name}: network error`)
       }
-    } catch {
-      setUploadError("Network error — please try again")
-    } finally {
-      setUploading(false)
-      if (fileRef.current) fileRef.current.value = ""
     }
+    setUploading(false)
+    setUploadSuccess(okCount
+      ? `${okCount} file${okCount === 1 ? "" : "s"} uploaded successfully`
+      : "")
+    if (okCount) setTimeout(() => setUploadSuccess(""), 4000)
+    setUploadError(errors.join(" · "))
+    if (okCount) router.refresh()
+    if (fileRef.current) fileRef.current.value = ""
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files?.length) await uploadMany(e.target.files)
   }
 
   async function handleDelete(docId: string, name: string) {
@@ -385,7 +398,23 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
 
       {/* ── FILES TAB ── */}
       {tab === "files" && (
-        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+        <div
+          onDragOver={e => { e.preventDefault(); if (can("projects:edit")) setDragOver(true) }}
+          onDragLeave={e => { if (e.currentTarget === e.target) setDragOver(false) }}
+          onDrop={e => { e.preventDefault(); setDragOver(false)
+            if (can("projects:edit") && e.dataTransfer.files?.length) uploadMany(e.dataTransfer.files) }}
+          style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden",
+            position:"relative",
+            outline: dragOver ? "2px dashed var(--steel)" : "none", outlineOffset: -6 }}>
+          {dragOver && (
+            <div style={{ position:"absolute", inset:0, zIndex:5, pointerEvents:"none",
+              background:"rgba(27,108,168,.06)", display:"grid", placeItems:"center" }}>
+              <div style={{ background:"#fff", border:"1.5px dashed var(--steel)", borderRadius:10,
+                padding:"12px 22px", fontSize:13, fontWeight:600, color:"var(--steel)" }}>
+                Drop files to upload
+              </div>
+            </div>
+          )}
           <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",
             padding:"12px 16px", display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
             <span style={{ fontSize:13, color:"var(--text-3)" }}>
@@ -398,7 +427,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
               <span style={{ fontSize:12, color:"var(--green)" }}>✓ {uploadSuccess}</span>
             )}
             <div style={{ marginLeft:"auto" }}>
-              <input ref={fileRef} type="file" style={{ display:"none" }} onChange={handleUpload}
+              <input ref={fileRef} type="file" multiple style={{ display:"none" }} onChange={handleUpload}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.msg,.vtt,.json,.xml,.log,.jpg,.jpeg,.png,.gif,.webp" />
               <button onClick={() => fileRef.current?.click()} disabled={uploading}
                 style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
@@ -511,7 +540,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       <span>·</span>
                       <span>{fmtSize(doc.fileSize || 0)}</span>
                     </div>
-                    <div style={{ display:"flex", gap:8, marginTop:4 }}>
+                    <div style={{ display:"flex", gap:6, marginTop:4, flexWrap:"wrap" }}>
                       <button onClick={async () => {
                         const type = doc.fileType || ""
                         const url  = doc.fileUrl
