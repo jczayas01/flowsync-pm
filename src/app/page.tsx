@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/site-url"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import LandingPage from "@/components/landing/LandingPage"
+import { MetaPixel } from "@/components/marketing/MetaPixel"
 
 const SITE = SITE_URL
 
@@ -65,6 +66,7 @@ export default async function RootPage() {
   if (session?.user?.id) redirect("/dashboard")
   return (
     <>
+      <MetaPixel />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -3,11 +3,14 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SignUpForm } from '@/components/auth/SignUpForm'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { MetaPixel } from '@/components/marketing/MetaPixel'
 
 export const metadata: Metadata = { title: 'Create account' }
 
 export default function SignUpPage() {
   return (
+    <>
+    <MetaPixel />
     <AuthShell
       title="Get started free"
       subtitle="Create your FlowSync PM account — no credit card required"
@@ -17,5 +20,6 @@ export default function SignUpPage() {
         <SignUpForm />
       </Suspense>
     </AuthShell>
+    </>
   )
 }

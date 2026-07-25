@@ -1,6 +1,7 @@
 // src/components/auth/SignUpForm.tsx
 "use client"
 import { sendGAEvent } from "@next/third-parties/google"
+import { pixelTrack } from '@/components/marketing/MetaPixel'
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
@@ -34,6 +35,7 @@ export function SignUpForm() {
         setLoading(false); return
       }
       sendGAEvent('event', 'sign_up', { method: 'password' })
+      pixelTrack('CompleteRegistration')
       // Account exists but can't sign in until the email is confirmed —
       // show the check-your-inbox panel instead of signing in.
       setSent(true)
