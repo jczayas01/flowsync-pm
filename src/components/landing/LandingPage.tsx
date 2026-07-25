@@ -210,6 +210,19 @@ export default function LandingPage() {
       <style>{`
         h1, h2, .fs-display { font-family: ${displayFont.style.fontFamily}, var(--font); }
         .fs-hero { display:grid; grid-template-columns:1fr; gap:48px; align-items:center; }
+        .fs-spark path.fs-draw { stroke-dasharray: 340; stroke-dashoffset: 340;
+          animation: fsDraw 2.4s cubic-bezier(.25,.6,.3,1) .4s forwards; }
+        .fs-spark .fs-spark-fill { opacity: 0; animation: fsFadeIn .8s ease 2.2s forwards; }
+        @keyframes fsDraw { to { stroke-dashoffset: 0; } }
+        @keyframes fsFadeIn { to { opacity: 1; } }
+        .fs-spark .fs-ping { transform-box: fill-box; transform-origin: center;
+          animation: fsPing 2.2s cubic-bezier(.2,.6,.4,1) 2.6s infinite; }
+        @keyframes fsPing { 0% { transform: scale(.4); opacity:.9 } 70%,100% { transform: scale(2.6); opacity:0 } }
+        @media (prefers-reduced-motion: reduce) {
+          .fs-spark path.fs-draw { animation: none; stroke-dashoffset: 0; }
+          .fs-spark .fs-spark-fill { animation: none; opacity: 1; }
+          .fs-spark .fs-ping { animation: none; opacity: 0; }
+        }
         .fs-grid3 { display:grid; grid-template-columns:1fr; gap:16px; }
         .fs-grid2 { display:grid; grid-template-columns:1fr; gap:14px; }
         .fs-band  { display:flex; flex-direction:column; gap:20px; }
@@ -649,7 +662,8 @@ export default function LandingPage() {
               </h2>
               <p style={{ fontSize:16.5, color:"#94A3B8", lineHeight:1.65, marginBottom:28, maxWidth:520 }}>
                 The controls your IT and compliance review will ask about are already in
-                the platform — not on a roadmap, not an add-on.
+                the platform — not on a roadmap, not an add-on. And every status report
+                ships with live earned-value charts, on screen and in the PDF.
               </p>
               <div className="fs-grid2" style={{ gap:10, maxWidth:560 }}>
                 {[
@@ -700,6 +714,35 @@ export default function LandingPage() {
                       <div style={{ fontSize:13, color:"#CBD5E1", lineHeight:1.6 }}>{body}</div>
                     </div>
                   ))}
+                </div>
+                <div className="fs-spark" style={{ padding:"2px 18px 10px" }}>
+                  <svg viewBox="0 0 300 74" width="100%" height="74" aria-hidden="true"
+                    style={{ display:"block" }}>
+                    <defs>
+                      <linearGradient id="lp-ev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={STEEL} stopOpacity=".38" />
+                        <stop offset="100%" stopColor={STEEL} stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {[18, 38, 58].map(y => (
+                      <line key={y} x1="0" x2="300" y1={y} y2={y}
+                        stroke="rgba(226,232,240,.08)" strokeWidth="1" />
+                    ))}
+                    <path className="fs-spark-fill"
+                      d="M4,66 C60,62 110,52 160,40 C210,28 255,20 296,14 L296,72 L4,72 Z"
+                      fill="url(#lp-ev)" stroke="none" />
+                    <path d="M4,64 C60,60 112,54 164,46 C216,38 258,32 296,28"
+                      fill="none" stroke="#64748B" strokeWidth="1.4" strokeDasharray="4 4" opacity=".6" />
+                    <path className="fs-draw" d="M4,66 C60,62 110,52 160,40 C210,28 255,20 296,14"
+                      fill="none" stroke={STEEL} strokeWidth="2.4" strokeLinecap="round"
+                      style={{ filter:`drop-shadow(0 0 5px ${STEEL}88)` }} />
+                    <circle className="fs-ping" cx="296" cy="14" r="4" fill="none"
+                      stroke={AMBER} strokeWidth="1.5" />
+                    <circle cx="296" cy="14" r="3.4" fill={AMBER} stroke="#0D1B2A" strokeWidth="1.5"
+                      style={{ filter:`drop-shadow(0 0 5px ${AMBER})` }} />
+                    <text x="6" y="12" fill="#7DA9CC" fontSize="8.5" fontWeight="700"
+                      letterSpacing=".12em" fontFamily={MONO}>EARNED VALUE — LIVE</text>
+                  </svg>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap",
                   padding:"12px 18px 16px", borderTop:"1px solid rgba(226,232,240,.1)" }}>

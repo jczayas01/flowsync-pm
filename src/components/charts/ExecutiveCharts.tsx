@@ -1,4 +1,5 @@
 "use client"
+import type { ReactNode } from "react"
 // src/components/charts/ExecutiveCharts.tsx
 // Portfolio-level charts for the Executive dashboard.
 // Loaded via next/dynamic (ssr:false).
@@ -9,17 +10,15 @@ import {
   AreaChart, Area,
 } from "recharts"
 import { buildPortfolioBurnSeries } from "@/lib/evm-series"
+import { CARD, cardTitle, TOOLTIP, GRID, AXIS, ChartDefs, ChartStyle, beaconDot } from "./theme"
 
 const NAVY = "#0D1B2A", GREEN = "#059669", AMBER = "#F59E0B", RED = "#DC2626"
 const SLATE = "#94A3B8", LINE = "#E2E8F0"
 
-const card: React.CSSProperties = {
-  background: "var(--bg-1,#fff)", border: `1px solid var(--border,${LINE})`,
-  borderRadius: 12, padding: "16px 16px 8px",
-}
-const cardTitle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase",
-  color: "var(--text-3,#64748B)", marginBottom: 10,
+const card = CARD
+const Title = ({ accent, children }: { accent: string; children: ReactNode }) => {
+  const [row, dot, text] = cardTitle(accent)
+  return <div style={row}><span style={dot} /><span style={text}>{children}</span></div>
 }
 
 // ── Portfolio health donut ───────────────────────────────────────────────
@@ -36,15 +35,18 @@ function HealthDonut({ counts, total, t }: {
   if (!data.length) return null
   return (
     <div style={card}>
-      <div style={cardTitle}>{t("Portfolio health")}</div>
+      <Title accent={GREEN}>{t("Portfolio health")}</Title>
       <div style={{ position: "relative" }}>
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
+            <Pie data={[{ value: 1 }]} dataKey="value" innerRadius={58} outerRadius={84}
+              fill="rgba(148,163,184,.12)" stroke="none" isAnimationActive={false} />
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={58} outerRadius={84}
-              paddingAngle={2} strokeWidth={0}>
-              {data.map(s => <Cell key={s.name} fill={s.color} />)}
+              paddingAngle={2.5} cornerRadius={7} strokeWidth={0} animationDuration={900}>
+              {data.map(s => <Cell key={s.name} fill={s.color}
+                style={{ filter: `drop-shadow(0 2px 6px ${s.color}33)` }} />)}
             </Pie>
-            <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }} />
+            <Tooltip contentStyle={TOOLTIP} />
             <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={8} />
           </PieChart>
         </ResponsiveContainer>
@@ -72,39 +74,40 @@ function CpiSpiScatter({ points, t }: {
   if (!data.length) return null
   return (
     <div style={card}>
-      <div style={cardTitle}>{t("Cost vs schedule performance")}</div>
+      <Title accent="#1B6CA8">{t("Cost vs schedule performance")}</Title>
       <ResponsiveContainer width="100%" height={220}>
         <ScatterChart margin={{ top: 8, right: 14, left: 0, bottom: 4 }}>
           {/* trouble quadrant tint: behind schedule + over cost */}
-          <ReferenceArea x1={0.5} x2={1} y1={0.5} y2={1} fill={RED} fillOpacity={0.05} />
-          <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+          <ReferenceArea x1={0.5} x2={1} y1={0.5} y2={1} fill={RED} fillOpacity={0.04} />
+          <CartesianGrid stroke={GRID} />
           <XAxis type="number" dataKey="x" name="SPI" domain={[0.5, 1.5]}
-            tickCount={5} tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
-            axisLine={{ stroke: LINE }}
+            tickCount={5} tick={AXIS} tickLine={false}
+            axisLine={false}
             label={{ value: "SPI →", position: "insideBottomRight", offset: -2, fontSize: 11, fill: SLATE }} />
           <YAxis type="number" dataKey="y" name="CPI" domain={[0.5, 1.5]}
-            tickCount={5} tick={{ fontSize: 11, fill: SLATE }} tickLine={false} axisLine={false} width={34}
+            tickCount={5} tick={AXIS} tickLine={false} axisLine={false} width={34}
             label={{ value: "CPI →", angle: -90, position: "insideLeft", fontSize: 11, fill: SLATE }} />
-          <ReferenceLine x={1} stroke={NAVY} strokeDasharray="4 3" />
-          <ReferenceLine y={1} stroke={NAVY} strokeDasharray="4 3" />
+          <ReferenceLine x={1} stroke={NAVY} strokeOpacity={.3} strokeDasharray="3 4" />
+          <ReferenceLine y={1} stroke={NAVY} strokeOpacity={.3} strokeDasharray="3 4" />
           <Tooltip cursor={{ strokeDasharray: "3 3" }}
-            contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }}
+            contentStyle={TOOLTIP}
             formatter={(v: number, name: string) => [v.toFixed(2), name]}
             labelFormatter={() => ""}
             content={({ payload }) => {
               const p = payload?.[0]?.payload
               if (!p) return null
               return (
-                <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8,
+                <div style={{ ...TOOLTIP,
                   padding: "8px 10px", fontSize: 12 }}>
                   <div style={{ fontWeight: 700, marginBottom: 2 }}>{p.code ? `${p.code} · ` : ""}{p.name}</div>
                   <div>CPI {p.cpi.toFixed(2)} · SPI {p.spi.toFixed(2)}</div>
                 </div>
               )
             }} />
-          <Scatter data={data} shape={(props: any) => (
+          <Scatter data={data} isAnimationActive shape={(props: any) => (
             <circle cx={props.cx} cy={props.cy} r={7} fill={props.payload.fill}
-              fillOpacity={0.85} stroke="#fff" strokeWidth={1.5} />
+              fillOpacity={0.9} stroke="#fff" strokeWidth={1.5}
+              style={{ filter: `drop-shadow(0 0 6px ${props.payload.fill}66)` }} />
           )} />
         </ScatterChart>
       </ResponsiveContainer>
@@ -127,21 +130,25 @@ function PortfolioBurn({ budgetItems, t }: { budgetItems: any[]; t: (k: string) 
   if (series.length < 2) return null
   return (
     <div style={card}>
-      <div style={cardTitle}>{t("Portfolio budget burn")}</div>
+      <Title accent={AMBER}>{t("Portfolio budget burn")}</Title>
+      <ChartStyle />
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={series} margin={{ top: 4, right: 12, left: 4, bottom: 0 }}>
-          <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
-            axisLine={{ stroke: LINE }} minTickGap={28} />
-          <YAxis tickFormatter={money} tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
+        <AreaChart data={series} margin={{ top: 8, right: 12, left: 4, bottom: 0 }}
+          style={{ ["--fsq-b" as any]: `${AMBER}55` }}>
+          <ChartDefs p="pb" brand="#1B6CA8" brand2={AMBER} />
+          <CartesianGrid stroke={GRID} vertical={false} />
+          <XAxis dataKey="label" tick={AXIS} tickLine={false}
+            axisLine={false} minTickGap={28} />
+          <YAxis tickFormatter={money} tick={AXIS} tickLine={false}
             axisLine={false} width={52} />
           <Tooltip formatter={(v: number) => money(v)}
-            contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }} />
+            contentStyle={TOOLTIP} />
           <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
-          <Area name={t("Planned")} dataKey="planned" stroke={SLATE} strokeWidth={1.5}
-            strokeDasharray="6 4" fill={SLATE} fillOpacity={0.05} dot={false} />
+          <Area name={t("Planned")} dataKey="planned" stroke="#94A3B8" strokeWidth={1.4}
+            strokeDasharray="5 5" fill="url(#pb-slate)" dot={false} animationDuration={900} />
           <Area name={t("Actual")} dataKey="actual" stroke={AMBER} strokeWidth={2.5}
-            fill={AMBER} fillOpacity={0.14} dot={false} />
+            strokeLinecap="round" className="fsq-glow-b" fill="url(#pb-brand2)"
+            dot={beaconDot(AMBER, series.length - 1)} animationDuration={1200} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -174,12 +181,12 @@ function MilestoneTimeline({ milestones, windowDays, t }: {
     new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
   return (
     <div style={{ ...card, paddingBottom: 2 }}>
-      <div style={cardTitle}>{t("Milestones ahead")} · {windowDays}d</div>
+      <Title accent="#1B6CA8">{t("Milestones ahead")} · {windowDays}d</Title>
       <ResponsiveContainer width="100%" height={110}>
         <ScatterChart margin={{ top: 12, right: 20, left: 8, bottom: 4 }}>
           <XAxis type="number" dataKey="x" domain={[now, end]} tickFormatter={fmtTick}
-            tickCount={6} tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
-            axisLine={{ stroke: LINE }} />
+            tickCount={6} tick={AXIS} tickLine={false}
+            axisLine={false} />
           <YAxis type="number" dataKey="y" hide domain={[0, 2]} />
           <ReferenceLine x={now} stroke={NAVY} strokeDasharray="4 3"
             label={{ value: t("Today"), position: "top", fontSize: 10, fill: NAVY }} />
@@ -188,7 +195,7 @@ function MilestoneTimeline({ milestones, windowDays, t }: {
               const p = payload?.[0]?.payload
               if (!p) return null
               return (
-                <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8,
+                <div style={{ ...TOOLTIP,
                   padding: "8px 10px", fontSize: 12 }}>
                   <div style={{ fontWeight: 700 }}>{p.code ? `${p.code} · ` : ""}{p.name}</div>
                   <div style={{ color: SLATE }}>{p.date}</div>
@@ -197,10 +204,11 @@ function MilestoneTimeline({ milestones, windowDays, t }: {
             }} />
           <Scatter data={data} shape={(props: any) => (
             <g>
-              <line x1={props.cx} x2={props.cx} y1={props.cy + 8} y2={props.cy + 22}
-                stroke={props.payload.fill} strokeWidth={1.5} />
+              <line x1={props.cx} x2={props.cx} y1={props.cy + 8} y2={props.cy + 24}
+                stroke={props.payload.fill} strokeWidth={2} strokeLinecap="round" opacity={.45} />
               <circle cx={props.cx} cy={props.cy} r={7} fill={props.payload.fill}
-                stroke="#fff" strokeWidth={1.5} />
+                stroke="#fff" strokeWidth={1.5}
+                style={{ filter: `drop-shadow(0 0 6px ${props.payload.fill}77)` }} />
             </g>
           )} />
         </ScatterChart>
@@ -224,21 +232,21 @@ function PortfolioBubble({ points, t }: {
   if (data.length < 2) return null
   return (
     <div style={card}>
-      <div style={cardTitle}>{t("Projects — budget vs progress (bubble = risk)")}</div>
+      <Title accent={AMBER}>{t("Projects — budget vs progress (bubble = risk)")}</Title>
       <ResponsiveContainer width="100%" height={220}>
         <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
-          <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+          <CartesianGrid stroke={GRID} />
           <XAxis type="number" dataKey="x" name="Budget" tickFormatter={money}
-            tick={{ fontSize: 11, fill: SLATE }} tickLine={false} axisLine={{ stroke: LINE }} />
+            tick={AXIS} tickLine={false} axisLine={false} />
           <YAxis type="number" dataKey="y" name="%" domain={[0, 100]} unit="%"
-            tick={{ fontSize: 11, fill: SLATE }} tickLine={false} axisLine={false} width={40} />
+            tick={AXIS} tickLine={false} axisLine={false} width={40} />
           <ZAxis type="number" dataKey="z" range={[60, 420]} />
           <Tooltip cursor={{ strokeDasharray: "3 3" }}
             content={({ payload }) => {
               const p = payload?.[0]?.payload
               if (!p) return null
               return (
-                <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8,
+                <div style={{ ...TOOLTIP,
                   padding: "8px 10px", fontSize: 12 }}>
                   <div style={{ fontWeight: 700, marginBottom: 2 }}>{p.code ? `${p.code} · ` : ""}{p.name}</div>
                   <div>{money(p.x)} · {p.y}% · {t("risk")} {p.riskExposure}</div>
@@ -247,7 +255,8 @@ function PortfolioBubble({ points, t }: {
             }} />
           <Scatter data={data} shape={(props: any) => (
             <circle cx={props.cx} cy={props.cy} r={props.size ? Math.sqrt(props.size) / 2 : 9}
-              fill={props.payload.fill} fillOpacity={0.55} stroke={props.payload.fill} strokeWidth={1.5} />
+              fill={props.payload.fill} fillOpacity={0.45} stroke={props.payload.fill} strokeWidth={1.5}
+              style={{ filter: `drop-shadow(0 0 8px ${props.payload.fill}55)` }} />
           )} />
         </ScatterChart>
       </ResponsiveContainer>

@@ -1,12 +1,14 @@
 "use client"
+import type { ReactNode } from "react"
 // src/components/charts/ProjectCharts.tsx
 // Performance charts for the project dashboard. Loaded via next/dynamic
 // (ssr:false) so recharts never blocks first paint or the server bundle.
 
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell, AreaChart, Area,
+  ResponsiveContainer, XAxis, YAxis, CartesianGrid, Line,
+  Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell, AreaChart, Area, ComposedChart,
 } from "recharts"
+import { CARD, cardTitle, TOOLTIP, GRID, AXIS, INK, ChartDefs, ChartStyle, beaconDot } from "./theme"
 import { buildSCurveSeries, buildBurnupSeries } from "@/lib/evm-series"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B"
@@ -17,13 +19,10 @@ const money = (n: number) =>
   : n >= 1_000 ? `$${(n / 1_000).toFixed(0)}K`
   : `$${Math.round(n)}`
 
-const card: React.CSSProperties = {
-  background: "var(--bg-1,#fff)", border: `1px solid var(--border,${LINE})`,
-  borderRadius: 12, padding: "16px 16px 8px",
-}
-const cardTitle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase",
-  color: "var(--text-3,#64748B)", marginBottom: 10,
+const card = CARD
+const Title = ({ accent, children }: { accent: string; children: ReactNode }) => {
+  const [row, dot, text] = cardTitle(accent)
+  return <div style={row}><span style={dot} /><span style={text}>{children}</span></div>
 }
 
 // ── S-curve ──────────────────────────────────────────────────────────────
@@ -35,31 +34,39 @@ function SCurve({ series, brand, brand2, labels }: {
   if (series.length < 2) return null
   const now = Date.now()
   const showToday = now >= series[0].t && now <= series[series.length - 1].t
+  const last = series.length - 1
   return (
-    <div style={card}>
-      <div style={cardTitle}>{labels.title}</div>
-      <ResponsiveContainer width="100%" height={230}>
-        <LineChart data={series} margin={{ top: 4, right: 12, left: 4, bottom: 0 }}>
-          <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: SLATE }} tickLine={false} axisLine={{ stroke: LINE }} minTickGap={28} />
-          <YAxis tickFormatter={money} tick={{ fontSize: 11, fill: SLATE }} tickLine={false} axisLine={false} width={52} />
-          <Tooltip formatter={(v: number) => money(v)} labelStyle={{ fontWeight: 600 }}
-            contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }} />
+    <div style={card as any}>
+      <ChartStyle />
+      <Title accent={brand}>{labels.title}</Title>
+      <ResponsiveContainer width="100%" height={240}>
+        <ComposedChart data={series} margin={{ top: 8, right: 14, left: 4, bottom: 0 }}
+          style={{ ["--fsq-a" as any]: `${brand}55`, ["--fsq-b" as any]: `${brand2}55` }}>
+          <ChartDefs p="sc" brand={brand} brand2={brand2} />
+          <CartesianGrid stroke={GRID} vertical={false} />
+          <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} minTickGap={30} dy={4} />
+          <YAxis tickFormatter={money} tick={AXIS} tickLine={false} axisLine={false} width={50} />
+          <Tooltip formatter={(v: number) => money(v)} labelStyle={{ fontWeight: 700, color: "#0F172A" }}
+            contentStyle={TOOLTIP} cursor={{ stroke: "rgba(100,116,139,.25)", strokeDasharray: "3 4" }} />
           <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
           {showToday && (
             <ReferenceLine x={series.reduce((best, p) => Math.abs(p.t - now) < Math.abs(best.t - now) ? p : best).label}
-              stroke={NAVY} strokeDasharray="4 3"
-              label={{ value: labels.today, position: "top", fontSize: 10, fill: NAVY }} />
+              stroke="#0D1B2A" strokeOpacity={.35} strokeDasharray="3 4"
+              label={{ value: labels.today, position: "top", fontSize: 10, fill: "#0D1B2A" }} />
           )}
-          <Line name={labels.pv} dataKey="pv" stroke={SLATE} strokeWidth={2} strokeDasharray="6 4" dot={false} />
-          <Line name={labels.ev} dataKey="ev" stroke={brand}  strokeWidth={2.5} dot={false} />
-          <Line name={labels.ac} dataKey="ac" stroke={brand2} strokeWidth={2.5} dot={false} />
-        </LineChart>
+          <Area name={labels.pv} dataKey="pv" stroke="#94A3B8" strokeWidth={1.5}
+            strokeDasharray="5 5" fill="url(#sc-slate)" dot={false} animationDuration={900} />
+          <Area name={labels.ev} dataKey="ev" stroke={brand} strokeWidth={2.5}
+            strokeLinecap="round" className="fsq-glow-a" fill="url(#sc-brand)"
+            dot={beaconDot(brand, last)} animationDuration={1100} />
+          <Line name={labels.ac} dataKey="ac" stroke={brand2} strokeWidth={2.5}
+            strokeLinecap="round" className="fsq-glow-b"
+            dot={beaconDot(brand2, last)} animationDuration={1300} />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   )
 }
-
 
 // ── Burnup ───────────────────────────────────────────────────────────────
 function Burnup({ series, brand, labels }: {
@@ -68,25 +75,28 @@ function Burnup({ series, brand, labels }: {
   labels: { title: string; done: string; scope: string; ideal: string }
 }) {
   if (series.length < 2) return null
+  const last = series.length - 1
   return (
-    <div style={card}>
-      <div style={cardTitle}>{labels.title}</div>
+    <div style={card as any}>
+      <Title accent={brand}>{labels.title}</Title>
       <ResponsiveContainer width="100%" height={230}>
-        <AreaChart data={series} margin={{ top: 4, right: 12, left: 4, bottom: 0 }}>
-          <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
-            axisLine={{ stroke: LINE }} minTickGap={28} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
-            axisLine={false} width={34} />
-          <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }} />
+        <ComposedChart data={series} margin={{ top: 8, right: 12, left: 4, bottom: 0 }}
+          style={{ ["--fsq-a" as any]: `${brand}55` }}>
+          <ChartDefs p="bu" brand={brand} brand2="#059669" />
+          <CartesianGrid stroke={GRID} vertical={false} />
+          <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} minTickGap={30} dy={4} />
+          <YAxis allowDecimals={false} tick={AXIS} tickLine={false} axisLine={false} width={32} />
+          <Tooltip contentStyle={TOOLTIP} labelStyle={{ fontWeight: 700, color: "#0F172A" }}
+            cursor={{ stroke: "rgba(100,116,139,.25)", strokeDasharray: "3 4" }} />
           <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
-          <Area name={labels.scope} dataKey="scope" stroke={SLATE} strokeWidth={1.5}
-            fill={SLATE} fillOpacity={0.06} dot={false} />
+          <Area name={labels.scope} dataKey="scope" stroke="#94A3B8" strokeWidth={1.2}
+            fill="url(#bu-slate)" dot={false} animationDuration={900} />
+          <Line name={labels.ideal} dataKey="ideal" stroke="#059669" strokeWidth={1.5}
+            strokeDasharray="5 5" className="fsq-glow-g" dot={false} animationDuration={1000} />
           <Area name={labels.done} dataKey="done" stroke={brand} strokeWidth={2.5}
-            fill={brand} fillOpacity={0.14} dot={false} />
-          <Line name={labels.ideal} dataKey="ideal" stroke={GREEN} strokeWidth={1.5}
-            strokeDasharray="6 4" dot={false} />
-        </AreaChart>
+            strokeLinecap="round" className="fsq-glow-a" fill="url(#bu-brand)"
+            dot={beaconDot(brand, last)} animationDuration={1200} />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   )
@@ -107,22 +117,28 @@ function StatusDonut({ tasks, title, t }: { tasks: any[]; title: string; t: (k: 
     .filter(s => s.value > 0)
   if (!data.length) return null
   return (
-    <div style={card}>
-      <div style={cardTitle}>{title}</div>
+    <div style={card as any}>
+      <Title accent={STEEL}>{title}</Title>
       <div style={{ position: "relative" }}>
         <ResponsiveContainer width="100%" height={230}>
           <PieChart>
+            {/* recessed track */}
+            <Pie data={[{ value: 1 }]} dataKey="value" innerRadius={62} outerRadius={88}
+              fill="rgba(148,163,184,.12)" stroke="none" isAnimationActive={false} />
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={62} outerRadius={88}
-              paddingAngle={2} strokeWidth={0}>
-              {data.map(s => <Cell key={s.name} fill={s.color} />)}
+              paddingAngle={2.5} cornerRadius={7} strokeWidth={0} animationDuration={900}>
+              {data.map(s => (
+                <Cell key={s.name} fill={s.color}
+                  style={{ filter: `drop-shadow(0 2px 6px ${s.color}33)` }} />
+              ))}
             </Pie>
-            <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }} />
+            <Tooltip contentStyle={TOOLTIP} />
             <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={8} />
           </PieChart>
         </ResponsiveContainer>
-        <div style={{ position: "absolute", top: 88, left: 0, right: 0, textAlign: "center", pointerEvents: "none" }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--text-1,#0F172A)" }}>{tasks.length}</div>
-          <div style={{ fontSize: 10.5, color: SLATE, letterSpacing: ".05em" }}>{t("TASKS")}</div>
+        <div style={{ position: "absolute", top: 84, left: 0, right: 0, textAlign: "center", pointerEvents: "none" }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: INK, letterSpacing: "-.02em" }}>{tasks.length}</div>
+          <div style={{ fontSize: 10, color: "#94A3B8", letterSpacing: ".12em", fontWeight: 600 }}>{t("TASKS")}</div>
         </div>
       </div>
     </div>
@@ -138,25 +154,30 @@ function BudgetBullet({ bac, ac, eac, title, labels }: {
   const max = Math.max(bac, eac, ac) * 1.05
   const pct = (v: number) => `${Math.min(100, (v / max) * 100)}%`
   const over = eac > bac
+  const barColor = over ? RED : STEEL
   return (
-    <div style={{ ...card, paddingBottom: 16 }}>
-      <div style={cardTitle}>{title}</div>
-      <div style={{ padding: "26px 4px 6px" }}>
-        <div style={{ position: "relative", height: 26, background: "var(--bg-2,#F1F5F9)",
-          borderRadius: 7, overflow: "visible" }}>
+    <div style={{ ...(card as any), paddingBottom: 16 }}>
+      <Title accent={over ? RED : GREEN}>{title}</Title>
+      <div style={{ padding: "28px 4px 6px" }}>
+        <div style={{ position: "relative", height: 28,
+          background: "linear-gradient(180deg, rgba(148,163,184,.14), rgba(148,163,184,.08))",
+          borderRadius: 9, boxShadow: "inset 0 1px 3px rgba(13,27,42,.08)" }}>
           {/* AC bar */}
-          <div style={{ position: "absolute", inset: "5px auto 5px 0", width: pct(ac),
-            background: over ? RED : STEEL, borderRadius: 5, transition: "width .4s ease" }} />
+          <div style={{ position: "absolute", inset: "5px auto 5px 5px", width: `calc(${pct(ac)} - 5px)`,
+            background: `linear-gradient(90deg, ${barColor}CC, ${barColor})`,
+            borderRadius: 6, transition: "width .5s cubic-bezier(.2,.7,.3,1)",
+            boxShadow: `0 0 12px ${barColor}44` }} />
           {/* EAC marker */}
-          <div style={{ position: "absolute", top: -5, bottom: -5, left: pct(eac), width: 2.5,
-            background: over ? RED : GREEN, borderRadius: 2 }}>
+          <div style={{ position: "absolute", top: -6, bottom: -6, left: pct(eac), width: 2.5,
+            background: over ? RED : GREEN, borderRadius: 2,
+            boxShadow: `0 0 8px ${over ? RED : GREEN}88` }}>
             <span style={{ position: "absolute", top: -17, left: "50%", transform: "translateX(-50%)",
               fontSize: 10, fontWeight: 700, color: over ? RED : GREEN, whiteSpace: "nowrap" }}>
               {labels.eac} {money(eac)}
             </span>
           </div>
           {/* BAC marker */}
-          <div style={{ position: "absolute", top: -5, bottom: -5, left: pct(bac), width: 2.5,
+          <div style={{ position: "absolute", top: -6, bottom: -6, left: pct(bac), width: 2.5,
             background: NAVY, borderRadius: 2 }}>
             <span style={{ position: "absolute", bottom: -17, left: "50%", transform: "translateX(-50%)",
               fontSize: 10, fontWeight: 700, color: NAVY, whiteSpace: "nowrap" }}>
@@ -164,8 +185,8 @@ function BudgetBullet({ bac, ac, eac, title, labels }: {
             </span>
           </div>
         </div>
-        <div style={{ marginTop: 24, fontSize: 12, color: SLATE }}>
-          {labels.spent}: <b style={{ color: "var(--text-1,#0F172A)" }}>{money(ac)}</b>
+        <div style={{ marginTop: 26, fontSize: 12, color: "#94A3B8" }}>
+          {labels.spent}: <b style={{ color: INK }}>{money(ac)}</b>
           <span style={{ margin: "0 6px" }}>·</span>
           {Math.round((ac / bac) * 100)}%
         </div>
