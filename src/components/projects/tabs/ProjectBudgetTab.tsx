@@ -146,7 +146,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         return
       }
       setAddingItem(false)
-      setNewItem({ description:"", category:"LABOR", plannedAmount:"", notes:"" })
+      setNewItem({ description:"", category:"LABOR", plannedAmount:"", notes:"", recurrence:false })
       router.refresh()
     } finally { setSaving(false) }
   }

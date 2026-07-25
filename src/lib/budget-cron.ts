@@ -89,7 +89,9 @@ export async function postLaborActuals(): Promise<number> {
     select: { workspaceId: true, userId: true, costRate: true },
   }).catch(() => [])
   const rateOf = new Map<string, number | null>(
-    members.map(m => [`${m.workspaceId}::${m.userId}`, m.costRate == null ? null : Number(m.costRate)]),
+    members.map(m =>
+      [`${m.workspaceId}::${m.userId}`, m.costRate == null ? null : Number(m.costRate)] as [string, number | null],
+    ),
   )
 
   // Group cost per project
