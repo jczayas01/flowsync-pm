@@ -27,6 +27,18 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
   const [excluded, setExcluded] = useState<Record<string, Set<number>>>({})
   const [open, setOpen] = useState<Record<string, boolean>>({ phases: true, tasks: true })
 
+  // Multi-file import: the FIRST file drives the AI analysis that builds the
+  // project; every selected file is attached to the project's Docs after
+  // creation, so nothing you brought gets discarded.
+  const [allFiles, setAllFiles] = useState<File[]>([])
+
+  function startAnalyze(list: FileList | File[]) {
+    const files = Array.from(list)
+    if (!files.length) return
+    setAllFiles(files)
+    analyze(files[0])
+  }
+
   async function analyze(file: File) {
     setStage("analyzing"); setError("")
     try {
@@ -80,7 +92,20 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) { setError(d?.error || `Creation failed (${res.status})`); setStage("review"); return }
-      router.push(`/projects/${d?.data?.projectId}`)
+      const newId = d?.data?.projectId
+      if (newId && allFiles.length) {
+        for (const f of allFiles) {
+          const dfd = new FormData()
+          dfd.append("file", f)
+          await fetch(`/api/projects/${newId}/documents`, { method: "POST", body: dfd })
+            .catch(() => null)
+        }
+        router.push(`/projects/${newId}/docs`)
+        router.refresh()
+        onClose()
+        return
+      }
+      router.push(`/projects/${newId}`)
       router.refresh()
       onClose()
     } catch (e: any) {
@@ -124,7 +149,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
             <div
               onDragOver={e => { e.preventDefault(); setDrag(true) }}
               onDragLeave={() => setDrag(false)}
-              onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) analyze(f) }}
+              onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files?.length) startAnalyze(e.dataTransfer.files) }}
               onClick={() => fileRef.current?.click()}
               style={{ border: `2px dashed ${drag ? "var(--steel)" : "var(--border)"}`,
                 background: drag ? "#EFF6FF" : "var(--surface)", borderRadius: 10,
@@ -132,12 +157,15 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
               <div style={{ fontSize: 40, marginBottom: 10 }}>📎</div>
               <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
                 {t("Drop your project plan here, or click to browse")}
+                <span style={{ display:"block", fontSize:11, color:"var(--text-3)", marginTop:4, fontWeight:400 }}>
+                  You can select several files — the first one builds the project, all of them are saved to Docs
+                </span>
               </div>
               <div style={{ fontSize: 12, color: "var(--text-3)" }}>
                 {t("Word · PDF (scans read visually) · Excel · text — max 8 MB")}
               </div>
-              <input ref={fileRef} type="file" hidden accept=".docx,.doc,.pdf,.xlsx,.txt,.md"
-                onChange={e => { const f = e.target.files?.[0]; if (f) analyze(f) }} />
+              <input ref={fileRef} type="file" hidden multiple accept=".docx,.doc,.pdf,.xlsx,.txt,.md"
+                onChange={e => { if (e.target.files?.length) startAnalyze(e.target.files); e.currentTarget.value = "" }} />
             </div>
           )}
 
