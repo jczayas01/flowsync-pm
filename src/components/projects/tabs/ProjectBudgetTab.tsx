@@ -16,6 +16,17 @@ function fmt(n: number, currency = "USD") {
 export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries, workspaceId }: {
   projectId:string; project:any; budgetItems:any[]; timeEntries:any[]; workspaceId?:string
 }) {
+  // Budget automation #1: Auto earned value toggle (Project.autoEv)
+  const [autoEv, setAutoEv] = useState<boolean>(project?.autoEv !== false)
+  async function toggleAutoEv(next: boolean) {
+    setAutoEv(next)
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(workspaceId ? { "x-workspace-id": workspaceId } : {}) },
+      body: JSON.stringify({ autoEv: next }),
+    }).catch(() => null)
+    if (!res || !res.ok) setAutoEv(!next)
+  }
   const t = useTranslations("budget")
   const { can } = usePermissions()
   const router = useRouter()
@@ -182,8 +193,18 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               PM Best Practices — Measurement Performance Domain
             </div>
           </div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,.7)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
+              fontSize:11, color:"rgba(255,255,255,.85)" }}
+              title="When on, earned value on every budget line is recalculated automatically from task progress. Turn off to enter EV manually.">
+              <input type="checkbox" checked={autoEv}
+                onChange={e => toggleAutoEv(e.target.checked)}
+                style={{ accentColor:"#F59E0B", width:14, height:14, cursor:"pointer" }} />
+              Auto EV
+            </label>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.7)" }}>
             {project?.percentComplete || 0}% complete
+          </div>
           </div>
         </div>
 

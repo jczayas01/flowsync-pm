@@ -19,6 +19,7 @@ import {
 } from '@/lib//api'
 
 const updateSchema = z.object({
+  autoEv:          z.boolean().optional(),
   name:            z.string().min(1).max(200).optional(),
   description:     z.string().max(2000).optional().nullable(),
   objective:       z.string().max(3000).optional().nullable(),

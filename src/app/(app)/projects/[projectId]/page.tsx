@@ -23,7 +23,7 @@ export default async function ProjectDashboardPage({ params }: { params: { proje
         assumptions:true, constraints:true,
         economicImpact:true, priority:true, isConfidential:true,
         methodology:true, status:true, health:true,
-        startDate:true, endDate:true, percentComplete:true,
+        startDate:true, endDate:true, percentComplete:true, autoEv:true,
         budgetTotal:true, budgetSpent:true, currency:true,
         programId:true,
         program: { select:{ id:true, name:true, portfolio:{ select:{ id:true, name:true } } } },

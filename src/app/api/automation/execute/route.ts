@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
 import { processTrigger } from "@/lib/automation/engine"
+import { reconcileAllEV } from "@/lib/evm-auto"
 import { runScheduledScans } from "@/lib/automation/engine"
 import type { TriggerEvent } from "@/lib/automation/types"
 
@@ -36,7 +37,8 @@ export async function GET(req: NextRequest) {
       (req.headers.get("authorization") || "").replace("Bearer ", "")
     if (provided !== secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const counts = await runScheduledScans().catch(e => {
+  const counts = await runScheduledScans()
+  await reconcileAllEV().catch(() => {}).catch(e => {
     console.error("[Automation] scheduled scan failed", e); return null
   })
   return NextResponse.json({ ok: !!counts, counts })

@@ -21,6 +21,7 @@ const schema = z.object({
   currency:      z.string().default("USD"),
   startDate:     z.string().optional().nullable(),
   endDate:       z.string().optional().nullable(),
+  budgetItemId:  z.string().optional().nullable(),
   status:        z.enum(["DRAFT","ACTIVE","COMPLETED","CANCELLED","ON_HOLD"]).default("ACTIVE"),
   deliverables:  z.string().max(3000).optional().nullable(),
   notes:         z.string().max(3000).optional().nullable(),

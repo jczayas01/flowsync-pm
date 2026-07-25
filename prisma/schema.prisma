@@ -263,6 +263,7 @@ model Project {
   settings          Json?
   currency          String                 @default("USD")
   percentComplete   Int                    @default(0)
+  autoEv            Boolean                @default(true)
   timezone          String                 @default("UTC")
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
@@ -749,6 +750,8 @@ model ProcurementItem {
   deliverables  String?
   notes         String?
   attachmentUrl String?
+  budgetItemId  String?
+  expensePostedAt DateTime?
   ownerId       String?
   createdById   String
   createdAt     DateTime  @default(now())
@@ -756,6 +759,7 @@ model ProcurementItem {
   createdBy     User      @relation("ProcurementCreator", fields: [createdById], references: [id])
   owner         User?     @relation("ProcurementOwner", fields: [ownerId], references: [id])
   project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  budgetItem    BudgetItem? @relation(fields: [budgetItemId], references: [id], onDelete: SetNull)
 
   @@map("procurement_items")
 }
@@ -887,6 +891,7 @@ model BudgetItem {
   updatedAt   DateTime       @updatedAt
   project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   expenses    Expense[]
+  procurementItems ProcurementItem[]
 
   @@map("budget_items")
 }

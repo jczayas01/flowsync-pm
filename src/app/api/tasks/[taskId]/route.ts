@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { fireTrigger } from "@/lib/automation/trigger"
+import { recomputeProjectEV } from "@/lib/evm-auto"
 import { dispatchEvent } from "@/lib/automation/dispatch"
 import {
   withWorkspace, ok, err, notFound, forbidden,
@@ -133,6 +134,8 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
       const weighted    = allTasks.reduce((s, t) => s + t.percentComplete * (Number(t.estimatedHours) || 1), 0)
       const pct         = Math.round(weighted / totalWeight)
       await tx.project.update({ where: { id: task.projectId }, data: { percentComplete: pct } })
+      // Auto earned value: keep stored EV in lockstep with progress (Project.autoEv gate inside)
+      await recomputeProjectEV(tx as any, task.projectId, pct).catch(() => {})
     }
 
     return t

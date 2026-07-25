@@ -4,7 +4,7 @@
 // Tracks contracts, POs, SOWs, MSAs, NDAs per project
 
 import { DateField } from "@/components/shared/DatePicker"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
@@ -100,14 +100,25 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     vendorName:"", vendorContact:"", vendorEmail:"", vendorPhone:"", vendorLocation:"",
     type:"CONTRACT", title:"", poNumber:"", contractRef:"",
     value:"", currency:"USD", startDate:"", endDate:"",
-    status:"ACTIVE", deliverables:"", notes:"", ownerId:"",
+    status:"ACTIVE", deliverables:"", notes:"", ownerId:"", budgetItemId:"",
   })
+
+  // Budget lines for the "bill against" picker (Budget automation #2)
+  const [budgetLines, setBudgetLines] = useState<{id:string;name:string;plannedCost:number}[]>([])
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/budget`, { headers: workspaceId ? { "x-workspace-id": workspaceId } : {} })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { const items = d?.data?.items || d?.data?.budgetItems || d?.data || []
+        if (Array.isArray(items)) setBudgetLines(items.map((b:any)=>({ id:b.id, name:b.name, plannedCost:Number(b.plannedCost||0) }))) })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
 
   function resetForm() {
     setForm({ vendorName:"", vendorContact:"", vendorEmail:"", vendorPhone:"", vendorLocation:"",
       type:"CONTRACT", title:"", poNumber:"", contractRef:"",
       value:"", currency:"USD", startDate:"", endDate:"",
-      status:"ACTIVE", deliverables:"", notes:"", ownerId:"" })
+      status:"ACTIVE", deliverables:"", notes:"", ownerId:"", budgetItemId:"" })
   }
 
   async function save() {
@@ -128,7 +139,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
           vendorEmail: form.vendorEmail || null,
           vendorPhone: form.vendorPhone || null,
           vendorLocation: form.vendorLocation || null,
-        }),
+        budgetItemId: form.budgetItemId || null,
+      }),
       })
       if (!res.ok) {
         const d = await res.json().catch(()=>({}))
@@ -329,6 +341,20 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                     <option key={v} value={v}>{c.label}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label style={lbl}>Bill against budget line</label>
+                <select style={{...inp,cursor:"pointer"}} value={form.budgetItemId}
+                  onChange={e=>setForm(f=>({...f,budgetItemId:e.target.value}))}>
+                  <option value="">— not linked —</option>
+                  {budgetLines.map(b=>(
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                <div style={{ fontSize:10.5, color:"var(--text-3)", marginTop:3 }}>
+                  When linked, marking this item Completed posts its value as an
+                  expense on that budget line automatically.
+                </div>
               </div>
               <div>
                 <label style={lbl}>Contract value</label>
