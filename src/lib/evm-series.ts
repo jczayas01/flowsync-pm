@@ -88,3 +88,69 @@ export function buildSCurveSeries(opts: {
     }
   })
 }
+
+// ── Phase 2 builders ─────────────────────────────────────────────────────
+
+export interface BurnupPoint {
+  label: string; t: number
+  scope: number   // total tasks that exist by t (created-by unknown → constant total)
+  done: number    // tasks completed by t
+  ideal: number   // straight line 0 → scope across the window
+}
+
+export function buildBurnupSeries(opts: {
+  tasks: TaskLike[]
+  projectStart?: string | Date | null
+  projectEnd?: string | Date | null
+}): BurnupPoint[] {
+  const { tasks } = opts
+  if (!tasks.length) return []
+  const taskTimes = tasks.flatMap(t => [d(t.startDate), d(t.dueDate)]).filter((x): x is number => x != null)
+  const start = d(opts.projectStart) ?? (taskTimes.length ? Math.min(...taskTimes) : Date.now() - 84 * 864e5)
+  const endRaw = d(opts.projectEnd) ?? (taskTimes.length ? Math.max(...taskTimes) : Date.now())
+  const end = Math.max(endRaw, start + 7 * 864e5)
+
+  const WEEK = 7 * 864e5
+  const pts: number[] = []
+  for (let t = start; t <= end + WEEK - 1; t += WEEK) pts.push(Math.min(t, end))
+  if (pts[pts.length - 1] !== end) pts.push(end)
+
+  const doneAt = (t: TaskLike) => {
+    if (t.status !== "DONE") return null
+    return d(t.completedAt) ?? d(t.updatedAt)
+  }
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+  const scope = tasks.length
+  const span = end - start || 1
+
+  return pts.map(x => ({
+    label: fmt.format(new Date(x)),
+    t: x,
+    scope,
+    done: tasks.reduce((s, t) => { const c = doneAt(t); return s + (c != null && c <= x ? 1 : 0) }, 0),
+    ideal: Math.round(scope * Math.min(1, Math.max(0, (x - start) / span))),
+  }))
+}
+
+export interface PortfolioBurnPoint { label: string; t: number; planned: number; actual: number }
+
+/** Cumulative planned vs actual spend across many projects' budget items. */
+export function buildPortfolioBurnSeries(budgetItems: (BudgetItemLike & { plannedCost?: number | string })[]): PortfolioBurnPoint[] {
+  if (!budgetItems.length) return []
+  const itemDate = (b: BudgetItemLike) => d(b.periodEnd) ?? d(b.periodStart) ?? d(b.createdAt) ?? Date.now()
+  const times = budgetItems.map(itemDate)
+  const start = Math.min(...times), end = Math.max(Math.max(...times), start + 7 * 864e5)
+
+  const WEEK = 7 * 864e5
+  const pts: number[] = []
+  for (let t = start; t <= end + WEEK - 1; t += WEEK) pts.push(Math.min(t, end))
+  if (pts[pts.length - 1] !== end) pts.push(end)
+
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+  return pts.map(x => ({
+    label: fmt.format(new Date(x)),
+    t: x,
+    planned: Math.round(budgetItems.reduce((s, b) => s + (itemDate(b) <= x ? num((b as any).plannedCost) : 0), 0)),
+    actual:  Math.round(budgetItems.reduce((s, b) => s + (itemDate(b) <= x ? num(b.actualCost) : 0), 0)),
+  }))
+}

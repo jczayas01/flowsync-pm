@@ -5,9 +5,9 @@
 
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell,
+  Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts"
-import { buildSCurveSeries } from "@/lib/evm-series"
+import { buildSCurveSeries, buildBurnupSeries } from "@/lib/evm-series"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B"
 const GREEN = "#059669", RED = "#DC2626", SLATE = "#94A3B8", LINE = "#E2E8F0"
@@ -55,6 +55,38 @@ function SCurve({ series, brand, brand2, labels }: {
           <Line name={labels.ev} dataKey="ev" stroke={brand}  strokeWidth={2.5} dot={false} />
           <Line name={labels.ac} dataKey="ac" stroke={brand2} strokeWidth={2.5} dot={false} />
         </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+
+// ── Burnup ───────────────────────────────────────────────────────────────
+function Burnup({ series, brand, labels }: {
+  series: ReturnType<typeof buildBurnupSeries>
+  brand: string
+  labels: { title: string; done: string; scope: string; ideal: string }
+}) {
+  if (series.length < 2) return null
+  return (
+    <div style={card}>
+      <div style={cardTitle}>{labels.title}</div>
+      <ResponsiveContainer width="100%" height={230}>
+        <AreaChart data={series} margin={{ top: 4, right: 12, left: 4, bottom: 0 }}>
+          <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
+            axisLine={{ stroke: LINE }} minTickGap={28} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: SLATE }} tickLine={false}
+            axisLine={false} width={34} />
+          <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${LINE}`, fontSize: 12 }} />
+          <Legend wrapperStyle={{ fontSize: 12 }} iconType="plainline" />
+          <Area name={labels.scope} dataKey="scope" stroke={SLATE} strokeWidth={1.5}
+            fill={SLATE} fillOpacity={0.06} dot={false} />
+          <Area name={labels.done} dataKey="done" stroke={brand} strokeWidth={2.5}
+            fill={brand} fillOpacity={0.14} dot={false} />
+          <Line name={labels.ideal} dataKey="ideal" stroke={GREEN} strokeWidth={1.5}
+            strokeDasharray="6 4" dot={false} />
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   )
@@ -182,6 +214,14 @@ export default function ProjectPerformanceCharts({
               ev: t("Earned value"), ac: t("Actual cost"), today: t("Today") }} />
         </div>
       )}
+      {tasks.length > 0 && (() => {
+        const bs = buildBurnupSeries({ tasks, projectStart: project?.startDate, projectEnd: project?.endDate })
+        return bs.length >= 2 ? (
+          <Burnup series={bs} brand={brand}
+            labels={{ title: t("Burnup — scope vs completed"), done: t("Completed"),
+              scope: t("Total scope"), ideal: t("Ideal pace") }} />
+        ) : null
+      })()}
       <StatusDonut tasks={tasks} title={t("Tasks by status")} />
       {hasBudget && (
         <BudgetBullet bac={budgetTotal} ac={ac} eac={eac} title={t("Budget performance")}

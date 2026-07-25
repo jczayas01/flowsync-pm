@@ -265,6 +265,16 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           cpi: projectEVM[p.id]?.cpi ?? 1,
           spi: projectEVM[p.id]?.spi ?? 1,
         }))}
+        bubbles={projects.map((p: any) => ({
+          name: p.name, code: p.code, health: p.health,
+          budget: Number(p.budgetTotal || 0),
+          pct: Number(p.percentComplete || 0),
+          riskExposure: risks.filter((r: any) => r.projectId === p.id)
+            .reduce((s: number, r: any) => s + (Number(r.score) || 0), 0),
+        }))}
+        budgetItems={budgetItems}
+        milestones={milestoneList}
+        milestoneWindow={milestoneWindow}
         t={tx}
       />
 
