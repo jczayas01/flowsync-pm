@@ -1,7 +1,7 @@
 "use client"
 // src/components/projects/NewProjectForm.tsx
 import { DateField } from "@/components/shared/DatePicker"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
@@ -53,6 +53,21 @@ export function NewProjectForm({ workspaceId, members }:{
     })
   }
 
+  // ── Attach documents at creation: staged locally, uploaded right after
+  //    the project is created, then you land on the Docs tab ready to Analyze.
+  const [stagedDocs, setStagedDocs] = useState<File[]>([])
+  const [docOver, setDocOver] = useState(false)
+  const [uploadNote, setUploadNote] = useState("")
+  const docInputRef = useRef<HTMLInputElement>(null)
+  const MAX_DOC_MB = 20
+  function stageFiles(list: FileList | File[]) {
+    const incoming = Array.from(list).filter(f => f.size <= MAX_DOC_MB * 1024 * 1024)
+    setStagedDocs(prev => {
+      const seen = new Set(prev.map(f => f.name + f.size))
+      return [...prev, ...incoming.filter(f => !seen.has(f.name + f.size))].slice(0, 12)
+    })
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name.trim()) { setError("Project name is required"); return }
@@ -85,6 +100,20 @@ export function NewProjectForm({ workspaceId, members }:{
         return
       }
       const { data } = await res.json()
+      if (stagedDocs.length) {
+        let done = 0
+        for (const f of stagedDocs) {
+          setUploadNote(`Uploading documents ${done + 1}/${stagedDocs.length} — ${f.name}`)
+          const fd = new FormData()
+          fd.append("file", f)
+          await fetch(`/api/projects/${data.id}/documents`, { method: "POST", body: fd })
+            .catch(() => null)
+          done++
+        }
+        setUploadNote("")
+        router.push(`/projects/${data.id}/docs`)
+        return
+      }
       router.push(`/projects/${data.id}`)
     } catch {
       setError("Network error — please try again")
@@ -343,6 +372,56 @@ export function NewProjectForm({ workspaceId, members }:{
                 )
               })}
             </div>
+          </div>
+
+          {/* Attach documents — uploaded after creation, ready for AI analysis */}
+          <div style={{ marginBottom:22 }}>
+            <div style={{ fontSize:12, fontWeight:600, color:"var(--text-2)", marginBottom:6 }}>
+              Attach project documents <span style={{ fontWeight:400, color:"var(--text-3)" }}>
+              (optional — charter, plan, minutes… AI can build the project from them)</span>
+            </div>
+            <div
+              role="button" tabIndex={0}
+              onClick={() => docInputRef.current?.click()}
+              onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); docInputRef.current?.click() } }}
+              onDragOver={e => { e.preventDefault(); setDocOver(true) }}
+              onDragLeave={() => setDocOver(false)}
+              onDrop={e => { e.preventDefault(); setDocOver(false)
+                if (e.dataTransfer.files?.length) stageFiles(e.dataTransfer.files) }}
+              style={{ border:`1.5px dashed ${docOver ? "var(--steel)" : "var(--border)"}`,
+                borderRadius:10, padding:"16px 18px", textAlign:"center", cursor:"pointer",
+                background: docOver ? "#EFF6FF" : "var(--bg-2,#F8FAFC)",
+                color:"var(--text-3)", fontSize:12.5, outline:"none",
+                transition:"background .15s ease, border-color .15s ease" }}>
+              Drop files here or <span style={{ color:"var(--steel)", fontWeight:600 }}>browse</span>
+              {" "}— Word, Excel, PDF (incl. scans), up to 12 files, {`${20}`} MB each
+            </div>
+            <input ref={docInputRef} type="file" multiple style={{ display:"none" }}
+              accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.txt,.md,.csv,.png,.jpg,.jpeg"
+              onChange={e => { if (e.target.files?.length) stageFiles(e.target.files); e.target.value = "" }} />
+            {stagedDocs.length > 0 && (
+              <div style={{ marginTop:8, display:"flex", flexDirection:"column", gap:5 }}>
+                {stagedDocs.map((f, i) => (
+                  <div key={f.name + f.size} style={{ display:"flex", alignItems:"center", gap:8,
+                    fontSize:12, color:"var(--text-2)", background:"#fff",
+                    border:"1px solid var(--border)", borderRadius:7, padding:"6px 10px" }}>
+                    <span>📄</span>
+                    <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis",
+                      whiteSpace:"nowrap" }}>{f.name}</span>
+                    <span style={{ color:"var(--text-3)" }}>{(f.size/1024).toFixed(0)} KB</span>
+                    <button type="button" aria-label={`Remove ${f.name}`}
+                      onClick={() => setStagedDocs(prev => prev.filter((_, x) => x !== i))}
+                      style={{ border:"none", background:"none", color:"var(--text-3)",
+                        cursor:"pointer", fontSize:13, padding:"0 2px" }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {uploadNote && (
+              <div style={{ marginTop:8, fontSize:12, color:"var(--steel)", fontWeight:600 }}>
+                {uploadNote}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
