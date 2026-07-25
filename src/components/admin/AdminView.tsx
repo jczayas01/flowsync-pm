@@ -1,10 +1,11 @@
 // src/components/admin/AdminView.tsx
 "use client"
 import { useState, useMemo } from "react"
+import { ContractsPanel } from "./ContractsPanel"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", RED = "#DC2626"
 
-type Tab = "workspaces" | "users" | "leads"
+type Tab = "workspaces" | "users" | "leads" | "contracts"
 
 export function AdminView({ workspaces, users, demoRequests, metrics }: {
   workspaces: any[]; users: any[]; demoRequests: any[]
@@ -38,7 +39,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
   const lds = useMemo(() => !term ? demoRequests
     : demoRequests.filter(d => `${d.name} ${d.email} ${d.company}`.toLowerCase().includes(term)), [demoRequests, term])
 
-  const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length }
+  const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length, contracts: -1 }
 
   return (
     // AppShell's <main> is overflow:hidden — every page provides its own scroll
@@ -66,14 +67,15 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
 
       {/* ── Tabs + search ── */}
       <div className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-        {(["workspaces","users","leads"] as Tab[]).map(t => (
+        {(["workspaces","users","leads","contracts"] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             style={{ padding:"7px 14px", borderRadius:8, fontSize:12.5, fontWeight:600, cursor:"pointer",
               border: tab===t ? "none" : "1px solid #E2E8F0",
               background: tab===t ? NAVY : "#fff", color: tab===t ? "#fff" : "#475569",
               fontFamily:"inherit" }}>
-            {t === "workspaces" ? "🏢 Workspaces" : t === "users" ? "👤 Users" : "📩 Demo requests"}
-            <span style={{ opacity:.6, marginLeft:6 }}>{counts[t]}</span>
+            {t === "workspaces" ? "🏢 Workspaces" : t === "users" ? "👤 Users"
+              : t === "leads" ? "📩 Demo requests" : "📜 Contracts"}
+            {counts[t] >= 0 && <span style={{ opacity:.6, marginLeft:6 }}>{counts[t]}</span>}
           </button>
         ))}
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search…"
@@ -94,6 +96,8 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
         <div style={{ overflowX:"auto" }}>
           {tab === "workspaces" && <WorkspaceTable rows={ws} onManage={setManage} />}
           {tab === "users"      && <UserTable rows={us} onAction={run} busy={busy} />}
+          {tab === "contracts"  && <ContractsPanel
+            workspaces={workspaces.map((w: any) => ({ id: w.id, name: w.name, plan: w.plan }))} />}
           {tab === "leads"      && <LeadTable rows={lds} onAction={run} busy={busy} />}
         </div>
       </div>

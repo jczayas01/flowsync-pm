@@ -210,6 +210,7 @@ model Workspace {
   members              WorkspaceMember[]
 
   @@map("workspaces")
+  customerContracts    CustomerContract[]
 }
 
 model WorkspaceMember {
@@ -1621,4 +1622,90 @@ enum GoalStatus {
   OFF_TRACK
   ACHIEVED
   MISSED
+}
+
+// ── Enterprise Contracts / CLM (vendor-side: FlowSync's customer agreements) ──
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+enum ContractInvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  VOID
+}
+
+model CustomerContract {
+  id             String          @id @default(cuid())
+  workspaceId    String
+  name           String
+  status         ContractStatus  @default(DRAFT)
+  startDate      DateTime
+  endDate        DateTime
+  renewalDate    DateTime?
+  autoRenew      Boolean         @default(false)
+  alertDays      Int             @default(60)
+  lastAlertAt    DateTime?
+  // Bundle package
+  paidSeats      Int             @default(0)
+  contributorBundles Int         @default(0)
+  ocrPageCap     Int?
+  billingCycle   String          @default("ANNUAL")
+  amount         Decimal?        @db.Decimal(15, 2)
+  currency       String          @default("USD")
+  // SLA
+  supportTier    String?
+  responseHours  Int?
+  uptimePct      Decimal?        @db.Decimal(5, 2)
+  slaNotes       String?
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invoices       ContractInvoice[]
+  documents      ContractDocument[]
+
+  @@index([workspaceId])
+  @@map("customer_contracts")
+}
+
+model ContractInvoice {
+  id         String                @id @default(cuid())
+  contractId String
+  number     String
+  amount     Decimal               @db.Decimal(15, 2)
+  currency   String                @default("USD")
+  issueDate  DateTime
+  dueDate    DateTime
+  paidDate   DateTime?
+  status     ContractInvoiceStatus @default(DRAFT)
+  notes      String?
+  createdAt  DateTime              @default(now())
+  contract   CustomerContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@map("contract_invoices")
+}
+
+model ContractDocument {
+  id           String           @id @default(cuid())
+  contractId   String
+  title        String
+  fileName     String
+  storagePath  String
+  contentType  String           @default("application/pdf")
+  sizeBytes    Int              @default(0)
+  uploadedById String
+  createdAt    DateTime         @default(now())
+  contract     CustomerContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@map("contract_documents")
 }
