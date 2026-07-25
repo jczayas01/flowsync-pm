@@ -112,7 +112,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const { error } = await resend.emails.send({
       from:    process.env.RESEND_FROM_EMAIL || "FlowSync PM <no-reply@flowsyncpm.com>",
       replyTo: session.user.email || process.env.RESEND_REPLY_TO || "support@flowsyncpm.com",
-      to, subject, html, ...(attachments ? { attachments } : {}),
+      to, subject, html, ...(attachments ? { attachments } : {  charts: await (await import("@/lib/report-chart-data")).getReportChartData(params.projectId).catch(() => undefined),
+      }),
     })
     if (error) { console.error("[ReportSend] rejected for", to, JSON.stringify(error)); failedTo.push(to) }
     else sent.push(to)

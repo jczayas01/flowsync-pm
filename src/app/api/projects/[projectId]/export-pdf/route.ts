@@ -7,6 +7,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
 import { generateReportPdf } from "@/lib/pdf-report"
+import { getReportChartData } from "@/lib/report-chart-data"
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await auth()
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       projectName: project.name,
       projectCode: project.code,
       report: reportData,
+      charts: await getReportChartData(params.projectId).catch(() => undefined),
     })
     return new NextResponse(Buffer.from(bytes), {
       status: 200,

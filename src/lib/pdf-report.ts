@@ -67,6 +67,11 @@ export async function generateReportPdf(opts: {
     risksAndIssues?: string
     decisionsNeeded?: string[]
   }
+  charts?: {
+    scurve?: { label: string; pv: number; ev: number; ac: number }[]
+    statusCounts?: { label: string; count: number; hex: string }[]
+    budget?: { bac: number; ac: number; eac: number }
+  }
 }): Promise<Uint8Array> {
   // Sanitize every string in the payload once, up front.
   const __deep = (v: any): any => typeof v === "string" ? pdfSafe(v)
@@ -131,6 +136,117 @@ export async function generateReportPdf(opts: {
     y -= 4
   }
 
+  // ── Vector chart drawing (no rasterization — crisp at any zoom) ──────
+  const money = (n: number) =>
+    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000 ? `$${(n / 1_000).toFixed(0)}K`
+    : `$${Math.round(n)}`
+
+  const AMBER = rgb(245/255, 158/255, 11/255)
+  const LIGHT = rgb(226/255, 232/255, 240/255)
+
+  const drawSCurve = (series: NonNullable<typeof opts.charts>["scurve"]) => {
+    if (!series || series.length < 2) return
+    const H = 150, W = PAGE_W - 2 * M - 60, X0 = M + 46
+    ensure(H + 46)
+    const top = y, bottom = y - H
+    const maxV = Math.max(1, ...series.flatMap(p => [p.pv, p.ev, p.ac]))
+    const px = (i: number) => X0 + (i / (series.length - 1)) * W
+    const py = (v: number) => bottom + (v / maxV) * H
+
+    // gridlines + y labels (0 / 50 / 100%)
+    for (const f of [0, 0.5, 1]) {
+      const gy = bottom + f * H
+      page.drawLine({ start: { x: X0, y: gy }, end: { x: X0 + W, y: gy },
+        thickness: 0.5, color: LIGHT })
+      const lbl = money(maxV * f)
+      page.drawText(lbl, { x: X0 - 8 - font.widthOfTextAtSize(lbl, 7.5), y: gy - 2.5,
+        size: 7.5, font, color: GRAY })
+    }
+    // x labels: first / mid / last
+    for (const i of [0, Math.floor((series.length - 1) / 2), series.length - 1]) {
+      const lbl = series[i].label
+      page.drawText(lbl, { x: px(i) - font.widthOfTextAtSize(lbl, 7.5) / 2, y: bottom - 12,
+        size: 7.5, font, color: GRAY })
+    }
+    // series
+    const line = (key: "pv" | "ev" | "ac", color: ReturnType<typeof rgb>, thickness: number, dash?: number[]) => {
+      for (let i = 1; i < series.length; i++) {
+        page.drawLine({
+          start: { x: px(i - 1), y: py(series[i - 1][key]) },
+          end:   { x: px(i),     y: py(series[i][key]) },
+          thickness, color, ...(dash ? { dashArray: dash } : {}),
+        })
+      }
+    }
+    line("pv", GRAY, 1.2, [4, 3])
+    line("ev", brand, 1.8)
+    line("ac", AMBER, 1.8)
+    // legend
+    const legend: [string, ReturnType<typeof rgb>][] = [["Planned", GRAY], ["Earned", brand], ["Actual cost", AMBER]]
+    let lx = X0
+    for (const [name, color] of legend) {
+      page.drawLine({ start: { x: lx, y: top + 10 }, end: { x: lx + 14, y: top + 10 },
+        thickness: 2, color })
+      page.drawText(name, { x: lx + 18, y: top + 7, size: 8, font, color: TEXT })
+      lx += 18 + font.widthOfTextAtSize(name, 8) + 18
+    }
+    y = bottom - 26
+  }
+
+  const drawStatusBar = (counts: NonNullable<typeof opts.charts>["statusCounts"]) => {
+    if (!counts?.length) return
+    const total = counts.reduce((s, c) => s + c.count, 0)
+    if (!total) return
+    const W = PAGE_W - 2 * M, H = 14
+    ensure(H + 40)
+    let x = M
+    for (const c of counts) {
+      const w = (c.count / total) * W
+      page.drawRectangle({ x, y: y - H, width: Math.max(w, 0.5), height: H, color: hexToRgb(c.hex) })
+      x += w
+    }
+    y -= H + 12
+    // legend
+    let lx = M
+    for (const c of counts) {
+      page.drawRectangle({ x: lx, y: y - 1, width: 7, height: 7, color: hexToRgb(c.hex) })
+      const lbl = `${c.label} (${c.count})`
+      page.drawText(lbl, { x: lx + 11, y, size: 8, font, color: TEXT })
+      lx += 11 + font.widthOfTextAtSize(lbl, 8) + 16
+    }
+    y -= 22
+  }
+
+  const drawBudgetBullet = (b: NonNullable<typeof opts.charts>["budget"]) => {
+    if (!b || b.bac <= 0) return
+    const W = PAGE_W - 2 * M, H = 16
+    const max = Math.max(b.bac, b.eac, b.ac) * 1.05
+    const px = (v: number) => M + Math.min(1, v / max) * W
+    ensure(H + 52)
+    const over = b.eac > b.bac
+    const RED   = rgb(220/255, 38/255, 38/255)
+    const GREEN = rgb(5/255, 150/255, 105/255)
+    // track + AC bar
+    page.drawRectangle({ x: M, y: y - H, width: W, height: H, color: rgb(241/255, 245/255, 249/255) })
+    page.drawRectangle({ x: M, y: y - H + 3, width: Math.max(px(b.ac) - M, 0.5), height: H - 6,
+      color: over ? RED : STEEL })
+    // EAC + BAC markers with labels
+    const mark = (v: number, color: ReturnType<typeof rgb>, lbl: string, above: boolean) => {
+      const mx = px(v)
+      page.drawLine({ start: { x: mx, y: y - H - 4 }, end: { x: mx, y: y + 4 }, thickness: 1.6, color })
+      const w = bold.widthOfTextAtSize(lbl, 7.5)
+      page.drawText(lbl, { x: Math.min(Math.max(mx - w / 2, M), PAGE_W - M - w),
+        y: above ? y + 8 : y - H - 14, size: 7.5, font: bold, color })
+    }
+    mark(b.eac, over ? RED : GREEN, `EAC ${money(b.eac)}`, true)
+    mark(b.bac, NAVY, `Budget ${money(b.bac)}`, false)
+    y -= H + 20
+    page.drawText(`Spent ${money(b.ac)} · ${Math.round((b.ac / b.bac) * 100)}% of budget`, {
+      x: M, y, size: 8.5, font, color: GRAY })
+    y -= 18
+  }
+
   newPage()
 
   // Title
@@ -143,6 +259,14 @@ export async function generateReportPdf(opts: {
   y -= 26
 
   if (report.executiveSummary) { heading("Executive Summary"); para(report.executiveSummary) }
+
+  const ch = opts.charts
+  if (ch && (ch.scurve?.length || ch.statusCounts?.length || ch.budget)) {
+    heading("Performance Snapshot")
+    if (ch.scurve?.length)       drawSCurve(ch.scurve)
+    if (ch.statusCounts?.length) drawStatusBar(ch.statusCounts)
+    if (ch.budget)               drawBudgetBullet(ch.budget)
+  }
   if (report.accomplishmentsThisWeek?.length) { heading("Accomplishments"); bullets(report.accomplishmentsThisWeek) }
   if (report.plannedNextWeek?.length) { heading("Planned Next Period"); bullets(report.plannedNextWeek) }
   if (report.budgetStatus) { heading("Budget Status"); para(report.budgetStatus) }
