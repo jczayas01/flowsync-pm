@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import nextDynamic from "next/dynamic"
+
+const ReportSnapshot = nextDynamic(() => import("@/components/charts/ReportSnapshot"),
+  { ssr: false, loading: () => <div style={{ height: 120 }} /> })
 
 const REPORT_TYPES = [
   { value:"STATUS",       label:"Weekly Status Report",  icon:"📋",
@@ -93,11 +97,12 @@ function ReportMetric({ label, value, color }: { label:string; value:string; col
 
 // ── Report view ─────────────────────────────────────────────────────────────
 
-function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, accent = "#1B6CA8", accent2 = "#F59E0B", onDownload, downloading, onDownloadPdf, downloadingPdf, onEmail }: {
+function ReportView({ report, reportType, audience, generatedAt, project, workspaceName, workspaceLogo, accent = "#1B6CA8", accent2 = "#F59E0B", onDownload, downloading, onDownloadPdf, downloadingPdf, onEmail, snapshot }: {
   report:any; reportType:string; audience:string; generatedAt:string;
   project:any; workspaceName:string; workspaceLogo?:string; accent?:string; accent2?:string;
   onDownload:()=>void; downloading:boolean
   onDownloadPdf:()=>void; downloadingPdf:boolean; onEmail?:()=>void
+  snapshot?: import("@/components/charts/ReportSnapshot").ReportSnapshotData | null
 }) {
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
@@ -144,6 +149,12 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
           padding:"8px 14px", fontSize:11, color:"#92400E", marginBottom:20 }}>
           ⚠ AI-generated report — review for accuracy before distributing.
         </div>
+
+        {snapshot && (snapshot.scurve?.length || snapshot.statusCounts?.length || snapshot.budget) ? (
+          <ReportSection title="Performance Snapshot">
+            <ReportSnapshot data={snapshot} accent={accent} accent2={accent2} />
+          </ReportSection>
+        ) : null}
 
         {/* STATUS */}
         {reportType==="STATUS" && (
@@ -611,6 +622,18 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   const [emailNote, setEmailNote]   = useState("")
   const [emailPdf, setEmailPdf]     = useState(true)
   const [emailBusy, setEmailBusy]   = useState(false)
+
+  // Web-report parity: same Performance Snapshot data the PDF embeds.
+  const [snapshot, setSnapshot] = useState<import("@/components/charts/ReportSnapshot").ReportSnapshotData | null>(null)
+  useEffect(() => {
+    let live = true
+    fetch(`/api/projects/${projectId}/reports/chart-data`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (live && d?.data) setSnapshot(d.data) })
+      .catch(() => {})
+    return () => { live = false }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
   const [emailMsg, setEmailMsg]     = useState("")
 
   async function sendReportEmail() {
@@ -947,7 +970,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                 </div>
               </div>
             ) : (
-            <ReportView accent={accent} accent2={accent2}
+            <ReportView accent={accent} accent2={accent2} snapshot={snapshot}
               report={generatedReport}
               reportType={reportType}
               audience={audience}
