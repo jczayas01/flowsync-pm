@@ -5,6 +5,7 @@
 import { SITE_URL } from "@/lib/site-url"
 import { db } from "@/lib/db"
 import type { AutomationRule, TriggerEvent, ExecutionResult, ExecutionLogEntry, Condition, Action } from "./types"
+import { adaptRule, ruleTriggersFor, eventMatchesRuleTrigger } from "./adapter"
 
 // ─────────────────────────────────────────────
 // CONDITION EVALUATION
@@ -408,23 +409,22 @@ async function buildContext(
 export async function processTrigger(event: TriggerEvent): Promise<ExecutionResult[]> {
   const results: ExecutionResult[] = []
 
-  // Find all active rules matching this trigger
-  const rules = await db.$queryRaw<any[]>`
-    SELECT * FROM automation_rules
-    WHERE workspace_id = ${event.workspaceId}
-      AND is_active = true
-      AND (project_id IS NULL OR project_id = ${event.projectId || null})
-      AND trigger_type = ${event.type}
-    ORDER BY created_at ASC
-  `.catch(() => [])
+  // Find all active rules matching this trigger.
+  // Rules are stored in the Prisma shape (trigger/condition/action as strings,
+  // written by the Automations UI); the adapter converts them to the engine's
+  // typed conditions[]/actions[] and maps dotted event types to the stored
+  // UPPER_SNAKE trigger vocabulary.
+  const rows = await db.automationRule.findMany({
+    where: {
+      workspaceId: event.workspaceId,
+      isActive: true,
+      trigger: { in: ruleTriggersFor(event.type) },
+    },
+    orderBy: { createdAt: "asc" },
+  }).catch(() => [])
 
-  for (const rawRule of rules) {
-    const rule: AutomationRule = {
-      ...rawRule,
-      trigger:    rawRule.trigger_config    || { type: event.type, params: {} },
-      conditions: rawRule.conditions        || [],
-      actions:    rawRule.actions           || [],
-    }
+  for (const rawRule of rows) {
+    const rule = adaptRule(rawRule)
 
     const startTime = Date.now()
     const log: ExecutionLogEntry[] = []
@@ -447,6 +447,14 @@ export async function processTrigger(event: TriggerEvent): Promise<ExecutionResu
         results.push({ ruleId: rule.id, success: true, actionsRun: 0, skipped: true, log: [], duration: Date.now() - startTime })
         continue
       }
+      if (rule.unsupported && !rule.actions.length) {
+        await db.automationLog.create({ data: {
+          workspaceId: event.workspaceId, ruleId: rule.id, ruleName: rule.name,
+          trigger: event.type, action: "skipped", status: "SKIPPED", message: rule.unsupported,
+        }}).catch(() => {})
+        results.push({ ruleId: rule.id, success: true, actionsRun: 0, skipped: true, log: [], duration: Date.now() - startTime })
+        continue
+      }
 
       // Execute actions in sequence
       let actionsRun = 0
@@ -457,24 +465,36 @@ export async function processTrigger(event: TriggerEvent): Promise<ExecutionResu
       }
 
       // Update rule stats
-      await db.$executeRaw`
-        UPDATE automation_rules
-        SET run_count = run_count + 1, last_run_at = NOW(), last_error = NULL
-        WHERE id = ${rule.id}
-      `.catch(() => {})
+      await db.automationRule.update({
+        where: { id: rule.id },
+        data:  { runCount: { increment: 1 }, lastRunAt: new Date() },
+      }).catch(() => {})
 
-      // Write execution log
-      await db.$executeRaw`
-        INSERT INTO automation_logs (rule_id, workspace_id, event_type, entity_id, success, actions_run, log_entries, duration_ms)
-        VALUES (${rule.id}, ${event.workspaceId}, ${event.type}, ${event.entityId}, true, ${actionsRun}, ${JSON.stringify(log)}::jsonb, ${Date.now() - startTime})
-      `.catch(() => {})
+      // Write execution log (shape matches the Execution logs tab)
+      await db.automationLog.create({ data: {
+        workspaceId: event.workspaceId,
+        ruleId:      rule.id,
+        ruleName:    rule.name,
+        trigger:     event.type,
+        action:      rule.actions.map(a => a.type).join(", ") || (rule.unsupported ? "skipped" : "none"),
+        status:      rule.unsupported ? "SKIPPED" : "SUCCESS",
+        message:     rule.unsupported
+          ? rule.unsupported
+          : (log[log.length - 1]?.message || `${actionsRun} action(s) executed`),
+      }}).catch(() => {})
 
       results.push({ ruleId: rule.id, success: true, actionsRun, skipped: false, log, duration: Date.now() - startTime })
 
     } catch (e: any) {
-      await db.$executeRaw`
-        UPDATE automation_rules SET last_error = ${e.message} WHERE id = ${rule.id}
-      `.catch(() => {})
+      await db.automationLog.create({ data: {
+        workspaceId: event.workspaceId,
+        ruleId:      rule.id,
+        ruleName:    rule.name,
+        trigger:     event.type,
+        action:      "error",
+        status:      "FAILED",
+        message:     e.message?.slice(0, 500) || "Unknown error",
+      }}).catch(() => {})
 
       results.push({ ruleId: rule.id, success: false, actionsRun: 0, skipped: false, error: e.message, log, duration: Date.now() - startTime })
     }
@@ -497,10 +517,12 @@ export async function runScheduledScans(now: Date = new Date()): Promise<{
   const isMonday = now.getUTCDay() === 1
 
   // Which workspaces even have active time-based rules? Scan only those.
-  const activeRules = await db.$queryRaw<any[]>`
-    SELECT DISTINCT workspace_id, trigger_type FROM automation_rules WHERE is_active = true
-  `.catch(() => [])
-  const wsWith = (t: string) => new Set(activeRules.filter(r => r.trigger_type === t).map(r => r.workspace_id))
+  const activeRules = await db.automationRule.findMany({
+    where: { isActive: true },
+    select: { workspaceId: true, trigger: true },
+  }).catch(() => [])
+  const wsWith = (eventType: string) =>
+    new Set(activeRules.filter(r => eventMatchesRuleTrigger(eventType, r.trigger)).map(r => r.workspaceId))
 
   const overdueWs   = wsWith("task.overdue")
   const dueSoonWs   = wsWith("task.due_date_approaching")

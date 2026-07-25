@@ -12,17 +12,26 @@ async function getLogs(ctx: ApiContext) {
   const ruleId    = url.searchParams.get("ruleId")    || undefined
   const projectId = url.searchParams.get("projectId") || undefined
 
-  const logs = await db.$queryRaw<any[]>`
-    SELECT al.*, ar.name as rule_name
-    FROM automation_logs al
-    LEFT JOIN automation_rules ar ON ar.id = al.rule_id
-    WHERE al.workspace_id = ${ctx.workspaceId}
-    ${ruleId    ? db.$queryRaw`AND al.rule_id = ${ruleId}`       : db.$queryRaw``}
-    ORDER BY al.created_at DESC
-    LIMIT ${take} OFFSET ${skip}
-  `.catch(() => [])
+  const [rows, total] = await Promise.all([
+    db.automationLog.findMany({
+      where:   { workspaceId: ctx.workspaceId, ...(ruleId ? { ruleId } : {}) },
+      orderBy: { createdAt: "desc" },
+      skip, take,
+    }),
+    db.automationLog.count({
+      where: { workspaceId: ctx.workspaceId, ...(ruleId ? { ruleId } : {}) },
+    }),
+  ]).catch(() => [[], 0] as const)
 
-  return okList(logs, logs.length, page, perPage)
+  // Keys the Execution logs tab reads: rule_name, trigger_context, status, created_at
+  const logs = rows.map(l => ({
+    id: l.id,
+    rule_name:       l.ruleName,
+    trigger_context: `${l.trigger} → ${l.action}${l.message ? ` · ${l.message}` : ""}`,
+    status:          l.status,
+    created_at:      l.createdAt,
+  }))
+  return okList(logs, total, page, perPage)
 }
 
 export async function GET(req: NextRequest) {
