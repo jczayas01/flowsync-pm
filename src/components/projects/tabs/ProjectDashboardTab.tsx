@@ -647,8 +647,8 @@ export function ProjectDashboardTab({
         tasks={tasks}
         budgetItems={budgetItems || []}
         project={project}
-        brandColor={null}
-        brandColor2={null}
+        brandColor={project?.workspace?.primaryColor || null}
+        brandColor2={project?.workspace?.secondaryColor || null}
         t={td}
       />
 

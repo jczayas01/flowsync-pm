@@ -102,8 +102,14 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
   return (
-    <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden",
+    <div className="report-print-root" style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden",
       ["--r-accent" as any]: accent, ["--r-accent2" as any]: accent2 }}>
+      <style>{`@media print {
+        .report-print-root, .report-print-root * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }`}</style>
       {/* Header */}
       <div style={{ background:`linear-gradient(135deg,${accent} 0%, ${accent2} 140%)`, padding:"20px 24px", color:"#fff" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>

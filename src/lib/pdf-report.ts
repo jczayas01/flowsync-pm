@@ -95,7 +95,7 @@ export async function generateReportPdf(opts: {
     page = pdf.addPage([PAGE_W, PAGE_H])
     pages.push(page)
     // header band
-    page.drawRectangle({ x: 0, y: PAGE_H - 44, width: PAGE_W, height: 44, color: NAVY })
+    page.drawRectangle({ x: 0, y: PAGE_H - 44, width: PAGE_W, height: 44, color: brand })
     page.drawText(org.toUpperCase(), { x: M, y: PAGE_H - 28, size: 10, font: bold, color: rgb(1,1,1) })
     page.drawText(`${projectName} (${projectCode})`, {
       x: PAGE_W - M - bold.widthOfTextAtSize(`${projectName} (${projectCode})`, 9),

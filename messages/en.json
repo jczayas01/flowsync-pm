@@ -227,7 +227,18 @@
     "Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.": "Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.",
     "Created": "Created",
     "by": "by",
-    "Approve baseline": "Approve baseline"
+    "Approve baseline": "Approve baseline",
+    "Portfolio health": "Portfolio health",
+    "PROJECTS": "PROJECTS",
+    "Cost vs schedule performance": "Cost vs schedule performance",
+    "Top-right = under budget and ahead of schedule. Values clamped to 0.5–1.5.": "Top-right = under budget and ahead of schedule. Values clamped to 0.5–1.5.",
+    "Portfolio budget burn": "Portfolio budget burn",
+    "Planned": "Planned",
+    "Actual": "Actual",
+    "Milestones ahead": "Milestones ahead",
+    "Today": "Today",
+    "Projects — budget vs progress (bubble = risk)": "Projects — budget vs progress (bubble = risk)",
+    "risk": "risk"
   },
   "resources": {
     "Resource management": "Resource management",
@@ -318,6 +329,19 @@
     "Review tomorrow": "Review tomorrow",
     "Project Manager": "Project Manager",
     "Team member": "Team member",
-    "External": "External"
+    "External": "External",
+    "Earned value S-curve": "Earned value S-curve",
+    "Planned value": "Planned value",
+    "Earned value": "Earned value",
+    "Actual cost": "Actual cost",
+    "Today": "Today",
+    "Tasks by status": "Tasks by status",
+    "Budget performance": "Budget performance",
+    "Spent": "Spent",
+    "Budget": "Budget",
+    "Burnup — scope vs completed": "Burnup — scope vs completed",
+    "Completed": "Completed",
+    "Total scope": "Total scope",
+    "Ideal pace": "Ideal pace"
   }
 }

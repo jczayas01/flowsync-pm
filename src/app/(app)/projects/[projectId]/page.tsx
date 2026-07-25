@@ -27,7 +27,7 @@ export default async function ProjectDashboardPage({ params }: { params: { proje
         budgetTotal:true, budgetSpent:true, currency:true,
         programId:true,
         program: { select:{ id:true, name:true, portfolio:{ select:{ id:true, name:true } } } },
-        workspace: { select:{ id:true, name:true } },
+        workspace: { select:{ id:true, name:true, primaryColor:true, secondaryColor:true } },
       },
     }),
     db.task.findMany({
