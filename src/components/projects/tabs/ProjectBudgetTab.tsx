@@ -18,6 +18,27 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
 }) {
   // Budget automation #1: Auto earned value toggle (Project.autoEv)
   const [autoEv, setAutoEv] = useState<boolean>(project?.autoEv !== false)
+  // Budget automation #5: scan a receipt photo → AI drafts the expense
+  const [receiptBusyId, setReceiptBusyId] = useState<string | null>(null)
+  const [receiptMsg, setReceiptMsg] = useState("")
+  async function scanReceipt(itemId: string, file: File) {
+    setReceiptBusyId(itemId); setReceiptMsg("")
+    try {
+      const fd = new FormData(); fd.append("file", file)
+      const res = await fetch(`/api/projects/${projectId}/budget/${itemId}/receipt`, {
+        method: "POST",
+        headers: workspaceId ? { "x-workspace-id": workspaceId } : {},
+        body: fd,
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setReceiptMsg(d?.error || `Scan failed (${res.status})`); return }
+      const r = d.data
+      setReceiptMsg(`✓ ${r.vendor} — ${r.amount ? `$${Number(r.amount).toLocaleString()}` : "amount not detected, edit the expense"} posted${r.date ? ` (${r.date})` : ""}`)
+      window.location.reload()
+    } catch { setReceiptMsg("Scan failed — network error") }
+    finally { setReceiptBusyId(null) }
+  }
+
   async function toggleAutoEv(next: boolean) {
     setAutoEv(next)
     const res = await fetch(`/api/projects/${projectId}`, {
@@ -86,7 +107,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   const [editForm, setEditForm] = useState<any>({})
   const [saving,   setSaving]   = useState(false)
   const [addingItem, setAddingItem] = useState(false)
-  const [newItem,  setNewItem]  = useState({ description:"", category:"LABOR", plannedAmount:"", notes:"" })
+  const [newItem,  setNewItem]  = useState({ description:"", category:"LABOR", plannedAmount:"", notes:"", recurrence:false })
 
   async function saveEdit(itemId: string) {
     setSaving(true)
@@ -115,6 +136,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           description:   newItem.description,
           category:      newItem.category,
           plannedAmount: Number(newItem.plannedAmount)||0,
+          recurrence:    newItem.recurrence ? "MONTHLY" : null,
           actualAmount:  0,
         }),
       })
@@ -327,6 +349,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>
             Budget line items ({budgetItems.length})
+            {receiptMsg && <span style={{ marginLeft:10, fontSize:11, fontWeight:500,
+              color: receiptMsg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{receiptMsg}</span>}
           </span>
           {can("budget:edit") && (
           <div style={{ display:"flex", gap:8 }}>
@@ -517,6 +541,17 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               cursor:"pointer", fontFamily:"var(--font)", padding:"3px 10px" }}>
                               Edit
                             </button>
+                            <label title={t("Scan a receipt or invoice photo — AI posts the expense on this line")}
+                              style={{ fontSize:11, color:"var(--text-2)", background:"none",
+                                border:"1px solid var(--border)", borderRadius:4,
+                                cursor: receiptBusyId ? "wait" : "pointer",
+                                fontFamily:"var(--font)", padding:"3px 8px" }}>
+                              {receiptBusyId === item.id ? "…" : "🧾"}
+                              <input type="file" accept="image/png,image/jpeg,image/webp"
+                                style={{ display:"none" }} disabled={!!receiptBusyId}
+                                onChange={e => { const f = e.target.files?.[0]
+                                  if (f) scanReceipt(item.id, f); e.target.value = "" }} />
+                            </label>
                             <button onClick={()=>deleteItem(item.id)}
                               style={{ fontSize:11, color:"var(--red)", background:"none",
                                 border:"1px solid #FECACA", borderRadius:4,
@@ -551,7 +586,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       onChange={e=>setNewItem(f=>({...f,plannedAmount:e.target.value}))} />
                   </td>
                   <td style={{ padding:"6px 10px" }}>
-                    <span style={{ fontSize:12, color:"var(--text-4)" }}>$0</span>
+                    <label title="Post this amount as an expense automatically every month"
+                      style={{ display:"flex", alignItems:"center", gap:5, fontSize:11,
+                        color:"var(--text-3)", cursor:"pointer", whiteSpace:"nowrap" }}>
+                      <input type="checkbox" checked={newItem.recurrence}
+                        onChange={e=>setNewItem(f=>({...f,recurrence:e.target.checked}))} />
+                      {t("Monthly")}
+                    </label>
                   </td>
                   <td />
                   <td style={{ padding:"6px 10px" }}>

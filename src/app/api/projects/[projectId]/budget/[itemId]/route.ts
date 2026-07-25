@@ -27,6 +27,7 @@ async function syncProjectBudget(projectId: string) {
 
 
 const schema = z.object({
+  recurrence:    z.enum(["MONTHLY"]).optional().nullable(),
   description:   z.string().min(1).max(300).optional(),
   category:      z.string().optional(),
   plannedAmount: z.number().min(0).optional(),
@@ -51,6 +52,7 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
         ...(parsed.data.plannedAmount !== undefined && { plannedCost:parsed.data.plannedAmount }),
         ...(parsed.data.actualAmount  !== undefined && { actualCost:parsed.data.actualAmount }),
         ...(parsed.data.notes         !== undefined && { notes:parsed.data.notes }),
+        ...(parsed.data.recurrence    !== undefined && { recurrence:parsed.data.recurrence }),
       },
     })
     await syncProjectBudget(params!.projectId)

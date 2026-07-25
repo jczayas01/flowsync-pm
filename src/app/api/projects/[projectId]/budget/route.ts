@@ -50,6 +50,7 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
         category:    parsed.data.category as any,
         plannedCost: parsed.data.plannedAmount,
         actualCost:  parsed.data.actualAmount,
+        recurrence:  parsed.data.recurrence ?? null,
         earnedValue: 0,
         currency:    "USD",
         notes:       parsed.data.notes ?? null,

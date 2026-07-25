@@ -32,7 +32,7 @@ export default async function TeamSettingsPage() {
 
   return (
     <TeamSettingsView
-      members={members as any}
+      members={members.map(m => ({ ...m, costRate: m.costRate == null ? null : Number(m.costRate) })) as any}
       invitations={invitations as any}
       currentUserId={session.user.id}
       workspaceId={membership.workspaceId}

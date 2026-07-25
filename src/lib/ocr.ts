@@ -58,7 +58,7 @@ export async function monthlyOcrPagesUsed(workspaceId: string): Promise<number> 
   return rows.reduce((n, r) => n + (parseInt(r.action.split(":")[1] || "0", 10) || 0), 0)
 }
 
-async function recordOcrPages(workspaceId: string, userId: string, pages: number, docName: string) {
+export async function recordOcrPages(workspaceId: string, userId: string, pages: number, docName: string) {
   await db.auditLog.create({
     data: {
       workspaceId, userId,

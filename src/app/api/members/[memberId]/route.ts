@@ -9,7 +9,10 @@ import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, forbidden, parseBody, ApiContext } from "@/lib/api"
 
 const ADMINISH = ["SUPER_ADMIN", "OWNER", "ADMIN", "PMO_DIRECTOR"]
-const schema = z.object({ skills: z.array(z.string()) })
+const schema = z.object({
+  skills:   z.array(z.string()).optional(),
+  costRate: z.number().min(0).max(10000).optional().nullable(),
+})
 
 async function updateMember(ctx: ApiContext, params?: Record<string, string>) {
   const id = params?.memberId
@@ -23,11 +26,21 @@ async function updateMember(ctx: ApiContext, params?: Record<string, string>) {
 
   const parsed = await parseBody(ctx.req, schema)
   if ("error" in parsed) return parsed.error
-  const skills = Array.from(new Set(parsed.data.skills.map((s: string) => s.trim()).filter(Boolean))) as string[]
+  const d = parsed.data
+
+  // Cost rate is money-sensitive: admin-tier only, never self-service.
+  if (d.costRate !== undefined && !ADMINISH.includes(ctx.userRole as any)) return forbidden()
+
+  const data: any = {}
+  if (d.skills !== undefined) {
+    data.skills = Array.from(new Set(d.skills.map((s: string) => s.trim()).filter(Boolean)))
+  }
+  if (d.costRate !== undefined) data.costRate = d.costRate
+
   const updated = await db.workspaceMember.update({
-    where: { id }, data: { skills }, select: { id: true, skills: true },
+    where: { id }, data, select: { id: true, skills: true, costRate: true },
   })
-  return ok(updated)
+  return ok({ ...updated, costRate: updated.costRate == null ? null : Number(updated.costRate) })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { memberId: string } }) {

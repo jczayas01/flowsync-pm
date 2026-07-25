@@ -54,6 +54,19 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
     finally { setInviting(false) }
   }
 
+  // Budget automation #4: default hourly cost rate per member (admin only)
+  const [rateDraft, setRateDraft] = useState<Record<string,string>>({})
+  async function saveRate(memberId: string, raw: string) {
+    const v = raw.trim() === "" ? null : Number(raw)
+    if (v !== null && (isNaN(v) || v < 0)) return
+    const res = await fetch(`/api/members/${memberId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ costRate: v }),
+    })
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d.error || "Couldn't save rate.") }
+    else router.refresh()
+  }
+
   async function updateRole(userId:string, newRole:string) {
     const prev = mem.find(m => m.userId===userId)?.role
     setMem(ms => ms.map(m => m.userId===userId ? { ...m, role:newRole } : m))
@@ -262,6 +275,17 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                 </select>
               ) : (
                 <Badge variant={ROLE_COLORS[m.role] || "gray"}>{ROLE_LABELS[m.role] || m.role}</Badge>
+              )}
+              {canManage && (
+                <input
+                  title="Hourly cost rate — time entries × this rate post to the project budget nightly"
+                  placeholder="$/h"
+                  defaultValue={m.costRate ?? ""}
+                  onBlur={e => { const v = e.target.value
+                    if (v !== String(m.costRate ?? "")) saveRate(m.id, v) }}
+                  onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+                  style={{ width:58, padding:"4px 7px", border:"1px solid var(--border)",
+                    borderRadius:5, fontSize:12, fontFamily:"var(--font)", textAlign:"right" }} />
               )}
               {canManage && m.userId !== currentUserId && (
                 <button onClick={() => removeMember(m.userId)}

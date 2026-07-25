@@ -219,6 +219,7 @@ model WorkspaceMember {
   workspaceId String
   userId      String
   role        UserRole  @default(MEMBER)
+  costRate  Decimal? @db.Decimal(10, 2)   // default hourly cost for labor actuals
   joinedAt    DateTime  @default(now())
   invitedBy   String?
   skills      String[]  @default([])
@@ -885,6 +886,8 @@ model BudgetItem {
   plannedCost Decimal        @db.Decimal(15, 2)
   actualCost  Decimal        @default(0) @db.Decimal(15, 2)
   earnedValue Decimal        @default(0) @db.Decimal(15, 2)
+  recurrence  String?        // "MONTHLY" — cron posts plannedCost each cycle
+  lastRecurredAt DateTime?
   currency    String         @default("USD")
   periodStart DateTime?
   periodEnd   DateTime?
@@ -1074,6 +1077,7 @@ model TimeEntry {
   date        DateTime
   billable    Boolean  @default(true)
   hourlyRate  Decimal? @db.Decimal(10, 2)
+  costPostedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
