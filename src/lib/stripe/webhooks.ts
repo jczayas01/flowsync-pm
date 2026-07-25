@@ -1,3 +1,4 @@
+import { OCR_PACK_PRICE_ID } from "@/lib/stripe/client"
 // src/lib/stripe/webhooks.ts
 // Handles all incoming Stripe webhook events
 // This is the authoritative source for subscription state changes
@@ -73,12 +74,17 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   const priceId = sub.items.data[0]?.price.id
   const plan    = priceId ? getPlanByStripePrice(priceId) : null
   const seats   = sub.items.data[0]?.quantity || 1
+  // OCR add-on packs: quantity of the OCR price line item (0 when absent)
+  const ocrPacks = OCR_PACK_PRICE_ID
+    ? (sub.items.data.find(i => i.price.id === OCR_PACK_PRICE_ID)?.quantity ?? 0)
+    : undefined
 
   await db.workspace.update({
     where: { id: workspaceId },
     data: {
       ...(plan && { plan: plan.id }),
       seats,
+      ...(ocrPacks !== undefined && { ocrPageAddons: ocrPacks }),
       stripeSubscriptionId: sub.id,
       planRenewsAt:         new Date(sub.current_period_end * 1000),
       trialEndsAt:          sub.trial_end ? new Date(sub.trial_end * 1000) : null,

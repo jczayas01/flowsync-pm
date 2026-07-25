@@ -4,6 +4,7 @@ import { sendGAEvent } from "@next/third-parties/google"
 import { useState } from "react"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 import { STARTER_LIMITS, BUSINESS_LIMITS, ENTERPRISE_LIMITS } from "@/lib/stripe/plan-limits"
+import { OcrPacksCard } from "./OcrPacksCard"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", SLATE = "#64748B"
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
@@ -178,6 +179,9 @@ export function BillingView({
           </div>
         )}
       </div>
+
+      {/* ── OCR add-on packs ── */}
+      <OcrPacksCard />
 
       {/* ── Plans — the same four tiers as everywhere else ── */}
       <div style={{ fontSize:11, fontWeight:700, color:SLATE, textTransform:"uppercase",

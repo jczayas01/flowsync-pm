@@ -179,6 +179,7 @@ model Workspace {
   accentColor          String                @default("#F59E0B")
   stripeCustomerId     String?               @unique
   stripeSubscriptionId String?               @unique
+  ocrPageAddons        Int                   @default(0)
   trialEndsAt          DateTime?
   planRenewsAt         DateTime?
   seats                Int                   @default(1)

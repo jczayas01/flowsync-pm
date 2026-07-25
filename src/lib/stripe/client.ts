@@ -185,3 +185,7 @@ export function getPlanByStripePrice(priceId: string): Plan | null {
   }
   return null
 }
+
+// ── OCR add-on pack: +200 AI-read pages/month, stackable, $10/mo per pack ──
+export const OCR_PACK_PRICE_ID = process.env.STRIPE_PRICE_OCR_PACK_MONTHLY || null
+export const OCR_PACK_PRICE_MONTHLY = 1000 // cents

@@ -86,7 +86,7 @@ export async function POST(
           failed.push({ name: d.name, reason: "scanned PDF — AI reading of scans is included in the Business plan" })
           continue
         } else if (ocr.reason === "cap") {
-          failed.push({ name: d.name, reason: `scanned PDF — monthly ${OCR_MONTHLY_PAGE_CAP}-page AI-read limit reached` })
+          failed.push({ name: d.name, reason: `scanned PDF — you've used ${(ocr as any).used} of your ${(ocr as any).cap} AI-read pages this month. Add 200 more for $10/mo in Settings → Billing.` })
           continue
         } else {
           failed.push({ name: d.name, reason: "scanned PDF — AI couldn't read these pages" })

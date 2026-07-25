@@ -19,7 +19,29 @@ import { db } from "@/lib/db"
 import { PLANS, type PlanId } from "@/lib/stripe/client"
 
 export const OCR_DOC_PAGE_CAP     = 15    // pages read per document per run
-export const OCR_MONTHLY_PAGE_CAP = 200   // pages per workspace per calendar month
+export const OCR_MONTHLY_PAGE_CAP = 200   // base pages per workspace per calendar month
+export const OCR_PACK_PAGES       = 200   // pages added per purchased add-on pack
+
+/**
+ * Effective monthly cap for a workspace:
+ *  - Enterprise: the CLM contract's custom ocrPageCap when set, else the base.
+ *  - Everyone else: base + 200 per purchased add-on pack (Workspace.ocrPageAddons).
+ */
+export async function resolveOcrCap(workspaceId: string, plan: string): Promise<number> {
+  if (plan === "ENTERPRISE") {
+    const contract = await db.customerContract.findFirst({
+      where:   { workspaceId, status: "ACTIVE", ocrPageCap: { not: null } },
+      orderBy: { endDate: "desc" },
+      select:  { ocrPageCap: true },
+    }).catch(() => null)
+    if (contract?.ocrPageCap) return contract.ocrPageCap
+    return OCR_MONTHLY_PAGE_CAP
+  }
+  const ws = await db.workspace.findUnique({
+    where: { id: workspaceId }, select: { ocrPageAddons: true },
+  }).catch(() => null)
+  return OCR_MONTHLY_PAGE_CAP + OCR_PACK_PAGES * (ws?.ocrPageAddons || 0)
+}
 const PAGES_PER_CALL = 4                  // vision images per Claude request
 
 export function ocrAllowed(plan: string): boolean {
@@ -108,7 +130,8 @@ async function transcribePages(pages: Buffer[], docName: string): Promise<string
 
 export type OcrOutcome =
   | { ok: true;  text: string; pagesRead: number; truncated: boolean }
-  | { ok: false; reason: "plan" | "cap" | "failed" }
+  | { ok: false; reason: "plan" | "failed" }
+  | { ok: false; reason: "cap"; used: number; cap: number }
 
 /**
  * OCR a scanned PDF, enforcing plan + caps. Call only after normal text
@@ -120,10 +143,11 @@ export async function ocrScannedPdf(opts: {
 }): Promise<OcrOutcome> {
   if (!ocrAllowed(opts.plan)) return { ok: false, reason: "plan" }
 
+  const cap  = await resolveOcrCap(opts.workspaceId, opts.plan)
   const used = await monthlyOcrPagesUsed(opts.workspaceId)
-  if (used >= OCR_MONTHLY_PAGE_CAP) return { ok: false, reason: "cap" }
+  if (used >= cap) return { ok: false, reason: "cap", used, cap }
 
-  const budget = Math.min(OCR_DOC_PAGE_CAP, OCR_MONTHLY_PAGE_CAP - used)
+  const budget = Math.min(OCR_DOC_PAGE_CAP, cap - used)
   try {
     const pages = await renderPages(opts.buf, budget)
     if (!pages.length) return { ok: false, reason: "failed" }
