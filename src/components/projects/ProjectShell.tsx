@@ -173,6 +173,7 @@ export function ProjectShell({ project, userRole, children }:{
               title="Change project status"
               style={{ fontSize:10, fontWeight:600, padding:"3px 6px", borderRadius:4,
                 border:"1px solid var(--border)", background:"#fff", color:"var(--text-2)",
+                flexShrink:0, minWidth:74,
                 cursor: statusBusy ? "wait" : "pointer", fontFamily:"var(--font)" }}>
               {["ACTIVE","ON_HOLD","COMPLETED","CANCELLED","ARCHIVED"].map(v => (
                 <option key={v} value={v}>{tTabs((STATUS_META[v]?.label||v) as any)}</option>
@@ -183,9 +184,12 @@ export function ProjectShell({ project, userRole, children }:{
           {(status === "DRAFT" || status === "PENDING_APPROVAL") && myLevel >= 68 && (
             <select value="" onChange={e => e.target.value && changeStatus(e.target.value)} disabled={statusBusy}
               title="Admin override — set status directly"
-              style={{ fontSize:10, padding:"3px 4px", borderRadius:4,
+              style={{ fontSize:13, fontWeight:700, padding:0, borderRadius:6,
                 border:"1px solid var(--border)", background:"#fff", color:"var(--text-3)",
-                cursor:"pointer", fontFamily:"var(--font)", width:26 }}>
+                cursor:"pointer", fontFamily:"var(--font)",
+                width:28, height:24, lineHeight:"22px", textAlign:"center",
+                textAlignLast:"center", flexShrink:0,
+                appearance:"none", WebkitAppearance:"none", MozAppearance:"none" } as any}>
               <option value="">⋮</option>
               {["ACTIVE","ON_HOLD","CANCELLED","ARCHIVED"].map(v => (
                 <option key={v} value={v}>{tTabs((STATUS_META[v]?.label||v) as any)}</option>
