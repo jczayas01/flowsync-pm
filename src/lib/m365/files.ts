@@ -27,7 +27,13 @@ async function gfetch(userId: string, path: string): Promise<any> {
   if (res.status === 403) throw Object.assign(new Error("needs_reconnect"), { code: "needs_reconnect" })
   if (!res.ok) {
     const e = await res.json().catch(() => ({}))
-    throw Object.assign(new Error(e?.error?.message || `Graph ${res.status}`), { code: "graph_error" })
+    const msg = e?.error?.message || `Graph ${res.status}`
+    // Personal Microsoft accounts have no SharePoint — Graph's sites API
+    // rejects them with an MSA error. Surface it as a capability, not a fault.
+    if (/MSA accounts/i.test(msg)) {
+      throw Object.assign(new Error("msa_no_sharepoint"), { code: "msa_no_sharepoint" })
+    }
+    throw Object.assign(new Error(msg), { code: "graph_error" })
   }
   return res.json()
 }

@@ -69,8 +69,8 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
 
   function switchTab(t: "onedrive" | "sharepoint") {
     setTab(t); setSel({}); setItems([]); setError("")
-    if (t === "onedrive") { setSites(null); setDrives(null); openOneDrive() }
-    else loadSites()
+    if (t === "onedrive") { setSites(null); setDrives(null); setCrumbs([{ label: "OneDrive" }]); openOneDrive() }
+    else { setCrumbs([{ label: "SharePoint" }]); loadSites() }
   }
 
   function crumbTo(i: number) {

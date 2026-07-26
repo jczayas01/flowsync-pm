@@ -47,6 +47,9 @@ async function get(ctx: ApiContext) {
     if (e?.code === "not_connected") {
       return err("Microsoft 365 is not connected. Connect it in Settings → Integrations.", 409)
     }
+    if (e?.code === "msa_no_sharepoint") {
+      return err("SharePoint is available with work or school Microsoft accounts. Personal accounts (outlook.com, hotmail.com) include OneDrive only — use the OneDrive tab.", 400)
+    }
     if (e?.code === "needs_reconnect") {
       return err("Your Microsoft connection predates file access. Reconnect in Settings → Integrations to grant it.", 409)
     }
