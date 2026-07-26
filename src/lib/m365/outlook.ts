@@ -33,7 +33,7 @@ const SIGNAL_PATTERNS = {
 export async function detectProjectEmails(
   userId:    string,
   projectIds?: string[]
-): Promise<DetectedEmailUpdate[]> {
+, opts?: { days?: number; unreadOnly?: boolean }): Promise<DetectedEmailUpdate[]> {
   const graph = await GraphClient.forUser(userId)
   if (!graph) return []
 
@@ -49,12 +49,15 @@ export async function detectProjectEmails(
 
   if (!projects.length) return []
 
-  // Fetch emails from last 7 days
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  // Window is user-selectable (7/14/30 days); optional unread-only filter.
+  const days = Math.min(30, Math.max(1, opts?.days ?? 7))
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  const filter = `receivedDateTime ge ${since}` +
+    (opts?.unreadOnly ? ` and isRead eq false` : ``)
 
   const emails = await graph.get<{ value: any[] }>(
-    `/me/messages?$filter=receivedDateTime ge ${since}` +
-    `&$select=id,subject,from,receivedDateTime,bodyPreview,body` +
+    `/me/messages?$filter=${filter}` +
+    `&$select=id,subject,from,receivedDateTime,bodyPreview,body,isRead` +
     `&$top=50&$orderby=receivedDateTime desc`
   )
 

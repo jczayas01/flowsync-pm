@@ -78,11 +78,13 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
   const [applied, setApplied] = useState<Record<string,string>>({})
   const [connLost, setConnLost] = useState(false)
   const [syncedAt, setSyncedAt] = useState<string>("")
+  const [days, setDays] = useState(7)
+  const [unreadOnly, setUnreadOnly] = useState(false)
 
   async function syncNow() {
     setSyncing(true); setError("")
     try {
-      const res = await fetch("/api/m365/sync")
+      const res = await fetch(`/api/m365/sync?days=${days}&unread=${unreadOnly ? 1 : 0}`)
       const d   = await res.json().catch(() => ({}))
       if (!res.ok) {
         setError(d?.error || (res.status === 503
@@ -101,7 +103,7 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
   async function apply(it: Item) {
     if (!it.projectId) return
     setApplied(a => ({ ...a, [it.id]: "…" }))
-    const res = await fetch("/api/m365/sync", {
+    const res = await fetch(`/api/m365/sync?days=${days}&unread=${unreadOnly ? 1 : 0}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: it.kind, entityId: it.id, projectId: it.projectId, action: it.action, data: it.data }),
     })
@@ -123,6 +125,22 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
             {syncedAt && ` · Last sync ${syncedAt}`}
           </div>
         </div>
+        <select value={days} onChange={e => setDays(Number(e.target.value))}
+          title="How far back to scan your mailbox"
+          style={{ fontSize:12, padding:"5px 8px", borderRadius:7,
+            border:"1px solid var(--border,#E2E8F0)", background:"#fff",
+            color:"var(--text-2)", cursor:"pointer", fontFamily:"var(--font)" }}>
+          <option value={7}>Last 7 days</option>
+          <option value={14}>Last 14 days</option>
+          <option value={30}>Last 30 days</option>
+        </select>
+        <label title="Only messages you haven't opened yet"
+          style={{ display:"flex", alignItems:"center", gap:5, fontSize:12,
+            color:"var(--text-2)", cursor:"pointer", userSelect:"none" }}>
+          <input type="checkbox" checked={unreadOnly}
+            onChange={e => setUnreadOnly(e.target.checked)} />
+          Unread only
+        </label>
         <button onClick={syncNow} disabled={syncing}
           style={{ padding:"9px 18px", background: syncing ? "#94A3B8" : STEEL, color:"#fff",
             border:"none", borderRadius:8, fontSize:12.5, fontWeight:700,

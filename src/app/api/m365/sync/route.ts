@@ -29,7 +29,10 @@ async function syncM365(ctx: ApiContext) {
     return err("M365 integration is not enabled", 503)
   }
 
-  const payload = await runFullSync(ctx.userId)
+  const payload = await runFullSync(ctx.userId, {
+    days: Number(new URL(ctx.req.url).searchParams.get("days")) || undefined,
+    unreadOnly: new URL(ctx.req.url).searchParams.get("unread") === "1",
+  })
   return ok(payload)
 }
 

@@ -22,7 +22,7 @@ export interface SyncPayload {
  * Run a full M365 sync for a user and surface all detected updates.
  * Returns structured data for the "Smart inbox" UI.
  */
-export async function runFullSync(userId: string): Promise<SyncPayload> {
+export async function runFullSync(userId: string, opts?: { days?: number; unreadOnly?: boolean }): Promise<SyncPayload> {
   // Honest failure: if the token is dead (expired, revoked, no refresh token),
   // say so instead of returning an empty result that reads as "no mail".
   const token = await getGraphToken(userId)
@@ -31,7 +31,7 @@ export async function runFullSync(userId: string): Promise<SyncPayload> {
   }
 
   const [emails, meetings, chats] = await Promise.allSettled([
-    detectProjectEmails(userId),
+    detectProjectEmails(userId, opts),
     detectProjectMeetings(userId),
     detectProjectChatMentions(userId),
   ])
