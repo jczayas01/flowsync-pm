@@ -30,7 +30,7 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
   const [error, setError] = useState("")
   const [importing, setImporting] = useState<string>("")
 
-  const H = workspaceId ? { "x-workspace-id": workspaceId } : {}
+  const H: Record<string, string> = workspaceId ? { "x-workspace-id": workspaceId } : {}
 
   async function api(qs: string) {
     setLoading(true); setError("")
