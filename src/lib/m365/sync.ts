@@ -31,7 +31,7 @@ export async function runFullSync(userId: string, opts?: { days?: number; unread
   }
 
   const [emails, meetings, chats] = await Promise.allSettled([
-    detectProjectEmails(userId, opts),
+    detectProjectEmails(userId, undefined, opts),
     detectProjectMeetings(userId),
     detectProjectChatMentions(userId),
   ])

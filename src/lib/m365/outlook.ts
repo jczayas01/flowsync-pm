@@ -31,9 +31,10 @@ const SIGNAL_PATTERNS = {
  * and detect which ones relate to their projects.
  */
 export async function detectProjectEmails(
-  userId:    string,
-  projectIds?: string[]
-, opts?: { days?: number; unreadOnly?: boolean }): Promise<DetectedEmailUpdate[]> {
+  userId:      string,
+  projectIds?: string[],
+  opts?:       { days?: number; unreadOnly?: boolean },
+): Promise<DetectedEmailUpdate[]> {
   const graph = await GraphClient.forUser(userId)
   if (!graph) return []
 
