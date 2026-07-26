@@ -2,6 +2,7 @@
 // src/components/projects/tabs/ProjectDocsTab.tsx
 // Three-panel Docs tab: Files | Project Brief | AI Analyzer
 import { DateField } from "@/components/shared/DatePicker"
+import { M365ImportModal } from "@/components/projects/M365ImportModal"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -104,6 +105,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [dragOver, setDragOver] = useState(false)
+  const [m365Open, setM365Open] = useState(false)
 
   // Uploads any number of files sequentially; used by the picker (now
   // multi-select) and by drag-and-drop onto the Files area.
@@ -429,7 +431,15 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
             <div style={{ marginLeft:"auto" }}>
               <input ref={fileRef} type="file" multiple style={{ display:"none" }} onChange={handleUpload}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.msg,.vtt,.json,.xml,.log,.jpg,.jpeg,.png,.gif,.webp" />
-              <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              <button onClick={() => setM365Open(true)}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px",
+                background:"#fff", color:"var(--text-1)", border:"1px solid var(--border)",
+                borderRadius:"var(--radius)", fontSize:13, fontWeight:600, cursor:"pointer",
+                fontFamily:"var(--font)" }}>
+              <svg width="14" height="14" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+              Import from 365
+            </button>
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
                 style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                   cursor:uploading?"wait":"pointer", fontFamily:"var(--font)" }}>
@@ -458,7 +468,12 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
             ) : (
               <>
               {/* Inline PDF Viewer */}
-              {viewingPdf && (
+              {m365Open && (
+        <M365ImportModal projectId={projectId} workspaceId={workspaceId}
+          onClose={() => setM365Open(false)}
+          onImported={docs => { setFiles(f => [...docs, ...f]); router.refresh() }} />
+      )}
+      {viewingPdf && (
                 <div style={{ marginBottom:16, background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", overflow:"hidden" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px",

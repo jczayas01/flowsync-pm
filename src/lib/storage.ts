@@ -76,6 +76,16 @@ export async function uploadFile(
   return { path }
 }
 
+/** Upload raw bytes (server-side imports). */
+export async function uploadBuffer(
+  buffer: Buffer,
+  path: string,
+  contentType: string,
+): Promise<{ path: string; error?: string }> {
+  return uploadFile(new Blob([new Uint8Array(buffer)], { type: contentType }), path, contentType)
+}
+
+
 export async function deleteFile(ref: string): Promise<void> {
   const path = refToPath(ref)
   if (path) await supabase.storage.from(BUCKET).remove([path])

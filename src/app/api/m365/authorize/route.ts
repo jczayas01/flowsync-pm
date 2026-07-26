@@ -21,6 +21,8 @@ const USER_CONSENT_SCOPES = [
   "Calendars.Read",         // detect project meetings
   "OnlineMeetings.Read",    // Teams meeting metadata
   "Tasks.ReadWrite",        // Planner / To Do sync
+  "Files.Read.All",         // OneDrive + shared files (document import)
+  "Sites.Read.All",         // SharePoint site libraries (document import)
 ]
 
 export async function GET(req: NextRequest) {
