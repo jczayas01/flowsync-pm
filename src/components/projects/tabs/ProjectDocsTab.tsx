@@ -398,6 +398,12 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
         ))}
       </div>
 
+      {m365Open && (
+        <M365ImportModal projectId={projectId} workspaceId={workspaceId}
+          onClose={() => setM365Open(false)}
+          onImported={docs => { setFiles(f => [...docs, ...f]); router.refresh() }} />
+      )}
+
       {/* ── FILES TAB ── */}
       {tab === "files" && (
         <div
@@ -464,15 +470,20 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                     fontFamily:"var(--font)" }}>
                   Upload first file
                 </button>
+                <div style={{ marginTop:10 }}>
+                  <button onClick={() => setM365Open(true)}
+                    style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"9px 16px",
+                      background:"#fff", color:"var(--text-1)", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:13, fontWeight:600, cursor:"pointer",
+                      fontFamily:"var(--font)" }}>
+                    <svg width="13" height="13" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+                    Import from Microsoft 365
+                  </button>
+                </div>
               </div>
             ) : (
               <>
               {/* Inline PDF Viewer */}
-              {m365Open && (
-        <M365ImportModal projectId={projectId} workspaceId={workspaceId}
-          onClose={() => setM365Open(false)}
-          onImported={docs => { setFiles(f => [...docs, ...f]); router.refresh() }} />
-      )}
       {viewingPdf && (
                 <div style={{ marginBottom:16, background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", overflow:"hidden" }}>
