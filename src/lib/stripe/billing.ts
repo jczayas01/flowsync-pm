@@ -156,15 +156,32 @@ export async function createPortalSession(
 ): Promise<string> {
   const workspace = await db.workspace.findUnique({
     where:  { id: workspaceId },
-    select: { stripeCustomerId: true },
+    select: { stripeCustomerId: true, stripeSubscriptionId: true },
   })
 
-  if (!workspace?.stripeCustomerId) {
-    throw new Error("No Stripe customer found for this workspace")
+  let customerId = workspace?.stripeCustomerId || null
+
+  // Self-heal: derive the customer from the stored subscription when the
+  // id was never persisted (older webhook builds didn't store it).
+  if (!customerId && workspace?.stripeSubscriptionId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(workspace.stripeSubscriptionId)
+      customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id || null
+      if (customerId) {
+        await db.workspace.update({
+          where: { id: workspaceId },
+          data:  { stripeCustomerId: customerId },
+        }).catch(() => {})
+      }
+    } catch { /* fall through to the explicit error */ }
+  }
+
+  if (!customerId) {
+    throw new Error("No Stripe customer found for this workspace — subscribe first, then billing management unlocks.")
   }
 
   const session = await stripe.billingPortal.sessions.create({
-    customer:   workspace.stripeCustomerId,
+    customer:   customerId,
     return_url: returnUrl,
   })
 

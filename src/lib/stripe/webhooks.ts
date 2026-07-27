@@ -37,6 +37,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     where: { id: workspaceId },
     data: {
       plan:                    planId,
+      stripeCustomerId:        (typeof sub.customer === "string" ? sub.customer : sub.customer?.id) || undefined,
       stripeSubscriptionId:    subId,
       planRenewsAt:            new Date(sub.current_period_end * 1000),
       trialEndsAt:             sub.trial_end ? new Date(sub.trial_end * 1000) : null,
