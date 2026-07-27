@@ -121,7 +121,8 @@ export function BillingView({
     try {
       const res = await fetch("/api/stripe/portal", { method:"POST" })
       const d = await res.json().catch(() => ({}))
-      if (d?.url) window.location.href = d.url
+      const url = d?.data?.url || d?.url
+      if (url) window.location.href = url
       else alert(d?.error || `Billing portal isn't available yet (HTTP ${res.status}).`)
     } finally { setBusy(false) }
   }
