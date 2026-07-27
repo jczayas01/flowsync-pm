@@ -190,10 +190,26 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
             <div>
               {/* Summary strip */}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-                <span style={{ fontSize: 12, padding: "5px 12px", background: "#EFF6FF",
-                  border: "1px solid #BFDBFE", borderRadius: 14, color: "var(--steel)", fontWeight: 600 }}>
-                  📄 {data.sourceFile}
-                </span>
+                {allFiles.length > 1 ? (
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12,
+                    padding: "3px 8px 3px 12px", background: "#EFF6FF",
+                    border: "1px solid #BFDBFE", borderRadius: 14, color: "var(--steel)", fontWeight: 600 }}
+                    title="The AI built this preview from the selected document — switch to rebuild from another (e.g. your project plan). Every file still gets attached to Docs.">
+                    📄 Built from:
+                    <select
+                      value={allFiles.findIndex(f => f.name === data.sourceFile)}
+                      onChange={e => { const f = allFiles[Number(e.target.value)]; if (f) analyze(f) }}
+                      style={{ border: "none", background: "transparent", color: "var(--steel)",
+                        fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "var(--font)" }}>
+                      {allFiles.map((f, i) => <option key={f.name + i} value={i}>{f.name}</option>)}
+                    </select>
+                  </label>
+                ) : (
+                  <span style={{ fontSize: 12, padding: "5px 12px", background: "#EFF6FF",
+                    border: "1px solid #BFDBFE", borderRadius: 14, color: "var(--steel)", fontWeight: 600 }}>
+                    📄 {data.sourceFile}
+                  </span>
+                )}
                 {Object.keys(SECTION_META).map(sec => (
                   <span key={sec} style={{ fontSize: 12, padding: "5px 12px", background: "var(--surface)",
                     border: "1px solid var(--border)", borderRadius: 14, color: "var(--text-2)" }}>
