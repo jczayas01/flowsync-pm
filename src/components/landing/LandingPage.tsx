@@ -89,7 +89,7 @@ const FEATURES = [
 const PLANS = [
   { name:"Trial", price:0, suffix:"", featured:false,
     tagline:"Two months free, the whole product.",
-    note:"No card required. Subscribe any time during the trial — you keep every remaining free day.",
+    note:"Launch offer, limited time: two full months free. No card required. Subscribe any time during the trial — you keep every remaining free day.",
     features:["Everything unlocked","Unlimited projects","AI document import","Bilingual EN / ES"],
     cta:"Start free trial" },
   { name:"Starter", price:19, suffix:"/user/mo", featured:false,
@@ -209,6 +209,9 @@ export default function LandingPage() {
     <div ref={rootRef} style={{ background:"#fff", color:INK, fontFamily:"var(--font)" }}>
       <style>{`
         h1, h2, .fs-display { font-family: ${displayFont.style.fontFamily}, var(--font); }
+        .fs-offer-dot { animation: fsOffer 2s ease-in-out infinite; }
+        @keyframes fsOffer { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+        @media (prefers-reduced-motion: reduce) { .fs-offer-dot { animation:none } }
         .fs-hero { display:grid; grid-template-columns:1fr; gap:48px; align-items:center; }
         .fs-spark path.fs-draw { stroke-dasharray: 340; stroke-dashoffset: 340;
           animation: fsDraw 2.4s cubic-bezier(.25,.6,.3,1) .4s forwards; }
@@ -384,11 +387,12 @@ export default function LandingPage() {
             {/* Left */}
             <div>
               <div className="fs-l1" style={{ display:"inline-flex", alignItems:"center", gap:7, marginBottom:22,
-                padding:"5px 12px", borderRadius:100, background:"rgba(5,150,105,.14)",
-                border:"1px solid rgba(5,150,105,.3)" }}>
-                <span style={{ width:6, height:6, borderRadius:"50%", background:"#34D399" }} />
-                <span style={{ fontSize:11.5, fontWeight:600, color:"#34D399", letterSpacing:".02em" }}>
-                  Live now · Free for two months
+                padding:"5px 12px", borderRadius:100, background:"rgba(245,158,11,.10)",
+                border:"1px solid rgba(245,158,11,.45)" }}>
+                <span className="fs-offer-dot" style={{ width:6, height:6, borderRadius:"50%",
+                  background:AMBER, boxShadow:`0 0 8px ${AMBER}` }} />
+                <span style={{ fontSize:11.5, fontWeight:700, color:AMBER, letterSpacing:".04em" }}>
+                  Launch offer · 2 months free — limited time
                 </span>
               </div>
 
@@ -410,7 +414,7 @@ export default function LandingPage() {
                   <Link href="/auth/signup" className="fs-cta"
                     style={{ padding:"14px 26px", background:AMBER, color:NAVY, borderRadius:10,
                       fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
-                    Start free trial →
+                    Start 2-month free trial →
                   </Link>
                   <button onClick={() => setDemoOpen(true)} className="fs-ghost"
                     style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
