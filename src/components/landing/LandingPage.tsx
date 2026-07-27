@@ -87,7 +87,7 @@ const FEATURES = [
 ]
 
 const PLANS = [
-  { name:"Trial", price:0, suffix:"", featured:false,
+  { name:"Trial", price:0, suffix:"", featured:false, ribbon:"Launch offer · Limited time",
     tagline:"Two months free, the whole product.",
     note:"Launch offer, limited time: two full months free. No card required. Subscribe any time during the trial — you keep every remaining free day.",
     features:["Everything unlocked","Unlimited projects","AI document import","Bilingual EN / ES"],
@@ -818,6 +818,13 @@ export default function LandingPage() {
                   <div style={{ background:AMBER, color:NAVY, textAlign:"center", padding:"5px",
                     fontSize:10.5, fontWeight:800, letterSpacing:".08em", textTransform:"uppercase" }}>
                     Most popular
+                  </div>
+                )}
+                {(p as any).ribbon && (
+                  <div style={{ background:"rgba(245,158,11,.12)", color:"#B45309",
+                    borderBottom:`1px solid rgba(245,158,11,.35)`, textAlign:"center", padding:"5px",
+                    fontSize:10.5, fontWeight:800, letterSpacing:".08em", textTransform:"uppercase" }}>
+                    {(p as any).ribbon}
                   </div>
                 )}
                 <div style={{ padding:"22px 22px 0" }}>
