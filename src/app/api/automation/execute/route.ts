@@ -9,6 +9,7 @@ import { processTrigger } from "@/lib/automation/engine"
 import { reconcileAllEV } from "@/lib/evm-auto"
 import { runContractAlerts } from "@/lib/contract-alerts"
 import { postRecurringBudgetItems, postLaborActuals } from "@/lib/budget-cron"
+import { sendVerificationReminders } from "@/lib/verify-reminder"
 import { runScheduledScans } from "@/lib/automation/engine"
 import type { TriggerEvent } from "@/lib/automation/types"
 
@@ -43,7 +44,8 @@ export async function GET(req: NextRequest) {
   await reconcileAllEV().catch(() => {})
   await runContractAlerts().catch(() => {})
   await postRecurringBudgetItems().catch(() => {})
-  await postLaborActuals().catch(() => {}).catch(e => {
+  await postLaborActuals().catch(() => {})
+  await sendVerificationReminders().catch(() => {}).catch(e => {
     console.error("[Automation] scheduled scan failed", e); return null
   })
   return NextResponse.json({ ok: !!counts, counts })
