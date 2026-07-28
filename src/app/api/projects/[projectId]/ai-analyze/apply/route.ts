@@ -190,6 +190,30 @@ export async function POST(
         }})
         created.push({ type: "decision", code, title: item.title })
         await recordLedger("decision", code, null, item.title, fp)
+      } else if (t === "change_request") {
+        const code = await nextCode("changeRequest" as any, params.projectId, "CR")
+        await db.changeRequest.create({ data: {
+          projectId: params.projectId,
+          code,
+          title: item.title,
+          description: item.description || "",
+          status: "SUBMITTED",
+          requestedById: session.user.id,
+        }})
+        created.push({ type: "change_request", code, title: item.title })
+        await recordLedger("change_request", code, null, item.title, fp)
+      } else if (t === "lesson") {
+        await db.lessonLearned.create({ data: {
+          projectId: params.projectId,
+          title: item.title,
+          category: "EXECUTION",
+          situation: item.description || item.title,
+          lesson: item.description || item.title,
+          recommendation: item.description || item.title,
+          createdById: session.user.id,
+        }})
+        created.push({ type: "lesson", code: "L", title: item.title })
+        await recordLedger("lesson", "L", null, item.title, fp)
       } else if (t === "milestone") {
         const due = parseDate(item.suggested_due_date)
         if (!due) { failed.push({ title: item.title, reason: "milestone needs a date — add it manually with a due date" }); continue }

@@ -46,12 +46,13 @@ Project context:
 
 Analyze this content and extract structured information. Include at most the 8 most important suggestions, and keep every string value under 30 words.
 Use type "decision" when the content asks for or records a formal decision (approvals, go/no-go, sign-offs). Use type "milestone" for dated delivery checkpoints (suggested_due_date required for milestones).
+Use type "change_request" when the document IS or contains a formal change request (scope/budget/schedule change needing approval) — one suggestion for the CR itself, with the requested amount or change in the description. Use type "lesson" for lessons-learned recommendations from past projects (one suggestion per distinct lesson; description = the recommendation).
 If the content is a meeting transcript or meeting notes, include exactly ONE suggestion of type "meeting_minutes" (title = meeting name, description = 2-3 sentence discussion summary, meeting_date and attendees filled from the content) so the meeting itself is filed, in addition to any tasks/risks it produced. Respond ONLY with valid JSON matching this schema exactly:
 {
   "summary": "2-3 sentence summary of what this content is about",
   "suggestions": [
     {
-      "type": "task|risk|status_update|document|action_item|meeting_minutes|decision|milestone",
+      "type": "task|risk|status_update|document|action_item|meeting_minutes|decision|milestone|change_request|lesson",
       "title": "concise title",
       "description": "what should be created or recorded",
       "priority": "CRITICAL|HIGH|MEDIUM|LOW",

@@ -58,6 +58,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
       title: it.title||"", vendorName: it.vendorName||"", vendorContact: it.vendorContact||"",
       vendorEmail: it.vendorEmail||"", vendorPhone: it.vendorPhone||"", vendorLocation: it.vendorLocation||"",
       ownerId: it.ownerId||"", type: it.type||"OTHER", status: it.status||"DRAFT",
+      budgetItemId: it.budgetItemId||"",
       poNumber: it.poNumber||"", contractRef: it.contractRef||"",
       value: it.value != null ? String(it.value) : "", currency: it.currency||"USD",
       startDate: it.startDate ? String(it.startDate).slice(0,10) : "",
@@ -86,6 +87,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
         vendorPhone: editF.vendorPhone||null, vendorLocation: editF.vendorLocation||null,
         ownerId: editF.ownerId||null,
         type: editF.type, status: editF.status,
+        budgetItemId: editF.budgetItemId||null,
         poNumber: editF.poNumber||null, contractRef: editF.contractRef||null,
         value: editF.value !== "" ? Number(editF.value)||0 : null,
         currency: editF.currency||"USD",
@@ -704,6 +706,16 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                               onChange={e=>setEditF((f:any)=>({...f,status:e.target.value}))}>
                               {Object.entries(STATUS_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
                             </select></div>
+              <div>
+                <label style={lbl}>Bill against budget line</label>
+                <select style={{...inp,cursor:"pointer"}} value={editF.budgetItemId}
+                  onChange={e=>setEditF(f=>({...f,budgetItemId:e.target.value}))}>
+                  <option value="">— not linked —</option>
+                  {budgetLines.map(b=>(
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
                             <div><div style={lblE}>PO number</div>
                             <input style={inp} placeholder="PO number" value={editF.poNumber}
                               onChange={e=>setEditF((f:any)=>({...f,poNumber:e.target.value}))} /></div>
