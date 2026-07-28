@@ -12,6 +12,18 @@ import { auth } from "@/lib/auth"
 import { verifyProjectAccess, audit } from "@/lib/api"
 
 const VALID_STATUS   = new Set(["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"])
+// Accept the labels humans actually type ("To Do", "In Progress", "Back log"…)
+const normStatus = (x: string) => {
+  const k = String(x || "").toUpperCase().replace(/[\s-]+/g, "_")
+  const alias: Record<string, string> = {
+    TO_DO: "TODO", TODO: "TODO", BACK_LOG: "BACKLOG",
+    IN_PROGRESS: "IN_PROGRESS", INPROGRESS: "IN_PROGRESS", DOING: "IN_PROGRESS",
+    IN_REVIEW: "IN_REVIEW", REVIEW: "IN_REVIEW",
+    DONE: "DONE", COMPLETE: "DONE", COMPLETED: "DONE",
+    CANCELLED: "CANCELLED", CANCELED: "CANCELLED",
+  }
+  return alias[k] || k
+}
 const VALID_PRIORITY = new Set(["CRITICAL","HIGH","MEDIUM","LOW"])
 
 interface RowResult {
@@ -118,7 +130,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const code      = cellText(row.getCell(2).value)
     const title     = cellText(row.getCell(3).value)
     const phaseName = cellText(row.getCell(4).value)
-    const status    = cellText(row.getCell(5).value).toUpperCase()
+    const status    = normStatus(cellText(row.getCell(5).value))
     const priority  = cellText(row.getCell(6).value).toUpperCase()
     const startVal  = row.getCell(7).value
     const dueVal    = row.getCell(8).value

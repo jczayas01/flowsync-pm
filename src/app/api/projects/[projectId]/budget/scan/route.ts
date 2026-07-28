@@ -84,6 +84,8 @@ Return ONLY valid JSON, no markdown fences, in this exact shape:
 {"candidates":[{"description":"short line item name (max 90 chars)","category":"LABOR|MATERIALS|EQUIPMENT|SOFTWARE|CONSULTING|TRAVEL|CONTINGENCY|OTHER","plannedAmount":12345.67,"sourceDoc":"document name it came from","evidence":"the short phrase with the amount in the document (max 160 chars)"}]}
 
 Rules: only include items with a real monetary amount stated or clearly derivable in the documents — never invent numbers. plannedAmount must be a plain number (no currency symbols, no thousands separators). 1-10 candidates. Write descriptions in the same language as the documents.
+- Never emit discounts, credits, $0 rows, or informational lines.
+- If the budget already contains an umbrella line whose amount covers a document's TOTAL (for example a vendor contract or quote total), do NOT emit that document's sub-components — they are already budgeted. Emit only genuinely new cost items.
 
 DOCUMENTS:
 ${chunks.join("\n\n")}`
@@ -122,7 +124,42 @@ ${chunks.join("\n\n")}`
     const text = (data.content || []).map((c: any) => c.text || "").join("")
     const clean = text.replace(/```json|```/g, "").trim()
     const parsed = JSON.parse(clean)
-    const candidates = Array.isArray(parsed?.candidates) ? parsed.candidates.slice(0, 12) : []
+    let candidates = (Array.isArray(parsed?.candidates) ? parsed.candidates.slice(0, 12) : [])
+      // Hard floor: no zero/negative/discount rows regardless of what the model says.
+      .filter((c: any) => Number(c?.plannedAmount) > 0)
+      .filter((c: any) => !/\b(discount|descuento|credit|cr[eé]dito)\b/i.test(String(c?.description || "")))
+
+    // Double-count guards, flagged for the client (default-unchecked there):
+    //  - dupOf: candidate amount equals an existing line's planned amount (±1%), or
+    //           strong name-token overlap with an existing line
+    //  - sub-decomposition: candidates from one document summing to an existing
+    //    line's planned amount (±10%) are details of that line, not new cost
+    const norm = (x: string) => String(x || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9 ]/g, "")
+    const toks = (x: string) => new Set(norm(x).split(/\s+/).filter(w => w.length > 3))
+    const overlap = (a: Set<string>, b: Set<string>) => {
+      if (!a.size || !b.size) return 0
+      let hit = 0; a.forEach(t => { if (b.has(t)) hit++ })
+      return hit / Math.min(a.size, b.size)
+    }
+    const existingT = existing.map(e => ({ name: e.name, planned: Number(e.plannedCost || 0), t: toks(e.name) }))
+    for (const c of candidates) {
+      const ct = toks(c.description)
+      const amt = Number(c.plannedAmount)
+      const hit = existingT.find(e =>
+        (e.planned > 0 && Math.abs(e.planned - amt) / e.planned < 0.01) || overlap(ct, e.t) >= 0.5)
+      if (hit) c.dupOf = hit.name
+    }
+    const byDoc = new Map<string, any[]>()
+    for (const c of candidates) {
+      const k = String(c.sourceDoc || "")
+      byDoc.set(k, [...(byDoc.get(k) || []), c])
+    }
+    byDoc.forEach(list => {
+      const sum = list.reduce((s2, c) => s2 + Number(c.plannedAmount || 0), 0)
+      const hit = existingT.find(e => e.planned > 0 && Math.abs(e.planned - sum) / e.planned < 0.10)
+      if (hit) list.forEach(c => { if (!c.dupOf) c.dupOf = hit.name })
+    })
+
     return NextResponse.json({ data: { candidates, scannedDocs: scanned, skippedDocs: skipped } })
   } catch {
     return NextResponse.json({ error: "Could not parse the AI response — try again" }, { status: 502 })

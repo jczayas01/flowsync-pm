@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 // src/components/projects/tabs/ProjectBudgetTab.tsx
 import { useTranslations } from "next-intl"
 import { useState } from "react"
@@ -21,22 +22,51 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   // Budget automation #5: scan a receipt photo → AI drafts the expense
   const [receiptBusyId, setReceiptBusyId] = useState<string | null>(null)
   const [receiptMsg, setReceiptMsg] = useState("")
-  async function scanReceipt(itemId: string, file: File) {
+  async function scanReceipt(itemId: string, file: File, force = false) {
     setReceiptBusyId(itemId); setReceiptMsg("")
     try {
       const fd = new FormData(); fd.append("file", file)
-      const res = await fetch(`/api/projects/${projectId}/budget/${itemId}/receipt`, {
+      const res = await fetch(`/api/projects/${projectId}/budget/${itemId}/receipt${force ? "?force=1" : ""}`, {
         method: "POST",
         headers: workspaceId ? { "x-workspace-id": workspaceId } : {},
         body: fd,
       })
       const d = await res.json().catch(() => ({}))
+      if (res.status === 409) {
+        if (confirm(`${d?.error || "Possible duplicate receipt."}\n\nPost it anyway?`)) {
+          setReceiptBusyId(null)
+          return scanReceipt(itemId, file, true)
+        }
+        return
+      }
       if (!res.ok) { setReceiptMsg(d?.error || `Scan failed (${res.status})`); return }
       const r = d.data
       setReceiptMsg(`✓ ${r.vendor} — ${r.amount ? `$${Number(r.amount).toLocaleString()}` : "amount not detected, edit the expense"} posted${r.date ? ` (${r.date})` : ""}`)
       window.location.reload()
     } catch { setReceiptMsg("Scan failed — network error") }
     finally { setReceiptBusyId(null) }
+  }
+
+  // Expenses behind a line's Actual — visible, auditable, deletable.
+  const [expOpenId, setExpOpenId] = useState<string | null>(null)
+  const [expList, setExpList] = useState<any[] | null>(null)
+  const [expBusy, setExpBusy] = useState(false)
+  async function toggleExpenses(itemId: string) {
+    if (expOpenId === itemId) { setExpOpenId(null); setExpList(null); return }
+    setExpOpenId(itemId); setExpList(null); setExpBusy(true)
+    const res = await fetch(`/api/projects/${projectId}/budget/${itemId}/expenses`,
+      { headers: workspaceId ? { "x-workspace-id": workspaceId } : {} }).catch(() => null)
+    setExpBusy(false)
+    const d = await res?.json().catch(() => null)
+    setExpList(d?.data?.expenses || [])
+  }
+  async function deleteExpense(itemId: string, expenseId: string, amount: number) {
+    if (!confirm(`Delete this $${Number(amount).toLocaleString()} expense? The line's Actual decreases by that amount.`)) return
+    setExpBusy(true)
+    await fetch(`/api/projects/${projectId}/budget/${itemId}/expenses?expenseId=${expenseId}`,
+      { method: "DELETE", headers: workspaceId ? { "x-workspace-id": workspaceId } : {} }).catch(() => null)
+    setExpBusy(false)
+    window.location.reload()
   }
 
   async function toggleAutoEv(next: boolean) {
@@ -73,7 +103,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       const c = d?.data?.candidates || []
       setScanSkipped(d?.data?.skippedDocs || [])
       setCandidates(c)
-      setPickedCands(new Set(c.map((_: any, i: number) => i)))
+      setPickedCands(new Set(c.map((x: any, i: number) => x.dupOf ? -1 : i).filter((i: number) => i >= 0)))
     } catch { setScanError("Connection lost — try again") }
     finally { setScanning(false) }
   }
@@ -261,9 +291,9 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)",
           borderBottom:"1px solid var(--border)" }}>
           {[
-            { label:t("Cost Performance Index (CPI)"), value:CPI.toFixed(2),
-              sub:CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
-              color:CPI>=1?"var(--green)":"var(--red)",
+            { label:t("Cost Performance Index (CPI)"), value:EV<=0?"—":CPI.toFixed(2),
+              sub:EV<=0?t("No earned value yet"):CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
+              color:EV<=0?"var(--text-3)":CPI>=1?"var(--green)":"var(--red)",
               tip:"CPI = EV/AC. >1 = under budget, <1 = over budget" },
             { label:t("Schedule Performance Index (SPI)"), value:SPI.toFixed(2),
               sub:SPI>1?t("Ahead of schedule"):SPI<1?t("Behind schedule"):t("On schedule"),
@@ -403,6 +433,11 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             {fmt(Number(c.plannedAmount)||0, currency)}
                           </span>
                         </div>
+                        {c.dupOf && (
+                          <div style={{ fontSize:11, color:"#B45309", marginBottom:2 }}>
+                            ⚠ Likely a detail of existing "{c.dupOf}" — adding it would double-count.
+                          </div>
+                        )}
                         {c.evidence && (
                           <div style={{ fontSize:11, color:"var(--text-3)", fontStyle:"italic" }}>
                             "{c.evidence}" — {c.sourceDoc}
@@ -462,8 +497,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const actual   = Number(item.actualCost||item.actualAmount||0)
                 const variance = planned - actual
                 const isEditing = editId === item.id
-                return (
-                  <tr key={item.id} style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)",
+                return (<React.Fragment key={item.id}>
+                  <tr style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)",
                     background: isEditing ? "#EFF6FF" : "transparent" }}>
                     {isEditing ? (
                       <>
@@ -518,7 +553,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           {fmt(planned,currency)}
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
-                          {fmt(actual,currency)}
+                          {actual > 0 ? (
+                            <button onClick={() => toggleExpenses(item.id)}
+                              title="View the expenses behind this amount"
+                              style={{ background:"none", border:"none", cursor:"pointer", padding:0,
+                                fontSize:13, fontFamily:"monospace", color:"var(--steel)",
+                                textDecoration:"underline dotted", textUnderlineOffset:3 }}>
+                              {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
+                            </button>
+                          ) : fmt(actual,currency)}
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, fontFamily:"monospace",
                           color:variance>=0?"var(--green)":"var(--red)", fontWeight:500 }}>
@@ -564,7 +607,51 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       </>
                     )}
                   </tr>
-                )
+                  {expOpenId === item.id && (
+                    <tr>
+                      <td colSpan={6} style={{ padding:"0 14px 12px", background:"var(--surface,#F8FAFC)" }}>
+                        <div style={{ border:"1px solid var(--border)", borderRadius:8, padding:"8px 12px",
+                          background:"#fff" }}>
+                          <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)",
+                            textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
+                            Expenses on this line
+                          </div>
+                          {expBusy && !expList && <div style={{ fontSize:12, color:"var(--text-3)" }}>Loading…</div>}
+                          {expList && expList.length === 0 && (
+                            <div style={{ fontSize:12, color:"var(--text-3)" }}>
+                              No expense records — this Actual was entered manually.
+                            </div>
+                          )}
+                          {(expList || []).map(ex => (
+                            <div key={ex.id} style={{ display:"flex", alignItems:"center", gap:10,
+                              padding:"5px 0", borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:12.5 }}>
+                              <span style={{ color:"var(--text-3)", width:78, flexShrink:0 }}>
+                                {ex.date ? String(ex.date).slice(0,10) : "—"}
+                              </span>
+                              <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis",
+                                whiteSpace:"nowrap" }}>{ex.description}</span>
+                              {ex.receiptUrl && (
+                                <a href={ex.receiptUrl} target="_blank" rel="noreferrer"
+                                  style={{ fontSize:11.5, color:"var(--steel)" }}>receipt</a>
+                              )}
+                              <span style={{ fontFamily:"monospace", fontWeight:600 }}>
+                                {fmt(ex.amount, currency)}
+                              </span>
+                              {can("budget:edit") && (
+                                <button onClick={() => deleteExpense(item.id, ex.id, ex.amount)}
+                                  disabled={expBusy}
+                                  title="Delete this expense"
+                                  style={{ border:"1px solid #FECACA", background:"none", color:"var(--red)",
+                                    borderRadius:4, fontSize:11, cursor:"pointer", padding:"2px 7px",
+                                    fontFamily:"var(--font)" }}>✕</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>)
               })}
               {/* Add new item row */}
               {addingItem && (

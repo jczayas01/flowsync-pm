@@ -45,12 +45,13 @@ Project context:
 - % Complete: ${project.percentComplete}%
 
 Analyze this content and extract structured information. Include at most the 8 most important suggestions, and keep every string value under 30 words.
+Use type "decision" when the content asks for or records a formal decision (approvals, go/no-go, sign-offs). Use type "milestone" for dated delivery checkpoints (suggested_due_date required for milestones).
 If the content is a meeting transcript or meeting notes, include exactly ONE suggestion of type "meeting_minutes" (title = meeting name, description = 2-3 sentence discussion summary, meeting_date and attendees filled from the content) so the meeting itself is filed, in addition to any tasks/risks it produced. Respond ONLY with valid JSON matching this schema exactly:
 {
   "summary": "2-3 sentence summary of what this content is about",
   "suggestions": [
     {
-      "type": "task|risk|status_update|document|action_item|meeting_minutes",
+      "type": "task|risk|status_update|document|action_item|meeting_minutes|decision|milestone",
       "title": "concise title",
       "description": "what should be created or recorded",
       "priority": "CRITICAL|HIGH|MEDIUM|LOW",
@@ -205,6 +206,31 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       for (const sg of result.suggestions) {
         const hit = byFp.get(sg.fingerprint)
         sg.existing = hit ? { code: hit.itemCode, type: hit.itemType, source: hit.sourceLabel } : null
+      }
+      // Fuzzy pass: same wording family, different phrasing — catches
+      // "Complete Data Cleansing" vs "Provider record cleansing".
+      {
+        const norm = (x: string) => String(x || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9 ]/g, " ")
+        const toks = (x: string) => new Set(norm(x).split(/\s+/).filter(w => w.length > 3))
+        const ledger = await db.documentExtraction.findMany({
+          where: { projectId: params.projectId },
+          select: { itemCode: true, itemType: true, sourceLabel: true, title: true },
+          orderBy: { createdAt: "desc" }, take: 300,
+        }).catch(() => [] as any[])
+        const lt = ledger.map((l: any) => ({ ...l, t: toks(l.title || "") }))
+        for (const sg of result.suggestions) {
+          if (sg.existing) continue
+          const st = toks(sg.title)
+          if (!st.size) continue
+          const kind = String(sg.type || "").includes("risk") ? "risk" : null
+          const hit = lt.find((l: any) => {
+            if (kind && l.itemType !== kind) return false
+            if (!l.t.size) return false
+            let n = 0; st.forEach((w: string) => { if (l.t.has(w)) n++ })
+            return n / Math.min(st.size, l.t.size) >= 0.6
+          })
+          if (hit) sg.existing = { code: hit.itemCode, type: hit.itemType, source: hit.sourceLabel, similar: true }
+        }
       }
     }
 

@@ -486,9 +486,13 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
     try {
       const res = await fetch(`/api/projects/${projectId}/import`, { method:"POST", body:fd })
       const d = await res.json()
-      setImportMsg(res.ok
-        ? `✓ ${d.summary.created||0} created, ${d.summary.updated||0} updated`
-        : `✗ ${d.error||"Import failed"}`)
+      if (res.ok) {
+        const errs = (d.results || []).filter((r: any) => r.status === "error")
+        const base = `✓ ${d.summary.created||0} created, ${d.summary.updated||0} updated`
+        setImportMsg(errs.length
+          ? `${base} — ✗ ${errs.length} row${errs.length===1?"":"s"} failed (first: row ${errs[0].row}, ${errs[0].message})`
+          : base)
+      } else setImportMsg(`✗ ${d.error||"Import failed"}`)
       if (res.ok) router.refresh()
     } catch { setImportMsg("✗ Upload failed") }
     finally { setImporting(false); if (fileRef.current) fileRef.current.value="" }

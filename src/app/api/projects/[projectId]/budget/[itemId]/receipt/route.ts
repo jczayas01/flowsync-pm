@@ -98,7 +98,29 @@ async function post(ctx: ApiContext, params?: Record<string, string>) {
   const path = `receipts/${projectId}/${Date.now()}-${safeName}`
   const up = await uploadFile(file, path, file.type)
 
+
   const amount = parsed.amount ?? 0
+
+  // Duplicate guard: the same receipt drafted onto a second line silently
+  // double-counts spend. Same amount + same vendor wording anywhere in this
+  // project => 409 unless the client confirms with ?force=1.
+  const force = new URL(ctx.req.url).searchParams.get("force") === "1"
+  if (!force && amount > 0) {
+    const normV = (x: string) => String(x || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim()
+    const dupe = await db.expense.findFirst({
+      where: { budgetItem: { projectId }, amount },
+      include: { budgetItem: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+    })
+    if (dupe) {
+      const a = new Set(normV(dupe.description).split(/\s+/).filter(w => w.length > 3))
+      const b = new Set(normV(parsed.vendor || "").split(/\s+/).filter(w => w.length > 3))
+      let hit = 0; a.forEach(w => { if (b.has(w)) hit++ })
+      if (!b.size || hit > 0) {
+        return err(`This receipt looks already posted on "${dupe.budgetItem.name}" ($${Number(amount).toLocaleString()}). Delete it there or confirm to post again.`, 409)
+      }
+    }
+  }
   const expense = await db.$transaction(async tx => {
     const e = await tx.expense.create({ data: {
       budgetItemId: itemId,

@@ -190,6 +190,17 @@ export async function POST(
         }})
         created.push({ type: "decision", code, title: item.title })
         await recordLedger("decision", code, null, item.title, fp)
+      } else if (t === "milestone") {
+        const due = parseDate(item.suggested_due_date)
+        if (!due) { failed.push({ title: item.title, reason: "milestone needs a date — add it manually with a due date" }); continue }
+        await db.milestone.create({ data: {
+          projectId: params.projectId,
+          name: item.title,
+          description: item.description || null,
+          dueDate: due,
+        }})
+        created.push({ type: "milestone", code: "MS", title: item.title })
+        await recordLedger("milestone", "MS", null, item.title, fp)
       } else {
         // task, action_item, document, and anything future-shaped
         const code = await nextCode("task", params.projectId, "T")

@@ -63,12 +63,33 @@ function fmtDate(d:any) {
 // ── Report section helpers (top-level, not nested) ──────────────────────────
 
 function ReportSection({ title, children }: { title:string; children:React.ReactNode }) {
+  // Report chrome follows the UI language; the AI narrative already does.
+  const _loc = useLocale()
+  const SEC_ES: Record<string, string> = {
+    "Executive Summary": "Resumen Ejecutivo",
+    "Key Metrics": "Métricas Clave",
+    "Accomplishments": "Logros del Período",
+    "Accomplishments This Period": "Logros del Período",
+    "Planned Next Period": "Plan del Próximo Período",
+    "Budget Status": "Estado del Presupuesto",
+    "Schedule Status": "Estado del Cronograma",
+    "Risks & Issues": "Riesgos y Problemas",
+    "Decisions Needed": "Decisiones Requeridas",
+    "Performance Snapshot": "Panorama de Desempeño",
+    "Recommendations": "Recomendaciones",
+    "Milestone Review": "Revisión de Hitos",
+    "Health Assessment": "Evaluación de Salud",
+    "Earned Value Analysis": "Análisis de Valor Ganado",
+    "Top Risks": "Riesgos Principales",
+    "Mitigation Actions": "Acciones de Mitigación",
+  }
+  const _title = _loc === "es" ? (SEC_ES[String(title)] || title) : title
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ fontSize:11, fontWeight:700, color:"#1E293B", textTransform:"uppercase",
         letterSpacing:".06em", marginBottom:8, paddingBottom:4,
         borderBottom:"2px solid var(--r-accent, #1B6CA8)" }}>
-        {title}
+        {_title}
       </div>
       {children}
     </div>

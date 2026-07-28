@@ -124,7 +124,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         pdfBlocks.push({ name: d.name, data: buf.toString("base64") })
         scanned.push(`${d.name} (read visually)`)
       } else {
-        skipped.push({ name: d.name, reason: "no readable text (scanned/image file too large or unsupported)" })
+        const isImg = /\.(jpe?g|png|webp|gif|heic)$/i.test(d.name || "")
+        skipped.push({ name: d.name, reason: isImg
+          ? "photo/image — for receipts use the 🧾 button on a Budget line instead"
+          : "no readable text (scanned file too large or unsupported)" })
       }
     } catch { skipped.push({ name: d.name, reason: "unreadable format" }) }
   }

@@ -117,11 +117,44 @@ export async function POST(req: NextRequest) {
     if (data?.stop_reason === "max_tokens") {
       return NextResponse.json({ error: "The document produced too much content — try a shorter or more focused plan." }, { status: 422 })
     }
-    const raw = (data?.content || []).map((c: any) => c?.text || "").join("\n")
-    const clean = raw.replace(/```json|```/g, "").trim()
+    let raw = (data?.content || []).map((c: any) => c?.text || "").join("\n")
+    let clean = raw.replace(/```json|```/g, "").trim()
     let parsed: any
     try { parsed = JSON.parse(clean) } catch {
+      console.error("[import/analyze] unparseable response:", clean.slice(0, 400))
       return NextResponse.json({ error: "Could not parse the AI response — please try again." }, { status: 502 })
+    }
+
+    // Defense: structured doc but zero structure back → one stricter retry.
+    const structEmpty = ["phases","tasks","milestones","risks","budget"]
+      .every(k => !Array.isArray(parsed?.[k]) || parsed[k].length === 0)
+    if (structEmpty && usableText && text.trim().length > 400) {
+      console.error("[import/analyze] empty structure for", file.name,
+        "— text len", text.trim().length, "— raw head:", clean.slice(0, 300))
+      const retry = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": process.env.ANTHROPIC_API_KEY!,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8000,
+          messages: [{ role: "user", content: [{ type: "text",
+            text: `${RULES}\n\nJSON spec:\n${SPEC}\n\nIMPORTANT: the document below DOES contain phases, tasks or other structure — extract it. Empty arrays are only acceptable when the document truly contains none of that content.\n\nDocument "${file.name}":\n\n${text}` }] }],
+        }),
+      }).catch(() => null)
+      if (retry?.ok) {
+        const rd = await retry.json().catch(() => null)
+        const rraw = (rd?.content || []).map((c: any) => c?.text || "").join("\n")
+        try {
+          const rparsed = JSON.parse(rraw.replace(/```json|```/g, "").trim())
+          const rHas = ["phases","tasks","milestones","risks","budget"]
+            .some(k => Array.isArray(rparsed?.[k]) && rparsed[k].length > 0)
+          if (rHas) parsed = rparsed
+        } catch { /* keep first parse */ }
+      }
     }
 
     // Server-side sanitation & hard caps
