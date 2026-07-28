@@ -34,6 +34,21 @@ async function syncProjectBudget(projectId: string) {
   } catch { /* rollup is best-effort */ }
 }
 
+// GET — lightweight line list (id/name/planned) for pickers like
+// Procurement's "Bill against budget line".
+async function list(ctx: ApiContext, params?: Record<string,string>) {
+  const projectId = params?.projectId
+  if (!projectId) return notFound("Project")
+  const access = await verifyProjectAccess(projectId, ctx.userId, ctx.workspaceId)
+  if (!access.ok) return notFound("Project")
+  const items = await db.budgetItem.findMany({
+    where: { projectId },
+    select: { id: true, name: true, plannedCost: true },
+    orderBy: { createdAt: "asc" },
+  })
+  return ok({ items: items.map(i => ({ id: i.id, name: i.name, plannedCost: Number(i.plannedCost || 0) })) })
+}
+
 async function create(ctx: ApiContext, params?: Record<string,string>) {
     { const _g = await requirePermission(ctx as any, "budget:edit" as any); if (_g) return _g }
   const projectId = params?.projectId
@@ -64,6 +79,9 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
   }
 }
 
+export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
+  return withWorkspace(req, list, params)
+}
 export async function POST(req: NextRequest, { params }: { params: { projectId:string } }) {
   return withWorkspace(req, create, params)
 }
