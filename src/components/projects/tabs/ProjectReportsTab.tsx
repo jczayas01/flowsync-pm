@@ -1,7 +1,7 @@
 "use client"
 // src/components/projects/tabs/ProjectReportsTab.tsx
 
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -356,6 +356,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   statusUpdates:any[]; members:any[]; reportTemplates?:any[]
 }) {
   const tr = useTranslations("reports")
+  const locale = useLocale()
   const router = useRouter()
   const [view, setView]             = useState<"list"|"generate"|"result">("list")
   const [reportType, setReportType] = useState("STATUS")
@@ -580,6 +581,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           reportType, audience, additionalNotes: notes || undefined,
+          locale: locale === "es" ? "es" : "en",
           ...(reportType === "STATUS" ? {
             periodStart: new Date(reportWeek).toISOString(),
             periodEnd: reportWeekEnd(reportWeek).toISOString(),

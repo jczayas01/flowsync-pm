@@ -15,6 +15,7 @@ import { extractTextFromBuffer } from "@/lib/extract"
 const schema = z.object({
   reportType: z.enum(["STATUS","EXECUTIVE","PHASE_GATE","EVM","RISK_SUMMARY"]),
   audience:   z.enum(["TEAM","SPONSOR","STEERING_COMMITTEE","PMO"]).default("TEAM"),
+  locale:     z.enum(["en","es"]).default("en"),
   additionalNotes: z.string().max(2000).optional(),
   periodStart: z.string().datetime().optional(),
   periodEnd:   z.string().datetime().optional(),
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error:"Validation failed" }, { status:422 })
 
-  const { reportType, audience, additionalNotes, periodStart, periodEnd, includeWeekDocs } = parsed.data
+  const { reportType, audience, additionalNotes, periodStart, periodEnd, includeWeekDocs, locale } = parsed.data
 
   const [project, tasks, risks, budgetItems, milestones, changes, decisions, members] = await Promise.all([
     db.project.findUnique({
@@ -207,7 +208,10 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   }
 
   const styleDirective = await getAiStyleDirective(params.projectId)
-  const prompt = styleDirective + buildPrompt(reportType, audience, {
+  const langDirective = locale === "es"
+    ? "IDIOMA: Redacta TODO el reporte en español profesional (es-PR/es-419) — resumen ejecutivo, secciones, títulos de riesgos y recomendaciones. Mantén en su idioma original únicamente los nombres propios, códigos (R-001, T-005, CTS-2026-0841) y citas textuales de documentos.\n\n"
+    : ""
+  const prompt = langDirective + styleDirective + buildPrompt(reportType, audience, {
     period,
     project, tasks, risks,
     budgetItems: budgetItems.map(b=>({ plannedCost:Number(b.plannedCost||0), actualCost:Number(b.actualCost||0), earnedValue:Number(b.earnedValue||0) })),
