@@ -66,7 +66,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     await fetch(`/api/projects/${projectId}/budget/${itemId}/expenses?expenseId=${expenseId}`,
       { method: "DELETE", headers: workspaceId ? { "x-workspace-id": workspaceId } : {} }).catch(() => null)
     setExpBusy(false)
-    window.location.reload()
+    setExpList(l => (l || []).filter(e => e.id !== expenseId))
+    router.refresh()
   }
 
   async function toggleAutoEv(next: boolean) {
@@ -553,15 +554,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           {fmt(planned,currency)}
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
-                          {actual > 0 ? (
-                            <button onClick={() => toggleExpenses(item.id)}
-                              title="View the expenses behind this amount"
-                              style={{ background:"none", border:"none", cursor:"pointer", padding:0,
-                                fontSize:13, fontFamily:"monospace", color:"var(--steel)",
-                                textDecoration:"underline dotted", textUnderlineOffset:3 }}>
-                              {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
-                            </button>
-                          ) : fmt(actual,currency)}
+                          <button onClick={() => toggleExpenses(item.id)}
+                            title="View the expenses behind this amount"
+                            style={{ background:"none", border:"none", cursor:"pointer", padding:0,
+                              fontSize:13, fontFamily:"monospace",
+                              color: actual > 0 ? "var(--steel)" : "var(--text-2)",
+                              textDecoration: actual > 0 ? "underline dotted" : "none",
+                              textUnderlineOffset:3 }}>
+                            {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
+                          </button>
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, fontFamily:"monospace",
                           color:variance>=0?"var(--green)":"var(--red)", fontWeight:500 }}>
