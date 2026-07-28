@@ -623,13 +623,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             </div>
                           )}
                           {(expList || []).map(ex => (
-                            <div key={ex.id} style={{ display:"flex", alignItems:"center", gap:10,
-                              padding:"5px 0", borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:12.5 }}>
+                            <div key={ex.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
+                              padding:"6px 0", borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:12.5 }}>
                               <span style={{ color:"var(--text-3)", width:78, flexShrink:0 }}>
                                 {ex.date ? String(ex.date).slice(0,10) : "—"}
                               </span>
-                              <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis",
-                                whiteSpace:"nowrap" }}>{ex.description}</span>
+                              <span style={{ flex:1, minWidth:0, whiteSpace:"normal",
+                                overflowWrap:"anywhere", lineHeight:1.45 }}>{ex.description}</span>
                               {ex.receiptUrl && (
                                 <a href={ex.receiptUrl} target="_blank" rel="noreferrer"
                                   style={{ fontSize:11.5, color:"var(--steel)" }}>receipt</a>
