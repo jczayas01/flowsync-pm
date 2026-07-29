@@ -26,6 +26,7 @@ const itemSchema = z.object({
   description:        z.string().max(4000).optional().nullable(),
   priority:           z.string().optional().nullable(),
   suggested_due_date: z.string().optional().nullable(),
+  suggested_phase:    z.string().optional().nullable(),
   suggested_assignee: z.string().optional().nullable(),
   meeting_date:       z.string().optional().nullable(),
   attendees:          z.array(z.string()).optional().nullable(),
