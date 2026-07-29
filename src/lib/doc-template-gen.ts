@@ -368,7 +368,7 @@ export async function buildDocx(id: string, l: L): Promise<Buffer> {
 }
 
 // ── Excel registers ──────────────────────────────────────────────────────────
-interface SheetSpec { cols: { header: string; key: string; width: number }[]; sample: any[]; note: string }
+interface SheetSpec { cols: { header: string; key: string; width: number }[]; sample: any[]; note: string; sheetName?: string }
 
 function sheetSpec(id: string, l: L): SheetSpec {
   const p = (en: string, es: string) => pick(l, en, es)
@@ -527,8 +527,8 @@ export async function buildXlsx(id: string, l: L): Promise<Buffer> {
   wb.creator = "FlowSync PM"
   wb.created = new Date()
 
-  const importStrict = Boolean((spec as any).sheetName)
-  const ws = wb.addWorksheet((spec as any).sheetName || pick(l, t.name, t.nameEs).slice(0, 30))
+  const importStrict = Boolean(spec.sheetName)
+  const ws = wb.addWorksheet(spec.sheetName || pick(l, t.name, t.nameEs).slice(0, 30))
 
   if (importStrict) {
     // The in-app importer reads headers from row 1 — guidance lives on its own sheet.

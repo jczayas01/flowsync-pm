@@ -125,6 +125,11 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     rows.push({ row, rowNumber })
   })
 
+  // Second-pass wiring: hierarchy and dependencies reference the FILE's own
+  // Code column (whatever numbering the author used), resolved after creates.
+  const byFileCode = new Map<string, string>()             // file code -> taskId
+  const pendingLinks: { taskId: string; parentRef: string; dependsOn: string; rowNumber: number }[] = []
+
   for (const { row, rowNumber } of rows) {
     const id        = cellText(row.getCell(1).value)
     const code      = cellText(row.getCell(2).value)
@@ -138,6 +143,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const pctVal    = row.getCell(10).value
     const estVal    = row.getCell(11).value
     const assignee  = cellText(row.getCell(12).value)
+    const parentRef = cellText(row.getCell(13).value)
+    const dependsOn = cellText(row.getCell(14).value)
 
     // Completely blank row — skip silently
     if (!id && !title) continue
@@ -193,6 +200,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
       try {
         await db.task.update({ where: { id }, data })
+        byFileCode.set(code.toLowerCase(), id)
+        if (parentRef || dependsOn) pendingLinks.push({ taskId: id, parentRef, dependsOn, rowNumber })
         results.push({ row: rowNumber, code, status:"updated" })
         updatedCount++
       } catch (e: any) {
@@ -272,11 +281,55 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         }
       }
 
+      if (code) byFileCode.set(code.toLowerCase(), created.id)
+      byFileCode.set(newCode.toLowerCase(), created.id)
+      if (parentRef || dependsOn) pendingLinks.push({ taskId: created.id, parentRef, dependsOn, rowNumber })
+
       results.push({ row: rowNumber, code: newCode, status:"created" })
       createdCount++
     } catch (e: any) {
       results.push({ row: rowNumber, code: newCode, status:"error", message: e?.message || "Create failed" })
     }
+  }
+
+  // ── Wiring pass: parents + dependencies (file codes, then project codes) ──
+  if (pendingLinks.length) {
+    const projTasks = await db.task.findMany({
+      where: { projectId: params.projectId }, select: { id: true, code: true } })
+    const byProjCode = new Map(projTasks.map(t2 => [t2.code.toLowerCase(), t2.id]))
+    const resolve = (ref: string) => {
+      const k = ref.trim().toLowerCase()
+      return byFileCode.get(k) || byProjCode.get(k) || null
+    }
+    let linked = 0
+    for (const link of pendingLinks) {
+      if (link.parentRef) {
+        const pid = resolve(link.parentRef)
+        if (pid && pid !== link.taskId) {
+          await db.task.update({ where: { id: link.taskId }, data: { parentId: pid } }).catch(() => {})
+          linked++
+        } else if (!pid) {
+          results.push({ row: link.rowNumber, code: "—", status: "error",
+            message: `Parent "${link.parentRef}" not found — hierarchy skipped` })
+        }
+      }
+      if (link.dependsOn) {
+        for (const ref of link.dependsOn.split(/[,;]+/).map(x => x.trim()).filter(Boolean)) {
+          const pre = resolve(ref)
+          if (pre && pre !== link.taskId) {
+            await db.taskDependency.create({
+              data: { dependentTaskId: link.taskId, precedingTaskId: pre },
+            }).catch(() => {}) // @@unique makes re-imports idempotent
+            linked++
+          } else if (!pre) {
+            results.push({ row: link.rowNumber, code: "—", status: "error",
+              message: `Dependency "${ref}" not found — link skipped` })
+          }
+        }
+      }
+    }
+    if (linked) await audit(workspaceId, session.user.id, "task.import_links" as any,
+      "project", params.projectId, { linked }).catch(() => {})
   }
 
   if (updatedCount > 0 || createdCount > 0) {
