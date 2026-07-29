@@ -21,11 +21,16 @@ const TAB_OF: Record<string, { label: string; icon: string; slug: string }> = {
   document:        { label: "Docs",      icon: "📁", slug: "docs" },
 }
 
-export function ProjectAIOverviewTab({ projectId, workspaceId, documents }: {
+export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromImport = false, driverName = "" }: {
   projectId: string; workspaceId: string; documents: { id: string; name: string; createdAt?: string }[]
+  fromImport?: boolean; driverName?: string
 }) {
   const router = useRouter()
-  const [picked, setPicked] = useState<Set<string>>(new Set(documents.map(d => d.id)))
+  const [picked, setPicked] = useState<Set<string>>(
+    // Arriving from project creation: the driver already built the skeleton —
+    // preselect everything else for distribution.
+    new Set(documents.filter(d => !(fromImport && driverName && d.name === driverName)).map(d => d.id))
+  )
   const [phase, setPhase] = useState<"idle" | "running" | "review" | "applying" | "done">("idle")
   const [progress, setProgress] = useState("")
   const [findings, setFindings] = useState<any[]>([])          // suggestions + sourceDoc
@@ -114,6 +119,14 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents }: {
         anything is created; items the project already knows arrive pre-unchecked.
       </p>
 
+      {fromImport && phase === "idle" && (
+        <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", borderRadius: 10,
+          padding: "12px 16px", marginBottom: 14, fontSize: 13, color: "#1E3A8A", lineHeight: 1.6 }}>
+          ✅ Project created{driverName ? <> from <strong>{driverName}</strong></> : null}.
+          The other documents are attached but not yet read — analyze them below to distribute
+          their tasks, risks, decisions, change requests and milestones into their tabs.
+        </div>
+      )}
       {(phase === "idle" || phase === "running") && (
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "16px 18px" }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-2)", marginBottom: 10 }}>

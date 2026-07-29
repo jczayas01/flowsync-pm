@@ -102,7 +102,13 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
           await fetch(`/api/projects/${newId}/documents`, { method: "POST", body: dfd })
             .catch(() => null)
         }
-        router.push(`/projects/${newId}/docs`)
+        // Multi-document import: the driver built the skeleton — hand the rest
+        // to AI Overview so their contents get distributed to the right tabs.
+        if (allFiles.length > 1) {
+          router.push(`/projects/${newId}/ai-overview?from=import&driver=${encodeURIComponent(data?.sourceFile || "")}`)
+        } else {
+          router.push(`/projects/${newId}/docs`)
+        }
         router.refresh()
         onClose()
         return

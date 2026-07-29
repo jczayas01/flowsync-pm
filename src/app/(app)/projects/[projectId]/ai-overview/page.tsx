@@ -23,7 +23,7 @@ export default async function ProjectAIOverviewPage({ params, searchParams }: {
   if (!project) redirect("/projects")
 
   const documents = await db.document.findMany({
-    where: { projectId: params.projectId },
+    where: { projectId: params.projectId, fileUrl: { not: null } },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, createdAt: true },
     take: 60,
