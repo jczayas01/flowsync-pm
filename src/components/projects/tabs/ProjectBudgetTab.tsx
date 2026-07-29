@@ -2,7 +2,7 @@
 import React from "react"
 // src/components/projects/tabs/ProjectBudgetTab.tsx
 import { useTranslations } from "next-intl"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { DocScanPicker } from "@/components/shared/DocScanPicker"
