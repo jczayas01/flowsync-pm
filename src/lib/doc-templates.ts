@@ -29,10 +29,16 @@ export interface DocTemplate {
 export const DOC_TEMPLATES: DocTemplate[] = [
   // ── Initiation ──
   {
-    id: "project-charter", icon: "📜", phase: "INITIATION", format: "docx", ingestType: "TEAM_CHARTER",
+    id: "project-charter", icon: "📜", phase: "INITIATION", format: "docx",
     name: "Project Charter", nameEs: "Acta de Constitución del Proyecto",
     description: "Authorizes the project: objective, scope, sponsor, budget, milestones, and success criteria.",
     descriptionEs: "Autoriza el proyecto: objetivo, alcance, patrocinador, presupuesto, hitos y criterios de éxito.",
+  },
+  {
+    id: "team-charter", icon: "🤝", phase: "INITIATION", format: "docx", ingestType: "TEAM_CHARTER",
+    name: "Team Charter", nameEs: "Acta del Equipo",
+    description: "Team norms, values, and working agreements — how this team decides, communicates, and resolves conflict.",
+    descriptionEs: "Normas, valores y acuerdos de trabajo del equipo — cómo decide, se comunica y resuelve conflictos.",
   },
   {
     id: "stakeholder-register", icon: "👥", phase: "INITIATION", format: "xlsx",

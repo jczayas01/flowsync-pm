@@ -184,6 +184,31 @@ function docBody(id: string, l: L): any[] {
         H(pick(l, "4. Assumptions & Constraints", "4. Supuestos y Restricciones")), ...blank(2))
       break
 
+    case "team-charter":
+      c.push(H(pick(l, "1. Team Vision", "1. Visión del Equipo")),
+        g("One or two sentences on what this team exists to achieve together.",
+          "Una o dos oraciones sobre lo que este equipo existe para lograr en conjunto."), ...blank(2),
+        H(pick(l, "2. Objectives & Success Criteria", "2. Objetivos y Criterios de Éxito")), ...blank(2),
+        H(pick(l, "3. Values & Working Agreements", "3. Valores y Acuerdos de Trabajo")),
+        g("The behaviors this team commits to — e.g. cameras on, no meeting without an agenda, disagree then commit.",
+          "Los comportamientos a los que el equipo se compromete — p.ej. agenda obligatoria, desacuerdo y compromiso."), ...blank(3),
+        H(pick(l, "4. Working Norms", "4. Normas de Trabajo")),
+        gridTable(
+          [pick(l, "Norm", "Norma"), pick(l, "Agreement", "Acuerdo")],
+          [pick(l, "Core hours / response times", "Horario núcleo / tiempos de respuesta"), ""],
+          [3200, 6000]),
+        H(pick(l, "5. Decision-Making", "5. Toma de Decisiones")),
+        g("Who decides what, and how ties are broken (consensus, consult-then-decide, escalation).",
+          "Quién decide qué y cómo se resuelven empates (consenso, consultar-y-decidir, escalamiento)."), ...blank(2),
+        H(pick(l, "6. Conflict Resolution", "6. Resolución de Conflictos")), ...blank(2),
+        H(pick(l, "7. Communication Plan", "7. Plan de Comunicación")),
+        gridTable(
+          [pick(l, "Channel", "Canal"), pick(l, "Used for", "Se usa para"), pick(l, "Cadence", "Cadencia")],
+          ["", "", ""],
+          [2600, 4200, 2400]),
+        H(pick(l, "8. Tools & Processes", "8. Herramientas y Procesos")), ...blank(2))
+      break
+
     case "quality-plan":
       c.push(H(pick(l, "1. Quality Objectives", "1. Objetivos de Calidad")),
         g("What 'good' means for this project's deliverables.",

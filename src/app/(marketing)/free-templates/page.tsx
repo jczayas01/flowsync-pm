@@ -53,6 +53,28 @@ export default function FreeTemplatesPage() {
           </section>
         ))}
 
+        {/* Governance segment — templates the Governance tab can read back */}
+        <div style={{ marginTop: 8 }}>
+          <h2 style={{ fontSize: 19, fontWeight: 800, margin: "26px 0 4px" }}>
+            🏛 Governance documents
+          </h2>
+          <p style={{ fontSize: 13, color: "#64748B", lineHeight: 1.65, margin: "0 0 14px", maxWidth: 640 }}>
+            These six templates round-trip: download, complete offline, then upload them in your
+            project's <strong>Governance</strong> tab — the AI reads them back and populates the
+            matching governance panels automatically. <span style={{ color: "#94A3B8" }}>
+            (Bájalo, complétalo, y súbelo en la pestaña Governance — la AI lo lee y llena los paneles.)</span>
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {DOC_TEMPLATES.filter(t => t.ingestType).map(t => (
+              <Link key={t.id} href={`/free-templates/${t.id}`} style={{ textDecoration: "none",
+                fontSize: 12.5, fontWeight: 700, color: "#1B6CA8", border: "1px solid #E2E8F0",
+                borderRadius: 99, padding: "7px 14px", background: "#fff" }}>
+                {t.icon} {t.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
         <div style={{ background:NAVY, borderRadius:14, padding:"28px", textAlign:"center", marginTop:16 }}>
           <div style={{ fontSize:18, fontWeight:700, color:"#fff", marginBottom:8 }}>
             Templates are the slow way. Watch one become a live project.
