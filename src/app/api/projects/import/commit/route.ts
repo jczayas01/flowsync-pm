@@ -18,6 +18,7 @@ const commitSchema = z.object({
     description: z.string().max(3000).nullable().optional(),
     outOfScope: z.string().max(3000).nullable().optional(),
     economicImpact: z.string().max(3000).nullable().optional(),
+    background: z.string().max(3000).nullable().optional(),
     methodology: z.enum(["WATERFALL", "AGILE", "SCRUM", "HYBRID"]),
     startDate: iso,
     endDate: iso,
@@ -75,8 +76,10 @@ async function commit(ctx: ApiContext) {
         name: d.project.name,
         objective: d.project.objective || null,
         scope: d.project.scope || null,
-        description: d.project.description
-          || (d.sourceFile ? `Imported from "${d.sourceFile}"` : null),
+        // Never mask an empty extraction with filename noise — the panel's own
+        // prompt is more useful than "Imported from …".
+        description: d.project.description || null,
+        background: d.project.background || null,
         outOfScope: d.project.outOfScope || null,
         economicImpact: d.project.economicImpact || null,
         methodology: d.project.methodology as any,
