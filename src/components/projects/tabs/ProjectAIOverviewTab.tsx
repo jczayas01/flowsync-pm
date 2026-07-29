@@ -87,14 +87,18 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
     for (const f of chosen) bySrc.set(f.sourceDoc, [...(bySrc.get(f.sourceDoc) || []), f])
     const results: any[] = []
     for (const [src, items] of Array.from(bySrc.entries())) {
-      setProgress(`Applying ${items.length} from ${src}`)
-      const r = await fetch(`/api/projects/${projectId}/ai-analyze/apply?workspaceId=${workspaceId}`, {
-        method: "POST", headers: { "Content-Type": "application/json", ...hdr },
-        body: JSON.stringify({ suggestions: items, sourceLabel: src }),
-      }).catch(() => null)
-      const d = await r?.json().catch(() => null)
-      if (r?.ok) results.push(...(d?.data?.created || []))
-      else setErrors(e => [...e, `${src}: ${d?.error || "apply failed"}`])
+      // The apply route takes `items`, max 30 per call — chunk larger sets.
+      for (let i = 0; i < items.length; i += 30) {
+        const chunk = items.slice(i, i + 30)
+        setProgress(`Applying ${Math.min(i + chunk.length, items.length)}/${items.length} from ${src}`)
+        const r = await fetch(`/api/projects/${projectId}/ai-analyze/apply?workspaceId=${workspaceId}`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...hdr },
+          body: JSON.stringify({ items: chunk, sourceLabel: src }),
+        }).catch(() => null)
+        const d = await r?.json().catch(() => null)
+        if (r?.ok) results.push(...(d?.data?.created || []))
+        else setErrors(e => [...e, `${src}: ${d?.error || "apply failed"}`])
+      }
     }
     setApplied(results); setPhase("done"); router.refresh()
   }
