@@ -29,8 +29,8 @@ const schema = z.discriminatedUnion("action", [
 
 import { suggestionFingerprint } from "@/lib/ai/fingerprint"
 
-function buildAnalyzePrompt(content: string, contentType: string, project: any) {
-  return `You are a PMO assistant for ${project.name} (${project.code}).
+function buildAnalyzePrompt(content: string, contentType: string, project: any, phaseNames: string[] = []) {
+  return `You are a PMO assistant for ${project.name} (${project.code}).${phaseNames.length ? `\nProject phases: ${phaseNames.join(" | ")}` : ""}
 
 The user pasted the following ${contentType.replace("_"," ")}:
 
@@ -58,6 +58,7 @@ If the content is a meeting transcript or meeting notes, include exactly ONE sug
       "priority": "CRITICAL|HIGH|MEDIUM|LOW",
       "suggested_assignee": "name if mentioned, else null",
       "suggested_due_date": "YYYY-MM-DD if mentioned, else null",
+      "suggested_phase": "for tasks: the EXACT name of one of the project's phases (listed in context) this task belongs to, else null",
       "meeting_date": "YYYY-MM-DD (meeting_minutes only) if mentioned, else null",
       "attendees": ["names (meeting_minutes only)"] 
     }
@@ -139,7 +140,11 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   let prompt = ""
 
   if (parsed.data.action === "analyze_content") {
-    prompt = buildAnalyzePrompt(parsed.data.content, parsed.data.contentType, project)
+    const projPhases = await db.phase.findMany({
+      where: { projectId: params.projectId },
+      select: { name: true }, orderBy: { order: "asc" },
+    }).catch(() => [] as { name: string }[])
+    prompt = buildAnalyzePrompt(parsed.data.content, parsed.data.contentType, project, projPhases.map(x => x.name))
   } else {
     const [tasks, risks, milestones] = await Promise.all([
       db.task.findMany({ where: { projectId: params.projectId }, select: {

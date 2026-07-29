@@ -47,6 +47,27 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     finally { setReceiptBusyId(null) }
   }
 
+  // Committed (open POs): ACTIVE agreements linked to budget lines. True
+  // exposure = Spent + Committed — the classic "signed but not yet invoiced".
+  const [committedBy, setCommittedBy] = useState<Record<string, number>>({})
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/procurement`,
+      { headers: workspaceId ? { "x-workspace-id": workspaceId } : {} })
+      .then(r => r.json()).catch(() => null)
+      .then(d => {
+        const its = d?.data?.items || []
+        const map: Record<string, number> = {}
+        for (const it of its) {
+          if (it.status === "ACTIVE" && it.budgetItemId && it.value) {
+            map[it.budgetItemId] = (map[it.budgetItemId] || 0) + Number(it.value)
+          }
+        }
+        setCommittedBy(map)
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
+  const committedTotal = Object.values(committedBy).reduce((a, b) => a + b, 0)
+
   // Expenses behind a line's Actual — visible, auditable, deletable.
   const [expOpenId, setExpOpenId] = useState<string | null>(null)
   const [expList, setExpList] = useState<any[] | null>(null)
@@ -362,11 +383,26 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             {fmt(AC,currency)} of {fmt(BAC,currency)} ({pct}%)
           </span>
         </div>
-        <div style={{ height:10, background:"var(--border)", borderRadius:5, overflow:"hidden" }}>
+        <div style={{ height:10, background:"var(--border)", borderRadius:5, overflow:"hidden",
+          display:"flex" }}>
           <div style={{ height:"100%", width:`${Math.min(pct,100)}%`,
             background:pct>90?"var(--red)":pct>75?"var(--amber)":"var(--steel)",
-            borderRadius:5, transition:"width .5s" }} />
+            transition:"width .5s" }} />
+          {committedTotal > 0 && BAC > 0 && (
+            <div title="Committed — signed POs not yet completed"
+              style={{ height:"100%", width:`${Math.min((committedTotal/BAC)*100, 100-Math.min(pct,100))}%`,
+                background:"repeating-linear-gradient(45deg, var(--amber), var(--amber) 4px, transparent 4px, transparent 8px)",
+                opacity:.75, transition:"width .5s" }} />
+          )}
         </div>
+        {committedTotal > 0 && (
+          <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:6 }}>
+            Committed (open POs): <strong style={{ color:"var(--amber)" }}>{fmt(committedTotal,currency)}</strong>
+            {" · "}True exposure (spent + committed):{" "}
+            <strong style={{ color:"var(--text)" }}>{fmt(AC+committedTotal,currency)}</strong> of {fmt(BAC,currency)}
+            {" "}({BAC>0 ? Math.round(((AC+committedTotal)/BAC)*100) : 0}%)
+          </div>
+        )}
         {pct > 100 && (
           <div style={{ fontSize:11, color:"var(--red)", marginTop:6, fontWeight:500 }}>
             ⚠ Budget exceeded by {fmt(AC-BAC,currency)}
@@ -563,6 +599,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               textUnderlineOffset:3 }}>
                             {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
                           </button>
+                          {(committedBy[item.id] || 0) > 0 && (
+                            <div title="Committed — signed POs on this line, not yet completed"
+                              style={{ fontSize:10.5, color:"var(--amber)", fontWeight:600, marginTop:2 }}>
+                              +{fmt(committedBy[item.id],currency)} committed
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, fontFamily:"monospace",
                           color:variance>=0?"var(--green)":"var(--red)", fontWeight:500 }}>

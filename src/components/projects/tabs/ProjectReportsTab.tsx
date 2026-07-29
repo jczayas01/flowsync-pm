@@ -128,7 +128,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
   return (
-    <div className="report-print-root" style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden",
+    <div id="fs-report-print" className="report-print-root" style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden",
       ["--r-accent" as any]: accent, ["--r-accent2" as any]: accent2 }}>
       <style>{`@media print {
         .report-print-root, .report-print-root * {

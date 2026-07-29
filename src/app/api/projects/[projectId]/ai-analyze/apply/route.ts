@@ -229,6 +229,16 @@ export async function POST(
         // task, action_item, document, and anything future-shaped
         const code = await nextCode("task", params.projectId, "T")
         const note = (t !== "task" && t !== "action_item") ? `[${t.replace(/_/g, " ")}] ` : ""
+        // Map the model's suggested phase to a real one (exact, then fuzzy contains)
+        let phaseId: string | null = null
+        if (item.suggested_phase) {
+          const want = String(item.suggested_phase).toLowerCase().trim()
+          const phases = await db.phase.findMany({
+            where: { projectId: params.projectId }, select: { id: true, name: true } })
+          const hit = phases.find(ph => ph.name.toLowerCase() === want)
+            || phases.find(ph => ph.name.toLowerCase().includes(want) || want.includes(ph.name.toLowerCase()))
+          phaseId = hit?.id || null
+        }
         await db.task.create({ data: {
           projectId: params.projectId, code,
           title: item.title,
@@ -236,6 +246,7 @@ export async function POST(
           status: "TODO" as any,
           priority: prio(item.priority) as any,
           dueDate: parseDate(item.suggested_due_date) || null,
+          ...(phaseId ? { phaseId } : {}),
         }})
         created.push({ type: "task", code, title: item.title })
         await recordLedger("task", code, null, item.title, fp)
