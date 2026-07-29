@@ -4,7 +4,10 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { ProjectAIOverviewTab } from "@/components/projects/tabs/ProjectAIOverviewTab"
 
-export default async function ProjectAIOverviewPage({ params }: { params: { projectId: string } }) {
+export default async function ProjectAIOverviewPage({ params, searchParams }: {
+  params: { projectId: string }
+  searchParams?: { from?: string; driver?: string }
+}) {
   const session = await auth()
   if (!session?.user?.id) redirect("/auth/signin")
 
@@ -20,7 +23,7 @@ export default async function ProjectAIOverviewPage({ params }: { params: { proj
   if (!project) redirect("/projects")
 
   const documents = await db.document.findMany({
-    where: { projectId: params.projectId, fileUrl: { not: null } },
+    where: { projectId: params.projectId },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, createdAt: true },
     take: 60,
@@ -31,6 +34,8 @@ export default async function ProjectAIOverviewPage({ params }: { params: { proj
       projectId={params.projectId}
       workspaceId={membership.workspaceId}
       documents={documents.map(d => ({ id: d.id, name: d.name, createdAt: d.createdAt.toISOString() }))}
+      fromImport={searchParams?.from === "import"}
+      driverName={searchParams?.driver || ""}
     />
   )
 }
