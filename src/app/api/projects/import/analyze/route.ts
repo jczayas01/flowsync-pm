@@ -13,7 +13,10 @@ const SPEC = `{
   "project": {
     "name": "project name (max 150 chars)",
     "objective": "the project objective/goal in 1-3 sentences, or null",
+    "description": "2-4 sentence high-level description (purpose + approach), or null",
     "scope": "in-scope summary, or null",
+    "outOfScope": "explicitly excluded items summary, or null",
+    "economicImpact": "expected benefits / ROI / cost-of-doing-nothing summary if the documents state it, or null",
     "methodology": "WATERFALL|AGILE|SCRUM|HYBRID — infer from vocabulary (sprints→SCRUM/AGILE, phase gates→WATERFALL, both→HYBRID); default WATERFALL",
     "startDate": "yyyy-mm-dd or null",
     "endDate": "yyyy-mm-dd or null",

@@ -67,6 +67,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
   const isIn = (section: string, idx: number) => !(excluded[section]?.has(idx))
   const countIn = (section: string) => (data?.[section] || []).filter((_: any, i: number) => isIn(section, i)).length
 
+  const [doneCounts, setDoneCounts] = useState<any|null>(null)
   function setProjField(k: string, v: any) { setData((d: any) => ({ ...d, project: { ...d.project, [k]: v } })) }
 
   async function create() {
@@ -93,6 +94,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
       const d = await res.json().catch(() => ({}))
       if (!res.ok) { setError(d?.error || `Creation failed (${res.status})`); setStage("review"); return }
       const newId = d?.data?.projectId
+      if (d?.data?.created) setDoneCounts(d.data.created)
       if (newId && allFiles.length) {
         for (const f of allFiles) {
           const dfd = new FormData()
@@ -180,9 +182,30 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
           )}
 
           {stage === "creating" && (
-            <div style={{ textAlign: "center", padding: "70px 20px" }}>
-              <div style={{ fontSize: 40, marginBottom: 14 }}>🏗️</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>{t("Creating your project…")}</div>
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: 40, marginBottom: 14 }}>{doneCounts ? "✅" : "🏗️"}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>
+                {doneCounts ? t("Project created") : t("Creating your project…")}
+              </div>
+              {doneCounts && (
+                <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
+                  {[["🧭", doneCounts.phases, "phases"], ["✓", doneCounts.tasks, "tasks"],
+                    ["◆", doneCounts.milestones, "milestones"], ["⚠", doneCounts.risks, "risks"],
+                    ["💰", doneCounts.budget, "budget lines"]].map(([ic, n, lbl]: any) => (
+                    <span key={lbl} style={{ fontSize: 12.5, fontWeight: 700, padding: "6px 12px",
+                      borderRadius: 14, background: n > 0 ? "#ECFDF5" : "#F8FAFC",
+                      border: `1px solid ${n > 0 ? "#A7F3D0" : "var(--border)"}`,
+                      color: n > 0 ? "#047857" : "var(--text-4)" }}>
+                      {ic} {n} {lbl}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {doneCounts && allFiles.length > 0 && (
+                <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 14 }}>
+                  {t("Attaching documents…")} ({allFiles.length})
+                </div>
+              )}
             </div>
           )}
 

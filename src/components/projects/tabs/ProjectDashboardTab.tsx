@@ -486,6 +486,32 @@ export function ProjectDashboardTab({
       {/* ── Row 3: Out of Scope + Background/Assumptions ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
         {EditablePanel({ field: 'outOfScope', label: 'Out of Scope', icon: '🚫', value: project?.outOfScope, hint: 'What is explicitly excluded from this project?' })}
+
+        {/* Milestones — the imported ones need a home outside the Gantt diamonds */}
+        {Array.isArray(milestones) && milestones.length > 0 && (
+          <div style={{ background:"var(--panel,#fff)", border:"1px solid var(--border)",
+            borderRadius:10, padding:"16px 18px", marginBottom:14 }}>
+            <div style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)", marginBottom:10 }}>
+              ◆ Milestones <span style={{ color:"var(--text-4)", fontWeight:500 }}>({milestones.length})</span>
+            </div>
+            {[...milestones].sort((a:any,b:any)=>+new Date(a.dueDate)-+new Date(b.dueDate)).slice(0,6).map((m:any)=>{
+              const done = m.status === "ACHIEVED" || m.achievedAt
+              const overdue = !done && new Date(m.dueDate) < new Date()
+              return (
+                <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0",
+                  borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:13 }}>
+                  <span style={{ color: done ? "var(--green)" : overdue ? "var(--red)" : "var(--amber)" }}>◆</span>
+                  <span style={{ flex:1, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis",
+                    whiteSpace:"nowrap" }}>{m.name}</span>
+                  <span style={{ fontSize:12, color: overdue ? "var(--red)" : "var(--text-3)",
+                    fontFamily:"monospace" }}>
+                    {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric" })}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
         {project?.background ? (
           EditablePanel({ field: 'background', label: 'Background', icon: '📖', value: project?.background, hint: 'What is the background and context for this project?' })
         ) : project?.assumptions ? (

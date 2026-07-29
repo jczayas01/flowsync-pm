@@ -15,6 +15,9 @@ const commitSchema = z.object({
     name: z.string().min(1).max(150),
     objective: z.string().max(3000).nullable().optional(),
     scope: z.string().max(3000).nullable().optional(),
+    description: z.string().max(3000).nullable().optional(),
+    outOfScope: z.string().max(3000).nullable().optional(),
+    economicImpact: z.string().max(3000).nullable().optional(),
     methodology: z.enum(["WATERFALL", "AGILE", "SCRUM", "HYBRID"]),
     startDate: iso,
     endDate: iso,
@@ -72,6 +75,10 @@ async function commit(ctx: ApiContext) {
         name: d.project.name,
         objective: d.project.objective || null,
         scope: d.project.scope || null,
+        description: d.project.description
+          || (d.sourceFile ? `Imported from "${d.sourceFile}"` : null),
+        outOfScope: d.project.outOfScope || null,
+        economicImpact: d.project.economicImpact || null,
         methodology: d.project.methodology as any,
         priority: "MEDIUM" as any,
         status: "DRAFT" as any,
@@ -80,7 +87,6 @@ async function commit(ctx: ApiContext) {
         endDate: d.project.endDate ? new Date(d.project.endDate) : null,
         budgetTotal: d.project.budgetTotal ?? undefined,
         currency: d.project.currency || "USD",
-        description: d.sourceFile ? `Imported from "${d.sourceFile}"` : null,
         members: { create: { userId: ctx.userId, role: "PM" as any, allocation: 100 } },
       },
     })
