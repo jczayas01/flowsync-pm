@@ -10,6 +10,7 @@ import { mapDbRoleToRbac, ROLE_LEVEL } from "@/lib/rbac/roles"
 
 const TABS = [
   { slug:"",          label:"Dashboard",  icon:"⊞"  },
+  { slug:"ai-overview", label:"AI Overview", icon:"🤖" },
   { slug:"gantt",     label:"Gantt",      icon:"📊" },
   { slug:"board",     label:"Board",      icon:"🗂"  },
   { slug:"tasks",     label:"Tasks",      icon:"✓"   },
