@@ -408,20 +408,32 @@ function sheetSpec(id: string, l: L): SheetSpec {
         ],
       }
     case "task-plan":
+      // Mirrors the in-app bulk importer's contract exactly (sheet "Tasks",
+      // 11 positional columns) so a downloaded template imports first try
+      // via Tasks tab → 📊 Excel → Import from Excel.
       return {
-        note: p("Fill this in and import it from Projects → Import from plan. Hours feed the workload engine.",
-                "Complétalo e impórtalo desde Proyectos → Importar desde plan. Las horas alimentan el motor de carga."),
+        sheetName: "Tasks",
+        note: p("Fill this in, then import from your project's Tasks tab → 📊 Excel → Import from Excel. Leave Task ID and Code blank for new tasks (the system assigns them). Status: TODO, IN_PROGRESS, IN_REVIEW, DONE — or blank. The Phase column creates phases automatically. Keep the sheet named 'Tasks'.",
+                "Complétalo e impórtalo desde la pestaña Tareas del proyecto → 📊 Excel → Importar desde Excel. Deja Task ID y Code en blanco para tareas nuevas (el sistema los asigna). Status: TODO, IN_PROGRESS, IN_REVIEW, DONE — o en blanco. La columna Phase crea las fases automáticamente. Mantén la hoja con el nombre 'Tasks'."),
         cols: [
-          { header: p("Task name","Nombre de tarea"), key:"t", width:44 },
-          { header: p("Phase","Fase"), key:"p", width:22 },
-          { header: p("Start (yyyy-mm-dd)","Inicio (aaaa-mm-dd)"), key:"s", width:18 },
-          { header: p("Finish (yyyy-mm-dd)","Fin (aaaa-mm-dd)"), key:"f", width:18 },
-          { header: p("Hours","Horas"), key:"h", width:10 },
-          { header: p("Priority","Prioridad"), key:"pr", width:14 },
-          { header: p("Assignee","Responsable"), key:"a", width:24 },
+          { header: "Task ID (do not edit)", key:"id", width:24 },
+          { header: "Code", key:"code", width:10 },
+          { header: "Title", key:"t", width:44 },
+          { header: "Phase", key:"ph", width:24 },
+          { header: "Status", key:"st", width:14 },
+          { header: "Priority", key:"pr", width:12 },
+          { header: "Start", key:"s", width:14 },
+          { header: "Due", key:"d", width:14 },
+          { header: "Actual finish", key:"af", width:14 },
+          { header: "% complete", key:"pc", width:12 },
+          { header: "Est. hours", key:"h", width:12 },
         ],
-        sample: [{ t:p("Draft requirements","Redactar requisitos"), p:p("Planning","Planificación"),
-                   s:"2026-08-03", f:"2026-08-14", h:24, pr:p("High","Alta"), a:"" }],
+        sample: [
+          { id:"", code:"", t:p("Draft requirements","Redactar requisitos"), ph:p("Phase 1 — Planning","Fase 1 — Planificación"),
+            st:"TODO", pr:"HIGH", s:"2026-08-03", d:"2026-08-14", af:"", pc:"", h:24 },
+          { id:"", code:"", t:p("Stakeholder kickoff meeting","Reunión de kickoff con interesados"), ph:p("Phase 1 — Planning","Fase 1 — Planificación"),
+            st:"TODO", pr:"MEDIUM", s:"2026-08-05", d:"2026-08-05", af:"", pc:"", h:4 },
+        ],
       }
     case "risk-register":
       return {
@@ -515,25 +527,38 @@ export async function buildXlsx(id: string, l: L): Promise<Buffer> {
   wb.creator = "FlowSync PM"
   wb.created = new Date()
 
-  const ws = wb.addWorksheet(pick(l, t.name, t.nameEs).slice(0, 30))
+  const importStrict = Boolean((spec as any).sheetName)
+  const ws = wb.addWorksheet((spec as any).sheetName || pick(l, t.name, t.nameEs).slice(0, 30))
 
-  // Title + guidance rows
-  ws.mergeCells(1, 1, 1, spec.cols.length)
-  const title = ws.getCell(1, 1)
-  title.value = pick(l, t.name, t.nameEs)
-  title.font = { size: 15, bold: true, color: { argb: "FF0D1B2A" } }
-  ws.getRow(1).height = 24
+  if (importStrict) {
+    // The in-app importer reads headers from row 1 — guidance lives on its own sheet.
+    const info = wb.addWorksheet(pick(l, "How to use", "Cómo usar"))
+    info.columns = [{ width: 100 }]
+    const ti = info.addRow([pick(l, t.name, t.nameEs)]); ti.font = { size: 15, bold: true, color: { argb: "FF0D1B2A" } }
+    const ni = info.addRow([spec.note]); ni.font = { size: 10.5, color: { argb: "FF334155" } }
+    ni.alignment = { wrapText: true, vertical: "top" }; ni.height = 90
+    info.addRow([""])
+    info.addRow(["flowsyncpm.com"]).font = { size: 9, color: { argb: "FF94A3B8" } }
+  } else {
+    // Title + guidance rows
+    ws.mergeCells(1, 1, 1, spec.cols.length)
+    const title = ws.getCell(1, 1)
+    title.value = pick(l, t.name, t.nameEs)
+    title.font = { size: 15, bold: true, color: { argb: "FF0D1B2A" } }
+    ws.getRow(1).height = 24
 
-  ws.mergeCells(2, 1, 2, spec.cols.length)
-  const note = ws.getCell(2, 1)
-  note.value = spec.note
-  note.font = { size: 10, italic: true, color: { argb: "FF64748B" } }
-  note.alignment = { wrapText: true, vertical: "middle" }
-  ws.getRow(2).height = 30
+    ws.mergeCells(2, 1, 2, spec.cols.length)
+    const note = ws.getCell(2, 1)
+    note.value = spec.note
+    note.font = { size: 10, italic: true, color: { argb: "FF64748B" } }
+    note.alignment = { wrapText: true, vertical: "middle" }
+    ws.getRow(2).height = 30
+    ws.getRow(3).height = 6
+  }
 
-  // Header row at 4
-  ws.getRow(3).height = 6
-  const header = ws.getRow(4)
+  // Header row (row 1 in import-strict mode, row 4 otherwise)
+  const headerRowN = importStrict ? 1 : 4
+  const header = ws.getRow(headerRowN)
   spec.cols.forEach((c, i) => {
     const cell = header.getCell(i + 1)
     cell.value = c.header
@@ -554,8 +579,8 @@ export async function buildXlsx(id: string, l: L): Promise<Buffer> {
   // Blank rows ready to fill
   for (let i = 0; i < 40; i++) ws.addRow(spec.cols.map(() => ""))
 
-  ws.views = [{ state: "frozen", ySplit: 4 }]
-  ws.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: spec.cols.length } }
+  ws.views = [{ state: "frozen", ySplit: headerRowN }]
+  ws.autoFilter = { from: { row: headerRowN, column: 1 }, to: { row: headerRowN, column: spec.cols.length } }
 
   return Buffer.from(await wb.xlsx.writeBuffer() as ArrayBuffer)
 }
