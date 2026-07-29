@@ -314,7 +314,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           borderBottom:"1px solid var(--border)" }}>
           {[
             { label:t("Cost Performance Index (CPI)"), value:EV<=0?"—":CPI.toFixed(2),
-              sub:EV<=0?t("No earned value yet"):CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
+              sub:EV<=0?"No earned value yet":CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
               color:EV<=0?"var(--text-3)":CPI>=1?"var(--green)":"var(--red)",
               tip:"CPI = EV/AC. >1 = under budget, <1 = over budget" },
             { label:t("Schedule Performance Index (SPI)"), value:SPI.toFixed(2),
@@ -326,7 +326,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               color:CV>=0?"var(--green)":"var(--red)",
               tip:"CV = EV - AC. Positive = under budget" },
             { label:"To-Complete Performance Index (TCPI)", value:TCPI.toFixed(2),
-              sub:TCPI>1?t("Needs improvement"):TCPI<=1?t("On track"):"",
+              sub:EV<=0?"No earned value yet":TCPI>1?t("Needs improvement"):t("On track"),
               color:TCPI>1.1?"var(--red)":TCPI>1?"var(--amber)":"var(--green)",
               tip:"Efficiency needed to complete on budget" },
           ].map((k,i) => (

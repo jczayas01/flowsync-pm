@@ -496,7 +496,7 @@ export function ProjectDashboardTab({
             </div>
             {[...milestones].sort((a:any,b:any)=>+new Date(a.dueDate)-+new Date(b.dueDate)).slice(0,6).map((m:any)=>{
               const done = m.status === "ACHIEVED" || m.achievedAt
-              const overdue = !done && new Date(m.dueDate) < new Date()
+              const overdue = !done && new Date(m.dueDate).getTime() < Date.now() - 86400000
               return (
                 <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0",
                   borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:13 }}>
@@ -505,7 +505,7 @@ export function ProjectDashboardTab({
                     whiteSpace:"nowrap" }}>{m.name}</span>
                   <span style={{ fontSize:12, color: overdue ? "var(--red)" : "var(--text-3)",
                     fontFamily:"monospace" }}>
-                    {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric" })}
+                    {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })}
                   </span>
                 </div>
               )

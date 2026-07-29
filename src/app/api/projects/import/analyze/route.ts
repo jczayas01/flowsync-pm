@@ -13,7 +13,7 @@ const SPEC = `{
   "project": {
     "name": "project name (max 150 chars)",
     "objective": "the project objective/goal in 1-3 sentences, or null",
-    "description": "2-4 sentence high-level description (purpose + approach), or null",
+    "description": "2-4 sentence high-level description — synthesize from the document's purpose/background/overview sections; only null when the document truly has none",
     "scope": "in-scope summary, or null",
     "outOfScope": "explicitly excluded items summary, or null",
     "economicImpact": "expected benefits / ROI / cost-of-doing-nothing summary if the documents state it, or null",
