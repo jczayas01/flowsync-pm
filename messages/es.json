@@ -68,6 +68,7 @@
   },
   "tabs": {
     "dashboard": "Panel",
+    "ai-overview": "Resumen AI",
     "board": "Tablero",
     "tasks": "Tareas",
     "gantt": "Gantt",

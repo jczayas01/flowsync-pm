@@ -68,6 +68,7 @@
   },
   "tabs": {
     "dashboard": "Dashboard",
+    "ai-overview": "AI Overview",
     "board": "Board",
     "tasks": "Tasks",
     "gantt": "Gantt",
