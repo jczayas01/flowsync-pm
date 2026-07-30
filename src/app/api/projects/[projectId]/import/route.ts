@@ -11,7 +11,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess, audit } from "@/lib/api"
 
-const VALID_STATUS   = new Set(["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"])
+const VALID_STATUS   = new Set(["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"])
 // Accept the labels humans actually type ("To Do", "In Progress", "Back log"…)
 const normStatus = (x: string) => {
   const k = String(x || "").toUpperCase().replace(/[\s-]+/g, "_")
@@ -21,6 +21,7 @@ const normStatus = (x: string) => {
     IN_REVIEW: "IN_REVIEW", REVIEW: "IN_REVIEW",
     DONE: "DONE", COMPLETE: "DONE", COMPLETED: "DONE",
     CANCELLED: "CANCELLED", CANCELED: "CANCELLED",
+    BLOCKED: "BLOCKED", ON_HOLD: "BLOCKED", STUCK: "BLOCKED", IMPEDED: "BLOCKED", WAITING: "BLOCKED",
   }
   return alias[k] || k
 }

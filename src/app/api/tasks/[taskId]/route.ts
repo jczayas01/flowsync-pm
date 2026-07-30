@@ -21,7 +21,7 @@ import { notifyMany } from "@/lib/notify"
 const updateTaskSchema = z.object({
   title:          z.string().min(1).max(500).optional(),
   description:    z.string().max(5000).optional().nullable(),
-  status:         z.enum(["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"]).optional(),
+  status:         z.enum(["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"]).optional(),
   priority:       z.enum(["CRITICAL","HIGH","MEDIUM","LOW"]).optional(),
   startDate:      z.string().datetime().optional().nullable(),
   dueDate:        z.string().datetime().optional().nullable(),

@@ -8,7 +8,7 @@
 export type Methodology = 'WATERFALL' | 'AGILE' | 'SCRUM'
 export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED'
 export type ProjectHealth = 'GREEN' | 'AMBER' | 'RED'
-export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'CANCELLED'
+export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'BLOCKED' | 'DONE' | 'CANCELLED'
 export type TaskPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
 export type PhaseStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED' | 'SKIPPED'
 export type MilestoneStatus = 'UPCOMING' | 'ACHIEVED' | 'MISSED' | 'AT_RISK'

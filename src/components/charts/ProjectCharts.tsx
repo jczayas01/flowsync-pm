@@ -107,6 +107,7 @@ const STATUS_META: [string, string, string][] = [
   ["DONE",        "Done",        GREEN],
   ["IN_PROGRESS", "In progress", STEEL],
   ["IN_REVIEW",   "In review",   "#7C3AED"],
+  ["BLOCKED",     "Blocked",     "#DC2626"],
   ["BLOCKED",     "Blocked",     RED],
   ["TODO",        "To do",       SLATE],
 ]

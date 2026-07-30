@@ -10,7 +10,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
 
-const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","DONE","CANCELLED"]
+const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"]
 const PRIORITY_OPTS = ["CRITICAL","HIGH","MEDIUM","LOW"]
 
 function fmtDate(d: Date | null): string {

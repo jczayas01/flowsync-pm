@@ -20,7 +20,7 @@ const createTaskSchema = z.object({
   parentId:       z.string().min(1).optional().nullable(),
   title:          z.string().min(1).max(500),
   description:    z.string().max(5000).optional().nullable(),
-  status:         z.enum(['BACKLOG','TODO','IN_PROGRESS','IN_REVIEW','DONE','CANCELLED']).default('TODO'),
+  status:         z.enum(['BACKLOG','TODO','IN_PROGRESS','IN_REVIEW','BLOCKED','DONE','CANCELLED']).default('TODO'),
   priority:       z.enum(['CRITICAL','HIGH','MEDIUM','LOW']).default('MEDIUM'),
   startDate:      z.string().datetime().optional().nullable(),
   dueDate:        z.string().datetime().optional().nullable(),

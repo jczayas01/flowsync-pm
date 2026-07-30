@@ -26,7 +26,7 @@ const createTaskSchema = z.object({
   phaseId: z.string().min(1).optional().nullable(),
   sprintId: z.string().min(1).optional().nullable(),
   parentId: z.string().min(1).optional().nullable(),
-  status: z.enum(['BACKLOG','TODO','IN_PROGRESS','IN_REVIEW','DONE','CANCELLED']).default('TODO'),
+  status: z.enum(['BACKLOG','TODO','IN_PROGRESS','IN_REVIEW','BLOCKED','DONE','CANCELLED']).default('TODO'),
   priority: z.enum(['CRITICAL','HIGH','MEDIUM','LOW']).default('MEDIUM'),
   startDate: z.string().datetime().optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),
