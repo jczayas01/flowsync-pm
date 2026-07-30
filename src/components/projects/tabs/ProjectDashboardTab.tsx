@@ -118,7 +118,7 @@ function MethodologyPanelAgile({ tasks, phases, milestones }: {
       <div style={{ display:"flex", gap:12 }}>
         {/* Left: metrics */}
         <div style={{ flex:1 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:10 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))", gap:8, marginBottom:10 }}>
             {[
               { label:"Done",        value:done,      color:"#059669" },
               { label:"In progress", value:inProg,    color:"#1B6CA8" },
@@ -512,19 +512,19 @@ export function ProjectDashboardTab({
       </div>
 
       {/* ── Row 1: Description + Economic Impact ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:14 }}>
         {EditablePanel({ field: 'description', label: 'Description', icon: '📋', value: project?.description, hint: 'Describe this project at a high level.' })}
         {EditablePanel({ field: 'economicImpact', label: 'Economic Impact / ROI', icon: '💹', value: project?.economicImpact, hint: 'Describe the expected financial benefit or ROI of this project.' })}
       </div>
 
       {/* ── Row 2: Objective + Scope (In) ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:14 }}>
         {EditablePanel({ field: 'objective', label: 'Project Objective', icon: '🎯', value: project?.objective, hint: 'What must this project achieve? State the measurable outcomes.' })}
         {EditablePanel({ field: 'scope', label: 'In Scope', icon: '✅', value: project?.scope, hint: 'What deliverables and work are included in this project?' })}
       </div>
 
       {/* ── Row 3: Out of Scope + Background/Assumptions ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:14 }}>
         {EditablePanel({ field: 'outOfScope', label: 'Out of Scope', icon: '🚫', value: project?.outOfScope, hint: 'What is explicitly excluded from this project?' })}
 
         {project?.background ? (
@@ -905,7 +905,7 @@ export function ProjectDashboardTab({
                 </p>
               )}
               {statusSection === "risks" && (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:12 }}>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--amber)",
                       textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>⚠ Risks</div>
@@ -938,7 +938,7 @@ export function ProjectDashboardTab({
       </div>
 
       {/* ── Tasks + Milestones + Risks ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:14 }}>
         {/* Recent tasks */}
         <div style={card}>
           <div style={sTitle}>

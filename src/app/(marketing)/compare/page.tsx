@@ -41,7 +41,7 @@ export default function CompareHub() {
           frente a las principales herramientas de gestión de proyectos — incluyendo dónde gana cada competidor.
         </p>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",
           gap:12, marginBottom:44 }}>
           {COMPETITORS.map(c=>(
             <Link key={c.id} href={`/compare/${c.id}`} style={{ textDecoration:"none", color:"inherit",

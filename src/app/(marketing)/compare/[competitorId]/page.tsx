@@ -90,8 +90,9 @@ export default function ComparePage({ params }: { params: { competitorId: string
 
         {/* Feature matrix */}
         <h2 style={{ fontSize:20, fontWeight:800, margin:"0 0 14px" }}>Feature comparison</h2>
-        <div style={{ border:`1px solid ${LINE}`, borderRadius:12, overflow:"hidden", marginBottom:10 }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13.5 }}>
+        <div style={{ border:`1px solid ${LINE}`, borderRadius:12, overflowX:"auto", marginBottom:10,
+          WebkitOverflowScrolling:"touch" }}>
+          <table style={{ width:"100%", minWidth:560, borderCollapse:"collapse", fontSize:13.5 }}>
             <thead>
               <tr style={{ background:NAVY, color:"#fff" }}>
                 <th style={{ textAlign:"left", padding:"11px 14px", fontWeight:700, width:"22%" }}>Capability</th>

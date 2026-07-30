@@ -217,7 +217,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             )}
             {Array.isArray(report.keyDeliverables) && report.keyDeliverables.length > 0 && (
               <ReportSection title="Key Deliverables">
-                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12.5 }}>
+                <table style={{ width:"100%", minWidth:460, borderCollapse:"collapse", fontSize:12.5 }}>
                   <thead>
                     <tr style={{ background:"#F1F5F9" }}>
                       {["Deliverable","Owner","Due"].map(h => (
@@ -294,7 +294,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
                 </div>
               </ReportSection>
             )}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:20 }}>
               <ReportSection title="Accomplishments This Period">
                 {(report.accomplishmentsThisWeek||[]).map((a:string,i:number)=><ReportBullet key={i} text={a}/>)}
               </ReportSection>
@@ -321,7 +321,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             <ReportSection title={"Executive Summary"}>
               <p style={{ fontSize:14, lineHeight:1.8, color:"#1E293B", margin:0, fontWeight:500 }}>{report.executiveSummary}</p>
             </ReportSection>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:20 }}>
               <ReportSection title="Strategic Highlights">
                 {(report.strategicHighlights||[]).map((h:string,i:number)=><ReportBullet key={i} text={h}/>)}
               </ReportSection>
@@ -361,7 +361,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </div>
               <div style={{ fontSize:13,color:"#374151" }}>{report.gateRationale}</div>
             </div>
-            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12 }}>
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12 }}>
               <ReportSection title="Scope Variance"><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.scopeVariance}</p></ReportSection>
               <ReportSection title="Schedule Variance"><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.scheduleVariance}</p></ReportSection>
               <ReportSection title="Cost Variance"><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.costVariance}</p></ReportSection>
@@ -386,7 +386,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
                 </div>
               </ReportSection>
             )}
-            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16 }}>
               <ReportSection title="Cost Performance"><p style={{ fontSize:12,color:"#374151",lineHeight:1.6,margin:0 }}>{report.cpiAnalysis}</p></ReportSection>
               <ReportSection title="Schedule Performance"><p style={{ fontSize:12,color:"#374151",lineHeight:1.6,margin:0 }}>{report.spiAnalysis}</p></ReportSection>
             </div>
@@ -1426,7 +1426,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               <div style={{ background:"#fff", border:"1px solid var(--border)",
                 borderRadius:"var(--radius)", padding:20, marginBottom:16 }}>
                 <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>New Status Update</div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:12, marginBottom:12 }}>
                   <div>
                     <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>Period start</label>
                     <DateField  style={inp} value={statusForm.periodStart}

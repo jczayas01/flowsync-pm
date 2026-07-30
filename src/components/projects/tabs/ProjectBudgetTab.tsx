@@ -516,7 +516,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             No budget line items yet
           </div>
         ) : (
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse" , minWidth:680 }}>
             <thead>
               <tr style={{ background:"var(--surface)" }}>
                 {["Description","Category","Planned","Actual","Variance",""].map(h => (
@@ -745,6 +746,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
