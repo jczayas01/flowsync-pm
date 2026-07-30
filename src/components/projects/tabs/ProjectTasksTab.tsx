@@ -24,7 +24,6 @@ const STATUS_COLOR: Record<string,{bg:string;text:string;label:string}> = {
   IN_REVIEW:   { bg:"#F5F3FF", text:"#7C3AED", label:"In Review"   },
   BLOCKED:     { bg:"#FEF2F2", text:"#DC2626", label:"Blocked"     },
   DONE:        { bg:"#ECFDF5", text:"#059669", label:"Done"        },
-  BLOCKED:     { bg:"#FEF2F2", text:"#DC2626", label:"Blocked"     },
   CANCELLED:   { bg:"#F8FAFC", text:"#94A3B8", label:"Cancelled"   },
 }
 const PRIORITY_COLOR: Record<string,{color:string;label:string}> = {
