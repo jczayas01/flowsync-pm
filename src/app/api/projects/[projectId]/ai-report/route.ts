@@ -20,6 +20,7 @@ const schema = z.object({
   periodStart: z.string().datetime().optional(),
   periodEnd:   z.string().datetime().optional(),
   includeWeekDocs: z.boolean().optional().default(true),
+  documentIds:     z.array(z.string()).max(12).optional(),
 })
 
 function buildPrompt(reportType: string, audience: string, data: any, notes?: string): string {
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error:"Validation failed" }, { status:422 })
 
-  const { reportType, audience, additionalNotes, periodStart, periodEnd, includeWeekDocs, locale } = parsed.data
+  const { reportType, audience, additionalNotes, periodStart, periodEnd, includeWeekDocs, locale, documentIds } = parsed.data
 
   const [project, tasks, risks, budgetItems, milestones, changes, decisions, members] = await Promise.all([
     db.project.findUnique({
@@ -143,18 +144,23 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
     let evidence = ""
     const evidenceNames: string[] = []
-    if (includeWeekDocs) {
+    const explicitDocs = Array.isArray(documentIds) && documentIds.length > 0
+    if (includeWeekDocs || explicitDocs) {
       try {
+        // Explicit selection wins: the PM chose exactly what should inform
+        // this report. Otherwise fall back to the reporting period's documents.
         const weekDocs = await db.document.findMany({
-          where: {
-            projectId: params.projectId,
-            OR: [
-              { weekOf: { gte: pStart, lte: pEnd } },
-              { weekOf: null, createdAt: { gte: pStart, lte: pEnd } },
-            ],
-          },
+          where: explicitDocs
+            ? { projectId: params.projectId, id: { in: documentIds! } }
+            : {
+                projectId: params.projectId,
+                OR: [
+                  { weekOf: { gte: pStart, lte: pEnd } },
+                  { weekOf: null, createdAt: { gte: pStart, lte: pEnd } },
+                ],
+              },
           orderBy: { createdAt: "desc" },
-          take: 6,
+          take: explicitDocs ? 12 : 6,
           select: { id: true, name: true, fileUrl: true },
         })
         const chunks: string[] = []

@@ -37,9 +37,38 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
   const [excluded, setExcluded] = useState<Set<string>>(new Set()) // finding keys
   const [applied, setApplied] = useState<any[]>([])
   const [errors, setErrors] = useState<string[]>([])
+  const [pasted, setPasted] = useState("")
+  const [pasteKind, setPasteKind] = useState("email")
 
   const hdr = workspaceId ? { "x-workspace-id": workspaceId } : ({} as Record<string, string>)
   const key = (f: any) => `${f.sourceDocId}:${f.type}:${f.title}`
+
+  async function runPasted() {
+    if (pasted.trim().length < 30) return
+    setPhase("running"); setFindings([]); setErrors([]); setExcluded(new Set())
+    setProgress("Analyzing pasted content…")
+    const all: any[] = []
+    try {
+      const ar = await fetch(`/api/projects/${projectId}/ai-analyze`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...hdr },
+        body: JSON.stringify({ action: "analyze_content", contentType: pasteKind, content: pasted }),
+      })
+      const ad = await ar.json().catch(() => null)
+      if (!ar.ok) { setErrors(e => [...e, ad?.error || `Analysis failed (${ar.status})`]) }
+      else {
+        const label = pasteKind === "email" ? "Pasted email"
+          : pasteKind === "teams_meeting" ? "Pasted meeting transcript"
+          : pasteKind === "teams_chat" ? "Pasted chat" : "Pasted notes"
+        for (const sg of (ad?.data?.suggestions || ad?.suggestions || [])) {
+          all.push({ ...sg, sourceDoc: label, sourceDocId: "pasted" })
+        }
+      }
+    } catch { setErrors(e => [...e, "Connection lost"]) }
+    setExcluded(new Set(all.filter(f => f.existing).map(f => key(f))))
+    setFindings(all)
+    setPhase(all.length ? "review" : "idle")
+    if (!all.length) setErrors(e => [...e, "No findings in the pasted content."])
+  }
 
   async function run() {
     setPhase("running"); setFindings([]); setErrors([]); setExcluded(new Set())
@@ -149,6 +178,36 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
               📄 {d.name}
             </label>
           ))}
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-2)" }}>
+                Or paste content
+              </span>
+              <select value={pasteKind} onChange={e => setPasteKind(e.target.value)}
+                style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6,
+                  border: "1px solid var(--border)", background: "#fff",
+                  color: "var(--text)", fontFamily: "var(--font)" }}>
+                <option value="email">Email</option>
+                <option value="teams_meeting">Meeting transcript</option>
+                <option value="teams_chat">Chat thread</option>
+                <option value="notes">Notes</option>
+              </select>
+              {pasted.trim().length >= 30 && (
+                <button onClick={runPasted} disabled={phase === "running"}
+                  style={{ marginLeft: "auto", padding: "6px 14px", background: "var(--steel)",
+                    color: "#fff", border: "none", borderRadius: 7, fontSize: 12.5, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "var(--font)" }}>
+                  🤖 Analyze pasted →
+                </button>
+              )}
+            </div>
+            <textarea rows={4} value={pasted} onChange={e => setPasted(e.target.value)}
+              placeholder="Paste an email, a Teams meeting transcript, or notes — the AI extracts action items, risks and decisions and routes them to their tabs."
+              style={{ width: "100%", padding: "9px 11px", borderRadius: 8, resize: "vertical",
+                border: "1px solid var(--border)", fontSize: 12.5, lineHeight: 1.6,
+                fontFamily: "var(--font)", color: "var(--text)", background: "#fff" }} />
+          </div>
+
           <button onClick={run} disabled={phase === "running" || picked.size === 0}
             style={{ marginTop: 14, padding: "10px 22px", background: "var(--steel)", color: "#fff",
               border: "none", borderRadius: 8, fontSize: 13.5, fontWeight: 700,

@@ -2,6 +2,7 @@
 // src/components/projects/tabs/ProjectReportsTab.tsx
 
 import { useLocale, useTranslations } from "next-intl"
+import { M365ImportModal } from "@/components/projects/M365ImportModal"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -552,6 +553,11 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   }
   const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())
   const [includeWeekDocs, setIncludeWeekDocs] = useState(true)
+  // Explicit document selection — when the PM picks documents, those (and only
+  // those) inform the report, regardless of the reporting week.
+  const [pickDocs, setPickDocs] = useState(false)
+  const [pickedDocIds, setPickedDocIds] = useState<Set<string>>(new Set())
+  const [m365Open, setM365Open] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [projDocs, setProjDocs] = useState<any[]|null>(null)
   useEffect(() => {
@@ -607,6 +613,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
             periodStart: new Date(reportWeek).toISOString(),
             periodEnd: reportWeekEnd(reportWeek).toISOString(),
             includeWeekDocs,
+            documentIds: pickDocs && pickedDocIds.size ? [...pickedDocIds] : undefined,
           } : {}),
         }),
       })
@@ -735,6 +742,16 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%" }}>
+      {m365Open && (
+        <M365ImportModal projectId={projectId} workspaceId={workspaceId}
+          onClose={() => setM365Open(false)}
+          onImported={docs => {
+            // Newly imported documents land selected — that's why they were fetched.
+            setProjDocs(p => [...docs, ...(p || [])])
+            setPickedDocIds(p => new Set([...p, ...docs.map((d:any) => d.id)]))
+            setM365Open(false)
+          }} />
+      )}
       {/* Toolbar */}
       <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",
         padding:"8px 14px", display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
@@ -868,6 +885,61 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                         )
                       })()}
                     </label>
+
+                    {/* Explicit document selection + Microsoft 365 import */}
+                    <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)" }}>
+                      <label style={{ display:"flex", alignItems:"center", gap:7, fontSize:12,
+                        color:"var(--text-2)", cursor:"pointer" }}>
+                        <input type="checkbox" checked={pickDocs}
+                          onChange={e => { setPickDocs(e.target.checked); if (!e.target.checked) setPickedDocIds(new Set()) }} />
+                        Or choose specific documents to inform this report
+                      </label>
+
+                      {pickDocs && (
+                        <div style={{ marginTop:8, border:"1px solid var(--border)", borderRadius:8,
+                          padding:"10px 12px", background:"var(--surface,#F8FAFC)" }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                            <span style={{ fontSize:11, fontWeight:700, color:"var(--text-3)",
+                              textTransform:"uppercase", letterSpacing:".05em" }}>
+                              Project documents ({pickedDocIds.size} selected)
+                            </span>
+                            <button type="button" onClick={() => setM365Open(true)}
+                              style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
+                                background:"#fff", border:"1px solid var(--border)", borderRadius:6,
+                                padding:"4px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>
+                              Import from 365
+                            </button>
+                          </div>
+                          <div style={{ maxHeight:190, overflowY:"auto" }}>
+                            {(!projDocs || projDocs.length === 0) && (
+                              <div style={{ fontSize:12, color:"var(--text-3)" }}>
+                                No documents yet — upload them in the Docs tab or import from Microsoft 365.
+                              </div>
+                            )}
+                            {(projDocs || []).map((d:any) => (
+                              <label key={d.id} style={{ display:"flex", alignItems:"center", gap:8,
+                                padding:"4px 0", fontSize:12.5, color:"var(--text)", cursor:"pointer" }}>
+                                <input type="checkbox" checked={pickedDocIds.has(d.id)}
+                                  onChange={() => setPickedDocIds(p => {
+                                    const n = new Set(p); n.has(d.id) ? n.delete(d.id) : n.add(d.id); return n })} />
+                                <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis",
+                                  whiteSpace:"nowrap" }}>📄 {d.name}</span>
+                                <span style={{ fontSize:10.5, color:"var(--text-4)", fontFamily:"monospace" }}>
+                                  {new Date(d.weekOf || d.createdAt).toLocaleDateString("en-US",
+                                    { month:"short", day:"numeric", timeZone:"UTC" })}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          {pickedDocIds.size > 0 && (
+                            <div style={{ fontSize:11, color:"var(--steel)", marginTop:6 }}>
+                              These {pickedDocIds.size} document{pickedDocIds.size===1?"":"s"} will be read as
+                              evidence instead of the reporting week's set.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
