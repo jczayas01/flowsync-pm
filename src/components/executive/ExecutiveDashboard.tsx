@@ -332,12 +332,14 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             📐 {tx("Baselines awaiting approval")} ({pendingBaselines.length})
           </div>
           <div style={{ fontSize:11, color:"#6D28D9", marginBottom:10 }}>
-            {tx("Approving a baseline formally locks the plan of record — scope, schedule, and budget — for variance tracking.")}
+            Approving a baseline formally locks the plan of record — scope, schedule, and budget —
+            for variance tracking. Click a baseline to review it in the project before approving.
           </div>
           {pendingBaselines.map((b:any) => (
             <div key={b.id} className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:12,
               padding:"9px 0", borderTop:"1px solid #DDD6FE" }}>
-              <div style={{ flex:1, minWidth:0 }}>
+              <a href={`/projects/${b.project?.id}/baselines`}
+                style={{ flex:1, minWidth:0, textDecoration:"none" }}>
                 <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{b.name}</span>
                 <span style={{ fontSize:11, color:"var(--text-3)", marginLeft:8 }}>
                   {b.project?.code} · {b.project?.name}
@@ -346,8 +348,9 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                   {tx("Created")}{b.createdBy?.name ? ` ${tx("by")} ${b.createdBy.name}` : ""}
                   {" · "}{new Date(b.startDate).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
                   {" → "}{new Date(b.endDate).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
+                  <span style={{ color:"#7C3AED", fontWeight:600, marginLeft:6 }}>· Review baseline →</span>
                 </div>
-              </div>
+              </a>
               <button onClick={() => baselineApprove(b.project.id, b.id)}
                 style={{ padding:"6px 14px", background:"#EDE9FE", border:"1px solid #C4B5FD",
                   borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#6D28D9",
