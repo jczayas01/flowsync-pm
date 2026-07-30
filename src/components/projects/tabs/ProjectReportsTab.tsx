@@ -743,7 +743,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%" }}>
       {m365Open && (
-        <M365ImportModal projectId={projectId} workspaceId={workspaceId}
+        <M365ImportModal projectId={projectId}
           onClose={() => setM365Open(false)}
           onImported={docs => {
             // Newly imported documents land selected — that's why they were fetched.
