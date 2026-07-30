@@ -658,6 +658,40 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   const [pickDocs, setPickDocs] = useState(false)
   const [pickedDocIds, setPickedDocIds] = useState<Set<string>>(new Set())
   const [m365Open, setM365Open] = useState(false)
+  // Microsoft 365 activity as report evidence — read the Smart Inbox, pick what
+  // actually informs this report. No logging step required.
+  const [useM365, setUseM365] = useState(false)
+  const [m365Items, setM365Items] = useState<any[]|null>(null)
+  const [m365Loading, setM365Loading] = useState(false)
+  const [m365Err, setM365Err] = useState("")
+  const [pickedM365, setPickedM365] = useState<Set<string>>(new Set())
+
+  async function loadM365() {
+    setM365Loading(true); setM365Err("")
+    try {
+      const r = await fetch("/api/m365/sync")
+      const d = await r.json().catch(() => null)
+      if (!r.ok) { setM365Err(d?.error || "Microsoft 365 isn't connected — connect it in Settings → Integrations."); setM365Items([]); return }
+      const p = d?.data || d || {}
+      if (p.connectionError) { setM365Err("Microsoft 365 needs to be reconnected (Settings → Integrations)."); setM365Items([]); return }
+      const rows = [
+        ...(p.emails   || []).map((e:any) => ({ key:`e:${e.emailId}`,   kind:"email",
+          subject:e.subject, from:e.from, date:e.receivedAt, snippet:e.snippet,
+          projectCode:e.projectCode, tag:e.detectedType })),
+        ...(p.meetings || []).map((m:any,i:number) => ({ key:`m:${m.meetingId||m.id||i}`, kind:"meeting",
+          subject:m.subject, from:m.organizer || "", date:m.start || m.startsAt, snippet:m.snippet || m.bodyPreview || "",
+          projectCode:m.projectCode, tag:"MEETING" })),
+        ...(p.chats    || []).map((c:any,i:number) => ({ key:`c:${c.messageId||i}`, kind:"chat",
+          subject:c.subject || c.preview?.slice(0,80) || "Teams mention", from:c.from || "",
+          date:c.createdAt, snippet:c.preview || "", projectCode:c.projectCode, tag:"MENTION" })),
+      ]
+      // Prefer items matched to this project; if none matched, show everything
+      // so the PM can still choose (matching depends on subject conventions).
+      const mine = rows.filter(r2 => !r2.projectCode || r2.projectCode === project?.code)
+      setM365Items(mine.length ? mine : rows)
+    } catch { setM365Err("Couldn't reach Microsoft 365.") ; setM365Items([]) }
+    finally { setM365Loading(false) }
+  }
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [projDocs, setProjDocs] = useState<any[]|null>(null)
   useEffect(() => {
@@ -714,6 +748,14 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
             periodEnd: reportWeekEnd(reportWeek).toISOString(),
             includeWeekDocs,
             documentIds: pickDocs && pickedDocIds.size ? [...pickedDocIds] : undefined,
+            m365Items: useM365 && pickedM365.size
+              ? (m365Items || []).filter((i:any) => pickedM365.has(i.key)).slice(0, 12).map((i:any) => ({
+                  kind: i.kind, subject: String(i.subject || "").slice(0, 300),
+                  from: i.from ? String(i.from).slice(0, 200) : undefined,
+                  date: i.date ? new Date(i.date).toLocaleDateString("en-US") : undefined,
+                  snippet: i.snippet ? String(i.snippet).slice(0, 1200) : undefined,
+                }))
+              : undefined,
           } : {}),
         }),
       })
@@ -1035,6 +1077,84 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                             <div style={{ fontSize:11, color:"var(--steel)", marginTop:6 }}>
                               These {pickedDocIds.size} document{pickedDocIds.size===1?"":"s"} will be read as
                               evidence instead of the reporting week's set.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Microsoft 365 activity as evidence */}
+                    <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)" }}>
+                      <label style={{ display:"flex", alignItems:"center", gap:7, fontSize:12,
+                        color:"var(--text-2)", cursor:"pointer" }}>
+                        <input type="checkbox" checked={useM365}
+                          onChange={e => {
+                            setUseM365(e.target.checked)
+                            if (e.target.checked && !m365Items) loadM365()
+                            if (!e.target.checked) setPickedM365(new Set())
+                          }} />
+                        Include Microsoft 365 activity — email, Teams meetings & mentions
+                      </label>
+
+                      {useM365 && (
+                        <div style={{ marginTop:8, border:"1px solid var(--border)", borderRadius:8,
+                          padding:"10px 12px", background:"var(--surface,#F8FAFC)" }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                            <span style={{ fontSize:11, fontWeight:700, color:"var(--text-3)",
+                              textTransform:"uppercase", letterSpacing:".05em" }}>
+                              Detected activity ({pickedM365.size} selected)
+                            </span>
+                            <button type="button" onClick={loadM365} disabled={m365Loading}
+                              style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
+                                background:"#fff", border:"1px solid var(--border)", borderRadius:6,
+                                padding:"4px 10px", cursor:m365Loading?"wait":"pointer", fontFamily:"var(--font)" }}>
+                              {m365Loading ? "Syncing…" : "↻ Sync now"}
+                            </button>
+                          </div>
+                          {m365Err && (
+                            <div style={{ fontSize:12, color:"#B45309", lineHeight:1.55 }}>{m365Err}</div>
+                          )}
+                          {!m365Err && m365Loading && !m365Items && (
+                            <div style={{ fontSize:12, color:"var(--text-3)" }}>Reading your inbox and calendar…</div>
+                          )}
+                          {!m365Err && m365Items && m365Items.length === 0 && (
+                            <div style={{ fontSize:12, color:"var(--text-3)" }}>
+                              Nothing project-related detected. Detection matches the subject against your
+                              project name or code.
+                            </div>
+                          )}
+                          <div style={{ maxHeight:210, overflowY:"auto" }}>
+                            {(m365Items || []).map((i:any) => (
+                              <label key={i.key} style={{ display:"flex", alignItems:"flex-start", gap:8,
+                                padding:"5px 0", borderTop:"1px solid var(--surface-1,#F1F5F9)",
+                                fontSize:12.5, cursor:"pointer" }}>
+                                <input type="checkbox" checked={pickedM365.has(i.key)} style={{ marginTop:3 }}
+                                  onChange={() => setPickedM365(p => {
+                                    const n = new Set(p); n.has(i.key) ? n.delete(i.key) : n.add(i.key); return n })} />
+                                <span style={{ flex:1, minWidth:0 }}>
+                                  <span style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                    <span>{i.kind === "email" ? "✉️" : i.kind === "meeting" ? "📅" : "💬"}</span>
+                                    <span style={{ fontWeight:600, color:"var(--text)", overflow:"hidden",
+                                      textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{i.subject}</span>
+                                    <span style={{ marginLeft:"auto", fontSize:10.5, color:"var(--text-4)",
+                                      fontFamily:"monospace", flexShrink:0 }}>
+                                      {i.date ? new Date(i.date).toLocaleDateString("en-US",{ month:"short", day:"numeric" }) : ""}
+                                    </span>
+                                  </span>
+                                  {(i.from || i.snippet) && (
+                                    <span style={{ display:"block", fontSize:11, color:"var(--text-3)",
+                                      lineHeight:1.5, marginTop:1 }}>
+                                      {i.from ? `${i.from} — ` : ""}{(i.snippet || "").slice(0, 110)}
+                                    </span>
+                                  )}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          {pickedM365.size > 0 && (
+                            <div style={{ fontSize:11, color:"var(--steel)", marginTop:6 }}>
+                              The AI will cite these {pickedM365.size} item{pickedM365.size===1?"":"s"} as
+                              first-hand evidence, attributed by sender and date.
                             </div>
                           )}
                         </div>

@@ -21,9 +21,16 @@ const schema = z.object({
   periodEnd:   z.string().datetime().optional(),
   includeWeekDocs: z.boolean().optional().default(true),
   documentIds:     z.array(z.string()).max(12).optional(),
+  m365Items: z.array(z.object({
+    kind:    z.enum(["email", "meeting", "chat"]),
+    subject: z.string().max(300),
+    from:    z.string().max(200).optional().nullable(),
+    date:    z.string().max(40).optional().nullable(),
+    snippet: z.string().max(1200).optional().nullable(),
+  })).max(12).optional(),
 })
 
-function buildPrompt(reportType: string, audience: string, data: any, notes?: string): string {
+function buildPrompt(reportType: string, audience: string, data: any, notes?: string, extraEvidence?: string): string {
   const { project, tasks, risks, budgetItems, milestones, changes, decisions, members, period } = data
 
   const totalBAC = budgetItems.reduce((s:number,b:any) => s+b.plannedCost, 0)
@@ -60,7 +67,8 @@ ${period ? `
 REPORTING PERIOD: ${period.label}
 TASKS COMPLETED THIS PERIOD (${period.completedTitles.length}): ${period.completedTitles.join("; ") || "None recorded"}
 MILESTONES DUE THIS PERIOD: ${period.milestonesDue.join("; ") || "None"}
-${period.evidence ? `\nEVIDENCE DOCUMENTS FILED THIS WEEK (${period.evidenceNames.join(", ")}):\n${period.evidence}` : ""}` : ""}`
+${period.evidence ? `\nEVIDENCE DOCUMENTS FILED THIS WEEK (${period.evidenceNames.join(", ")}):\n${period.evidence}` : ""}` : ""}
+${extraEvidence || ""}`
 
   const audienceNote: Record<string,string> = {
     TEAM:               "Write for the project team — specific, action-oriented, technical detail OK.",
@@ -108,7 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error:"Validation failed" }, { status:422 })
 
-  const { reportType, audience, additionalNotes, periodStart, periodEnd, includeWeekDocs, locale, documentIds } = parsed.data
+  const { reportType, audience, additionalNotes, periodStart, periodEnd, includeWeekDocs, locale, documentIds, m365Items } = parsed.data
 
   const [project, tasks, risks, budgetItems, milestones, changes, decisions, members] = await Promise.all([
     db.project.findUnique({
@@ -220,12 +228,66 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   const langDirective = locale === "es"
     ? "IDIOMA: Redacta TODO el reporte en español profesional (es-PR/es-419) — resumen ejecutivo, secciones, títulos de riesgos y recomendaciones. Mantén en su idioma original únicamente los nombres propios, códigos (R-001, T-005, CTS-2026-0841) y citas textuales de documentos.\n\n"
     : ""
+  // ── Evidence available to EVERY report type ──────────────────────────────
+  // Document evidence used to be Weekly-Status-only. When the PM explicitly
+  // selects documents (or asks for a Brief), those documents must reach the
+  // prompt regardless of report type — otherwise a "document-grounded" brief
+  // is grounded in nothing.
+  const evidenceBlocks: string[] = []
+  const wantDocsHere = Array.isArray(documentIds) && documentIds.length > 0 && !period
+  if (wantDocsHere || (reportType === "BRIEF" && !period)) {
+    try {
+      const docs = await db.document.findMany({
+        where: Array.isArray(documentIds) && documentIds.length
+          ? { projectId: params.projectId, id: { in: documentIds } }
+          : { projectId: params.projectId },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+        select: { name: true, fileUrl: true },
+      })
+      const chunks: string[] = []
+      const names: string[] = []
+      let total = 0
+      for (const d of docs) {
+        if (total >= 12000) break
+        try {
+          const buf = await downloadBuffer(d.fileUrl)
+          if (!buf) continue
+          const t = (await extractTextFromBuffer(d.name, buf)).slice(0, 4000)
+          if (!t.trim()) continue
+          chunks.push(`### ${d.name}\n${t}`)
+          names.push(d.name)
+          total += t.length
+        } catch { /* skip unreadable */ }
+      }
+      if (chunks.length) {
+        evidenceBlocks.push(`\nEVIDENCE DOCUMENTS (${names.join(", ")}):\n${chunks.join("\n\n")}`)
+      }
+    } catch { /* evidence is best-effort */ }
+  }
+
+  // Microsoft 365 activity the PM picked at report time — emails, Teams
+  // meetings and mentions become quotable evidence without being logged first.
+  if (Array.isArray(m365Items) && m365Items.length) {
+    const lines = m365Items.map(i => {
+      const head = `[Microsoft 365 — ${i.kind}] ${i.subject}`
+      const meta = [i.from ? `from ${i.from}` : "", i.date || ""].filter(Boolean).join(" · ")
+      return `### ${head}${meta ? `\n(${meta})` : ""}${i.snippet ? `\n${i.snippet}` : ""}`
+    })
+    evidenceBlocks.push(
+      `\nMICROSOFT 365 ACTIVITY SELECTED AS EVIDENCE (${m365Items.length} item${m365Items.length === 1 ? "" : "s"}):\n` +
+      lines.join("\n\n") +
+      `\nTreat these as first-hand evidence of what happened this period. Attribute naturally (e.g. "per the vendor's email of <date>") and never invent detail beyond what they state.`
+    )
+  }
+  const extraEvidence = evidenceBlocks.join("\n")
+
   const prompt = langDirective + styleDirective + buildPrompt(reportType, audience, {
     period,
     project, tasks, risks,
     budgetItems: budgetItems.map(b=>({ plannedCost:Number(b.plannedCost||0), actualCost:Number(b.actualCost||0), earnedValue:Number(b.earnedValue||0) })),
     milestones, changes, decisions, members,
-  }, additionalNotes)
+  }, additionalNotes, extraEvidence)
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
