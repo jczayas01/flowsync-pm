@@ -487,31 +487,6 @@ export function ProjectDashboardTab({
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
         {EditablePanel({ field: 'outOfScope', label: 'Out of Scope', icon: '🚫', value: project?.outOfScope, hint: 'What is explicitly excluded from this project?' })}
 
-        {/* Milestones — the imported ones need a home outside the Gantt diamonds */}
-        {Array.isArray(milestones) && milestones.length > 0 && (
-          <div style={{ background:"var(--panel,#fff)", border:"1px solid var(--border)",
-            borderRadius:10, padding:"16px 18px", marginBottom:14 }}>
-            <div style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)", marginBottom:10 }}>
-              ◆ Milestones <span style={{ color:"var(--text-4)", fontWeight:500 }}>({milestones.length})</span>
-            </div>
-            {[...milestones].sort((a:any,b:any)=>+new Date(a.dueDate)-+new Date(b.dueDate)).slice(0,6).map((m:any)=>{
-              const done = m.status === "ACHIEVED" || m.achievedAt
-              const overdue = !done && new Date(m.dueDate).getTime() < Date.now() - 86400000
-              return (
-                <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0",
-                  borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:13 }}>
-                  <span style={{ color: done ? "var(--green)" : overdue ? "var(--red)" : "var(--amber)" }}>◆</span>
-                  <span style={{ flex:1, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis",
-                    whiteSpace:"nowrap" }}>{m.name}</span>
-                  <span style={{ fontSize:12, color: overdue ? "var(--red)" : "var(--text-3)",
-                    fontFamily:"monospace" }}>
-                    {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        )}
         {project?.background ? (
           EditablePanel({ field: 'background', label: 'Background', icon: '📖', value: project?.background, hint: 'What is the background and context for this project?' })
         ) : project?.assumptions ? (
@@ -520,6 +495,42 @@ export function ProjectDashboardTab({
           EditablePanel({ field: 'background', label: 'Background', icon: '📖', value: project?.background, hint: 'What is the background and context for this project?' })
         )}
       </div>
+
+      {/* ── Milestone strip: full width, fills the row instead of leaving a gap ── */}
+      {Array.isArray(milestones) && milestones.length > 0 && (
+        <div style={{ ...card, marginBottom:14 }}>
+          <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:12 }}>
+            <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)" }}>◆ Milestones</span>
+            <span style={{ fontSize:11.5, color:"var(--text-4)" }}>
+              {milestones.filter((m:any)=>m.status==="ACHIEVED"||m.achievedAt).length} of {milestones.length} achieved
+            </span>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))", gap:10 }}>
+            {[...milestones].sort((a:any,b:any)=>+new Date(a.dueDate)-+new Date(b.dueDate)).map((m:any)=>{
+              const done    = m.status === "ACHIEVED" || m.achievedAt
+              const days    = Math.round((new Date(m.dueDate).getTime() - Date.now()) / 86400000)
+              const overdue = !done && days < 0
+              const soon    = !done && days >= 0 && days <= 14
+              const tone    = done ? "var(--green)" : overdue ? "var(--red)" : soon ? "var(--amber)" : "var(--steel)"
+              const when    = done ? "Achieved" : overdue ? `${Math.abs(days)}d overdue`
+                            : days === 0 ? "Due today" : `in ${days}d`
+              return (
+                <div key={m.id} style={{ border:"1px solid var(--border)", borderLeft:`3px solid ${tone}`,
+                  borderRadius:8, padding:"10px 12px", background:"var(--surface,#F8FAFC)" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                    <span style={{ color:tone, fontSize:11 }}>◆</span>
+                    <span style={{ fontSize:11, fontWeight:700, color:tone }}>{when}</span>
+                    <span style={{ fontSize:11, color:"var(--text-4)", marginLeft:"auto", fontFamily:"monospace" }}>
+                      {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })}
+                    </span>
+                  </div>
+                  <div style={{ fontSize:12.5, color:"var(--text)", lineHeight:1.45 }}>{m.name}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Stakeholders strip ── */}
       <div style={card}>
