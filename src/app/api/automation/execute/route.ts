@@ -42,11 +42,20 @@ export async function GET(req: NextRequest) {
   }
   const counts = await runScheduledScans()
   await reconcileAllEV().catch(() => {})
-  await runContractAlerts().catch(() => {})
-  await postRecurringBudgetItems().catch(() => {})
-  await postLaborActuals().catch(() => {})
-  await sendVerificationReminders().catch(() => {}).catch(e => {
-    console.error("[Automation] scheduled scan failed", e); return null
-  })
-  return NextResponse.json({ ok: !!counts, counts })
+  // Every sub-job reports: a blind `.catch(() => {})` hid a broken verification
+  // reminder for days — silent failure is worse than a loud one in a cron.
+  const jobs: Record<string, any> = {}
+  const run = async (name: string, fn: () => Promise<any>) => {
+    try { jobs[name] = (await fn()) ?? "ok" }
+    catch (e: any) {
+      jobs[name] = `ERROR: ${e?.message || String(e)}`
+      console.error(`[Automation] ${name} failed:`, e)
+    }
+  }
+  await run("contractAlerts",  () => runContractAlerts())
+  await run("recurringBudget", () => postRecurringBudgetItems())
+  await run("laborActuals",    () => postLaborActuals())
+  await run("verifyReminders", () => sendVerificationReminders())
+  console.log("[Automation] daily jobs:", JSON.stringify(jobs))
+  return NextResponse.json({ ok: !!counts, counts, jobs })
 }

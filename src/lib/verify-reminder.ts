@@ -9,8 +9,12 @@ import { sendEmail } from "@/lib/emails/templates"
 
 const DAY = 864e5
 
-export async function sendVerificationReminders(): Promise<number> {
+export type VerifyReminderResult = { candidates: number; sent: number; failures: string[] }
+
+export async function sendVerificationReminders(): Promise<VerifyReminderResult> {
   const now = Date.now()
+  // No blind catch here: if this query fails (missing column, stale client),
+  // the caller must see the error instead of a silent "0 users".
   const users = await db.user.findMany({
     where: {
       emailVerified:    null,
@@ -19,8 +23,9 @@ export async function sendVerificationReminders(): Promise<number> {
     },
     select: { id: true, email: true, name: true },
     take: 100,
-  }).catch(() => [])
+  })
 
+  const failures: string[] = []
   let sent = 0
   for (const u of users) {
     try {
@@ -50,9 +55,19 @@ export async function sendVerificationReminders(): Promise<number> {
   we won't write again.</p>
 </div>`,
       })
-      await db.user.update({ where: { id: u.id }, data: { verifyReminderAt: new Date() } })
-      if (ok) sent++
-    } catch { /* next user */ }
+      if (ok) {
+        // Stamp only on a real send — a failed send must stay retryable.
+        await db.user.update({ where: { id: u.id }, data: { verifyReminderAt: new Date() } })
+        sent++
+      } else {
+        failures.push(`${u.email}: email provider rejected the send`)
+      }
+    } catch (e: any) {
+      failures.push(`${u.email}: ${e?.message || String(e)}`)
+      console.error("[VerifyReminder] failed for", u.email, e)
+    }
   }
-  return sent
+  const result = { candidates: users.length, sent, failures }
+  console.log("[VerifyReminder]", JSON.stringify(result))
+  return result
 }
