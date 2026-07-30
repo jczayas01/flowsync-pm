@@ -313,6 +313,46 @@ export function ProjectDashboardTab({
   milestones:any[]; budgetItems:any[]; members:any[]; statusUpdates:any[]; phases?:any[];
   portfolios?:any[]; programs?:any[]; linkedGoals?:any[]
 }) {
+  // Milestones are a governance artifact — they must be creatable, editable and
+  // closeable where they're seen, not only through AI import.
+  const [msBusy, setMsBusy]   = useState<string|null>(null)
+  const [msEdit, setMsEdit]   = useState<string|null>(null)
+  const [msForm, setMsForm]   = useState<{ name:string; dueDate:string }>({ name:"", dueDate:"" })
+  const [msAdding, setMsAdding] = useState(false)
+  const msRouter = useRouter()
+
+  const isoNoon = (d: string) => new Date(`${d}T12:00:00.000Z`).toISOString()
+
+  async function msCreate() {
+    if (!msForm.name.trim() || !msForm.dueDate) return
+    setMsBusy("new")
+    const r = await fetch(`/api/projects/${projectId}/milestones`, {
+      method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ name: msForm.name.trim(), dueDate: isoNoon(msForm.dueDate) }),
+    }).catch(() => null)
+    setMsBusy(null)
+    if (r?.ok) { setMsAdding(false); setMsForm({ name:"", dueDate:"" }); msRouter.refresh() }
+    else alert("Could not create the milestone.")
+  }
+
+  async function msPatch(id: string, body: any) {
+    setMsBusy(id)
+    const r = await fetch(`/api/projects/${projectId}/milestones/${id}`, {
+      method:"PATCH", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body),
+    }).catch(() => null)
+    setMsBusy(null)
+    if (r?.ok) { setMsEdit(null); msRouter.refresh() }
+    else alert("Could not update the milestone.")
+  }
+
+  async function msDelete(id: string, name: string) {
+    if (!confirm(`Delete milestone "${name}"? This cannot be undone.`)) return
+    setMsBusy(id)
+    const r = await fetch(`/api/projects/${projectId}/milestones/${id}`, { method:"DELETE" }).catch(() => null)
+    setMsBusy(null)
+    if (r?.ok) msRouter.refresh(); else alert("Could not delete the milestone.")
+  }
+
   const td = useTranslations("projectDash")
   const router = useRouter()
   const [weekOffset, setWeekOffset] = useState(0)
@@ -496,41 +536,131 @@ export function ProjectDashboardTab({
         )}
       </div>
 
-      {/* ── Milestone strip: full width, fills the row instead of leaving a gap ── */}
-      {Array.isArray(milestones) && milestones.length > 0 && (
-        <div style={{ ...card, marginBottom:14 }}>
-          <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:12 }}>
-            <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)" }}>◆ Milestones</span>
-            <span style={{ fontSize:11.5, color:"var(--text-4)" }}>
-              {milestones.filter((m:any)=>m.status==="ACHIEVED"||m.achievedAt).length} of {milestones.length} achieved
-            </span>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))", gap:10 }}>
-            {[...milestones].sort((a:any,b:any)=>+new Date(a.dueDate)-+new Date(b.dueDate)).map((m:any)=>{
-              const done    = m.status === "ACHIEVED" || m.achievedAt
-              const days    = Math.round((new Date(m.dueDate).getTime() - Date.now()) / 86400000)
-              const overdue = !done && days < 0
-              const soon    = !done && days >= 0 && days <= 14
-              const tone    = done ? "var(--green)" : overdue ? "var(--red)" : soon ? "var(--amber)" : "var(--steel)"
-              const when    = done ? "Achieved" : overdue ? `${Math.abs(days)}d overdue`
-                            : days === 0 ? "Due today" : `in ${days}d`
-              return (
-                <div key={m.id} style={{ border:"1px solid var(--border)", borderLeft:`3px solid ${tone}`,
-                  borderRadius:8, padding:"10px 12px", background:"var(--surface,#F8FAFC)" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-                    <span style={{ color:tone, fontSize:11 }}>◆</span>
-                    <span style={{ fontSize:11, fontWeight:700, color:tone }}>{when}</span>
-                    <span style={{ fontSize:11, color:"var(--text-4)", marginLeft:"auto", fontFamily:"monospace" }}>
-                      {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })}
-                    </span>
-                  </div>
-                  <div style={{ fontSize:12.5, color:"var(--text)", lineHeight:1.45 }}>{m.name}</div>
-                </div>
-              )
-            })}
-          </div>
+      {/* ── Milestones: create, edit, close — the governance artifact, managed
+             where it is seen (the API always supported it; the UI did not). ── */}
+      <div style={{ ...card, marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:12 }}>
+          <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)" }}>◆ Milestones</span>
+          <span style={{ fontSize:11.5, color:"var(--text-4)" }}>
+            {(milestones||[]).filter((m:any)=>m.status==="ACHIEVED"||m.achievedAt).length} of {(milestones||[]).length} achieved
+          </span>
+          <button onClick={() => { setMsAdding(a => !a); setMsForm({ name:"", dueDate:"" }) }}
+            style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
+              background:"none", border:"1px solid var(--border)", borderRadius:6,
+              padding:"4px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>
+            {msAdding ? "Cancel" : "+ Add milestone"}
+          </button>
         </div>
-      )}
+
+        {msAdding && (
+          <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+            <input autoFocus value={msForm.name} placeholder="Milestone name (e.g. UAT approval)"
+              onChange={e => setMsForm(f => ({ ...f, name:e.target.value }))}
+              onKeyDown={e => { if (e.key === "Enter") msCreate() }}
+              style={{ flex:"1 1 260px", padding:"7px 10px", fontSize:13, borderRadius:6,
+                border:"1px solid var(--border)", fontFamily:"var(--font)", color:"var(--text)" }} />
+            <input type="date" value={msForm.dueDate}
+              onChange={e => setMsForm(f => ({ ...f, dueDate:e.target.value }))}
+              style={{ padding:"7px 10px", fontSize:13, borderRadius:6,
+                border:"1px solid var(--border)", fontFamily:"var(--font)", color:"var(--text)" }} />
+            <button onClick={msCreate} disabled={msBusy === "new" || !msForm.name.trim() || !msForm.dueDate}
+              style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                borderRadius:6, fontSize:12.5, fontWeight:700, cursor:"pointer", fontFamily:"var(--font)",
+                opacity:(!msForm.name.trim() || !msForm.dueDate) ? .5 : 1 }}>
+              {msBusy === "new" ? "Adding…" : "Add"}
+            </button>
+          </div>
+        )}
+
+        {(!milestones || milestones.length === 0) && !msAdding && (
+          <div style={{ fontSize:12.5, color:"var(--text-3)", lineHeight:1.6 }}>
+            No milestones yet. Milestones are the dated checkpoints your sponsor tracks —
+            add them here or let the AI extract them from a charter or project plan.
+          </div>
+        )}
+
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))", gap:10 }}>
+          {[...(milestones||[])].sort((a:any,b:any)=>+new Date(a.dueDate)-+new Date(b.dueDate)).map((m:any)=>{
+            const done    = m.status === "ACHIEVED" || m.achievedAt
+            const days    = Math.round((new Date(m.dueDate).getTime() - Date.now()) / 86400000)
+            const overdue = !done && days < 0
+            const soon    = !done && days >= 0 && days <= 14
+            const tone    = done ? "var(--green)" : overdue ? "var(--red)" : soon ? "var(--amber)" : "var(--steel)"
+            const when    = done ? "Achieved" : overdue ? `${Math.abs(days)}d overdue`
+                          : days === 0 ? "Due today" : `in ${days}d`
+            const editing = msEdit === m.id
+            return (
+              <div key={m.id} style={{ border:"1px solid var(--border)", borderLeft:`3px solid ${tone}`,
+                borderRadius:8, padding:"10px 12px", background:"var(--surface,#F8FAFC)",
+                opacity: msBusy === m.id ? .55 : 1 }}>
+                {editing ? (
+                  <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                    <input autoFocus value={msForm.name}
+                      onChange={e => setMsForm(f => ({ ...f, name:e.target.value }))}
+                      style={{ padding:"5px 8px", fontSize:12.5, borderRadius:5,
+                        border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                    <input type="date" value={msForm.dueDate}
+                      onChange={e => setMsForm(f => ({ ...f, dueDate:e.target.value }))}
+                      style={{ padding:"5px 8px", fontSize:12.5, borderRadius:5,
+                        border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                    <div style={{ display:"flex", gap:6 }}>
+                      <button onClick={() => msPatch(m.id, {
+                          name: msForm.name.trim() || m.name,
+                          ...(msForm.dueDate ? { dueDate: isoNoon(msForm.dueDate) } : {}),
+                        })}
+                        style={{ flex:1, padding:"5px 0", background:"var(--steel)", color:"#fff",
+                          border:"none", borderRadius:5, fontSize:11.5, fontWeight:700,
+                          cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                      <button onClick={() => setMsEdit(null)}
+                        style={{ padding:"5px 10px", background:"none", border:"1px solid var(--border)",
+                          borderRadius:5, fontSize:11.5, cursor:"pointer", color:"var(--text-3)",
+                          fontFamily:"var(--font)" }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                      <span style={{ color:tone, fontSize:11 }}>◆</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:tone }}>{when}</span>
+                      <span style={{ fontSize:11, color:"var(--text-4)", marginLeft:"auto",
+                        fontFamily:"monospace" }}>
+                        {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })}
+                      </span>
+                    </div>
+                    <div style={{ fontSize:12.5, color:"var(--text)", lineHeight:1.45, marginBottom:8 }}>
+                      {m.name}
+                    </div>
+                    <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                      <button onClick={() => msPatch(m.id, done
+                          ? { status:"UPCOMING", achievedAt:null }
+                          : { status:"ACHIEVED", achievedAt:new Date().toISOString() })}
+                        disabled={msBusy === m.id}
+                        style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5,
+                          cursor:"pointer", fontFamily:"var(--font)",
+                          background: done ? "#F1F5F9" : "#ECFDF5",
+                          border:`1px solid ${done ? "var(--border)" : "#A7F3D0"}`,
+                          color: done ? "var(--text-3)" : "#047857" }}>
+                        {done ? "↺ Reopen" : "✓ Mark achieved"}
+                      </button>
+                      <button onClick={() => {
+                          setMsEdit(m.id)
+                          setMsForm({ name:m.name, dueDate:new Date(m.dueDate).toISOString().slice(0,10) })
+                        }}
+                        style={{ fontSize:11, padding:"3px 8px", borderRadius:5, cursor:"pointer",
+                          background:"none", border:"1px solid var(--border)", color:"var(--text-3)",
+                          fontFamily:"var(--font)" }}>Edit</button>
+                      <button onClick={() => msDelete(m.id, m.name)}
+                        style={{ fontSize:11, padding:"3px 8px", borderRadius:5, cursor:"pointer",
+                          background:"none", border:"1px solid #FECACA", color:"var(--red)",
+                          marginLeft:"auto", fontFamily:"var(--font)" }}>✕</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
       {/* ── Stakeholders strip ── */}
       <div style={card}>
