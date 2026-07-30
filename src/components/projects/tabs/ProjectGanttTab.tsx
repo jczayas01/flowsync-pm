@@ -466,9 +466,15 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             backgroundImage:"repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.55) 2px,rgba(255,255,255,.55) 4px)" }} />
           <span>Critical path</span>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:4 }}
+          title="Sponsor milestone — a governance checkpoint tracked on the Dashboard and in reports">
           <svg width={12} height={12}><polygon points="6,1 11,6 6,11 1,6" fill="#1B6CA8" /></svg>
-          <span>Milestone</span>
+          <span>Sponsor milestone</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:4 }}
+          title="Project milestone — a zero-duration task in the schedule (counts toward progress and critical path)">
+          <svg width={12} height={12}><polygon points="6,1 11,6 6,11 1,6" fill="#7C3AED" /></svg>
+          <span>Project milestone</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <svg width={17} height={10}><line x1={1} y1={5} x2={12} y2={5} stroke="#94A3B8" strokeWidth={1.5} /><polygon points="12,2 17,5 12,8" fill="#94A3B8" /></svg>

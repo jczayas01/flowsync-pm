@@ -108,7 +108,8 @@ function ContextMenu({ x, y, task, onAction, onClose }: {
     { action:"move-up",       label:"▲ Move up",                divider:true  },
     { action:"move-down",     label:"▼ Move down",              divider:false },
     { action:"mark-complete", label:"✓ Mark complete",          divider:true  },
-    { action:"to-milestone",  label:"◇ Convert to milestone",   divider:false },
+    { action:"to-milestone",  label:"◇ Make project milestone", divider:false },
+    { action:"promote-milestone", label:"◆ Promote to sponsor milestone", divider:false },
     { action:"edit",          label:"✏ Edit task",              divider:true  },
     { action:"delete",        label:"🗑 Delete",                 divider:false, danger:true },
   ]
@@ -313,6 +314,30 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
     await patchTask(task.id, { isMilestone: true, startDate: iso, dueDate: iso })
   }
 
+  // Promote a project milestone (zero-duration task) into a Sponsor Milestone —
+  // the governance record the sponsor tracks, approves and sees in reports.
+  // The task stays in the schedule; the two are linked by name and date.
+  async function promoteToSponsorMilestone(task: any) {
+    const when = task.dueDate || task.startDate
+    if (!when) { alert("This task needs a date before it can become a sponsor milestone."); return }
+    if (!confirm(`Create a sponsor milestone "${task.title}"?\n\nIt will appear on the project Dashboard and in reports for sponsor tracking. The task stays in your schedule.`)) return
+    const body = {
+      name: task.title,
+      description: `Promoted from schedule task ${task.code}`,
+      dueDate: new Date(when).toISOString(),
+    }
+    const r = await fetch(`/api/projects/${projectId}/milestones`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).catch(() => null)
+    if (!r?.ok) { alert("Could not create the sponsor milestone."); return }
+    // Make sure the task itself reads as a milestone in the schedule too.
+    if (!task.isMilestone) {
+      const iso = new Date(when).toISOString()
+      await patchTask(task.id, { isMilestone: true, startDate: iso, dueDate: iso })
+    }
+    debouncedRefresh()
+  }
+
   async function toggleCritical(task: any) {
     await patchTask(task.id, { isCriticalPath: !task.isCriticalPath })
   }
@@ -511,6 +536,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
       case "move-down":    moveTask(task.id, "down"); break
       case "mark-complete":patchTask(task.id, { status:"DONE", percentComplete:100 }); break
       case "to-milestone": convertToMilestone(task); break
+      case "promote-milestone": promoteToSponsorMilestone(task); break
       case "toggle-critical": toggleCritical(task); break
       case "edit":         setOpenTaskId(task.id); break
       case "delete":       deleteTask(task.id); break
@@ -871,7 +897,8 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           { label:"Move Up",              action:"move-up",       always:false },
           { label:"Move Down",            action:"move-down",     always:false },
           { label:"Mark Complete",        action:"mark-complete", always:false },
-          { label:"Convert to Milestone", action:"to-milestone",  always:false },
+          { label:"Make Project Milestone", action:"to-milestone",  always:false },
+          { label:"Promote to Sponsor Milestone", action:"promote-milestone", always:false },
           { label:"Critical Path",        action:"toggle-critical", always:false },
           { label:"Edit",                 action:"edit",          always:false, single:true },
           { label:"Delete",               action:"delete",        always:false },
@@ -1207,7 +1234,8 @@ function TaskActionMenu({ task, onAction, onEdit, onContextMenu }: {
     { action:"move-up",       label:"Move up",          icon:"▲",  divider:true  },
     { action:"move-down",     label:"Move down",        icon:"▼",  divider:false },
     { action:"mark-complete", label:"Mark complete",    icon:"✓",  divider:true  },
-    { action:"to-milestone",  label:"Make milestone",   icon:"◆",  divider:false },
+    { action:"to-milestone",  label:"Make project milestone",   icon:"◇",  divider:false },
+    { action:"promote-milestone", label:"Promote to sponsor milestone", icon:"◆", divider:false },
     { action:"toggle-critical", label:"Mark critical path", icon:"⚡", divider:true  },
     { action:"delete",        label:"Delete",           icon:"🗑",  divider:true, danger:true },
   ]

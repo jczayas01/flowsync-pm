@@ -540,7 +540,10 @@ export function ProjectDashboardTab({
              where it is seen (the API always supported it; the UI did not). ── */}
       <div style={{ ...card, marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:12 }}>
-          <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)" }}>◆ Milestones</span>
+          <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)" }}
+            title="Governance checkpoints the sponsor tracks and signs off. Schedule-level milestones live in Tasks and the Gantt as project milestones.">
+            ◆ Sponsor Milestones
+          </span>
           <span style={{ fontSize:11.5, color:"var(--text-4)" }}>
             {(milestones||[]).filter((m:any)=>m.status==="ACHIEVED"||m.achievedAt).length} of {(milestones||[]).length} achieved
           </span>
@@ -574,8 +577,9 @@ export function ProjectDashboardTab({
 
         {(!milestones || milestones.length === 0) && !msAdding && (
           <div style={{ fontSize:12.5, color:"var(--text-3)", lineHeight:1.6 }}>
-            No milestones yet. Milestones are the dated checkpoints your sponsor tracks —
-            add them here or let the AI extract them from a charter or project plan.
+            No sponsor milestones yet. These are the dated checkpoints your sponsor tracks and
+            approves — add them here, let the AI extract them from a charter or project plan, or
+            promote a schedule task from the Tasks tab.
           </div>
         )}
 
