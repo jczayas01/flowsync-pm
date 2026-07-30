@@ -13,7 +13,7 @@ import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
 
 const schema = z.object({
-  reportType: z.enum(["STATUS","EXECUTIVE","PHASE_GATE","EVM","RISK_SUMMARY"]),
+  reportType: z.enum(["STATUS","EXECUTIVE","PHASE_GATE","EVM","RISK_SUMMARY","BRIEF"]),
   audience:   z.enum(["TEAM","SPONSOR","STEERING_COMMITTEE","PMO"]).default("TEAM"),
   locale:     z.enum(["en","es"]).default("en"),
   additionalNotes: z.string().max(2000).optional(),
@@ -84,6 +84,9 @@ ${period.evidence ? `\nEVIDENCE DOCUMENTS FILED THIS WEEK (${period.evidenceName
 
     RISK_SUMMARY: `Generate a Risk Summary Report (PM Standard — Uncertainty). Return ONLY valid JSON:
 {"reportTitle":"Risk Summary — ${project.name} — ${new Date().toLocaleDateString()}","riskOverview":"2-3 sentences overall risk posture","overallRiskRating":"${criticalRisks.length>0?"CRITICAL":openRisks.length>3?"HIGH":"MEDIUM"}","riskRatingRationale":"why this rating","criticalRisks":[{"title":"risk","score":15,"response":"mitigation status","recommendation":"action"}],"highRisks":[{"title":"risk","score":10,"trend":"STABLE"}],"opportunities":"summary of opportunities","riskTrend":"IMPROVING|STABLE|DETERIORATING","topThreeActions":["action1","action2","action3"],"contingencyReserveStatus":"adequate or not","nextRiskReview":"recommended date"}`,
+
+    BRIEF: `Generate a Project Brief — a standalone onboarding document that brings a new stakeholder, sponsor, or vendor fully up to speed on this project. Ground every statement in the project data and the evidence documents provided; where the documents are silent, say so rather than inventing. Return ONLY valid JSON:
+{"reportTitle":"Project Brief — ${project.name}","executiveSummary":"4-6 sentences: what this project is, why it exists, where it stands today","background":"the situation and problem that motivated the project","objectives":["objective1","objective2"],"scopeSummary":"what is included, in prose","outOfScopeSummary":"what is explicitly excluded, or 'Not documented' if the sources are silent","approach":"delivery methodology and how the work is organized into phases","keyDeliverables":[{"deliverable":"name","owner":"role","dueDate":"YYYY-MM-DD or TBD"}],"governanceSummary":"who decides what, meeting cadence, escalation path","budgetStatus":"budget position in prose: BAC, committed/actual, forecast","scheduleStatus":"schedule position: phase, milestones ahead, variance","risksAndIssues":"the risks a newcomer must know about, with why they matter","stakeholderSummary":"the people and groups involved and their interest","openQuestions":["question a newcomer should get answered","..."],"sourceDocuments":["document name used as evidence"]}`
   }
 
   return `You are a PM Standard-certified PMO Assistant. Audience: ${audienceNote[audience]}

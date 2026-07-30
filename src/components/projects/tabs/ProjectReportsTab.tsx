@@ -14,6 +14,8 @@ const ReportSnapshot = nextDynamic(() => import("@/components/charts/ReportSnaps
 const REPORT_TYPES = [
   { value:"STATUS",       label:"Weekly Status Report",  icon:"📋",
     desc:"Accomplishments, plans, risks, EVM summary." },
+  { value:"BRIEF",        label:"Project Brief",         icon:"📄",
+    desc:"Onboarding document: background, scope, governance, risks — built from your documents." },
   { value:"EXECUTIVE",    label:"Executive Brief",        icon:"👔",
     desc:"1-page strategic summary for leadership." },
   { value:"PHASE_GATE",   label:"Phase Gate Review",      icon:"🔁",
@@ -177,6 +179,104 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             <ReportSnapshot data={snapshot} accent={accent} accent2={accent2} />
           </ReportSection>
         ) : null}
+
+        {/* PROJECT BRIEF — onboarding document, document-grounded */}
+        {reportType==="BRIEF" && (
+          <>
+            <ReportSection title={"Executive Summary"}>
+              <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.executiveSummary}</p>
+            </ReportSection>
+            {report.background && (
+              <ReportSection title="Background">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.background}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.objectives) && report.objectives.length > 0 && (
+              <ReportSection title="Objectives">
+                {report.objectives.map((o:string,i:number) => <ReportBullet key={i} text={o} />)}
+              </ReportSection>
+            )}
+            {(report.scopeSummary || report.outOfScopeSummary) && (
+              <ReportSection title="Scope">
+                {report.scopeSummary && (
+                  <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 8px" }}>
+                    <strong style={{ color:"#1E293B" }}>In scope. </strong>{report.scopeSummary}
+                  </p>
+                )}
+                {report.outOfScopeSummary && (
+                  <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>
+                    <strong style={{ color:"#1E293B" }}>Out of scope. </strong>{report.outOfScopeSummary}
+                  </p>
+                )}
+              </ReportSection>
+            )}
+            {report.approach && (
+              <ReportSection title="Approach">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.approach}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.keyDeliverables) && report.keyDeliverables.length > 0 && (
+              <ReportSection title="Key Deliverables">
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12.5 }}>
+                  <thead>
+                    <tr style={{ background:"#F1F5F9" }}>
+                      {["Deliverable","Owner","Due"].map(h => (
+                        <th key={h} style={{ textAlign:"left", padding:"7px 10px", fontWeight:700,
+                          color:"#1E293B", borderBottom:"1px solid #E2E8F0" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.keyDeliverables.map((d:any,i:number) => (
+                      <tr key={i} style={{ borderBottom:"1px solid #F1F5F9" }}>
+                        <td style={{ padding:"7px 10px", color:"#374151" }}>{d.deliverable}</td>
+                        <td style={{ padding:"7px 10px", color:"#64748B" }}>{d.owner || "—"}</td>
+                        <td style={{ padding:"7px 10px", color:"#64748B", fontFamily:"monospace" }}>{d.dueDate || "TBD"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ReportSection>
+            )}
+            {report.governanceSummary && (
+              <ReportSection title="Governance">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.governanceSummary}</p>
+              </ReportSection>
+            )}
+            {report.budgetStatus && (
+              <ReportSection title="Budget Status">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.budgetStatus}</p>
+              </ReportSection>
+            )}
+            {report.scheduleStatus && (
+              <ReportSection title="Schedule Status">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.scheduleStatus}</p>
+              </ReportSection>
+            )}
+            {report.risksAndIssues && (
+              <ReportSection title="Risks & Issues">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.risksAndIssues}</p>
+              </ReportSection>
+            )}
+            {report.stakeholderSummary && (
+              <ReportSection title="Stakeholders">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.stakeholderSummary}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.openQuestions) && report.openQuestions.length > 0 && (
+              <ReportSection title="Open Questions">
+                {report.openQuestions.map((q:string,i:number) => <ReportBullet key={i} text={q} />)}
+              </ReportSection>
+            )}
+            {Array.isArray(report.sourceDocuments) && report.sourceDocuments.length > 0 && (
+              <ReportSection title="Sources">
+                <p style={{ fontSize:12, lineHeight:1.7, color:"#64748B", margin:0 }}>
+                  Built from: {report.sourceDocuments.join(" · ")}
+                </p>
+              </ReportSection>
+            )}
+          </>
+        )}
 
         {/* STATUS */}
         {reportType==="STATUS" && (
