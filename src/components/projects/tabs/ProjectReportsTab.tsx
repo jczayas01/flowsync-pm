@@ -1400,33 +1400,24 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         {/* HISTORY */}
         {view==="list" && (
           <>
-            {/* Project Brief download */}
+            {/* Project Brief — routes to the AI report type that carries
+                preview, email, print, PDF and Word (the old docx-only export
+                had none of those). */}
             <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
               borderRadius:"var(--radius)", padding:"12px 16px", marginBottom:14,
-              display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
               <div>
-                <div style={{ fontSize:12, fontWeight:600, color:"var(--steel)" }}>Project Brief (.docx)</div>
-                <div style={{ fontSize:11, color:"var(--text-3)" }}>Download the complete Project Brief as a Word document</div>
+                <div style={{ fontSize:12, fontWeight:600, color:"var(--steel)" }}>📄 Project Brief</div>
+                <div style={{ fontSize:11, color:"var(--text-3)", lineHeight:1.5 }}>
+                  Onboarding document built from your project data and selected documents —
+                  preview it, email it, print it, or export to PDF/Word.
+                </div>
               </div>
-              <button onClick={async () => {
-                setDownloading(true)
-                try {
-                  const res = await fetch(`/api/projects/${projectId}/export-docx`, {
-                    method:"POST", headers:{"Content-Type":"application/json"},
-                    body: JSON.stringify({ docType:"PROJECT_BRIEF" }),
-                  })
-                  if (!res.ok) { alert(tr("Download failed")); return }
-                  const blob = await res.blob()
-                  const url  = URL.createObjectURL(blob)
-                  const a    = document.createElement("a")
-                  a.href = url; a.download = `${project?.code}_Project_Brief.docx`; a.click()
-                  URL.revokeObjectURL(url)
-                } finally { setDownloading(false) }
-              }} disabled={downloading}
+              <button onClick={() => { setReportType("BRIEF"); setView("generate") }}
                 style={{ padding:"7px 14px", background:"var(--steel)", color:"#fff",
-                  border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
+                  border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:600,
                   cursor:"pointer", fontFamily:"var(--font)", flexShrink:0 }}>
-                📄 Download Brief
+                Generate Brief →
               </button>
             </div>
 
