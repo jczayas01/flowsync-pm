@@ -8,6 +8,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requirePermission } from '@/lib/rbac/guards'
+import { fireTrigger } from '@/lib/automation/trigger'
 import {
   withWorkspace, ok, okList, err, serverError,
   parseBody, getSearchParams, audit, verifyProjectAccess, ApiContext,
@@ -152,6 +153,12 @@ async function createTask(ctx: ApiContext) {
 
   await audit(ctx.workspaceId, ctx.userId, 'task.created', 'task', task.id,
     undefined, { code, title: data.title, projectId: data.projectId })
+
+  // Automation: "when a task is created" was offered as a recipe but never
+  // fired — the trigger simply wasn't wired here.
+  fireTrigger('task.created', ctx.workspaceId, data.projectId, 'task', task.id, ctx.userId, {
+    code, title: data.title, priority: data.priority, status: data.status,
+  })
 
   return ok(task, 201)
 }

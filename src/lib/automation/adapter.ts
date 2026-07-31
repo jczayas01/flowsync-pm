@@ -12,6 +12,7 @@ import type { Action, Condition } from "./types"
 
 // ── Event (dotted, fired in code) → rule trigger values (UPPER, stored) ──
 export const EVENT_TO_RULE_TRIGGERS: Record<string, string[]> = {
+  "task.created":                  ["TASK_CREATED"],
   "task.status_changed":           ["TASK_STATUS_CHANGED"],
   "task.completed":                ["TASK_STATUS_CHANGED", "TASK_COMPLETED"],
   "task.overdue":                  ["TASK_OVERDUE"],

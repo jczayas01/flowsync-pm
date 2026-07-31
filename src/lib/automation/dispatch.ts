@@ -3,6 +3,7 @@
 // any matching automation rules and fire subscribed webhooks. Everything here is
 // wrapped so a failing rule or webhook can NEVER break the caller's operation.
 import { db } from "@/lib/db"
+import { sendEmail } from "@/lib/emails/templates"
 import { createHmac } from "crypto"
 
 // Automation rules use UPPER_SNAKE triggers; webhooks use dotted.lowercase events.
@@ -58,8 +59,9 @@ async function deliverWebhook(wh: any, webhookEvent: string, data: any) {
 async function recipients(action: string, ctx: any, workspaceId: string): Promise<string[]> {
   if (ctx.projectId) {
     let roles: string[]
-    if (action === "NOTIFY_PM") roles = ["PM"]
-    else if (action === "NOTIFY_SPONSOR") roles = ["SPONSOR", "EXECUTIVE_SPONSOR"]
+    // Match the roles people actually assign, not just the literal "PM".
+    if (action === "NOTIFY_PM") roles = ["PM", "PROGRAM_MANAGER", "PMO_DIRECTOR", "PMO"]
+    else if (action === "NOTIFY_SPONSOR") roles = ["SPONSOR", "EXECUTIVE_SPONSOR", "STEERING_COMMITTEE"]
     else roles = ["SPONSOR", "EXECUTIVE_SPONSOR", "STAKEHOLDER", "STEERING_COMMITTEE", "PMO"]
     const members = await db.projectMember.findMany({
       where: { projectId: ctx.projectId, projectRole: { in: roles as any } }, select: { userId: true },
@@ -78,23 +80,56 @@ async function runAction(rule: any, ctx: any): Promise<{ status: string; message
   const ws = rule.workspaceId
   const action = rule.action
   try {
-    if (["NOTIFY_PM", "NOTIFY_STAKEHOLDERS", "NOTIFY_SPONSOR"].includes(action)) {
-      const ids = await recipients(action, ctx, ws)
+    if (["NOTIFY_PM", "NOTIFY_STAKEHOLDERS", "NOTIFY_SPONSOR", "SEND_EMAIL"].includes(action)) {
+      const ids = await recipients(action === "SEND_EMAIL" ? "NOTIFY_PM" : action, ctx, ws)
+      const wantsEmail = action === "SEND_EMAIL"
+      const title = ctx.title || rule.name
+      const link  = ctx.link || null
+      let mailed = 0
+
       for (const uid of ids) {
         await db.notification.create({
-          data: { workspaceId: ws, userId: uid, type: "automation", title: ctx.title || rule.name, body: `Automation: ${rule.name}`, link: ctx.link || null, actorId: ctx.actorId || null },
+          data: { workspaceId: ws, userId: uid, type: "automation",
+            title, body: `Automation: ${rule.name}`, link, actorId: ctx.actorId || null },
         })
       }
-      return { status: "SUCCESS", message: `Notified ${ids.length} recipient(s)` }
-    }
-    if (action === "SEND_EMAIL") {
-      const ids = await recipients("NOTIFY_PM", ctx, ws)
-      for (const uid of ids) {
-        await db.notification.create({
-          data: { workspaceId: ws, userId: uid, type: "automation", title: `✉ ${ctx.title || rule.name}`, body: `(Email) ${rule.name}`, link: ctx.link || null },
+
+      // Mail transport IS configured — send for real instead of pretending.
+      if (wantsEmail && ids.length) {
+        const people = await db.user.findMany({
+          where: { id: { in: ids } }, select: { email: true, name: true },
         })
+        const base = process.env.NEXT_PUBLIC_APP_URL || "https://flowsyncpm.com"
+        const url  = link ? (link.startsWith("http") ? link : `${base}${link}`) : base
+        for (const person of people) {
+          if (!person.email) continue
+          const ok = await sendEmail({
+            to: person.email,
+            subject: title,
+            html: `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px">
+              <p style="font-size:15px;color:#0F172A;margin:0 0 10px"><strong>${title}</strong></p>
+              <p style="font-size:14px;color:#334155;line-height:1.6;margin:0 0 18px">
+                Triggered by the automation rule <strong>${rule.name}</strong> in FlowSync PM.
+              </p>
+              <p style="margin:0 0 22px">
+                <a href="${url}" style="display:inline-block;background:#1B6CA8;color:#fff;
+                  text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">
+                  Open in FlowSync PM
+                </a>
+              </p>
+              <p style="font-size:12px;color:#94A3B8;margin:0">
+                You received this because you are on this project's team. Manage automation rules in Settings → Automation.
+              </p>
+            </div>`,
+          }).catch(() => false)
+          if (ok) mailed++
+        }
       }
-      return { status: "SUCCESS", message: "Email delivered as in-app notification (no mail transport configured)" }
+
+      return { status: "SUCCESS",
+        message: wantsEmail
+          ? `Notified ${ids.length} recipient(s) · emailed ${mailed}`
+          : `Notified ${ids.length} recipient(s)` }
     }
     if (action === "CREATE_TASKS" && ctx.projectId) {
       const base = ["Kickoff meeting", "Define success criteria", "Set up communication plan"]
@@ -105,7 +140,9 @@ async function runAction(rule: any, ctx: any): Promise<{ status: string; message
       }
       return { status: "SUCCESS", message: `Created ${base.length} kickoff tasks` }
     }
-    return { status: "SUCCESS", message: `Action ${action} acknowledged (no live handler yet)` }
+    // An unimplemented action is a configuration problem, not a success.
+    console.warn(`[Automation] rule "${rule.name}" uses action ${action}, which has no handler`)
+    return { status: "FAILED", message: `Action "${action}" is not available yet — this rule does nothing. Pick a different action.` }
   } catch (e: any) {
     return { status: "FAILED", message: String(e?.message || e) }
   }
