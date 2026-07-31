@@ -20,6 +20,13 @@ const PUBLIC_PREFIXES = [
   // way — Stripe by webhook signature, Microsoft Graph by validation token.
   "/api/stripe/webhook",
   "/api/m365/webhook",
+  // Scheduled jobs: Vercel Cron calls these with no session cookie, so a
+  // session check can only ever return 401 — which silently killed every
+  // scheduled job (automation scans, contract alerts, recurring budget items,
+  // labour actuals, trial and verification reminders). Both routes verify
+  // CRON_SECRET themselves, by query param or Bearer header.
+  "/api/automation/execute",
+  "/api/cron/",
 ]
 
 const PUBLIC_ROUTES = new Set([
