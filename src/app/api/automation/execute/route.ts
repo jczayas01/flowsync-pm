@@ -13,10 +13,25 @@ import { sendVerificationReminders } from "@/lib/verify-reminder"
 import { runScheduledScans } from "@/lib/automation/engine"
 import type { TriggerEvent } from "@/lib/automation/types"
 
-// Simple API key auth for internal calls
+// Simple API key auth for internal calls.
+// A missing INTERNAL_API_KEY used to 401 every event trigger in total silence —
+// the automation engine looked "built but never firing" for weeks. Now the
+// misconfiguration announces itself in the logs instead of hiding.
 function validateInternalKey(req: NextRequest): boolean {
+  const expected = process.env.INTERNAL_API_KEY
+  if (!expected) {
+    console.error(
+      "[Automation] INTERNAL_API_KEY is not set — every event trigger will be " +
+      "rejected. Set it in the deployment environment and redeploy."
+    )
+    return false
+  }
   const key = req.headers.get("x-internal-key")
-  return key === process.env.INTERNAL_API_KEY
+  if (key !== expected) {
+    console.warn("[Automation] event trigger rejected: bad or missing x-internal-key")
+    return false
+  }
+  return true
 }
 
 export async function POST(req: NextRequest) {
