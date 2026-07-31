@@ -109,6 +109,12 @@ async function updateProject(ctx: ApiContext, params?: Record<string,string>) {
 
   await audit(ctx.workspaceId, ctx.userId, 'project.updated', 'project', id, before as any, updated as any)
 
+  // Automations: project reaching completion — the recipe existed, the trigger didn't.
+  if (parsed.data.status === "COMPLETED" && (before as any)?.status !== "COMPLETED") {
+    fireTrigger("project.completed", ctx.workspaceId, id, "project", id, ctx.userId,
+      { name: updated.name })
+  }
+
   // Automations: health transitions.
   if (parsed.data.health && parsed.data.health !== (before as any)?.health) {
     fireTrigger("project.health_changed", ctx.workspaceId, id, "project", id, ctx.userId,

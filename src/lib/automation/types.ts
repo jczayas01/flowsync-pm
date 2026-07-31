@@ -20,6 +20,7 @@ export type TriggerType =
   | "project.health_changed"
   | "project.status_changed"
   | "project.created"
+  | "project.completed"
   | "project.milestone_approaching"
   | "project.milestone_missed"
   | "project.budget_threshold"   // % of budget consumed

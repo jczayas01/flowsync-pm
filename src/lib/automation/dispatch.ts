@@ -140,6 +140,154 @@ async function runAction(rule: any, ctx: any): Promise<{ status: string; message
       }
       return { status: "SUCCESS", message: `Created ${base.length} kickoff tasks` }
     }
+    // ── Advance the schedule: when a task completes, start whatever it was
+    //    blocking (dependents whose predecessors are now all done). ──
+    if (action === "UPDATE_TASK_STATUS" && ctx.projectId) {
+      const taskId = ctx.entityId || ctx.taskId
+      if (!taskId) return { status: "FAILED", message: "No task in context" }
+      const links = await db.taskDependency.findMany({
+        where: { precedingTaskId: taskId }, select: { dependentTaskId: true },
+      })
+      if (!links.length) return { status: "SUCCESS", message: "No dependent tasks to advance" }
+      let started = 0
+      for (const l of links) {
+        const preds = await db.taskDependency.findMany({
+          where: { dependentTaskId: l.dependentTaskId },
+          select: { precedingTask: { select: { status: true } } },
+        })
+        const allDone = preds.every(p2 => p2.precedingTask?.status === "DONE")
+        if (!allDone) continue
+        const dep = await db.task.findUnique({
+          where: { id: l.dependentTaskId }, select: { status: true },
+        })
+        if (dep && (dep.status === "TODO" || dep.status === "BACKLOG")) {
+          await db.task.update({
+            where: { id: l.dependentTaskId }, data: { status: "IN_PROGRESS" as any },
+          })
+          started++
+        }
+      }
+      return { status: "SUCCESS", message: `Started ${started} unblocked task(s)` }
+    }
+
+    // ── Re-evaluate project health from real signals, not a fixed value ──
+    if (action === "UPDATE_PROJECT_HEALTH" && ctx.projectId) {
+      const pid = ctx.projectId
+      const now = new Date()
+      const [overdue, criticalRisks, project] = await Promise.all([
+        db.task.count({ where: { projectId: pid, dueDate: { lt: now },
+          status: { notIn: ["DONE", "CANCELLED"] as any } } }),
+        db.risk.count({ where: { projectId: pid, status: "OPEN" as any,
+          score: { gte: 15 } } }).catch(() => 0),
+        db.project.findUnique({ where: { id: pid },
+          select: { health: true, budgetTotal: true, budgetSpent: true } }),
+      ])
+      if (!project) return { status: "FAILED", message: "Project not found" }
+      const bac = Number(project.budgetTotal || 0)
+      const overBudget = bac > 0 && Number(project.budgetSpent || 0) > bac
+      const health = (overdue >= 5 || criticalRisks >= 3 || overBudget) ? "RED"
+                   : (overdue >= 1 || criticalRisks >= 1)               ? "AMBER"
+                   : "GREEN"
+      if (health === project.health) {
+        return { status: "SUCCESS", message: `Health unchanged (${health})` }
+      }
+      await db.project.update({ where: { id: pid }, data: { health: health as any } })
+      return { status: "SUCCESS",
+        message: `Health ${project.health} → ${health} (${overdue} overdue, ${criticalRisks} critical risks${overBudget ? ", over budget" : ""})` }
+    }
+
+    // ── Re-baseline on approved change: snapshot the new plan of record and
+    //    leave it awaiting sponsor approval. Never auto-approve a baseline. ──
+    if (action === "UPDATE_BASELINE" && ctx.projectId) {
+      const pid = ctx.projectId
+      const project = await db.project.findUnique({
+        where: { id: pid },
+        select: { name: true, startDate: true, endDate: true, budgetTotal: true,
+                  objective: true, scope: true, outOfScope: true },
+      })
+      if (!project) return { status: "FAILED", message: "Project not found" }
+      const tasks = await db.task.findMany({
+        where: { projectId: pid },
+        select: { code: true, title: true, startDate: true, dueDate: true,
+                  percentComplete: true, status: true, phaseId: true },
+      })
+      const n = await db.baseline.count({ where: { projectId: pid } })
+      const author = ctx.actorId || (await db.projectMember.findFirst({
+        where: { projectId: pid }, select: { userId: true } }))?.userId
+      if (!author) return { status: "FAILED", message: "No user to attribute the baseline to" }
+      await db.baseline.create({
+        data: {
+          projectId: pid,
+          name: `Baseline v${n + 1} — after ${rule.name}`,
+          description: "Created automatically when a change request was approved. Pending sponsor approval.",
+          snapshotData: { tasks, capturedAt: new Date().toISOString() } as any,
+          budgetTotal: project.budgetTotal ?? 0,
+          startDate: project.startDate ?? new Date(),
+          endDate:   project.endDate   ?? new Date(),
+          createdById: author,
+          isApproved: false,
+          objectiveSnapshot:  project.objective  ?? null,
+          scopeSnapshot:      project.scope      ?? null,
+          outOfScopeSnapshot: project.outOfScope ?? null,
+        },
+      })
+      return { status: "SUCCESS",
+        message: `Baseline v${n + 1} captured (${tasks.length} tasks) — awaiting sponsor approval` }
+    }
+
+    // ── Status report into project history ──
+    if (action === "GENERATE_AI_REPORT" && ctx.projectId) {
+      const pid = ctx.projectId
+      const project = await db.project.findUnique({
+        where: { id: pid },
+        select: { name: true, health: true, percentComplete: true,
+                  budgetTotal: true, budgetSpent: true },
+      })
+      if (!project) return { status: "FAILED", message: "Project not found" }
+      const now = new Date()
+      const weekAgo = new Date(now.getTime() - 7 * 86400000)
+      const [done, open] = await Promise.all([
+        db.task.count({ where: { projectId: pid, status: "DONE" as any,
+          updatedAt: { gte: weekAgo } } }),
+        db.task.count({ where: { projectId: pid,
+          status: { notIn: ["DONE", "CANCELLED"] as any } } }),
+      ])
+      const author = ctx.actorId || (await db.projectMember.findFirst({
+        where: { projectId: pid }, select: { userId: true } }))?.userId
+      if (!author) return { status: "FAILED", message: "No user to attribute the report to" }
+      await db.statusUpdate.create({
+        data: {
+          projectId: pid, type: "WEEKLY_STATUS" as any,
+          periodStart: weekAgo, periodEnd: now,
+          health: project.health,
+          summary: `${project.name}: ${done} task(s) completed this period, ${open} still open. ` +
+                   `Progress ${project.percentComplete}%. Spent $${Number(project.budgetSpent || 0).toLocaleString()} ` +
+                   `of $${Number(project.budgetTotal || 0).toLocaleString()}. Generated by automation rule "${rule.name}".`,
+          percentComplete: project.percentComplete,
+          budgetPlanned: Number(project.budgetTotal || 0),
+          budgetActual:  Number(project.budgetSpent || 0),
+          aiGenerated: false,
+          createdById: author,
+        },
+      })
+      return { status: "SUCCESS", message: `Status update recorded (${done} completed, ${open} open)` }
+    }
+
+    // ── Audit trail entry ──
+    if (action === "LOG_AUDIT_EVENT") {
+      await db.auditLog.create({
+        data: {
+          workspaceId: ws,
+          userId: ctx.actorId || null,
+          action: "automation.logged",
+          entityType: ctx.entityType || "project",
+          entityId: ctx.entityId || ctx.projectId || ws,
+          after: { rule: rule.name, trigger: rule.trigger, title: ctx.title || null } as any,
+        },
+      }).catch(() => {})
+      return { status: "SUCCESS", message: `Audit entry written for "${rule.name}"` }
+    }
+
     // An unimplemented action is a configuration problem, not a success.
     console.warn(`[Automation] rule "${rule.name}" uses action ${action}, which has no handler`)
     return { status: "FAILED", message: `Action "${action}" is not available yet — this rule does nothing. Pick a different action.` }

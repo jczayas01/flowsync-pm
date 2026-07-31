@@ -55,7 +55,15 @@ export async function GET(req: NextRequest) {
       (req.headers.get("authorization") || "").replace("Bearer ", "")
     if (provided !== secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const counts = await runScheduledScans()
+  // Honour the cron's trigger: the weekly and monthly crons must not re-run the
+  // whole daily batch, and monthly rules only fire on the monthly schedule.
+  const trig = (new URL(req.url).searchParams.get("trigger") || "SCHEDULE_DAILY").toUpperCase()
+  const kind = trig.includes("MONTHLY") ? "monthly" : trig.includes("WEEKLY") ? "weekly" : "daily"
+
+  const counts = await runScheduledScans(new Date(), kind)
+  if (kind !== "daily") {
+    return NextResponse.json({ ok: true, kind, counts })
+  }
   await reconcileAllEV().catch(() => {})
   // Every sub-job reports: a blind `.catch(() => {})` hid a broken verification
   // reminder for days — silent failure is worse than a loud one in a cron.
@@ -72,5 +80,5 @@ export async function GET(req: NextRequest) {
   await run("laborActuals",    () => postLaborActuals())
   await run("verifyReminders", () => sendVerificationReminders())
   console.log("[Automation] daily jobs:", JSON.stringify(jobs))
-  return NextResponse.json({ ok: !!counts, counts, jobs })
+  return NextResponse.json({ ok: !!counts, kind, counts, jobs })
 }

@@ -509,10 +509,13 @@ export async function processTrigger(event: TriggerEvent): Promise<ExecutionResu
 // approaching due dates, approaching milestones, and the Monday report.
 // ─────────────────────────────────────────────
 
-export async function runScheduledScans(now: Date = new Date()): Promise<{
-  overdue: number; dueSoon: number; milestones: number; weekly: number
+export async function runScheduledScans(
+  now: Date = new Date(),
+  kind: "daily" | "weekly" | "monthly" = "daily",
+): Promise<{
+  overdue: number; dueSoon: number; milestones: number; weekly: number; daily: number; monthly: number
 }> {
-  const counts = { overdue: 0, dueSoon: 0, milestones: 0, weekly: 0 }
+  const counts = { overdue: 0, dueSoon: 0, milestones: 0, weekly: 0, daily: 0, monthly: 0 }
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const isMonday = now.getUTCDay() === 1
 
@@ -528,6 +531,8 @@ export async function runScheduledScans(now: Date = new Date()): Promise<{
   const dueSoonWs   = wsWith("task.due_date_approaching")
   const milestoneWs = wsWith("project.milestone_approaching")
   const weeklyWs    = wsWith("schedule.weekly")
+  const dailyWs     = wsWith("schedule.daily")
+  const monthlyWs   = wsWith("schedule.monthly")
 
   // ── Overdue tasks ──
   if (overdueWs.size) {
@@ -625,6 +630,38 @@ export async function runScheduledScans(now: Date = new Date()): Promise<{
         entityType: "project", entityId: p.id, triggeredBy: undefined, payload: {},
       }).catch(() => {})
       counts.weekly++
+    }
+  }
+
+  // ── Daily schedule rules — "every day at 9am" was offered but never fired ──
+  if (dailyWs.size) {
+    const projects = await db.project.findMany({
+      where: { workspaceId: { in: [...dailyWs] }, status: { in: ["ACTIVE", "ON_HOLD"] } },
+      select: { id: true, workspaceId: true },
+      take: 500,
+    })
+    for (const p of projects) {
+      await processTrigger({
+        type: "schedule.daily", workspaceId: p.workspaceId, projectId: p.id,
+        entityType: "project", entityId: p.id, triggeredBy: undefined, payload: {},
+      }).catch(() => {})
+      counts.daily++
+    }
+  }
+
+  // ── Monthly schedule rules — only on the 1st (the monthly cron) ──
+  if (kind === "monthly" && monthlyWs.size) {
+    const projects = await db.project.findMany({
+      where: { workspaceId: { in: [...monthlyWs] }, status: { in: ["ACTIVE", "ON_HOLD"] } },
+      select: { id: true, workspaceId: true },
+      take: 500,
+    })
+    for (const p of projects) {
+      await processTrigger({
+        type: "schedule.monthly", workspaceId: p.workspaceId, projectId: p.id,
+        entityType: "project", entityId: p.id, triggeredBy: undefined, payload: {},
+      }).catch(() => {})
+      counts.monthly++
     }
   }
 

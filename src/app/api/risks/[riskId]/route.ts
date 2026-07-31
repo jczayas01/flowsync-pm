@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest } from "next/server"
+import { fireTrigger } from "@/lib/automation/trigger"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import {
@@ -65,6 +66,12 @@ async function updateRisk(ctx: ApiContext, params?: Record<string, string>) {
     })
     await audit(ctx.workspaceId, ctx.userId, "risk.updated", "risk", risk!.id,
       undefined, { title: updated.title, score }).catch(() => {})
+
+    // Automations: a risk changing status is exactly what a PMO wants alerts on.
+    if (data.status && data.status !== risk!.status) {
+      fireTrigger("risk.status_changed", ctx.workspaceId, updated.projectId, "risk", updated.id,
+        ctx.userId, { from: risk!.status, to: data.status, title: updated.title, score })
+    }
     return ok({ id: updated.id, score })
   } catch (e: any) {
     return err(e?.message || "Failed to update risk", 500)
