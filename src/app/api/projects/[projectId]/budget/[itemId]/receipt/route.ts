@@ -14,6 +14,9 @@ import { uploadFile } from "@/lib/storage"
 import { monthlyOcrPagesUsed, resolveOcrCap, recordOcrPages, ocrAllowed } from "@/lib/ocr"
 
 const IMG = new Set(["image/png", "image/jpeg", "image/webp"])
+// Invoices arrive as PDF far more often than as a phone photo. Claude reads
+// PDFs natively (text layer or scan), so the same extractor handles both.
+const PDF = "application/pdf"
 const MAX_BYTES = 10_000_000
 
 async function extractReceipt(imageB64: string, mediaType: string): Promise<{
@@ -31,9 +34,12 @@ async function extractReceipt(imageB64: string, mediaType: string): Promise<{
       model: "claude-sonnet-4-6",
       max_tokens: 500,
       messages: [{ role: "user", content: [
-        { type: "image", source: { type: "base64", media_type: mediaType, data: imageB64 } },
+        mediaType === "application/pdf"
+          ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: imageB64 } }
+          : { type: "image",    source: { type: "base64", media_type: mediaType,        data: imageB64 } },
         { type: "text", text:
-          `This is a receipt or invoice. Extract and respond with ONLY a JSON object, no markdown fences, no commentary: ` +
+          `This is a receipt or invoice (it may be a multi-page PDF; use the grand total, not a subtotal or a page total). ` +
+          `Extract and respond with ONLY a JSON object, no markdown fences, no commentary: ` +
           `{"vendor": string, "date": "YYYY-MM-DD" or null, "amount": number (grand total) or null, ` +
           `"currency": 3-letter code (default "USD"), "summary": short description of what was purchased}` },
       ]}],
@@ -86,7 +92,9 @@ async function post(ctx: ApiContext, params?: Record<string, string>) {
   catch { return err("Expected multipart form data") }
   const file = form.get("file")
   if (!(file instanceof File)) return err("No file provided")
-  if (!IMG.has(file.type)) return err("Upload a photo of the receipt (PNG, JPG or WebP)")
+  if (!IMG.has(file.type) && file.type !== PDF) {
+    return err("Upload a receipt or invoice — PDF, PNG, JPG or WebP")
+  }
   if (file.size > MAX_BYTES) return err("Image must be under 10 MB")
 
   const buf = Buffer.from(await file.arrayBuffer())

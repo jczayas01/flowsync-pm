@@ -674,13 +674,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               cursor:"pointer", fontFamily:"var(--font)", padding:"3px 10px" }}>
                               Edit
                             </button>
-                            <label title={t("Scan a receipt or invoice photo — AI posts the expense on this line")}
+                            <label title={t("Scan a receipt or invoice (PDF or photo) — AI posts the expense on this line")}
                               style={{ fontSize:11, color:"var(--text-2)", background:"none",
                                 border:"1px solid var(--border)", borderRadius:4,
                                 cursor: receiptBusyId ? "wait" : "pointer",
                                 fontFamily:"var(--font)", padding:"3px 8px" }}>
                               {receiptBusyId === item.id ? "…" : "🧾"}
-                              <input type="file" accept="image/png,image/jpeg,image/webp"
+                              <input type="file" accept="application/pdf,image/png,image/jpeg,image/webp"
                                 style={{ display:"none" }} disabled={!!receiptBusyId}
                                 onChange={e => { const f = e.target.files?.[0]
                                   if (f) scanReceipt(item.id, f); e.target.value = "" }} />
