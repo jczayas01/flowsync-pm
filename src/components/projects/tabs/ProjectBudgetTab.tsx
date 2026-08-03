@@ -58,7 +58,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         const its = d?.data?.items || []
         const map: Record<string, number> = {}
         for (const it of its) {
-          if (it.status === "ACTIVE" && it.budgetItemId && it.value) {
+          if (it.status !== "ACTIVE") continue
+          // A split PO commits per allocation; an unsplit one commits its whole
+          // value to the single linked line.
+          const allocs = it.allocations || []
+          if (allocs.length) {
+            for (const a of allocs) {
+              if (!a.budgetItemId) continue
+              map[a.budgetItemId] = (map[a.budgetItemId] || 0) + Number(a.amount || 0)
+            }
+          } else if (it.budgetItemId && it.value) {
             map[it.budgetItemId] = (map[it.budgetItemId] || 0) + Number(it.value)
           }
         }

@@ -39,10 +39,15 @@ async function list(ctx: ApiContext, params?: Record<string,string>) {
     include: {
       owner:     { select:{ id:true, name:true, avatarUrl:true } },
       createdBy: { select:{ id:true, name:true } },
+      allocations: { select:{ budgetItemId:true, amount:true, note:true } },
     },
     orderBy: { createdAt:"desc" },
   })
-  return ok({ items: items.map(i=>({ ...i, value:i.value?Number(i.value):null })) })
+  return ok({ items: items.map(i=>({
+    ...i,
+    value: i.value ? Number(i.value) : null,
+    allocations: (i as any).allocations?.map((a: any) => ({ ...a, amount: Number(a.amount) })) || [],
+  })) })
 }
 
 async function create(ctx: ApiContext, params?: Record<string,string>) {

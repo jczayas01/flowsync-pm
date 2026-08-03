@@ -766,6 +766,7 @@ model ProcurementItem {
   owner         User?     @relation("ProcurementOwner", fields: [ownerId], references: [id])
   project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   budgetItem    BudgetItem? @relation(fields: [budgetItemId], references: [id], onDelete: SetNull)
+  allocations   ProcurementAllocation[]
 
   @@map("procurement_items")
 }
@@ -880,6 +881,24 @@ model ChangeRequest {
   @@map("change_requests")
 }
 
+/// A purchase order can span several budget lines: a $150K vendor contract that
+/// is $100K implementation and $50K training. Each allocation posts its own
+/// expense when the PO completes, so every line carries exactly its share.
+model ProcurementAllocation {
+  id                String          @id @default(cuid())
+  procurementItemId String
+  budgetItemId      String
+  amount            Decimal         @db.Decimal(15, 2)
+  note              String?
+  createdAt         DateTime        @default(now())
+  procurementItem   ProcurementItem @relation(fields: [procurementItemId], references: [id], onDelete: Cascade)
+  budgetItem        BudgetItem      @relation(fields: [budgetItemId], references: [id], onDelete: Cascade)
+
+  @@unique([procurementItemId, budgetItemId])
+  @@index([budgetItemId])
+  @@map("procurement_allocations")
+}
+
 model BudgetItem {
   id          String         @id @default(cuid())
   projectId   String
@@ -901,6 +920,7 @@ model BudgetItem {
   expenses    Expense[]
   procurementItems ProcurementItem[]
   tasks       Task[]
+  allocations ProcurementAllocation[]
 
   @@map("budget_items")
 }

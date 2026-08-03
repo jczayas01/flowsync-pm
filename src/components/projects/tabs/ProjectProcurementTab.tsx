@@ -59,6 +59,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
       vendorEmail: it.vendorEmail||"", vendorPhone: it.vendorPhone||"", vendorLocation: it.vendorLocation||"",
       ownerId: it.ownerId||"", type: it.type||"OTHER", status: it.status||"DRAFT",
       budgetItemId: it.budgetItemId||"",
+      allocations: (it.allocations||[]).map((a:any)=>({ budgetItemId:a.budgetItemId, amount:Number(a.amount)||0 })),
       poNumber: it.poNumber||"", contractRef: it.contractRef||"",
       value: it.value != null ? String(it.value) : "", currency: it.currency||"USD",
       startDate: it.startDate ? String(it.startDate).slice(0,10) : "",
@@ -88,6 +89,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
         ownerId: editF.ownerId||null,
         type: editF.type, status: editF.status,
         budgetItemId: editF.budgetItemId||null,
+        allocations: (editF.allocations||[]).filter((a:any)=>a.budgetItemId && a.amount>0),
         poNumber: editF.poNumber||null, contractRef: editF.contractRef||null,
         value: editF.value !== "" ? Number(editF.value)||0 : null,
         currency: editF.currency||"USD",
@@ -709,12 +711,71 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
               <div>
                 <label style={lbl}>Bill against budget line</label>
                 <select style={{...inp,cursor:"pointer"}} value={editF.budgetItemId}
-                  onChange={e=>setEditF(f=>({...f,budgetItemId:e.target.value}))}>
+                  onChange={e=>setEditF(f=>({...f,budgetItemId:e.target.value}))}
+                  disabled={(editF.allocations||[]).length>0}>
                   <option value="">— not linked —</option>
                   {budgetLines.map(b=>(
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
                 </select>
+
+                {/* Split across several budget lines — one contract, many cost accounts */}
+                <div style={{ marginTop:8, border:"1px solid var(--border)", borderRadius:8,
+                  padding:"10px 12px", background:"var(--surface,#F8FAFC)" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                    <span style={{ fontSize:11.5, fontWeight:700, color:"var(--text-3)",
+                      textTransform:"uppercase", letterSpacing:".05em" }}>
+                      Split across lines {(editF.allocations||[]).length>0 ? `(${editF.allocations.length})` : ""}
+                    </span>
+                    <button type="button"
+                      onClick={()=>setEditF(f=>({...f, allocations:[...(f.allocations||[]), { budgetItemId:"", amount:0 }]}))}
+                      style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
+                        background:"#fff", border:"1px solid var(--border)", borderRadius:6,
+                        padding:"3px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>
+                      + Add line
+                    </button>
+                  </div>
+
+                  {(editF.allocations||[]).length===0 && (
+                    <div style={{ fontSize:11.5, color:"var(--text-4)", lineHeight:1.5 }}>
+                      Leave empty to bill the whole value to the single line above. Add lines when one
+                      contract covers several budget items — each posts its own expense on completion.
+                    </div>
+                  )}
+
+                  {(editF.allocations||[]).map((a:any,i:number)=>(
+                    <div key={i} style={{ display:"flex", gap:6, marginBottom:6 }}>
+                      <select style={{...inp,cursor:"pointer",flex:1}} value={a.budgetItemId}
+                        onChange={e=>setEditF(f=>{ const n=[...f.allocations]; n[i]={...n[i],budgetItemId:e.target.value}; return {...f,allocations:n} })}>
+                        <option value="">— choose line —</option>
+                        {budgetLines.map(b=>(<option key={b.id} value={b.id}>{b.name}</option>))}
+                      </select>
+                      <input type="number" min={0} step="0.01" value={a.amount||""} placeholder="0.00"
+                        onChange={e=>setEditF(f=>{ const n=[...f.allocations]; n[i]={...n[i],amount:Number(e.target.value)||0}; return {...f,allocations:n} })}
+                        style={{...inp,width:120}} />
+                      <button type="button"
+                        onClick={()=>setEditF(f=>({...f, allocations:f.allocations.filter((_:any,j:number)=>j!==i)}))}
+                        style={{ border:"1px solid #FECACA", background:"none", color:"var(--red)",
+                          borderRadius:6, fontSize:12, cursor:"pointer", padding:"0 10px",
+                          fontFamily:"var(--font)" }}>✕</button>
+                    </div>
+                  ))}
+
+                  {(editF.allocations||[]).length>0 && (() => {
+                    const sum = editF.allocations.reduce((s2:number,a:any)=>s2+(Number(a.amount)||0),0)
+                    const val = Number(editF.value)||0
+                    const diff = Math.round((val - sum) * 100) / 100
+                    return (
+                      <div style={{ fontSize:11.5, marginTop:4,
+                        color: diff === 0 ? "var(--green)" : "var(--amber)", fontWeight:600 }}>
+                        Allocated ${sum.toLocaleString()} of ${val.toLocaleString()}
+                        {diff === 0 ? " — balanced ✓"
+                          : diff > 0 ? ` — $${diff.toLocaleString()} unallocated`
+                          : ` — over by $${Math.abs(diff).toLocaleString()}`}
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
                             <div><div style={lblE}>PO number</div>
                             <input style={inp} placeholder="PO number" value={editF.poNumber}

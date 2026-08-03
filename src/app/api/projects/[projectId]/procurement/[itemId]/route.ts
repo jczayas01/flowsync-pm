@@ -22,6 +22,12 @@ const updateSchema = z.object({
   endDate:       z.string().optional().nullable(),
   status:        z.enum(["DRAFT","ACTIVE","COMPLETED","CANCELLED","ON_HOLD"]).optional(),
   budgetItemId:  z.string().optional().nullable(),
+  // A PO can be split across budget lines; amounts should add up to its value.
+  allocations:   z.array(z.object({
+    budgetItemId: z.string(),
+    amount:       z.number().min(0),
+    note:         z.string().max(200).optional().nullable(),
+  })).max(20).optional(),
   deliverables:  z.string().max(3000).optional().nullable(),
   notes:         z.string().max(3000).optional().nullable(),
   ownerId:       z.string().optional().nullable(),
@@ -56,6 +62,20 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
       },
     })
 
+    // Replace the allocation set when the caller sends one.
+    if (d.allocations) {
+      await db.$transaction(async tx => {
+        await tx.procurementAllocation.deleteMany({ where: { procurementItemId: itemId } })
+        for (const a of d.allocations!) {
+          if (a.amount <= 0) continue
+          await tx.procurementAllocation.create({
+            data: { procurementItemId: itemId, budgetItemId: a.budgetItemId,
+                    amount: a.amount, note: a.note || null },
+          })
+        }
+      }).catch(() => { /* allocation write must not fail the save */ })
+    }
+
     // ── Budget automation #2: PO reaches COMPLETED → post the actual cost ──
     // One-time (guarded by expensePostedAt), only when a budget line is linked
     // and the PO has a value. Creates an auditable Expense and rolls the
@@ -63,21 +83,33 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
     const becameCompleted = d.status === "COMPLETED" && existing.status !== "COMPLETED"
     const budgetLine = d.budgetItemId !== undefined ? d.budgetItemId : existing.budgetItemId
     const poValue = d.value !== undefined ? d.value : Number(existing.value || 0)
-    if (becameCompleted && !existing.expensePostedAt && budgetLine && poValue && poValue > 0) {
+    const allocs = await db.procurementAllocation.findMany({
+      where: { procurementItemId: itemId },
+      select: { budgetItemId: true, amount: true, note: true },
+    }).catch(() => [] as any[])
+    // Split POs post one expense per line; single-line POs behave as before.
+    const postings = allocs.length
+      ? allocs.map(a => ({ budgetItemId: a.budgetItemId, amount: Number(a.amount), note: a.note }))
+      : (budgetLine && Number(poValue || 0) > 0 ? [{ budgetItemId: budgetLine, amount: Number(poValue), note: null }] : [])
+
+    if (becameCompleted && !existing.expensePostedAt && postings.length) {
       await db.$transaction(async tx => {
-        await tx.expense.create({
-          data: {
-            budgetItemId: budgetLine,
-            description:  `PO ${existing.poNumber || ""} — ${existing.title} (${existing.vendorName})`.trim(),
-            amount:       poValue,
-            date:         new Date(),
-            createdById:  ctx.userId,
-          },
-        })
-        await tx.budgetItem.update({
-          where: { id: budgetLine },
-          data:  { actualCost: { increment: poValue } },
-        })
+        for (const post of postings) {
+          if (!post.amount || post.amount <= 0) continue
+          await tx.expense.create({
+            data: {
+              budgetItemId: post.budgetItemId,
+              description:  `PO ${existing.poNumber || ""} — ${existing.title} (${existing.vendorName})${post.note ? ` · ${post.note}` : ""}`.trim(),
+              amount:       post.amount,
+              date:         new Date(),
+              createdById:  ctx.userId,
+            },
+          })
+          await tx.budgetItem.update({
+            where: { id: post.budgetItemId },
+            data:  { actualCost: { increment: post.amount } },
+          })
+        }
         await tx.procurementItem.update({
           where: { id: itemId },
           data:  { expensePostedAt: new Date() },
@@ -92,7 +124,7 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
         })
       }).catch(() => { /* posting failure must not fail the status change */ })
       await audit(ctx.workspaceId, ctx.userId, "budget.expense_posted" as any, "procurement", itemId,
-        { amount: poValue, budgetItemId: budgetLine }).catch(() => {})
+        { postings, total: postings.reduce((sm, p2) => sm + p2.amount, 0) }).catch(() => {})
     }
 
     return ok({ id: item.id })
