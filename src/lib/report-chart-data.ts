@@ -31,11 +31,13 @@ export async function getReportChartData(projectId: string): Promise<ReportChart
       select: {
         status: true, startDate: true, dueDate: true,
         completedAt: true, updatedAt: true, estimatedHours: true,
+        budgetItemId: true,   // control account — drives time-phased PV
       },
     }),
     db.budgetItem.findMany({
       where: { projectId },
       select: {
+        id: true,
         plannedCost: true, actualCost: true, earnedValue: true,
         periodStart: true, periodEnd: true, createdAt: true,
       },

@@ -1,5 +1,6 @@
 "use client"
 import React from "react"
+import { plannedValueAt } from "@/lib/evm-phasing"
 // src/components/projects/tabs/ProjectBudgetTab.tsx
 import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
@@ -80,6 +81,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   // Control accounts: tasks linked to each budget line drive that line's
   // earned value, so the PM should see whose work is behind each number.
   const [lineTasks, setLineTasks] = useState<Record<string, { pct: number; count: number }>>({})
+  const [phasingTasks, setPhasingTasks] = useState<any[]>([])
   useEffect(() => {
     fetch(`/api/projects/${projectId}/tasks?limit=500`,
       { headers: workspaceId ? { "x-workspace-id": workspaceId } : {} })
@@ -87,6 +89,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       .then(d => {
         const rows = d?.data?.items || d?.data || []
         if (!Array.isArray(rows)) return
+        setPhasingTasks(rows)
         const acc: Record<string, { weighted: number; weight: number; count: number }> = {}
         for (const t of rows) {
           if (!t.budgetItemId || t.status === "CANCELLED") continue
@@ -274,7 +277,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   const BAC = budgetTotal                       // Budget At Completion
   const AC  = budgetSpent                       // Actual Cost
   const EV  = BAC * pctComplete                 // Earned Value = BAC × actual % complete
-  const PV  = BAC * plannedPct                  // Planned Value = BAC × scheduled % to date
+  // Planned Value, time-phased: every dollar rides on the work that consumes it
+  // (control accounts first, project window for money with no task). Same
+  // function the S-curve uses, so the KPI and the chart can't disagree.
+  const PV = phasingTasks.length
+    ? plannedValueAt({
+        tasks: phasingTasks, lines: budgetItems as any, bac: BAC,
+        projectStart: project?.startDate, projectEnd: project?.endDate,
+      })
+    : BAC * plannedPct                          // no tasks yet → elapsed-time fallback
   const CV  = EV - AC                           // Cost Variance (+ = under budget)
   const SV  = EV - PV                           // Schedule Variance (simplified)
   const CPI = AC > 0 ? EV / AC : 1             // Cost Performance Index
@@ -330,7 +341,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               color:"var(--steel)", tip:"Value of work actually performed" },
             { label:t("Actual Cost (AC)"), value:fmt(AC,currency), sub:t("Spent to date"),
               color:AC>EV?"var(--red)":"var(--text)", tip:"Total costs incurred for work performed" },
-            { label:t("Planned Value (PV)"), value:fmt(PV,currency), sub:t("Scheduled work to date"),
+            { label:t("Planned Value (PV)"), value:fmt(PV,currency),
+              sub: phasingTasks.length ? t("Scheduled work to date") : t("Scheduled work to date (by calendar)"),
               color:"var(--text-2)", tip:"Authorized budget assigned to scheduled work" },
           ].map((k,i) => (
             <div key={k.label} style={{ padding:"14px 16px",

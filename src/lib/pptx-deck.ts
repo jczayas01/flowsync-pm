@@ -1,5 +1,6 @@
 // src/lib/pptx-deck.ts — branded PowerPoint generation (pptxgenjs, in-process)
 import PptxGenJS from "pptxgenjs"
+import { plannedValueAt } from "@/lib/evm-phasing"
 
 const NAVY = "0D1B2A"
 const WHITE = "FFFFFF"
@@ -25,7 +26,8 @@ export interface DeckData {
     objective?: string | null
   }
   phases: { id: string; name: string; order: number }[]
-  tasks: { title: string; status: string; percentComplete?: number | null; startDate?: any; dueDate?: any; phaseId?: string | null }[]
+  tasks: { title: string; status: string; percentComplete?: number | null; startDate?: any; dueDate?: any; phaseId?: string | null; budgetItemId?: string | null; estimatedHours?: any; completedAt?: any; updatedAt?: any }[]
+  budgetItems?: { id: string; plannedCost?: number | string | null }[]
   risks: { title: string; score?: number | null; status?: string | null; isOpportunity?: boolean | null }[]
   milestones: { name: string; dueDate?: any; status?: string | null }[]
   decisions: { code?: string | null; title: string }[]
@@ -49,7 +51,15 @@ export async function generateProjectDeck(data: DeckData, audience: DeckAudience
     return Math.min(1, Math.max(0, (Date.now() - st) / (en - st)))
   })()
   const BAC = budgetTotal, AC = budgetSpent
-  const EV = BAC * pctComplete, PV = BAC * plannedPct
+  const EV = BAC * pctComplete
+  // Time-phased planned value — the same shared calculation the Budget tab and
+  // the S-curve use, so a deck never contradicts the app it was exported from.
+  const PV = (data.tasks || []).length
+    ? plannedValueAt({
+        tasks: data.tasks as any, lines: (data.budgetItems || []) as any, bac: BAC,
+        projectStart: data.project.startDate, projectEnd: data.project.endDate,
+      })
+    : BAC * plannedPct
   const CPI = AC > 0 ? EV / AC : 1
   const SPI = PV > 0 ? EV / PV : 1
   const EAC = CPI > 0 ? BAC / CPI : BAC

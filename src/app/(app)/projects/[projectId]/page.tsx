@@ -33,7 +33,9 @@ export default async function ProjectDashboardPage({ params }: { params: { proje
     db.task.findMany({
       where:   { projectId: params.projectId },
       orderBy: [{ phaseId:'asc' }, { sortOrder:'asc' }],
-      take: 20,
+      // The S-curve and time-phased PV need the whole schedule, not a preview
+      // slice — 20 tasks produced a curve that ignored most of the project.
+      take: 500,
       include: { assignees: { include: { projectMember: { include: { user: { select:{ id:true, name:true, avatarUrl:true } } } } } } },
     }),
     db.risk.findMany({

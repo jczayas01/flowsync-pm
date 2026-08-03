@@ -35,12 +35,12 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         },
       }),
       db.phase.findMany({ where: { projectId: pid }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" } }),
-      db.task.findMany({ where: { projectId: pid }, select: { title: true, status: true, percentComplete: true, startDate: true, dueDate: true, phaseId: true } }),
+      db.task.findMany({ where: { projectId: pid }, select: { title: true, status: true, percentComplete: true, startDate: true, dueDate: true, phaseId: true, budgetItemId: true, estimatedHours: true, completedAt: true, updatedAt: true } }),
       db.risk.findMany({ where: { projectId: pid }, select: { title: true, score: true, status: true, isOpportunity: true } }),
       db.milestone.findMany({ where: { projectId: pid }, select: { name: true, dueDate: true, status: true } }),
       db.decision.findMany({ where: { projectId: pid }, select: { code: true, title: true }, orderBy: { madeAt: "desc" }, take: 5 }),
       db.changeRequest.count({ where: { projectId: pid, status: { in: ["SUBMITTED", "UNDER_REVIEW"] as any } } }).catch(() => 0),
-      db.budgetItem.findMany({ where: { projectId: pid }, select: { category: true, plannedCost: true, actualCost: true } }),
+      db.budgetItem.findMany({ where: { projectId: pid }, select: { id: true, category: true, plannedCost: true, actualCost: true } }),
       db.workspace.findUnique({ where: { id: workspaceId }, select: { name: true, primaryColor: true, accentColor: true } }),
     ])
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 })
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       project, phases, tasks, risks, milestones, decisions,
       pendingChanges: Number(pendingChanges || 0),
       budgetByCategory,
+      budgetItems: budgetItems.map((b: any) => ({ id: b.id, plannedCost: Number(b.plannedCost || 0) })),
     }, audience)
 
     return new NextResponse(buf as any, {

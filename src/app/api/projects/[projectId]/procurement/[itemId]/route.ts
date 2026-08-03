@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 import { withWorkspace, ok, err, notFound, parseBody, audit, verifyProjectAccess, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
 
@@ -50,16 +51,27 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
   })
   if (!existing) return notFound("Procurement item")
 
+  // allocations is a relation, written separately below. Leaving it inside the
+  // spread makes Prisma unable to pick between its checked and unchecked update
+  // shapes, and the type error surfaces on an unrelated field (ownerId).
+  const { allocations: _allocations, ...scalars } = d
+
+  // Declare the variant explicitly: spreading into Prisma's XOR<checked,
+  // unchecked> update type leaves TypeScript unable to choose, and it then
+  // blames whichever field it happens to test first. These are all raw scalar
+  // columns, so the unchecked shape is the right one.
+  const updateData: Prisma.ProcurementItemUncheckedUpdateInput = {
+    ...scalars,
+    vendorEmail: d.vendorEmail === "" ? null : d.vendorEmail,
+    ownerId:     d.ownerId === "" ? null : d.ownerId,
+    startDate:   d.startDate === undefined ? undefined : (d.startDate ? new Date(d.startDate) : null),
+    endDate:     d.endDate   === undefined ? undefined : (d.endDate   ? new Date(d.endDate)   : null),
+  }
+
   try {
     const item = await db.procurementItem.update({
       where: { id: itemId },
-      data: {
-        ...d,
-        vendorEmail: d.vendorEmail === "" ? null : d.vendorEmail,
-        ownerId:     d.ownerId === "" ? null : d.ownerId,
-        startDate:   d.startDate === undefined ? undefined : (d.startDate ? new Date(d.startDate) : null),
-        endDate:     d.endDate   === undefined ? undefined : (d.endDate   ? new Date(d.endDate)   : null),
-      },
+      data: updateData,
     })
 
     // Replace the allocation set when the caller sends one.

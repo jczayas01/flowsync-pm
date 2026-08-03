@@ -1,3 +1,4 @@
+import { costWeights, taskRamp, taskDoneBy } from "@/lib/evm-phasing"
 // src/lib/evm-series.ts
 // Builds the weekly PV / EV / AC series for the project S-curve.
 // Pure data — no chart library imports, so it stays server/client agnostic
@@ -52,38 +53,40 @@ export function buildSCurveSeries(opts: {
   for (let t = start; t <= end + WEEK - 1; t += WEEK) points.push(Math.min(t, end))
   if (points[points.length - 1] !== end) points.push(end)
 
-  // ── Task weights: estimated hours when present, else equal weight
-  const weight = (t: TaskLike) => Math.max(num(t.estimatedHours), 0) || 1
-  const totalW = tasks.reduce((s, t) => s + weight(t), 0) || 1
-  const BAC = budgetTotal > 0 ? budgetTotal : totalW // fall back to weight-units
-
-  // PV fraction of one task at time x: linear ramp start→due (step at due if no start)
-  const taskPV = (t: TaskLike, x: number) => {
-    const s = d(t.startDate), e = d(t.dueDate)
-    if (e == null) return s != null && x >= s ? 1 : 0
-    if (s == null || e <= s) return x >= e ? 1 : 0
-    return Math.min(1, Math.max(0, (x - s) / (e - s)))
+  // ── Cost phasing (shared with the KPI header — one source of truth) ──
+  // Each budget line's money rides on the tasks that consume it; a line with no
+  // linked tasks phases over the project window instead of vanishing.
+  const BAC = budgetTotal > 0 ? budgetTotal : (tasks.reduce((s, t) => s + (Math.max(num(t.estimatedHours), 0) || 1), 0) || 1)
+  const phasing = {
+    tasks: tasks as any[], lines: budgetItems as any[], bac: BAC,
+    projectStart: opts.projectStart, projectEnd: opts.projectEnd,
   }
-  // EV: full weight once complete
-  const taskEV = (t: TaskLike, x: number) => {
-    if (t.status !== "DONE") return 0
-    const c = d(t.completedAt) ?? d(t.updatedAt)
-    return c != null && c <= x ? 1 : 0
-  }
+  const weights = costWeights(phasing.tasks, phasing.lines, BAC)
+  const winStart = d(opts.projectStart) ?? start
+  const winEnd   = d(opts.projectEnd)   ?? end
   // AC: cumulative actual cost dated at periodEnd → periodStart → createdAt
   const acDate = (b: BudgetItemLike) => d(b.periodEnd) ?? d(b.periodStart) ?? d(b.createdAt) ?? start
 
   const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
 
+  const winRamp = (x: number) =>
+    winEnd > winStart ? Math.min(1, Math.max(0, (x - winStart) / (winEnd - winStart))) : 0
+
   return points.map(x => {
-    const pvW = tasks.reduce((s, t) => s + weight(t) * taskPV(t, x), 0)
-    const evW = tasks.reduce((s, t) => s + weight(t) * taskEV(t, x), 0)
-    const ac  = budgetItems.reduce((s, b) => s + (acDate(b) <= x ? num(b.actualCost) : 0), 0)
+    let pv = 0, ev = 0
+    weights.taskCost.forEach((cost, t) => {
+      pv += cost * taskRamp(t as any, x)
+      if (taskDoneBy(t as any, x)) ev += cost
+    })
+    // Money with no task to sit on still has to appear on the plan line.
+    if (weights.unphased > 0) pv += weights.unphased * winRamp(x)
+
+    const ac = budgetItems.reduce((s, b) => s + (acDate(b) <= x ? num(b.actualCost) : 0), 0)
     return {
       label: fmt.format(new Date(x)),
       t: x,
-      pv: Math.round((pvW / totalW) * BAC),
-      ev: Math.round((evW / totalW) * BAC),
+      pv: Math.round(pv),
+      ev: Math.round(ev),
       ac: Math.round(ac),
     }
   })
