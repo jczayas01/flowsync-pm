@@ -55,7 +55,9 @@ const DOMAINS: Record<string, DomainCfg> = {
       (await db.procurementItem.findMany({ where: { projectId }, select: { title: true, vendorName: true } }).catch(() => []))
         .map((r: any) => `${r.title} (${r.vendorName})`),
     spec: `{"candidates":[{"title":"short name of the agreement/document (max 150 chars)","vendorName":"the vendor/supplier/counterparty name","vendorContact":"contact person if stated, else null","vendorPhone":"phone number if stated, else null","vendorLocation":"vendor address/city/location if stated, else null","type":"CONTRACT|PURCHASE_ORDER|SOW|MSA|NDA|OTHER","poNumber":"PO number if stated, else null","contractRef":"contract/reference number if stated, else null","value":12345.67,"currency":"USD or the stated currency code","startDate":"yyyy-mm-dd or null — the effective/signature/issue date if stated","endDate":"yyyy-mm-dd or null — an explicit end/expiration date, or one clearly derivable from a stated term (e.g. \"valid 90 days\", \"service period through Nov 2026\", \"12-month term\"); never invent one","deliverables":"short summary of deliverables/scope if stated, else null","sourceDoc":"document name","evidence":"short phrase with the key detail (max 160 chars)"}]}`,
-    rules: `Extract PROCUREMENT records: purchase orders, contracts, invoices, statements of work, master agreements, NDAs — any commercial document binding the project to a vendor. Invoices map to type OTHER with the invoice number in poNumber. value must be a plain number when a monetary amount is stated, otherwise null — never invent amounts. Dates strictly yyyy-mm-dd or null.`,
+    rules: `Extract PROCUREMENT records: purchase orders, contracts, invoices, statements of work, master agreements, NDAs — any commercial document binding the project to a vendor. Invoices map to type OTHER with the invoice number in poNumber. value must be a plain number when a monetary amount is stated, otherwise null — never invent amounts.
+CONTACT DETAILS: vendorContact, vendorPhone, vendorEmail and vendorLocation must be copied verbatim from the document or set to null. Never infer, guess, or reuse an address, phone number or email that appears anywhere other than as the vendor's own contact details — a wrong vendor contact is worse than a missing one.
+DATES: strictly yyyy-mm-dd, and the year must be the one printed in the document. Never derive a year from a partial date, a page number, a reference code or an amount. If a date's year is not explicit and unambiguous, return null.`,
   },
   benefits: {
     existing: async (projectId) =>
@@ -188,6 +190,33 @@ ${chunks.join("\n\n")}`
     const clean = text.replace(/```json|```/g, "").trim()
     const parsed = JSON.parse(clean)
     const candidates = Array.isArray(parsed?.candidates) ? parsed.candidates.slice(0, 12) : []
+
+    // Server-side sanity: a scan once produced "2001" from a 2026 quote, and
+    // filled vendor contact fields that the document never contained. Prompt
+    // rules alone can't guarantee this, so the boundary enforces it.
+    const YEAR_NOW = new Date().getFullYear()
+    const sane = (v: any) => {
+      if (!v || typeof v !== "string") return null
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.trim())
+      if (!m) return null
+      const y = Number(m[1])
+      // Contracts live within a decade of now; anything else is an extraction error.
+      return y >= YEAR_NOW - 10 && y <= YEAR_NOW + 10 ? v.trim() : null
+    }
+    for (const c of candidates as any[]) {
+      if (c.startDate !== undefined) c.startDate = sane(c.startDate)
+      if (c.endDate   !== undefined) c.endDate   = sane(c.endDate)
+      if (c.date      !== undefined) c.date      = sane(c.date)
+      // Contact details must be present in the source text or dropped.
+      for (const k of ["vendorEmail", "vendorPhone", "vendorLocation", "vendorContact"]) {
+        const val = c[k]
+        if (typeof val !== "string" || !val.trim()) { c[k] = null; continue }
+        const needle = val.replace(/[^a-z0-9@.]/gi, "").toLowerCase().slice(0, 12)
+        const hay = chunks.join(" ").replace(/[^a-z0-9@.]/gi, "").toLowerCase()
+        if (needle.length >= 5 && !hay.includes(needle)) c[k] = null
+      }
+    }
+
     return NextResponse.json({ data: { candidates, scannedDocs: scanned, skippedDocs: skipped } })
   } catch {
     return NextResponse.json({ error: "Could not parse the AI response — try again" }, { status: 502 })

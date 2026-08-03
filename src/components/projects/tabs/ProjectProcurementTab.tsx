@@ -645,6 +645,23 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                             whiteSpace:"pre-line" }}>{item.deliverables}</p>
                         </div>
                       )}
+                      {(item.allocations || []).length > 0 && (
+                        <div style={{ gridColumn:"1 / -1", marginTop:8 }}>
+                          <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:4 }}>
+                            Split across budget lines
+                          </div>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                            {item.allocations.map((a: any, i: number) => (
+                              <span key={i} style={{ fontSize:11.5, fontWeight:600, padding:"3px 10px",
+                                borderRadius:12, background:"#EFF6FF", border:"1px solid #BFDBFE",
+                                color:"var(--steel)" }}>
+                                {budgetLines.find(b => b.id === a.budgetItemId)?.name || "Budget line"}
+                                {" · "}${Number(a.amount).toLocaleString()}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {item.notes && (
                         <div style={{ marginBottom:10 }}>
                           <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)",

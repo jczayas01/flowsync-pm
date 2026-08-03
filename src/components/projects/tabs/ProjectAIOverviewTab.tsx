@@ -99,7 +99,21 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
         if (!ar.ok) { setErrors(e => [...e, `${d.name}: ${ad?.error || ar.status}`]); continue }
         const sugs = ad?.data?.suggestions || ad?.suggestions || []
         for (const sg of sugs) all.push({ ...sg, sourceDoc: d.name, sourceDocId: d.id })
-      } catch { setErrors(e => [...e, `${d.name}: connection failed`]) }
+      } catch {
+        // One retry: a single dropped connection used to mean re-running the
+        // whole batch, re-reading every document that already succeeded.
+        try {
+          const rr = await fetch(`/api/projects/${projectId}/ai-analyze`, {
+            method: "POST", headers: { "Content-Type": "application/json", ...hdr },
+            body: JSON.stringify({ action: "analyze_content", contentType: "document",
+              content: `## Document: ${d.name}` }),
+          })
+          const rd = await rr.json().catch(() => null)
+          if (rr.ok) {
+            for (const sg of (rd?.data?.suggestions || [])) all.push({ ...sg, sourceDoc: d.name, sourceDocId: d.id })
+          } else setErrors(e => [...e, `${d.name}: connection failed — run again for this one`])
+        } catch { setErrors(e => [...e, `${d.name}: connection failed — run again for this one`]) }
+      }
     }
     // Already-known findings start unchecked — dedupe is the ledger's verdict.
     setExcluded(new Set(all.filter(f => f.existing).map(f => key(f))))
@@ -162,8 +176,20 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
       )}
       {(phase === "idle" || phase === "running") && (
         <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "16px 18px" }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-2)", marginBottom: 10 }}>
-            Documents ({picked.size}/{documents.length} selected)
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-2)" }}>
+              Documents ({picked.size}/{documents.length} selected)
+            </span>
+            {documents.length > 1 && (
+              <button
+                onClick={() => setPicked(p2 =>
+                  p2.size === documents.length ? new Set() : new Set(documents.map(d => d.id)))}
+                style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 600, color: "var(--steel)",
+                  background: "none", border: "1px solid var(--border)", borderRadius: 6,
+                  padding: "3px 10px", cursor: "pointer", fontFamily: "var(--font)" }}>
+                {picked.size === documents.length ? "Deselect all" : "Select all"}
+              </button>
+            )}
           </div>
           {documents.length === 0 && (
             <div style={{ fontSize: 13, color: "var(--text-3)" }}>
@@ -223,6 +249,13 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
             <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)" }}>
               {findings.length} findings · {chosenCount} selected
             </span>
+            <button onClick={() => setExcluded(x =>
+                x.size ? new Set() : new Set(findings.map(f => key(f))))}
+              style={{ fontSize: 12, fontWeight: 600, color: "var(--steel)", background: "none",
+                border: "1px solid var(--border)", borderRadius: 6, padding: "3px 10px",
+                cursor: "pointer", fontFamily: "var(--font)" }}>
+              {excluded.size ? "Select all" : "Deselect all"}
+            </button>
             <button onClick={() => setPhase("idle")} style={{ fontSize: 12, color: "var(--steel)",
               background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}>
               ← different documents

@@ -44,9 +44,12 @@ export default async function ProjectDashboardPage({ params }: { params: { proje
       take: 5,
     }),
     db.milestone.findMany({
-      where:   { projectId: params.projectId, status: { in:['UPCOMING','AT_RISK'] } },
+      // The panel manages milestones, so it needs all of them: filtering to
+      // UPCOMING/AT_RISK made a milestone disappear the moment it was achieved,
+      // which reads as data loss even though the record was intact.
+      where:   { projectId: params.projectId },
       orderBy: { dueDate:'asc' },
-      take: 5,
+      take: 100,
       include: { acceptedBy: { select:{ id:true, name:true } } },
     }),
     db.budgetItem.findMany({
