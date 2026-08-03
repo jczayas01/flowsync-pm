@@ -76,7 +76,7 @@ async function recipients(action: string, ctx: any, workspaceId: string): Promis
   return admins.map(a => a.userId)
 }
 
-async function runAction(rule: any, ctx: any): Promise<{ status: string; message: string }> {
+export async function runAction(rule: any, ctx: any): Promise<{ status: string; message: string }> {
   const ws = rule.workspaceId
   const action = rule.action
   try {

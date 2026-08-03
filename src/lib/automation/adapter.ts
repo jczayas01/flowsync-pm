@@ -68,6 +68,12 @@ function actionsFor(actionKey: string, ruleTrigger: string): { actions: Action[]
     SCHEDULE_WEEKLY:     say("Weekly check-in for {{project.name}} — review status and send your report."),
     TASK_STATUS_CHANGED: say("Task {{task.title}} changed status in {{project.name}}."),
     MEMBER_ADDED:        say("A new member joined the workspace."),
+    TASK_CREATED:        say("New task in {{project.name}}: {{task.title}}."),
+    TASK_COMPLETED:      say("Task completed in {{project.name}}: {{task.title}}."),
+    RISK_STATUS_CHANGED: say("Risk status changed in {{project.name}}: {{risk.title}} → {{to}}."),
+    PROJECT_COMPLETED:   say("Project completed: {{project.name}}."),
+    SCHEDULE_DAILY:      say("Daily check for {{project.name}} — review today's priorities."),
+    SCHEDULE_MONTHLY:    say("Monthly review for {{project.name}} — check budget, risks and milestones."),
   }
   const message = M[ruleTrigger] || "Automation triggered."
   const roleNotify = (role: string, channel = "both"): Action[] =>
@@ -80,12 +86,17 @@ function actionsFor(actionKey: string, ruleTrigger: string): { actions: Action[]
     case "NOTIFY_STAKEHOLDERS":  return { actions: roleNotify("STAKEHOLDER") }
     case "SEND_EMAIL":           return { actions: roleNotify("PM", "email") }
     case "NOTIFY_TEAM":          return { actions: roleNotify("TEAM_MEMBER") }
-    // Honest gaps: these need dedicated builders; skip visibly, never fake.
+    // These are implemented for real in dispatch.runAction (advance dependent
+    // tasks, recompute health, snapshot a draft baseline, write a status
+    // update, log an audit entry). The engine path delegates to them instead
+    // of skipping — one implementation, both execution paths.
     case "UPDATE_TASK_STATUS":
+    case "UPDATE_PROJECT_HEALTH":
     case "CREATE_TASKS":
     case "UPDATE_BASELINE":
     case "GENERATE_AI_REPORT":
-      return { actions: [], unsupported: `${actionKey} is not automated yet — rule matched but action was skipped` }
+    case "LOG_AUDIT_EVENT":
+      return { actions: [{ type: "legacy.action", params: { actionKey } } as Action] }
     default:
       // Custom rules may store free text; fall back to notifying the PM with it.
       return { actions: [{ type: "notify.role",

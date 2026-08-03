@@ -311,6 +311,32 @@ async function executeAction(
         return true
       }
 
+      // Bridge: catalogue actions (UPPER_SNAKE) implemented once in dispatch.
+      case "legacy.action": {
+        const { runAction } = await import("./dispatch")
+        // executeAction only receives (action, context, log) — take everything
+        // the legacy handlers need from the context the engine already built.
+        const res = await runAction(
+          {
+            name:        (context.ruleName as string) || "Automation rule",
+            action:      params.actionKey,
+            trigger:     (context.eventType as string) || "",
+            workspaceId: context.workspaceId as string,
+          },
+          {
+            projectId:  context.projectId,
+            entityId:   context.entityId,
+            entityType: context.entityType,
+            actorId:    context.triggeredBy,
+            title:      (context as any).title || null,
+            link:       context.projectId ? `/projects/${context.projectId}` : null,
+          },
+        )
+        log.push({ actionType: action.type, success: res.status === "SUCCESS",
+          message: res.message, timestamp: ts })
+        return res.status === "SUCCESS"
+      }
+
       case "webhook.call": {
         const url = params.url as string
         if (!url || url.includes("{{")) {
@@ -440,6 +466,8 @@ export async function processTrigger(event: TriggerEvent): Promise<ExecutionResu
         entityType:   event.entityType,
         entityId:     event.entityId,
         triggeredBy:  event.triggeredBy,
+        eventType:    event.type,
+        ruleName:     rule.name,
       }
 
       // Evaluate conditions

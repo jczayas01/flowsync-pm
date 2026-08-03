@@ -100,6 +100,8 @@ export type ActionType =
   // Flow control
   | "flow.wait"                // wait X hours before next action
   | "flow.stop_if"             // stop chain if condition met
+  // Bridge to the catalogue actions implemented in dispatch.runAction
+  | "legacy.action"
 
 export interface Action {
   type:   ActionType
