@@ -570,7 +570,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           <table style={{ width:"100%", borderCollapse:"collapse" , minWidth:680 }}>
             <thead>
               <tr style={{ background:"var(--surface)" }}>
-                {["Description","Category","Planned","Actual","Variance",""].map(h => (
+                {["Description","Category","Planned","Earned","Actual","Variance",""].map(h => (
                   <th key={h} style={{ padding:"8px 14px", textAlign:"left", fontSize:10,
                     fontWeight:600, color:"var(--text-3)", letterSpacing:".05em",
                     textTransform:"uppercase", borderBottom:"1px solid var(--border)" }}>
@@ -583,6 +583,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               {budgetItems.map(item => {
                 const planned  = Number(item.plannedCost||item.plannedAmount||0)
                 const actual   = Number(item.actualCost||item.actualAmount||0)
+                const earned   = Number(item.earnedValue||0)
+                const committed = committedBy[item.id] || 0
+                // Over-commitment is a governance signal, not a footnote: a line
+                // with $3K planned and $42K in signed POs must read as a problem.
+                const exposure = actual + committed
+                const overCommitted = planned > 0 && exposure > planned
                 const variance = planned - actual
                 const isEditing = editId === item.id
                 return (<React.Fragment key={item.id}>
@@ -604,6 +610,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           <input type="number" style={inpS} value={editForm.plannedAmount}
                             onChange={e=>setEditForm((f:any)=>({...f,plannedAmount:e.target.value}))} />
                         </td>
+                        <td style={{ padding:"6px 10px", fontSize:12, fontFamily:"monospace",
+                          color:"var(--text-4)" }}>{fmt(Number(item.earnedValue||0),currency)}</td>
                         <td style={{ padding:"6px 10px" }}>
                           <input type="number" style={inpS} value={editForm.actualAmount}
                             onChange={e=>setEditForm((f:any)=>({...f,actualAmount:e.target.value}))} />
@@ -633,6 +641,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       <>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text)", fontWeight:500 }}>
                           {item.name||item.description}
+                          {overCommitted && (
+                            <span style={{ fontSize:10, fontWeight:800, color:"var(--red)",
+                              background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:6,
+                              padding:"1px 6px", marginLeft:8, verticalAlign:"middle" }}>
+                              OVER PLAN
+                            </span>
+                          )}
                           {lineTasks[item.id] && (
                             <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
                               {lineTasks[item.id].count} linked task{lineTasks[item.id].count === 1 ? "" : "s"}
@@ -648,6 +663,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
                           {fmt(planned,currency)}
                         </td>
+                        {/* Earned: value of work done. Not money out — that's Actual.
+                            Showing only Planned/Actual made a 30%-complete line with
+                            no invoice yet look like nothing had happened. */}
+                        <td style={{ padding:"10px 14px", fontSize:13, fontFamily:"monospace",
+                          color: earned > 0 ? "var(--steel)" : "var(--text-4)" }}
+                          title="Earned value — the value of work completed on this line. It moves with task progress, not with payments.">
+                          {fmt(earned,currency)}
+                        </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
                           <button onClick={() => toggleExpenses(item.id)}
                             title="View the expenses behind this amount"
@@ -658,10 +681,18 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               textUnderlineOffset:3 }}>
                             {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
                           </button>
-                          {(committedBy[item.id] || 0) > 0 && (
-                            <div title="Committed — signed POs on this line, not yet completed"
-                              style={{ fontSize:10.5, color:"var(--amber)", fontWeight:600, marginTop:2 }}>
-                              +{fmt(committedBy[item.id],currency)} committed
+                          {committed > 0 && (
+                            <div title={overCommitted
+                              ? `Spent + committed is ${Math.round((exposure/planned)*100)}% of this line's plan — the obligation already exceeds the budget.`
+                              : "Committed — signed POs on this line, not yet completed"}
+                              style={{ fontSize:10.5, fontWeight:700, marginTop:2,
+                                color: overCommitted ? "var(--red)" : "var(--amber)" }}>
+                              {overCommitted ? "⚠ " : "+"}{fmt(committed,currency)} committed
+                              {overCommitted && planned > 0 && (
+                                <span style={{ fontWeight:600 }}>
+                                  {" · "}{Math.round((exposure / planned) * 100)}% of plan
+                                </span>
+                              )}
                             </div>
                           )}
                         </td>
