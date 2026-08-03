@@ -136,6 +136,16 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   onClose: () => void
   onCommentsRead?: (taskId: string) => void
 }) {
+  // Control account: which budget line this work consumes. Lines with linked
+  // tasks earn value from their own progress instead of the project average.
+  const [budgetLines, setBudgetLines] = useState<any[]>([])
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/budget`)
+      .then(r => r.json()).catch(() => null)
+      .then(d => setBudgetLines(d?.data?.items || []))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
+
   const router = useRouter()
   const phaseList = (phases && phases.length)
     ? phases
@@ -174,6 +184,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
           status:          d.data.status || "TODO",
           priority:        d.data.priority || "MEDIUM",
           phaseId:         d.data.phaseId || "",
+          budgetItemId:    d.data.budgetItemId || "",
           startDate:       toDateInput(d.data.startDate),
           dueDate:         toDateInput(d.data.dueDate),
           completedAt:     toDateInput(d.data.completedAt),
@@ -203,6 +214,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
           status:          form.status,
           priority:        form.priority,
           phaseId:         form.phaseId || null,
+          budgetItemId:    form.budgetItemId || null,
           startDate:       toISO(form.startDate),
           dueDate:         toISO(form.dueDate),
           completedAt:     toISO(form.completedAt),
@@ -432,6 +444,22 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                       ))}
                     </select>
                   </div>
+
+                  {/* Budget line (control account) */}
+                  {budgetLines.length > 0 && (
+                    <div style={fieldRow}>
+                      <label style={lbl}>Budget line</label>
+                      <select style={sel} value={form.budgetItemId || ""}
+                        onChange={e => setForm((f:any) => ({ ...f, budgetItemId:e.target.value }))}>
+                        <option value="">— not linked —</option>
+                        {budgetLines.map((b:any) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} (${Number(b.plannedCost||0).toLocaleString()})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* % Complete */}
                   <div style={fieldRow}>

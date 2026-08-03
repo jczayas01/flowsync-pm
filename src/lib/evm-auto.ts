@@ -13,7 +13,7 @@
 
 import { db } from "@/lib/db"
 
-type Tx = Pick<typeof db, "project" | "budgetItem">
+type Tx = Pick<typeof db, "project" | "budgetItem" | "task">
 
 /**
  * Recompute earned value for one project's budget items.
@@ -28,13 +28,38 @@ export async function recomputeProjectEV(client: Tx, projectId: string, pct?: nu
   })
   if (!project || project.autoEv === false) return
 
-  const fraction = Math.min(100, Math.max(0, pct ?? project.percentComplete ?? 0)) / 100
+  const projectFraction = Math.min(100, Math.max(0, pct ?? project.percentComplete ?? 0)) / 100
 
   const items = await client.budgetItem.findMany({
     where: { projectId },
     select: { id: true, plannedCost: true, earnedValue: true },
   })
+
+  // Control accounts: when tasks are linked to a budget line, that line earns
+  // value from ITS OWN work — hours-weighted, same rule as the project rollup.
+  // Onboarding finished and implementation not started must not average into a
+  // single percentage smeared across both lines.
+  const linked = await client.task.findMany({
+    where: { projectId, budgetItemId: { not: null }, status: { notIn: ["CANCELLED"] } },
+    select: { budgetItemId: true, percentComplete: true, estimatedHours: true },
+  })
+  const byLine = new Map<string, { weighted: number; weight: number }>()
+  for (const t of linked) {
+    const id = t.budgetItemId as string
+    const w  = Number(t.estimatedHours) || 1
+    const acc = byLine.get(id) || { weighted: 0, weight: 0 }
+    acc.weighted += (t.percentComplete || 0) * w
+    acc.weight   += w
+    byLine.set(id, acc)
+  }
+
   for (const item of items) {
+    const acc = byLine.get(item.id)
+    // A line with its own tasks uses their progress; a line with none keeps the
+    // proportional behaviour, so existing projects are unaffected.
+    const fraction = acc && acc.weight > 0
+      ? Math.min(100, Math.max(0, acc.weighted / acc.weight)) / 100
+      : projectFraction
     const target = Math.round(Number(item.plannedCost || 0) * fraction * 100) / 100
     if (Number(item.earnedValue || 0) !== target) {
       await client.budgetItem.update({ where: { id: item.id }, data: { earnedValue: target } })

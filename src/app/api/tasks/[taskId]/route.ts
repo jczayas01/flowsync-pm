@@ -31,6 +31,7 @@ const updateTaskSchema = z.object({
   storyPoints:    z.number().int().min(0).optional().nullable(),
   percentComplete:z.number().int().min(0).max(100).optional(),
   phaseId:        z.string().min(1).optional().nullable(),
+  budgetItemId:   z.string().min(1).optional().nullable(),
   sprintId:       z.string().min(1).optional().nullable(),
   parentId:       z.string().min(1).optional().nullable(),
   sortOrder:      z.number().int().optional(),

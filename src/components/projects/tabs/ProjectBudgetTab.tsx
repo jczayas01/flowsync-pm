@@ -68,6 +68,35 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   }, [projectId])
   const committedTotal = Object.values(committedBy).reduce((a, b) => a + b, 0)
 
+  // Control accounts: tasks linked to each budget line drive that line's
+  // earned value, so the PM should see whose work is behind each number.
+  const [lineTasks, setLineTasks] = useState<Record<string, { pct: number; count: number }>>({})
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/tasks?limit=500`,
+      { headers: workspaceId ? { "x-workspace-id": workspaceId } : {} })
+      .then(r => r.json()).catch(() => null)
+      .then(d => {
+        const rows = d?.data?.items || d?.data || []
+        if (!Array.isArray(rows)) return
+        const acc: Record<string, { weighted: number; weight: number; count: number }> = {}
+        for (const t of rows) {
+          if (!t.budgetItemId || t.status === "CANCELLED") continue
+          const w = Number(t.estimatedHours) || 1
+          const a = acc[t.budgetItemId] || { weighted: 0, weight: 0, count: 0 }
+          a.weighted += (t.percentComplete || 0) * w
+          a.weight   += w
+          a.count    += 1
+          acc[t.budgetItemId] = a
+        }
+        const out: Record<string, { pct: number; count: number }> = {}
+        for (const [id, a] of Object.entries(acc)) {
+          out[id] = { pct: a.weight ? Math.round(a.weighted / a.weight) : 0, count: a.count }
+        }
+        setLineTasks(out)
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
+
   // Expenses behind a line's Actual — visible, auditable, deletable.
   const [expOpenId, setExpOpenId] = useState<string | null>(null)
   const [expList, setExpList] = useState<any[] | null>(null)
@@ -583,6 +612,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       <>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text)", fontWeight:500 }}>
                           {item.name||item.description}
+                          {lineTasks[item.id] && (
+                            <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
+                              {lineTasks[item.id].count} linked task{lineTasks[item.id].count === 1 ? "" : "s"}
+                              {" · "}
+                              <span style={{ color: lineTasks[item.id].pct >= 100 ? "var(--green)" : "var(--steel)",
+                                fontWeight:600 }}>{lineTasks[item.id].pct}% complete</span>
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding:"10px 14px" }}>
                           <Badge variant="gray">{item.category || "—"}</Badge>
