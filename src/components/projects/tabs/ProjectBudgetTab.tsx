@@ -584,6 +584,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const planned  = Number(item.plannedCost||item.plannedAmount||0)
                 const actual   = Number(item.actualCost||item.actualAmount||0)
                 const earned   = Number(item.earnedValue||0)
+                const approved = item.approvedCost == null ? null : Number(item.approvedCost)
+                const revised  = approved != null && Math.abs(approved - planned) > 0.5
                 const committed = committedBy[item.id] || 0
                 // Over-commitment is a governance signal, not a footnote: a line
                 // with $3K planned and $42K in signed POs must read as a problem.
@@ -662,6 +664,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
                           {fmt(planned,currency)}
+                          {revised && (
+                            <div style={{ fontSize:10, color:"var(--text-4)", marginTop:2 }}
+                              title="The figure the sponsor approved. The current plan has moved since — usually through an approved change request.">
+                              approved {fmt(approved!,currency)}
+                              <span style={{ color: planned > approved! ? "var(--amber)" : "var(--green)", fontWeight:600 }}>
+                                {" "}({planned > approved! ? "+" : "−"}{fmt(Math.abs(planned - approved!),currency)})
+                              </span>
+                            </div>
+                          )}
                         </td>
                         {/* Earned: value of work done. Not money out — that's Actual.
                             Showing only Planned/Actual made a 30%-complete line with

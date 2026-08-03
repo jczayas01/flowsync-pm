@@ -65,6 +65,10 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
         description: parsed.data.description,
         category:    parsed.data.category as any,
         plannedCost: parsed.data.plannedAmount,
+        // A new line's first figure is its approved baseline; later edits move
+        // plannedCost and the difference becomes visible variance.
+        approvedCost: parsed.data.plannedAmount,
+        approvedAt:   new Date(),
         actualCost:  parsed.data.actualAmount,
         recurrence:  parsed.data.recurrence ?? null,
         earnedValue: 0,

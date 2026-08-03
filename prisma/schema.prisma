@@ -906,6 +906,10 @@ model BudgetItem {
   name        String
   description String?
   plannedCost Decimal        @db.Decimal(15, 2)
+  /// The figure the sponsor approved. plannedCost is the current working number;
+  /// the difference between them is the story a PMO must be able to tell.
+  approvedCost Decimal?      @db.Decimal(15, 2)
+  approvedAt   DateTime?
   actualCost  Decimal        @default(0) @db.Decimal(15, 2)
   earnedValue Decimal        @default(0) @db.Decimal(15, 2)
   recurrence  String?        // "MONTHLY" — cron posts plannedCost each cycle
