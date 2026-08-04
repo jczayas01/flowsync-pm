@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { LegalPage } from '@/components/marketing/LegalPage'
 export const metadata: Metadata = { title: 'Privacy Policy — FlowSync PM' }
 export default function Privacy() {
-  return <LegalPage title="Privacy Policy" lastUpdated="July 1, 2026" sections={[
+  return <LegalPage docKey="privacy" title="Privacy Policy" lastUpdated="July 1, 2026" sections={[
     { title:"1. Introduction", content:"FlowSync PM ('we', 'us', 'our') is committed to protecting your personal information. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our project management platform. This policy applies to all users worldwide and complies with GDPR (EU), CCPA (California), and applicable US federal and Puerto Rico privacy requirements." },
     { title:"2. Information We Collect", content:"We collect: (a) Account information — name, email address, password (hashed), organization name; (b) Project data — tasks, risks, documents, and other content you input; (c) Usage data — pages visited, features used, timestamps, IP address, browser type; (d) Payment information — processed by Stripe; we do not store card numbers; (e) Communication data — emails and support messages. We do not collect sensitive personal data beyond what you voluntarily enter into project records." },
     { title:"3. How We Use Your Information", content:"We use your information to: provide and improve the Service; authenticate users and maintain security; process payments; send transactional emails (receipts, password resets, security alerts); send product updates (you may opt out); generate aggregate, anonymized analytics to improve the platform; provide customer support; comply with legal obligations." },
