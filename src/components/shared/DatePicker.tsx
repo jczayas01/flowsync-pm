@@ -2,6 +2,7 @@
 // src/components/shared/DatePicker.tsx — branded calendar popover (replaces native date inputs)
 // Deterministic behavior: browsing never closes; picking a day commits immediately.
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"]
@@ -9,12 +10,12 @@ const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"]
 const pad = (n: number) => String(n).padStart(2, "0")
 const toStr = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
 
-export function DatePickerPopover({ value, onSelect, onClear, onClose }: {
+export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }: {
   value?: string | null                 // "yyyy-mm-dd"
   onSelect: (dateStr: string) => void   // commits + caller closes
   onClear?: () => void
   onClose: () => void
-}) {
+, anchor: DOMRect | null }) {
   const ref = useRef<HTMLDivElement>(null)
   const init = /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? (value as string) : null
   const today = new Date()
@@ -58,9 +59,18 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose }: {
     display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font)",
   }
 
-  return (
+  // Rendered into <body>: cards use overflow:hidden for their rounded corners,
+  // which clipped the calendar and made the last week unreachable. Flips above
+  // the field when there isn't room below.
+  const PANEL_H = 300
+  const below = anchor ? window.innerHeight - anchor.bottom : 0
+  const flip  = anchor ? below < PANEL_H && anchor.top > below : false
+  const top   = anchor ? (flip ? anchor.top - PANEL_H - 4 : anchor.bottom + 4) : 0
+  const left  = anchor ? Math.min(anchor.left, window.innerWidth - 252 - 12) : 0
+
+  const panel = (
     <div ref={ref} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
-      style={{ position: "absolute", top: "100%", left: 0, zIndex: 300, marginTop: 4,
+      style={{ position: "fixed", top, left, zIndex: 3000,
         width: 252, background: "#fff", border: "1px solid var(--border)", borderRadius: 10,
         boxShadow: "0 12px 32px rgba(13,27,42,.18)", padding: 10, fontFamily: "var(--font)" }}>
 
@@ -124,6 +134,8 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose }: {
       </div>
     </div>
   )
+
+  return typeof document !== "undefined" ? createPortal(panel, document.body) : panel
 }
 
 
@@ -138,11 +150,17 @@ export function DateField({ value, onChange, style, placeholder, disabled, ...re
   [key: string]: any
 }) {
   const [open, setOpen] = useState(false)
+  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
   const val = /^\d{4}-\d{2}-\d{2}/.test(String(value || "")) ? String(value).slice(0, 10) : ""
   return (
     <div style={{ position: "relative", display: "inline-block", width: (style as any)?.width }}>
-      <button type="button" disabled={disabled}
-        onClick={() => !disabled && setOpen(o => !o)}
+      <button type="button" disabled={disabled} ref={btnRef}
+        onClick={() => {
+          if (disabled) return
+          setAnchor(btnRef.current?.getBoundingClientRect() || null)
+          setOpen(o => !o)
+        }}
         style={{ textAlign: "left", cursor: disabled ? "default" : "pointer",
           background: "#fff", display: "flex", alignItems: "center", gap: 8,
           fontFamily: "var(--font)", ...style, width: "100%" }}>
@@ -153,6 +171,7 @@ export function DateField({ value, onChange, style, placeholder, disabled, ...re
       </button>
       {open && (
         <DatePickerPopover
+          anchor={anchor}
           value={val || null}
           onSelect={(d) => { onChange({ target: { value: d } }); setOpen(false) }}
           onClear={() => { onChange({ target: { value: "" } }); setOpen(false) }}
