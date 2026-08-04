@@ -249,6 +249,59 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
 
   const totalH = HDR_H + rows.length * ROW_H + 20
 
+  // ── Drag a sponsor milestone to a new date ────────────────────────────────
+  // The diamond in the header is the handle. Dates move in whole days, exactly
+  // like task bars, and the dashed guide line follows the preview so you can
+  // see what you're aligning to before you let go.
+  const [msDrag, setMsDrag] = useState<{ id:string; startX:number; orig:Date; name:string }|null>(null)
+  const [msDragDays, setMsDragDays] = useState(0)
+
+  function startMsDrag(clientX:number, m:any) {
+    if (!m?.dueDate) return
+    setMsDrag({ id: m.id, startX: clientX, orig: new Date(m.dueDate), name: m.name })
+    setMsDragDays(0)
+  }
+
+  useEffect(() => {
+    if (!msDrag) return
+    const getX = (e:any) => (e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX ?? e.clientX)
+    function onMove(e:any) {
+      if (e.cancelable) e.preventDefault()
+      const nd = Math.round((getX(e) - msDrag!.startX) / dayW)
+      setMsDragDays(prev => prev === nd ? prev : nd)
+    }
+    function onEnd(e:any) {
+      const days = Math.round((getX(e) - msDrag!.startX) / dayW)
+      if (Math.abs(days) >= 1) {
+        const shift = hideWeekends ? addWorkdays : addDays
+        const next  = shift(msDrag!.orig, days)
+        setSaving(true)
+        fetch(`/api/projects/${projectId}/milestones/${msDrag!.id}`, {
+          method:"PATCH", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ dueDate: next.toISOString() }),
+        }).then(async res => {
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}))
+            alert(d?.error || `Could not move the milestone (${res.status})`)
+          }
+          router.refresh()
+        }).finally(() => setSaving(false))
+      }
+      setMsDrag(null); setMsDragDays(0)
+    }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup",   onEnd)
+    window.addEventListener("touchmove", onMove, { passive:false })
+    window.addEventListener("touchend",  onEnd)
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup",   onEnd)
+      window.removeEventListener("touchmove", onMove)
+      window.removeEventListener("touchend",  onEnd)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [msDrag, dayW, hideWeekends, projectId])
+
   // ── Drag reschedule ───────────────────────────────────────────────────────
   function startDrag(clientX:number, task:any, mode:"move"|"resize-start"|"resize-end") {
     if (!task.startDate || !task.dueDate) return
@@ -469,7 +522,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
         <div style={{ display:"flex", alignItems:"center", gap:4 }}
           title="Sponsor milestone — a governance checkpoint tracked on the Dashboard and in reports">
           <svg width={12} height={12}><polygon points="6,1 11,6 6,11 1,6" fill="#1B6CA8" /></svg>
-          <span>Sponsor milestone</span>
+          <span>Sponsor milestone <span style={{ color:"var(--text-4)" }}>(drag to reschedule)</span></span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}
           title="Project milestone — a zero-duration task in the schedule (counts toward progress and critical path)">
@@ -804,10 +857,12 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
               const col = m.status==="ACHIEVED" ? "#059669"
                         : m.status==="AT_RISK"  ? "#F59E0B"
                         : m.status==="MISSED"   ? "#DC2626" : "#1B6CA8"
-              return (
-                <line key={`msl-${m.id}`} x1={mx} y1={HDR_H} x2={mx} y2={totalH}
-                  stroke={col} strokeWidth={1.5} strokeDasharray="2 3" opacity={0.4} />
-              )
+                const gx = msDrag?.id === m.id ? mx + msDragDays * dayW : mx
+                return (
+                  <line key={`msl-${m.id}`} x1={gx} y1={HDR_H} x2={gx} y2={totalH}
+                    stroke={col} strokeWidth={msDrag?.id === m.id ? 2 : 1.5}
+                    strokeDasharray="2 3" opacity={msDrag?.id === m.id ? 0.85 : 0.4} />
+                )
             })}
 
             {/* Tooltip */}
@@ -992,13 +1047,32 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                         : m.status==="AT_RISK"  ? "#F59E0B"
                         : m.status==="MISSED"   ? "#DC2626" : "#1B6CA8"
               const my = 33, s = 4.5
-              return (
-                <polygon key={`msf-${m.id}`}
-                  points={`${mx},${my-s} ${mx+s},${my} ${mx},${my+s} ${mx-s},${my}`}
-                  fill={col} stroke="#fff" strokeWidth={1} style={{ cursor:"default" }}>
-                  <title>{`◆ ${m.name}${m.dueDate ? " — due " + new Date(m.dueDate).toLocaleDateString("en-US", { timeZone:"UTC" }) : ""}${m.status ? " · " + String(m.status).replace(/_/g," ").toLowerCase() : ""}`}</title>
-                </polygon>
-              )
+                const isDragging = msDrag?.id === m.id
+                const dx = isDragging ? msDragDays * dayW : 0
+                const px = mx + dx
+                return (
+                  <g key={`msf-${m.id}`}>
+                    {/* Invisible grab area — a 9px diamond is a hard target */}
+                    <rect x={px - 10} y={my - 12} width={20} height={24} fill="transparent"
+                      style={{ cursor: isDragging ? "grabbing" : "grab" }}
+                      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); startMsDrag(e.clientX, m) }}
+                      onTouchStart={e => { e.stopPropagation(); if (e.touches[0]) startMsDrag(e.touches[0].clientX, m) }} />
+                    <polygon
+                      points={`${px},${my-s} ${px+s},${my} ${px},${my+s} ${px-s},${my}`}
+                      fill={col} stroke="#fff" strokeWidth={1}
+                      opacity={isDragging ? 0.9 : 1}
+                      style={{ pointerEvents:"none" }}>
+                      <title>{`◆ ${m.name}${m.dueDate ? " — due " + new Date(m.dueDate).toLocaleDateString("en-US", { timeZone:"UTC" }) : ""}${m.status ? " · " + String(m.status).replace(/_/g," ").toLowerCase() : ""} — drag to reschedule`}</title>
+                    </polygon>
+                    {isDragging && msDragDays !== 0 && (
+                      <text x={px} y={my - 14} fontSize={10} fontWeight={700} fill={col}
+                        textAnchor="middle" style={{ pointerEvents:"none" }}>
+                        {(hideWeekends ? addWorkdays : addDays)(msDrag!.orig, msDragDays)
+                          .toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })}
+                      </text>
+                    )}
+                  </g>
+                )
             })}
           </g>
           </g>{/* end sticky header */}
