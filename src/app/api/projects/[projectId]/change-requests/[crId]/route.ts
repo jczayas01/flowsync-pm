@@ -93,13 +93,9 @@ async function updateChangeRequest(ctx: ApiContext, params?: Record<string,strin
       { title: updated.title, budgetImpact: updated.budgetImpact ? Number(updated.budgetImpact) : 0 })
   }
 
-  if (data.status === "APPROVED") {
-    dispatchEvent(ctx.workspaceId, "CHANGE_APPROVED", {
-      projectId, actorId: ctx.userId,
-      title: `Change request approved: ${updated.title}`, link: `/projects/${projectId}`,
-      data: { id: updated.id, title: updated.title },
-    }).catch(() => {})
-  }
+  // The fireTrigger above already routes CHANGE_APPROVED through the engine,
+  // which now reaches every catalogue action. Dispatching a second time made
+  // each approval run its rules twice — two baselines from one decision.
 
   return ok({ ...updated, budgetImpact: updated.budgetImpact ? Number(updated.budgetImpact) : null })
 }

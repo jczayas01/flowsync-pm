@@ -134,11 +134,21 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
     <div id="fs-report-print" className="report-print-root" style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden",
       ["--r-accent" as any]: accent, ["--r-accent2" as any]: accent2 }}>
       <style>{`@media print {
-        .report-print-root, .report-print-root * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-      }`}</style>
+            /* Every ancestor of the report is a flex column with a fixed height
+               and its own scroll area, so the printer only ever saw the visible
+               slice. Release the whole chain, then show the report alone. */
+            html, body { height: auto !important; overflow: visible !important; }
+            body.fs-printing * {
+              overflow: visible !important; max-height: none !important; height: auto !important;
+            }
+            body * { visibility: hidden !important; }
+            #fs-report-print, #fs-report-print * { visibility: visible !important; }
+            #fs-report-print {
+              position: absolute !important; left: 0; top: 0; width: 100% !important;
+              margin: 0 !important; box-shadow: none !important; border: none !important;
+            }
+            @page { margin: 14mm; }
+          }`}</style>
       {/* Header */}
       <div style={{ background:`linear-gradient(135deg,${accent} 0%, ${accent2} 140%)`, padding:"20px 24px", color:"#fff" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
@@ -460,7 +470,16 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               ✉️ Email report
             </button>
           )}
-          <button onClick={() => window.print()}
+          <button onClick={() => {
+              document.body.classList.add("fs-printing")
+              const done = () => {
+                document.body.classList.remove("fs-printing")
+                window.removeEventListener("afterprint", done)
+              }
+              window.addEventListener("afterprint", done)
+              window.print()
+              setTimeout(done, 4000)   // some browsers never fire afterprint
+            }}
             style={{ padding:"8px 16px",background:"#fff",border:"1px solid #E2E8F0",
               borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"var(--font)" }}>
             🖨 Print
