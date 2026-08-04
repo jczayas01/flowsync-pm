@@ -498,7 +498,21 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             ) : (
               <div>
                 <div style={{ fontSize:12, fontWeight:700, color:"var(--text)", marginBottom:8 }}>
-                  {candidates.length ? `Found ${candidates.length} cost item${candidates.length===1?"":"s"} — review and add:` : "No cost items with amounts found in the selected documents."}
+                  {(() => {
+                    if (!candidates.length) {
+                      return "No cost items with amounts found in the selected documents. If your budget already " +
+                             "covers what's in them, that's expected — the scan only proposes what it can read as a cost."
+                    }
+                    const dup = candidates.filter((c: any) => c.dupOf).length
+                    const fresh = candidates.length - dup
+                    if (dup && !fresh) {
+                      return `Found ${candidates.length} cost item${candidates.length===1?"":"s"} — all of them already appear in your budget. Review below; nothing is pre-selected.`
+                    }
+                    if (dup) {
+                      return `Found ${candidates.length} cost items — ${fresh} new, ${dup} already in your budget (unchecked below):`
+                    }
+                    return `Found ${candidates.length} cost item${candidates.length===1?"":"s"} — review and add:`
+                  })()}
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:300, overflowY:"auto" }}>
                   {candidates.map((c: any, i: number) => (

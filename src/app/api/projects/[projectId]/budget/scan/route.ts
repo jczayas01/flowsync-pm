@@ -85,7 +85,8 @@ Return ONLY valid JSON, no markdown fences, in this exact shape:
 
 Rules: only include items with a real monetary amount stated or clearly derivable in the documents — never invent numbers. plannedAmount must be a plain number (no currency symbols, no thousands separators). 1-10 candidates. Write descriptions in the same language as the documents.
 - Never emit discounts, credits, $0 rows, or informational lines.
-- If the budget already contains an umbrella line whose amount covers a document's TOTAL (for example a vendor contract or quote total), do NOT emit that document's sub-components — they are already budgeted. Emit only genuinely new cost items.
+- Emit every real cost item you find, including ones that look like they are already in the budget — the caller flags and unchecks those, and silently emitting nothing is indistinguishable from finding nothing.
+- Do NOT break an umbrella line into its sub-components when the budget already carries the umbrella (for example a vendor contract total that is already a single line): emit the total, not the parts.
 
 DOCUMENTS:
 ${chunks.join("\n\n")}`
