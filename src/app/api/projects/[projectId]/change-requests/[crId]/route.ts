@@ -107,6 +107,33 @@ async function updateChangeRequest(ctx: ApiContext, params?: Record<string,strin
 export async function GET(req: NextRequest, { params }: { params: { projectId: string; crId: string } }) {
   return withWorkspace(req, getChangeRequest, params)
 }
+async function deleteChangeRequest(ctx: ApiContext, params?: Record<string, string>) {
+  const { projectId, crId } = params || {}
+  if (!projectId || !crId) return notFound("Change request")
+  const access = await verifyProjectAccess(projectId, ctx.userId, ctx.workspaceId)
+  if (!access.ok) return notFound("Project")
+  { const _g = await requirePermission(ctx as any, "project:edit" as any); if (_g) return _g }
+
+  const cr = await db.changeRequest.findFirst({
+    where: { id: crId, projectId }, select: { id: true, code: true, title: true, status: true },
+  })
+  if (!cr) return notFound("Change request")
+
+  // An approved or implemented change request is part of the project's decision
+  // history — deleting it would erase why the baseline moved.
+  if (cr.status === "APPROVED" || cr.status === "IMPLEMENTED") {
+    return err("Approved change requests can't be deleted — they document why the baseline changed. Reject or supersede it instead.", 409)
+  }
+
+  await db.changeRequest.delete({ where: { id: cr.id } })
+  await audit(ctx.workspaceId, ctx.userId, "change_request.deleted", "project", projectId,
+    { code: cr.code, title: cr.title }).catch(() => {})
+  return ok({ deleted: true })
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: { projectId: string; crId: string } }) {
   return withWorkspace(req, updateChangeRequest, params)
+}
+export async function DELETE(req: NextRequest, { params }: { params: { projectId: string; crId: string } }) {
+  return withWorkspace(req, deleteChangeRequest, params)
 }

@@ -103,6 +103,22 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
     finally { setSaving(false) }
   }
 
+  // Delete is intentionally limited: an approved change request explains why the
+  // baseline moved, so the server refuses those. Drafts and rejected ones are
+  // fair game — otherwise a mistyped CR is stuck in the register forever.
+  async function deleteCr(cr: any) {
+    if (!confirm(`Delete change request ${cr.code} — "${cr.title}"?\n\nThis cannot be undone.`)) return
+    setSaving(true)
+    const res = await fetch(`/api/projects/${projectId}/change-requests/${cr.id}`, { method: "DELETE" })
+      .catch(() => null)
+    setSaving(false)
+    if (res?.ok) { setSelected(null); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not delete this change request.")
+    }
+  }
+
   async function updateStatus(crId: string, status: string, extra?: any) {
     setSaving(true)
     try {
@@ -280,6 +296,15 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                   {saving ? "Saving…" : "✓ Approve"}
                 </button>
               </>
+            )}
+            {cr.status !== "APPROVED" && cr.status !== "IMPLEMENTED" && (
+              <button onClick={() => deleteCr(cr)} disabled={saving}
+                title="Delete this change request"
+                style={{ padding:"7px 12px", background:"none", border:"1px solid #FECACA",
+                  borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
+                  fontFamily:"var(--font)", color:"var(--red)" }}>
+                ✕ Delete
+              </button>
             )}
             {canImplement && (
               <button onClick={() => updateStatus(cr.id, "IMPLEMENTED")} disabled={saving}

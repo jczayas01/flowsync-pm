@@ -25,6 +25,15 @@ export function NotificationBell() {
   }
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t) }, [])
 
+  async function removeOne(id: string) {
+    setItems(list => list.filter(x => x.id !== id))
+    try { await fetch(`/api/notifications?id=${id}`, { method: "DELETE" }) } catch { /* optimistic */ }
+  }
+  async function clearRead() {
+    setItems(list => list.filter(x => !x.read))
+    try { await fetch("/api/notifications?read=1", { method: "DELETE" }) } catch { /* optimistic */ }
+  }
+
   async function markAll() {
     setItems(is => is.map(i => ({ ...i, read:true }))); setUnread(0)
     try { await fetch("/api/notifications", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ all:true }) }) } catch { /* optimistic; ignore if mark-all fails */ }
@@ -66,12 +75,20 @@ export function NotificationBell() {
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
               padding:"10px 14px", borderBottom:"1px solid var(--border)" }}>
               <span style={{ fontSize:13, fontWeight:700, color:"var(--text-1)" }}>Notifications</span>
-              {unread > 0 && (
-                <button onClick={markAll}
-                  style={{ background:"none", border:"none", cursor:"pointer", fontSize:11, color:"var(--steel)", fontFamily:"var(--font)" }}>
-                  Mark all read
-                </button>
-              )}
+              <span style={{ display:"flex", gap:10 }}>
+                {unread > 0 && (
+                  <button onClick={markAll}
+                    style={{ background:"none", border:"none", cursor:"pointer", fontSize:11, color:"var(--steel)", fontFamily:"var(--font)" }}>
+                    Mark all read
+                  </button>
+                )}
+                {items.some(i => i.read) && (
+                  <button onClick={clearRead}
+                    style={{ background:"none", border:"none", cursor:"pointer", fontSize:11, color:"var(--text-3)", fontFamily:"var(--font)" }}>
+                    Clear read
+                  </button>
+                )}
+              </span>
             </div>
             <div style={{ overflowY:"auto" }}>
               {items.length === 0 ? (
@@ -90,6 +107,10 @@ export function NotificationBell() {
                       overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{it.body}</div>}
                     <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>{timeAgo(it.createdAt)}</div>
                   </div>
+                  <button onClick={e => { e.stopPropagation(); removeOne(it.id) }}
+                    title="Remove this notification"
+                    style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-4)",
+                      fontSize:12, lineHeight:1, padding:"0 2px", flexShrink:0, fontFamily:"var(--font)" }}>✕</button>
                 </div>
               ))}
             </div>

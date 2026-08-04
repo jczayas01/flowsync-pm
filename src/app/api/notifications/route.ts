@@ -34,3 +34,23 @@ export async function PATCH(req: NextRequest) {
   }
   return NextResponse.json({ ok: true })
 }
+
+// DELETE — remove a single notification (?id=) or every read one (?read=1).
+// Marking as read hides the badge but the list still grows forever; people
+// want to clear it.
+export async function DELETE(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const url = new URL(req.url)
+  const id = url.searchParams.get("id")
+  if (id) {
+    await db.notification.deleteMany({ where: { id, userId: session.user.id } })
+    return NextResponse.json({ ok: true, deleted: 1 })
+  }
+  if (url.searchParams.get("read") === "1") {
+    const r = await db.notification.deleteMany({ where: { userId: session.user.id, read: true } })
+    return NextResponse.json({ ok: true, deleted: r.count })
+  }
+  return NextResponse.json({ error: "Pass ?id= or ?read=1" }, { status: 400 })
+}
