@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: site,                    lastModified: now, changeFrequency: 'weekly',  priority: 1.0 },
     { url: `${site}/pricing`,       lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${site}/free-templates`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${site}/es`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${site}/compare`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     ...COMPETITORS.map(c => ({ url: `${site}/compare/${c.id}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 })),
     ...DOC_TEMPLATES.map(t => ({ url: `${site}/free-templates/${t.id}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 })),

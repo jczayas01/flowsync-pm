@@ -9,7 +9,8 @@ import { MetaPixel } from "@/components/marketing/MetaPixel"
 const SITE = SITE_URL
 
 export const metadata = {
-  alternates: { canonical: '/' },
+  alternates: {
+    languages: { "en-US": "https://flowsyncpm.com", "es-MX": "https://flowsyncpm.com/es" }, canonical: '/' },
 }
 
 const jsonLd = {
