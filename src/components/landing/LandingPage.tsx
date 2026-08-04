@@ -353,6 +353,13 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* The Spanish landing existed but nothing pointed at it — a visitor who
+              reads Spanish had no way to find the page written for them. */}
+          <Link href="/es" className="fs-link"
+            style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
+              padding:"6px 10px", whiteSpace:"nowrap" }}>
+            Español
+          </Link>
           <button onClick={() => setDemoOpen(true)} className="fs-link"
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", background:"none", border:"none",
               cursor:"pointer", padding:"6px 10px", fontFamily:"inherit", whiteSpace:"nowrap" }}>
