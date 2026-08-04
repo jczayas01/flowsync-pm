@@ -276,7 +276,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
 
   const BAC = budgetTotal                       // Budget At Completion
   const AC  = budgetSpent                       // Actual Cost
-  const EV  = BAC * pctComplete                 // Earned Value = BAC × actual % complete
+  // Earned value comes from the lines themselves — each control account earns
+  // from its own tasks. The old BAC × project.percentComplete disagreed with the
+  // per-line Earned column and went to zero whenever the project rollup was
+  // stale (a bulk Excel import never refreshed it).
+  const lineEV = budgetItems.reduce((s2, b: any) => s2 + Number(b.earnedValue || 0), 0)
+  const EV  = lineEV > 0 ? lineEV : BAC * pctComplete
+  const evPct = BAC > 0 ? Math.round((EV / BAC) * 100) : 0
   // Planned Value, time-phased: every dollar rides on the work that consumes it
   // (control accounts first, project window for money with no task). Same
   // function the S-curve uses, so the KPI and the chart can't disagree.
@@ -337,7 +343,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           {[
             { label:t("Budget at Completion (BAC)"), value:fmt(BAC,currency), sub:t("Total project budget"),
               color:"var(--text)", tip:"The total authorized budget for the project" },
-            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:`${pct}% ${t("work done")}`,
+            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:`${evPct}% ${t("work done")}`,
               color:"var(--steel)", tip:"Value of work actually performed" },
             { label:t("Actual Cost (AC)"), value:fmt(AC,currency), sub:t("Spent to date"),
               color:AC>EV?"var(--red)":"var(--text)", tip:"Total costs incurred for work performed" },

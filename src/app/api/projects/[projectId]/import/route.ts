@@ -6,6 +6,7 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
+import { recomputeProjectEV } from "@/lib/evm-auto"
 import ExcelJS from "exceljs"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -334,6 +335,24 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   }
 
   if (updatedCount > 0 || createdCount > 0) {
+    // Roll the project percentage up after a bulk import. Only the single-task
+    // PATCH used to do this, so an imported schedule left the project at 0% and
+    // every downstream number (earned value, progress KPIs) read as if nothing
+    // had been planned.
+    try {
+      const all = await db.task.findMany({
+        where:  { projectId: params.projectId, parentId: null, status: { notIn: ["CANCELLED"] as any } },
+        select: { percentComplete: true, estimatedHours: true },
+      })
+      if (all.length) {
+        const weight   = all.reduce((s2, t) => s2 + (Number(t.estimatedHours) || 1), 0) || 1
+        const weighted = all.reduce((s2, t) => s2 + (t.percentComplete || 0) * (Number(t.estimatedHours) || 1), 0)
+        const pctNow   = Math.round(weighted / weight)
+        await db.project.update({ where: { id: params.projectId }, data: { percentComplete: pctNow } })
+        await recomputeProjectEV(db, params.projectId, pctNow).catch(() => {})
+      }
+    } catch { /* progress rollup is best-effort; the import itself already succeeded */ }
+
     await audit(workspaceId, session.user.id, "project.bulk_import", "project", params.projectId,
       undefined, { fileName: file.name, updatedCount, createdCount, totalRows: rows.length })
   }
