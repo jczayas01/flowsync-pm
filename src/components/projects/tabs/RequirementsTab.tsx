@@ -98,6 +98,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
         acceptanceCriteria: editF.acceptanceCriteria || null,
         source: editF.source || null, priority: editF.priority,
         linkedTaskId: editF.linkedTaskId || null,
+        code: editF.code || undefined, type: editF.type,
       }),
     }).catch(() => null)
     if (res?.ok) { setEditId(null); router.refresh() }
@@ -369,7 +370,8 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                               setEditId(r.id)
                               setEditF({ title:r.title||"", description:r.description||"",
                                 acceptanceCriteria:r.acceptanceCriteria||"", source:r.source||"",
-                                priority:r.priority||"MEDIUM", linkedTaskId:r.linkedTaskId||"" })
+                                priority:r.priority||"MEDIUM", linkedTaskId:r.linkedTaskId||"",
+                                code:r.code||"", type:r.type||"FUNCTIONAL" })
                             }}
                             style={{ padding:"4px 9px", fontSize:10.5, fontWeight:600, cursor:"pointer",
                               border:"1px solid var(--border)", borderRadius:6, background:"#fff",
@@ -394,6 +396,25 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                                   borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                             </label>
                           ))}
+                          <div style={{ display:"flex", gap:8 }}>
+                            <label style={{ flex:"0 0 110px", fontSize:11, color:"var(--text-3)" }}>
+                              Code
+                              <input value={editF.code || ""}
+                                onChange={e => setEditF((f:any) => ({ ...f, code: e.target.value }))}
+                                style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                                  borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                            </label>
+                            <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>
+                              Type
+                              <select value={editF.type || "FUNCTIONAL"}
+                                onChange={e => setEditF((f:any) => ({ ...f, type: e.target.value }))}
+                                style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                                  borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                                {["FUNCTIONAL","NON_FUNCTIONAL","BUSINESS","TECHNICAL","REGULATORY","OTHER"]
+                                  .map(t2 => <option key={t2} value={t2}>{t2.replace(/_/g," ")}</option>)}
+                              </select>
+                            </label>
+                          </div>
                           <label style={{ fontSize:11, color:"var(--text-3)" }}>
                             Linked task (traceability)
                             <select value={editF.linkedTaskId || ""}

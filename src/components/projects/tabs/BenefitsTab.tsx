@@ -74,6 +74,8 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
         description:    editF.description || null,
         projectedValue: editF.projectedValue || null,
         actualValue:    editF.actualValue || null,
+        category:       editF.category,
+        notes:          editF.notes || null,
         measureBy:      editF.measureBy ? new Date(editF.measureBy + "T00:00:00Z").toISOString() : null,
       }),
     }).catch(() => null)
@@ -261,6 +263,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                           setEditF({
                             title: b.title || "", description: b.description || "",
                             projectedValue: b.projectedValue || "", actualValue: b.actualValue || "",
+                            category: b.category || "Financial", notes: b.notes || "",
                             measureBy: b.measureBy ? new Date(b.measureBy).toISOString().slice(0,10) : "",
                           })
                         }}
@@ -287,6 +290,22 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                               borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                         </label>
                       ))}
+                      <label style={{ fontSize:11, color:"var(--text-3)" }}>
+                        Category
+                        <select value={editF.category || "Financial"}
+                          onChange={e => setEditF((f:any) => ({ ...f, category: e.target.value }))}
+                          style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                            borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                          {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </label>
+                      <label style={{ fontSize:11, color:"var(--text-3)" }}>
+                        Notes
+                        <input value={editF.notes || ""}
+                          onChange={e => setEditF((f:any) => ({ ...f, notes: e.target.value }))}
+                          style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                            borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                      </label>
                       <label style={{ fontSize:11, color:"var(--text-3)" }}>
                         Measure by
                         <input type="date" value={editF.measureBy || ""}

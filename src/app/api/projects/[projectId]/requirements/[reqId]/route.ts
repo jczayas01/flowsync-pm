@@ -11,7 +11,10 @@ const schema = z.object({
   priority: z.enum(["CRITICAL","HIGH","MEDIUM","LOW"]).optional(),
   title:    z.string().max(300).optional(),
   description: z.string().max(3000).optional().nullable(),
-  category: z.string().max(60).optional().nullable(),
+  // The model's field is `type`, not `category` — editing the type silently
+  // did nothing because the key never matched a column.
+  code: z.string().max(40).optional(),
+  type: z.enum(["FUNCTIONAL","NON_FUNCTIONAL","BUSINESS","TECHNICAL","REGULATORY","OTHER"]).optional(),
   source:   z.string().max(200).optional().nullable(),
   acceptanceCriteria: z.string().max(3000).optional().nullable(),
   linkedTaskId: z.string().optional().nullable(),

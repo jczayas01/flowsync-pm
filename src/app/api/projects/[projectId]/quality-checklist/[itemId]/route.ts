@@ -12,6 +12,8 @@ const schema = z.object({
   // A checklist you can only tick is a checklist you can't correct.
   deliverable: z.string().min(1).max(300).optional(),
   criteria:    z.string().max(2000).optional().nullable(),
+  inspector:     z.string().max(200).optional().nullable(),
+  scheduledDate: z.string().optional().nullable(),
 })
 
 async function update(ctx: ApiContext, params?: Record<string,string>) {
@@ -22,6 +24,9 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
   if ("error" in parsed) return parsed.error
   const d = parsed.data as any
   const data: any = { ...d }
+  if (d.scheduledDate !== undefined) {
+    data.scheduledDate = d.scheduledDate ? new Date(d.scheduledDate) : null
+  }
   if (d.criteria !== undefined) {
     // `items` is the stored JSON column; the form edits it as lines of text.
     data.items = String(d.criteria || "").split("\n").map(x => x.trim()).filter(Boolean)

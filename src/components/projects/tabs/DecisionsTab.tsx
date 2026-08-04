@@ -28,6 +28,26 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
     madeAt: new Date().toISOString().split("T")[0],
   })
 
+  const [editId, setEditId] = useState<string|null>(null)
+  const [editF, setEditF]   = useState<any>({})
+
+  async function saveDecision(id: string) {
+    const res = await fetch(`/api/projects/${projectId}/decisions/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: editF.title, description: editF.description || null,
+        rationale: editF.rationale || null, alternatives: editF.alternatives || null,
+        impact: editF.impact || null,
+        madeAt: editF.madeAt ? new Date(`${editF.madeAt}T12:00:00Z`).toISOString() : undefined,
+      }),
+    }).catch(() => null)
+    if (res?.ok) { setEditId(null); router.refresh() }
+    else {
+      const d2 = await res?.json().catch(() => null)
+      alert(d2?.error || "Could not save this decision.")
+    }
+  }
+
   // Deleting is a normal part of keeping a register honest — a mistyped entry
   // that can't be removed teaches people to stop trusting the register.
   async function removeItem(id: string, label: string) {
@@ -178,6 +198,18 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                         textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{d.description}</div>
                     )}
                   </div>
+<button onClick={e => {
+                      e.stopPropagation()
+                      setEditId(editId === d.id ? null : d.id)
+                      setEditF({ title:d.title||"", description:d.description||"",
+                        rationale:d.rationale||"", alternatives:d.alternatives||"",
+                        impact:d.impact||"",
+                        madeAt: d.madeAt ? new Date(d.madeAt).toISOString().slice(0,10) : "" })
+                    }}
+                    title="Edit"
+                    style={{ background:"none", border:"1px solid var(--border)", color:"var(--text-2)",
+                      borderRadius:6, fontSize:11, cursor:"pointer", padding:"3px 9px",
+                      flexShrink:0, fontFamily:"var(--font)", marginRight:6 }}>Edit</button>
 <button onClick={e => { e.stopPropagation(); removeItem(d.id, `${d.code} — ${d.title}`) }}
                     title="Delete"
                     style={{ background:"none", border:"1px solid #FECACA", color:"var(--red)",
@@ -214,6 +246,39 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                         <p style={{ fontSize:12, color:"#78350F", margin:0, lineHeight:1.7 }}>{d.impact}</p>
                       </div>
                     )}
+                  </div>
+                )}
+                {editId === d.id && (
+                  <div onClick={e => e.stopPropagation()}
+                    style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)",
+                      display:"flex", flexDirection:"column", gap:8 }}>
+                    {([["title","Title"],["description","Description"],["rationale","Rationale"],
+                       ["alternatives","Alternatives considered"],["impact","Impact"]] as const).map(([k,label]) => (
+                      <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>
+                        {label}
+                        <input value={editF[k] || ""}
+                          onChange={e => setEditF((f:any) => ({ ...f, [k]: e.target.value }))}
+                          style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                            borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                      </label>
+                    ))}
+                    <label style={{ fontSize:11, color:"var(--text-3)" }}>
+                      Decided on
+                      <input type="date" value={editF.madeAt || ""}
+                        onChange={e => setEditF((f:any) => ({ ...f, madeAt: e.target.value }))}
+                        style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                          borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                    </label>
+                    <div style={{ display:"flex", gap:6 }}>
+                      <button onClick={() => saveDecision(d.id)}
+                        style={{ flex:1, padding:"6px 0", background:"var(--steel)", color:"#fff",
+                          border:"none", borderRadius:6, fontSize:12, fontWeight:700,
+                          cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                      <button onClick={() => setEditId(null)}
+                        style={{ padding:"6px 12px", background:"none", border:"1px solid var(--border)",
+                          borderRadius:6, fontSize:12, cursor:"pointer", color:"var(--text-3)",
+                          fontFamily:"var(--font)" }}>Cancel</button>
+                    </div>
                   </div>
                 )}
               </div>

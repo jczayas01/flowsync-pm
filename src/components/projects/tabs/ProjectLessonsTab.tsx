@@ -89,7 +89,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
 
   function openEditLesson(l: any) {
     setEditF({
-      title: l.title || "", category: l.category || "OTHER",
+      title: l.title || "", category: l.category || "OTHER", phase: l.phase || "",
       situation: l.situation || "", lesson: l.lesson || "",
       recommendation: l.recommendation || "", impact: l.impact || "NEGATIVE",
     })
@@ -310,6 +310,12 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
                   {["PLANNING","EXECUTION","STAKEHOLDER","RISK","COMMUNICATION","TEAM","TECHNICAL","PROCUREMENT","QUALITY","OTHER"]
                     .map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
+              </label>
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Phase
+                <input value={editF.phase || ""} placeholder="e.g. Phase 2 — Build"
+                  onChange={e=>setEditF((f:any)=>({...f,phase:e.target.value}))}
+                  style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
+                    border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
               </label>
               <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Impact
                 <select value={editF.impact} onChange={e=>setEditF((f:any)=>({...f,impact:e.target.value}))}
