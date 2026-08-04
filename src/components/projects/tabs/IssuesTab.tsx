@@ -27,6 +27,15 @@ function fmtDate(d: any) {
   return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
+// A Date object stringifies to "Sat Aug 30 2026 …", and slicing that to 10
+// characters yields "Sat Aug 30" — which the date input can't show, and which
+// JavaScript later parses as the year 2001. Normalise properly instead.
+const toDateInput = (v: any): string => {
+  if (!v) return ""
+  const d = v instanceof Date ? v : new Date(v)
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10)
+}
+
 export function IssuesTab({ projectId, workspaceId, issues, members }: {
   projectId:string; workspaceId:string; issues:any[]; members:any[]
 }) {
@@ -84,7 +93,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
       category: selected.category || "",
       priority: selected.priority || "MEDIUM",
       ownerId: selected.ownerId || selected.owner?.id || "",
-      dueDate: selected.dueDate ? String(selected.dueDate).slice(0,10) : "",
+      dueDate: toDateInput(selected.dueDate),
       description: selected.description || "",
       impact: selected.impact || "",
     })

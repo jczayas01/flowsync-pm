@@ -37,6 +37,15 @@ function fmtCurrency(n:number|null|undefined, currency="USD") {
   return `${currency} ${n.toLocaleString("en-US")}`
 }
 
+// A Date object stringifies to "Sat Aug 30 2026 …", and slicing that to 10
+// characters yields "Sat Aug 30" — which the date input can't show, and which
+// JavaScript later parses as the year 2001. Normalise properly instead.
+const toDateInput = (v: any): string => {
+  if (!v) return ""
+  const d = v instanceof Date ? v : new Date(v)
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10)
+}
+
 export function ProjectProcurementTab({ projectId, items, members, workspaceId }: {
   projectId:string; items:any[]; members:any[]; workspaceId:string
 }) {
@@ -62,8 +71,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
       allocations: (it.allocations||[]).map((a:any)=>({ budgetItemId:a.budgetItemId, amount:Number(a.amount)||0 })),
       poNumber: it.poNumber||"", contractRef: it.contractRef||"",
       value: it.value != null ? String(it.value) : "", currency: it.currency||"USD",
-      startDate: it.startDate ? String(it.startDate).slice(0,10) : "",
-      endDate:   it.endDate   ? String(it.endDate).slice(0,10)   : "",
+      startDate: toDateInput(it.startDate),
+      endDate:   toDateInput(it.endDate),
       deliverables: it.deliverables||"", notes: it.notes||"",
     })
   }

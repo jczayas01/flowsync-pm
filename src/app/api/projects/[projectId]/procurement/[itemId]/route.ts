@@ -64,8 +64,10 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
     ...scalars,
     vendorEmail: d.vendorEmail === "" ? null : d.vendorEmail,
     ownerId:     d.ownerId === "" ? null : d.ownerId,
-    startDate:   d.startDate === undefined ? undefined : (d.startDate ? new Date(d.startDate) : null),
-    endDate:     d.endDate   === undefined ? undefined : (d.endDate   ? new Date(d.endDate)   : null),
+    // A blank or malformed picker value once parsed to the year 2001 and was
+    // saved as a real contract date. Anything implausible becomes null instead.
+    startDate:   d.startDate === undefined ? undefined : safeDate(d.startDate),
+    endDate:     d.endDate   === undefined ? undefined : safeDate(d.endDate),
   }
 
   try {
@@ -153,6 +155,15 @@ async function remove(ctx: ApiContext, params?: Record<string,string>) {
   if (!access.ok) return notFound("Project")
   await db.procurementItem.delete({ where:{ id:itemId } })
   return ok({ deleted:true })
+}
+
+/** Reject dates a contract can't plausibly carry (blank pickers used to save 2001). */
+function safeDate(v: any): Date | null {
+  if (!v) return null
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return null
+  const y = d.getFullYear(), now = new Date().getFullYear()
+  return y >= now - 20 && y <= now + 20 ? d : null
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { projectId:string; itemId:string } }) {

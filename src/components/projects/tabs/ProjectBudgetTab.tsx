@@ -790,7 +790,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             <div key={ex.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
                               padding:"6px 0", borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:12.5 }}>
                               <span style={{ color:"var(--text-3)", width:78, flexShrink:0 }}>
-                                {ex.date ? String(ex.date).slice(0,10) : "—"}
+                                {ex.date ? new Date(ex.date).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" }) : "—"}
                               </span>
                               <span style={{ flex:1, minWidth:0, whiteSpace:"normal",
                                 overflowWrap:"anywhere", lineHeight:1.45 }}>{ex.description}</span>
