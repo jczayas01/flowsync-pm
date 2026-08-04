@@ -15,7 +15,7 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
   onSelect: (dateStr: string) => void   // commits + caller closes
   onClear?: () => void
   onClose: () => void
-, anchor: DOMRect | null }) {
+, anchor?: DOMRect | null }) {
   const ref = useRef<HTMLDivElement>(null)
   const init = /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? (value as string) : null
   const today = new Date()
@@ -68,9 +68,16 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
   const top   = anchor ? (flip ? anchor.top - PANEL_H - 4 : anchor.bottom + 4) : 0
   const left  = anchor ? Math.min(anchor.left, window.innerWidth - 252 - 12) : 0
 
+  // With an anchor we portal to <body> (nothing can clip us). Without one we
+  // fall back to the original in-flow positioning so existing callers, like the
+  // inline date cell in the task grid, keep working untouched.
+  const positioned: React.CSSProperties = anchor
+    ? { position: "fixed", top, left, zIndex: 3000 }
+    : { position: "absolute", top: "100%", left: 0, zIndex: 300, marginTop: 4 }
+
   const panel = (
     <div ref={ref} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
-      style={{ position: "fixed", top, left, zIndex: 3000,
+      style={{ ...positioned,
         width: 252, background: "#fff", border: "1px solid var(--border)", borderRadius: 10,
         boxShadow: "0 12px 32px rgba(13,27,42,.18)", padding: 10, fontFamily: "var(--font)" }}>
 
@@ -135,7 +142,7 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
     </div>
   )
 
-  return typeof document !== "undefined" ? createPortal(panel, document.body) : panel
+  return anchor && typeof document !== "undefined" ? createPortal(panel, document.body) : panel
 }
 
 
