@@ -205,16 +205,22 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   async function saveEdit(itemId: string) {
     setSaving(true)
     try {
-      await fetch(`/api/projects/${projectId}/budget/${itemId}`, {
+      const res = await fetch(`/api/projects/${projectId}/budget/${itemId}`, {
         method:"PATCH", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          description:   editForm.description,
+          // An empty description must not take the amounts down with it.
+          description:   editForm.description?.trim() ? editForm.description.trim() : undefined,
           plannedAmount: Number(editForm.plannedAmount)||0,
           actualAmount:  Number(editForm.actualAmount)||0,
           category:      editForm.category,
           notes:         editForm.notes||null,
         }),
       })
+      if (!res.ok) {
+        const d = await res.json().catch(() => null)
+        alert(d?.error || `Could not save this line (HTTP ${res.status}).`)
+        return
+      }
       setEditId(null); router.refresh()
     } finally { setSaving(false) }
   }
@@ -737,7 +743,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             <button onClick={() => {
                               setEditId(item.id)
                               setEditForm({
-                                description:   item.description||"",
+                                // Lines created by import or scan carry `name`
+                                // only — reading `description` left the field
+                                // blank, and saving a blank one failed silently.
+                                description:   item.name || item.description || "",
                                 category:      item.category||"OTHER",
                                 plannedAmount: planned,
                                 actualAmount:  actual,
