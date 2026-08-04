@@ -76,6 +76,36 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
     } finally { setSaving(false) }
   }
 
+  const [editId, setEditId] = useState<string|null>(null)
+  const [editF, setEditF]   = useState<any>({})
+
+  async function removeReq(r: any) {
+    if (!confirm(`Delete ${r.code} — "${r.title}"?\n\nThis cannot be undone.`)) return
+    const res = await fetch(`/api/projects/${projectId}/requirements/${r.id}`, { method: "DELETE" })
+      .catch(() => null)
+    if (res?.ok) router.refresh()
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not delete this requirement.")
+    }
+  }
+
+  async function saveReq(id: string) {
+    const res = await fetch(`/api/projects/${projectId}/requirements/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: editF.title, description: editF.description || null,
+        acceptanceCriteria: editF.acceptanceCriteria || null,
+        source: editF.source || null, priority: editF.priority,
+      }),
+    }).catch(() => null)
+    if (res?.ok) { setEditId(null); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not save this requirement.")
+    }
+  }
+
   async function updateStatus(id:string, status:string) {
     await fetch(`/api/projects/${projectId}/requirements/${id}`, {
       method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
@@ -333,7 +363,57 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                             appearance:"none" as const, flexShrink:0 }}>
                           {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
                         </select>
+                        <div style={{ display:"flex", gap:5, flexShrink:0 }}>
+                          <button onClick={() => {
+                              setEditId(r.id)
+                              setEditF({ title:r.title||"", description:r.description||"",
+                                acceptanceCriteria:r.acceptanceCriteria||"", source:r.source||"",
+                                priority:r.priority||"MEDIUM" })
+                            }}
+                            style={{ padding:"4px 9px", fontSize:10.5, fontWeight:600, cursor:"pointer",
+                              border:"1px solid var(--border)", borderRadius:6, background:"#fff",
+                              color:"var(--text-2)", fontFamily:"var(--font)" }}>Edit</button>
+                          <button onClick={() => removeReq(r)}
+                            style={{ padding:"4px 8px", fontSize:10.5, fontWeight:600, cursor:"pointer",
+                              border:"1px solid #FECACA", borderRadius:6, background:"#fff",
+                              color:"var(--red)", fontFamily:"var(--font)" }}>✕</button>
+                        </div>
                       </div>
+
+                      {editId === r.id && (
+                        <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)",
+                          display:"flex", flexDirection:"column", gap:8 }}>
+                          {([["title","Title"],["description","Description"],
+                             ["acceptanceCriteria","Acceptance criteria"],["source","Source"]] as const).map(([k,label]) => (
+                            <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>
+                              {label}
+                              <input value={editF[k] || ""}
+                                onChange={e => setEditF((f:any) => ({ ...f, [k]: e.target.value }))}
+                                style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                                  borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                            </label>
+                          ))}
+                          <label style={{ fontSize:11, color:"var(--text-3)" }}>
+                            Priority
+                            <select value={editF.priority || "MEDIUM"}
+                              onChange={e => setEditF((f:any) => ({ ...f, priority: e.target.value }))}
+                              style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                                borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                              {["CRITICAL","HIGH","MEDIUM","LOW"].map(p2 => <option key={p2} value={p2}>{p2}</option>)}
+                            </select>
+                          </label>
+                          <div style={{ display:"flex", gap:6 }}>
+                            <button onClick={() => saveReq(r.id)}
+                              style={{ flex:1, padding:"6px 0", background:"var(--steel)", color:"#fff",
+                                border:"none", borderRadius:6, fontSize:12, fontWeight:700,
+                                cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                            <button onClick={() => setEditId(null)}
+                              style={{ padding:"6px 12px", background:"none", border:"1px solid var(--border)",
+                                borderRadius:6, fontSize:12, cursor:"pointer", color:"var(--text-3)",
+                                fontFamily:"var(--font)" }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}

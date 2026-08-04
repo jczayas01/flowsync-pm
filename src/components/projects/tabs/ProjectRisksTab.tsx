@@ -207,6 +207,17 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   const [editRisk, setEditRisk]     = useState<any|null>(null)
   const [savingEdit, setSavingEdit] = useState(false)
 
+  // A register only stays trustworthy if wrong entries can leave it.
+  async function removeRisk(r: any) {
+    if (!confirm(`Delete ${r.code || "this risk"} — "${r.title}"?\n\nThis cannot be undone.`)) return
+    const res = await fetch(`/api/risks/${r.id}`, { method: "DELETE" }).catch(() => null)
+    if (res?.ok) { setSelected(null); setEditRisk(null); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not delete this risk.")
+    }
+  }
+
   function openEdit() {
     if (!selected) return
     setEditRisk({
@@ -745,6 +756,14 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                       borderRadius:"var(--radius)", fontSize:11, fontWeight:600, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)" }}>
                     ✏️ Edit
+                  </button>
+                )}
+                {can("risks:create") && !editRisk && (
+                  <button onClick={() => removeRisk(selected)}
+                    style={{ padding:"5px 11px", background:"#fff", border:"1px solid #FECACA",
+                      borderRadius:"var(--radius)", fontSize:11, fontWeight:600, cursor:"pointer",
+                      fontFamily:"var(--font)", color:"var(--red)" }}>
+                    ✕ Delete
                   </button>
                 )}
                 <button onClick={() => { setEditRisk(null); setSelected(null) }}

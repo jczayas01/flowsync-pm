@@ -55,6 +55,35 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
     } catch { setError("Network error") } finally { setSaving(false) }
   }
 
+  const [editId, setEditId] = useState<string|null>(null)
+  const [editF, setEditF]   = useState<any>({})
+
+  async function removeBenefit(b: any) {
+    if (!confirm(`Delete benefit "${b.title}"?\n\nThis cannot be undone.`)) return
+    const res = await fetch(`/api/projects/${projectId}/benefits/${b.id}`, { method: "DELETE" })
+      .catch(() => null)
+    if (res?.ok) router.refresh()
+    else alert("Could not delete this benefit.")
+  }
+
+  async function saveBenefit(id: string) {
+    const res = await fetch(`/api/projects/${projectId}/benefits/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title:          editF.title,
+        description:    editF.description || null,
+        projectedValue: editF.projectedValue || null,
+        actualValue:    editF.actualValue || null,
+        measureBy:      editF.measureBy ? new Date(editF.measureBy + "T00:00:00Z").toISOString() : null,
+      }),
+    }).catch(() => null)
+    if (res?.ok) { setEditId(null); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not save this benefit.")
+    }
+  }
+
   async function updateBenefit(benefitId: string, patch: any) {
     setUpdatingId(benefitId)
     try {
@@ -226,7 +255,57 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                         {c.label}
                       </button>
                     ))}
+                    <span style={{ marginLeft:"auto", display:"flex", gap:6 }}>
+                      <button onClick={() => {
+                          setEditId(b.id)
+                          setEditF({
+                            title: b.title || "", description: b.description || "",
+                            projectedValue: b.projectedValue || "", actualValue: b.actualValue || "",
+                            measureBy: b.measureBy ? new Date(b.measureBy).toISOString().slice(0,10) : "",
+                          })
+                        }}
+                        style={{ padding:"4px 10px", fontSize:10, fontWeight:600, cursor:"pointer",
+                          fontFamily:"var(--font)", border:"1px solid var(--border)", borderRadius:6,
+                          background:"#fff", color:"var(--text-2)" }}>Edit</button>
+                      <button onClick={() => removeBenefit(b)}
+                        style={{ padding:"4px 9px", fontSize:10, fontWeight:600, cursor:"pointer",
+                          fontFamily:"var(--font)", border:"1px solid #FECACA", borderRadius:6,
+                          background:"#fff", color:"var(--red)" }}>✕</button>
+                    </span>
                   </div>
+
+                  {editId === b.id && (
+                    <div style={{ borderTop:"1px solid var(--border)", paddingTop:10,
+                      display:"flex", flexDirection:"column", gap:8 }}>
+                      {([["title","Title"],["description","Description"],
+                         ["projectedValue","Projected value"],["actualValue","Actual value"]] as const).map(([k,label]) => (
+                        <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>
+                          {label}
+                          <input value={editF[k] || ""} placeholder={label}
+                            onChange={e => setEditF((f:any) => ({ ...f, [k]: e.target.value }))}
+                            style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                              borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                        </label>
+                      ))}
+                      <label style={{ fontSize:11, color:"var(--text-3)" }}>
+                        Measure by
+                        <input type="date" value={editF.measureBy || ""}
+                          onChange={e => setEditF((f:any) => ({ ...f, measureBy: e.target.value }))}
+                          style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                            borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                      </label>
+                      <div style={{ display:"flex", gap:6 }}>
+                        <button onClick={() => saveBenefit(b.id)}
+                          style={{ flex:1, padding:"6px 0", background:"var(--steel)", color:"#fff",
+                            border:"none", borderRadius:6, fontSize:12, fontWeight:700,
+                            cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                        <button onClick={() => setEditId(null)}
+                          style={{ padding:"6px 12px", background:"none", border:"1px solid var(--border)",
+                            borderRadius:6, fontSize:12, cursor:"pointer", color:"var(--text-3)",
+                            fontFamily:"var(--font)" }}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}

@@ -28,6 +28,18 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
     madeAt: new Date().toISOString().split("T")[0],
   })
 
+  // Deleting is a normal part of keeping a register honest — a mistyped entry
+  // that can't be removed teaches people to stop trusting the register.
+  async function removeItem(id: string, label: string) {
+    if (!confirm(`Delete ${label}?\n\nThis cannot be undone.`)) return
+    const res = await fetch(`/api/projects/${projectId}/decisions/${id}`, { method: "DELETE" }).catch(() => null)
+    if (res?.ok) { router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not delete this item.")
+    }
+  }
+
   async function create() {
     if (!form.title.trim()) { setError("Title required"); return }
     setSaving(true); setError("")
@@ -166,6 +178,11 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                         textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{d.description}</div>
                     )}
                   </div>
+<button onClick={e => { e.stopPropagation(); removeItem(d.id, `${d.code} — ${d.title}`) }}
+                    title="Delete"
+                    style={{ background:"none", border:"1px solid #FECACA", color:"var(--red)",
+                      borderRadius:6, fontSize:11, cursor:"pointer", padding:"3px 8px",
+                      flexShrink:0, fontFamily:"var(--font)" }}>✕</button>
                   {d.madeBy && (
                     <div style={{ display:"flex", alignItems:"center", gap:5, flexShrink:0 }}>
                       <Avatar name={d.madeBy.name} size={20} />

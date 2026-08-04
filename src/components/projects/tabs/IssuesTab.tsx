@@ -53,6 +53,16 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
 
   const displayed = issues.filter(i => !statusFilter || i.status === statusFilter)
 
+  async function removeIssue(i: any) {
+    if (!confirm(`Delete ${i.code || "this issue"} — "${i.title}"?\n\nThis cannot be undone.`)) return
+    const res = await fetch(`/api/projects/${projectId}/issues/${i.id}`, { method: "DELETE" }).catch(() => null)
+    if (res?.ok) { setSelected(null); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not delete this issue.")
+    }
+  }
+
   async function create() {
     if (!form.title.trim()) { setError("Title required"); return }
     setSaving(true); setError("")
@@ -309,6 +319,10 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                     ✏️ Edit
                   </button>
                 )}
+                <button onClick={()=>removeIssue(selected)}
+                  style={{ padding:"5px 11px", background:"#fff", border:"1px solid #FECACA",
+                    borderRadius:"var(--radius)", fontSize:11, fontWeight:600, cursor:"pointer",
+                    fontFamily:"var(--font)", color:"var(--red)", marginRight:8 }}>✕ Delete</button>
                 <button onClick={()=>{ setEditIssue(null); setSelected(null) }} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"var(--text-3)" }}>✕</button>
               </div>
             </div>
