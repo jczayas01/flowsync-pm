@@ -15,6 +15,12 @@ const PUBLIC_PREFIXES = [
   // yet (accept + register). Each route validates the invitation token itself.
   "/api/invite/",
   "/legal",             // terms, privacy, DPA, DMCA, AI policy — must be readable by anyone
+  // Marketing pages. These were never allowlisted, so every one of them
+  // redirected to sign-in — for prospects AND for Googlebot. The comparison
+  // pages, the template library and the Spanish landing were all invisible.
+  "/compare",           // AEO comparison pages
+  "/free-templates",    // the template library — a lead magnet behind a login wall
+  "/es",                // Spanish landing (and future /es/* pages)
   // Machine-to-machine callbacks: the caller is a server, not a signed-in person,
   // so a session check can only ever say 401. Each route authenticates its own
   // way — Stripe by webhook signature, Microsoft Graph by validation token.
