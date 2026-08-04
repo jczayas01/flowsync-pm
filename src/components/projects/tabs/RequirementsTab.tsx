@@ -97,6 +97,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
         title: editF.title, description: editF.description || null,
         acceptanceCriteria: editF.acceptanceCriteria || null,
         source: editF.source || null, priority: editF.priority,
+        linkedTaskId: editF.linkedTaskId || null,
       }),
     }).catch(() => null)
     if (res?.ok) { setEditId(null); router.refresh() }
@@ -368,7 +369,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                               setEditId(r.id)
                               setEditF({ title:r.title||"", description:r.description||"",
                                 acceptanceCriteria:r.acceptanceCriteria||"", source:r.source||"",
-                                priority:r.priority||"MEDIUM" })
+                                priority:r.priority||"MEDIUM", linkedTaskId:r.linkedTaskId||"" })
                             }}
                             style={{ padding:"4px 9px", fontSize:10.5, fontWeight:600, cursor:"pointer",
                               border:"1px solid var(--border)", borderRadius:6, background:"#fff",
@@ -393,6 +394,18 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                                   borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                             </label>
                           ))}
+                          <label style={{ fontSize:11, color:"var(--text-3)" }}>
+                            Linked task (traceability)
+                            <select value={editF.linkedTaskId || ""}
+                              onChange={e => setEditF((f:any) => ({ ...f, linkedTaskId: e.target.value }))}
+                              style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
+                                borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                              <option value="">— not linked —</option>
+                              {tasks.map((t:any) => (
+                                <option key={t.id} value={t.id}>{t.code} — {t.title}</option>
+                              ))}
+                            </select>
+                          </label>
                           <label style={{ fontSize:11, color:"var(--text-3)" }}>
                             Priority
                             <select value={editF.priority || "MEDIUM"}

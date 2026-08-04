@@ -84,6 +84,30 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
     finally { setSaving(false) }
   }
 
+  const [editing, setEditing] = useState(false)
+  const [editF, setEditF]     = useState<any>({})
+
+  function openEditLesson(l: any) {
+    setEditF({
+      title: l.title || "", category: l.category || "OTHER",
+      situation: l.situation || "", lesson: l.lesson || "",
+      recommendation: l.recommendation || "", impact: l.impact || "NEGATIVE",
+    })
+    setEditing(true)
+  }
+
+  async function saveLesson(id: string) {
+    const res = await fetch(`/api/projects/${projectId}/lessons/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editF),
+    }).catch(() => null)
+    if (res?.ok) { setEditing(false); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not save this lesson.")
+    }
+  }
+
   async function deleteLesson(lessonId: string) {
     if (!confirm("Delete this lesson? This cannot be undone.")) return
     setDeletingId(lessonId)
@@ -231,6 +255,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             </div>
           </div>
         </div>
+
       </div>
     )
   }
@@ -250,6 +275,14 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
           <span style={{ color:"var(--border)" }}>›</span>
           <span style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>{l.title}</span>
           <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
+            {can("projects:edit") && !editing && (
+            <button onClick={() => openEditLesson(l)}
+              style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
+                borderRadius:"var(--radius)", fontSize:12, color:"var(--text-2)",
+                cursor:"pointer", fontFamily:"var(--font)" }}>
+              ✏️ Edit
+            </button>
+            )}
             {can("projects:edit") && (
             <button onClick={() => deleteLesson(l.id)} disabled={deletingId===l.id}
               style={{ padding:"6px 12px", background:"#FEF2F2", border:"1px solid #FECACA",
@@ -260,6 +293,54 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             )}
           </div>
         </div>
+
+        {editing && (
+          <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)",
+            padding:18, marginBottom:16, display:"flex", flexDirection:"column", gap:10 }}>
+            <label style={{ fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Title
+              <input value={editF.title} onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))}
+                style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
+                  border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+            </label>
+            <div style={{ display:"flex", gap:10 }}>
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Category
+                <select value={editF.category} onChange={e=>setEditF((f:any)=>({...f,category:e.target.value}))}
+                  style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
+                    border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                  {["PLANNING","EXECUTION","STAKEHOLDER","RISK","COMMUNICATION","TEAM","TECHNICAL","PROCUREMENT","QUALITY","OTHER"]
+                    .map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </label>
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Impact
+                <select value={editF.impact} onChange={e=>setEditF((f:any)=>({...f,impact:e.target.value}))}
+                  style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
+                    border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                  <option value="POSITIVE">POSITIVE — worth repeating</option>
+                  <option value="NEGATIVE">NEGATIVE — avoid next time</option>
+                </select>
+              </label>
+            </div>
+            {([["situation","What happened"],["lesson","What was learned"],
+               ["recommendation","What to do differently"]] as const).map(([k,label])=>(
+              <label key={k} style={{ fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{label}
+                <textarea rows={3} value={editF[k]}
+                  onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
+                  style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
+                    border:"1px solid var(--border)", fontFamily:"var(--font)", resize:"vertical" }} />
+              </label>
+            ))}
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>saveLesson(l.id)}
+                style={{ padding:"8px 20px", background:"var(--steel)", color:"#fff", border:"none",
+                  borderRadius:"var(--radius)", fontSize:13, fontWeight:600, cursor:"pointer",
+                  fontFamily:"var(--font)" }}>Save changes</button>
+              <button onClick={()=>setEditing(false)}
+                style={{ padding:"8px 16px", background:"none", border:"1px solid var(--border)",
+                  borderRadius:"var(--radius)", fontSize:13, cursor:"pointer", color:"var(--text-3)",
+                  fontFamily:"var(--font)" }}>Cancel</button>
+            </div>
+          </div>
+        )}
 
         <div style={{ flex:1, overflowY:"auto", padding:24, background:"var(--surface)" }}>
           <div style={{ maxWidth:720, margin:"0 auto", background:"#fff",

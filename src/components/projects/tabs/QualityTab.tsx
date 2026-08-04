@@ -3,6 +3,7 @@
 // Quality Management — Quality Plan + Quality Checklist per deliverable
 
 import { FieldCard, EditToggle } from "@/components/shared/FieldCard"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
@@ -209,6 +210,35 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                 {totalCount === 0 ? "No checklist items yet" :
                   `${passCount} of ${totalCount} items passed`}
               </div>
+              {can("projects:edit") && (
+                <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="quality"
+                  commitLabel="to the checklist"
+                  renderCandidate={(c:any)=>(
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.deliverable}</div>
+                      {Array.isArray(c.items) && c.items.length > 0 && (
+                        <ul style={{ margin:"4px 0 0 16px", padding:0, fontSize:11.5, color:"var(--text-3)", lineHeight:1.6 }}>
+                          {c.items.slice(0,6).map((it:string,i:number)=><li key={i}>{it}</li>)}
+                        </ul>
+                      )}
+                      {c.evidence && (
+                        <div style={{ fontSize:11, color:"var(--text-4)", fontStyle:"italic", marginTop:4 }}>
+                          "{c.evidence}" — {c.sourceDoc}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  commit={async (chosen:any[]) => {
+                    const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/quality-checklist`, {
+                      method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+                      body: JSON.stringify({
+                        deliverable: String(c.deliverable || "").slice(0,300),
+                        criteria: Array.isArray(c.items) ? c.items.join("\n") : (c.notes || null),
+                      }),
+                    }).catch(() => null)))
+                    return rs.filter(r => !r?.ok).length
+                  }} />
+              )}
               {can("projects:edit") && (<button onClick={()=>setShowAddChecklist(s=>!s)}
                 style={{ padding:"7px 14px", background:showAddChecklist?"#fff":"var(--steel)",
                   color:showAddChecklist?"var(--text-2)":"#fff",

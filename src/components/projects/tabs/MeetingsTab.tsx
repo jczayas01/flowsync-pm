@@ -3,6 +3,7 @@
 // Meeting Minutes — standalone tab view
 
 import { DateField } from "@/components/shared/DatePicker"
+import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -102,6 +103,44 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
             {minutes.length} meeting record{minutes.length!==1?"s":""}
           </div>
         </div>
+        <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="meetings"
+          commitLabel="to the meeting record"
+          renderCandidate={(c:any)=>(
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</div>
+              <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
+                {c.meetingDate || "no date"}{c.facilitator ? ` · ${c.facilitator}` : ""}
+                {Array.isArray(c.attendees) && c.attendees.length ? ` · ${c.attendees.length} attendees` : ""}
+              </div>
+              {Array.isArray(c.decisions) && c.decisions.length > 0 && (
+                <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:3 }}>
+                  ⚡ {c.decisions.length} decision{c.decisions.length===1?"":"s"}
+                  {Array.isArray(c.actionItems) && c.actionItems.length ? ` · ✓ ${c.actionItems.length} action items` : ""}
+                </div>
+              )}
+              {c.evidence && (
+                <div style={{ fontSize:11, color:"var(--text-4)", fontStyle:"italic", marginTop:4 }}>
+                  "{c.evidence}" — {c.sourceDoc}
+                </div>
+              )}
+            </div>
+          )}
+          commit={async (chosen:any[]) => {
+            const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/meeting-minutes`, {
+              method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+              body: JSON.stringify({
+                title: String(c.title || "Meeting").slice(0,300),
+                meetingDate: c.meetingDate ? new Date(`${c.meetingDate}T12:00:00Z`).toISOString() : new Date().toISOString(),
+                meetingType: c.meetingType || "STATUS",
+                attendees: Array.isArray(c.attendees) ? c.attendees.join(", ") : (c.attendees || null),
+                agenda: c.agenda || null,
+                discussion: c.discussion || null,
+                decisions: Array.isArray(c.decisions) ? c.decisions.join("\n") : (c.decisions || null),
+                actionItems: Array.isArray(c.actionItems) ? c.actionItems : [],
+              }),
+            }).catch(() => null)))
+            return rs.filter(r => !r?.ok).length
+          }} />
         <button onClick={()=>{ setShowForm(s=>!s); setError("") }}
           style={{ padding:"7px 16px", background:"rgba(255,255,255,.15)", color:"#fff",
             border:"1px solid rgba(255,255,255,.3)", borderRadius:"var(--radius)",

@@ -1,5 +1,5 @@
 // POST /api/projects/:projectId/ai-scan — AI-extract register candidates from stored documents
-// Body: { domain: "issues"|"changes"|"decisions"|"requirements"|"lessons", documentIds: string[] }
+// Body: { domain: "issues"|"changes"|"decisions"|"requirements"|"lessons"|"benefits"|"procurement"|"quality"|"meetings", documentIds: string[] }
 // FlowSync principle: documents flow into every register — the PM reviews, the platform synchronizes.
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -72,6 +72,20 @@ DATES: strictly yyyy-mm-dd, and the year must be the one printed in the document
         .map((r: any) => r.title),
     spec: `{"candidates":[{"title":"short lesson title (max 120 chars)","category":"PLANNING|EXECUTION|STAKEHOLDER|RISK|COMMUNICATION|TEAM|TECHNICAL|PROCUREMENT|QUALITY|OTHER","situation":"what happened","lesson":"what was learned from it","recommendation":"what to do differently next time","impact":"POSITIVE|NEGATIVE","sourceDoc":"document name","evidence":"short phrase from the document (max 160 chars)"}]}`,
     rules: `A LESSON LEARNED is an experience worth repeating or avoiding — retrospective insight. Situation, lesson, and recommendation must each be a real sentence, not empty.`,
+  },
+  quality: {
+    existing: async (projectId) =>
+      (await db.qualityChecklist.findMany({ where: { projectId }, select: { deliverable: true } }).catch(() => []))
+        .map((r: any) => r.deliverable),
+    spec: `{"candidates":[{"deliverable":"the deliverable being checked (max 120 chars)","items":["specific, checkable criterion","another criterion"],"notes":"context or standard this comes from, or null","sourceDoc":"document name","evidence":"short phrase from the document (max 160 chars)"}]}`,
+    rules: `A QUALITY CHECKLIST captures how a deliverable will be verified as acceptable. Extract acceptance criteria, quality standards, review gates, test criteria and definition-of-done statements. Each item must be independently checkable ("Reconciliation report shows zero unmatched records"), never a vague aspiration ("high quality"). Group items under the deliverable they verify. 2-10 items per checklist.`,
+  },
+  meetings: {
+    existing: async (projectId) =>
+      (await db.meetingMinutes.findMany({ where: { projectId }, select: { title: true } }).catch(() => []))
+        .map((r: any) => r.title),
+    spec: `{"candidates":[{"title":"meeting title (max 120 chars)","meetingType":"KICKOFF|STATUS|PHASE_GATE|RISK_REVIEW|STEERING|SPRINT_PLANNING|RETROSPECTIVE|AD_HOC|OTHER","meetingDate":"yyyy-mm-dd","facilitator":"name or null","attendees":["name"],"agenda":"agenda summary or null","discussion":"what was discussed","decisions":["decision made"],"actionItems":[{"action":"what must happen","owner":"name or null","dueDate":"yyyy-mm-dd or null"}],"sourceDoc":"document name","evidence":"short phrase from the document (max 160 chars)"}]}`,
+    rules: `MEETING MINUTES record a meeting that actually took place. Only extract when the document is minutes, notes or a transcript of a specific meeting — never invent a meeting from a plan or a policy. meetingDate must appear in the document; if no date is stated, skip that candidate. Attendees, decisions and action items must be the ones named in the text.`,
   },
 }
 
