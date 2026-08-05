@@ -10,6 +10,7 @@
 // prefers-reduced-motion disables all of it.
 
 import { useEffect, useRef, useState } from "react"
+import { trackCta, trackLanguage, trackSignIn } from "@/lib/track"
 import { LANDING_ES } from "@/lib/landing-es"
 import Link from "next/link"
 import { Space_Grotesk } from "next/font/google"
@@ -381,6 +382,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
           {/* The Spanish landing existed but nothing pointed at it — a visitor who
               reads Spanish had no way to find the page written for them. */}
           <Link href={lang === "es" ? "/" : "/es"} className="fs-link"
+            onClick={() => trackLanguage(lang === "es" ? "en" : "es", "nav")}
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
               padding:"6px 10px", whiteSpace:"nowrap" }}>
             {t("Español")}
@@ -391,10 +393,12 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
             {t("Request a demo")}
           </button>
           <Link href="/auth/signin" className="fs-link"
+            onClick={() => trackSignIn("nav")}
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"6px 10px" }}>
             {t("Sign in")}
           </Link>
           <Link href="/auth/signup" className="fs-cta"
+            onClick={() => trackCta("nav", "start_free")}
             style={{ padding:"8px 16px", background:AMBER, color:NAVY, borderRadius:8,
               fontSize:13, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
             {t("Start free")}
@@ -443,7 +447,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
 
               <div className="fs-l5">
                 <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
-                  <Link href="/auth/signup" className="fs-cta"
+                  <Link href="/auth/signup" onClick={() => trackCta("pricing", "start_free")} className="fs-cta"
                     style={{ padding:"14px 26px", background:AMBER, color:NAVY, borderRadius:10,
                       fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
                     {t("Start 2-month free trial →")}
@@ -884,7 +888,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
                   </ul>
                 </div>
                 <div style={{ padding:22 }}>
-                  <Link href="/auth/signup" className={p.featured ? "fs-cta" : undefined}
+                  <Link href="/auth/signup" onClick={() => trackCta("closing", "start_free")} className={p.featured ? "fs-cta" : undefined}
                     style={{ display:"block", textAlign:"center", padding:"11px", borderRadius:9,
                       background: p.featured ? AMBER : NAVY, color: p.featured ? NAVY : "#fff",
                       fontSize:13.5, fontWeight:700, textDecoration:"none" }}>
@@ -975,7 +979,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
             document you already have and watch what comes back.
           </p>
           <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
-            <Link href="/auth/signup" className="fs-cta"
+            <Link href="/auth/signup" onClick={() => trackCta("secondary", "start_free")} className="fs-cta"
               style={{ padding:"14px 28px", background:AMBER, color:NAVY, borderRadius:10,
                 fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
               Start free trial →

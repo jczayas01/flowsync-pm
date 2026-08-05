@@ -1,8 +1,9 @@
 // src/components/auth/SignUpForm.tsx
 "use client"
 import { sendGAEvent } from "@next/third-parties/google"
+import { trackSignUpStarted, trackSignUpFailed } from "@/lib/track"
 import { pixelTrack } from '@/components/marketing/MetaPixel'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
@@ -19,6 +20,14 @@ export function SignUpForm() {
   const [newsletter, setNewsletter]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+  // 11 form_start events produced zero sign_up. Knowing *where* they stop is
+  // the difference between guessing and fixing.
+  const startedRef = useRef(false)
+  const noteStart = () => {
+    if (startedRef.current) return
+    startedRef.current = true
+    trackSignUpStarted()
+  }
   const [sent, setSent]       = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,7 +40,9 @@ export function SignUpForm() {
       })
       if (!res.ok) {
         const d = await res.json()
-        setError(d.error || 'Registration failed')
+        const msg = d.error || 'Registration failed'
+        trackSignUpFailed(msg)
+        setError(msg)
         setLoading(false); return
       }
       sendGAEvent('event', 'sign_up', { method: 'password' })
@@ -82,7 +93,7 @@ export function SignUpForm() {
         </div>
       )}
       <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
-        <input type="text" placeholder="Your full name" required value={form.name}
+        <input type="text" placeholder="Your full name" required value={form.name} onFocus={noteStart}
           onChange={e => setForm({...form, name:e.target.value})} style={inputStyle} />
         <input type="email" placeholder="Work email" required value={form.email}
           onChange={e => setForm({...form, email:e.target.value})} style={inputStyle} />
