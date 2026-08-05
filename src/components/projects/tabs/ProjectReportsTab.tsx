@@ -14,6 +14,8 @@ const ReportSnapshot = nextDynamic(() => import("@/components/charts/ReportSnaps
 const REPORT_TYPES = [
   { value:"STATUS",       label:"Weekly Status Report",  icon:"📋",
     desc:"Accomplishments, plans, risks, EVM summary." },
+  { value:"PLAN",         label:"Project Management Plan", icon:"📘",
+    desc:"The integrated baseline: scope, schedule, cost, governance, risk and change control — the document a sponsor signs." },
   { value:"BRIEF",        label:"Project Brief",         icon:"📄",
     desc:"Onboarding document: background, scope, governance, risks — built from your documents." },
   { value:"EXECUTIVE",    label:"Executive Brief",        icon:"👔",
@@ -95,6 +97,36 @@ function ReportSection({ title, children }: { title:string; children:React.React
         {_title}
       </div>
       {children}
+    </div>
+  )
+}
+
+/** Plain table for baseline sections — the plan is mostly tabular by nature. */
+function ReportTable({ head, rows }: { head: string[]; rows: (string|number|null|undefined)[][] }) {
+  return (
+    <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+      <table style={{ width:"100%", minWidth:460, borderCollapse:"collapse", fontSize:12.5 }}>
+        <thead>
+          <tr style={{ background:"#F1F5F9" }}>
+            {head.map(h => (
+              <th key={h} style={{ textAlign:"left", padding:"7px 10px", fontWeight:700,
+                color:"#1E293B", borderBottom:"1px solid #E2E8F0", whiteSpace:"nowrap" }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r,i) => (
+            <tr key={i} style={{ borderBottom:"1px solid #F1F5F9" }}>
+              {r.map((c,j) => (
+                <td key={j} style={{ padding:"7px 10px", color: j===0 ? "#1E293B" : "#374151",
+                  fontWeight: j===0 ? 600 : 400, verticalAlign:"top", lineHeight:1.55 }}>
+                  {c ?? "—"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -189,6 +221,137 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
             <ReportSnapshot data={snapshot} accent={accent} accent2={accent2} />
           </ReportSection>
         ) : null}
+
+        {/* PROJECT MANAGEMENT PLAN — the baseline document, not a status update */}
+        {reportType==="PLAN" && (
+          <>
+            <ReportSection title="Purpose of this Plan">
+              <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.documentPurpose}</p>
+            </ReportSection>
+            {report.backgroundAndJustification && (
+              <ReportSection title="Background and Justification">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.backgroundAndJustification}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.objectives) && report.objectives.length > 0 && (
+              <ReportSection title="Objectives">
+                {report.objectives.map((o:string,i:number) => <ReportBullet key={i} text={o} />)}
+              </ReportSection>
+            )}
+            {report.deliveryApproach && (
+              <ReportSection title="Delivery Approach">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.deliveryApproach}</p>
+              </ReportSection>
+            )}
+            {(report.scopeStatement || report.outOfScope) && (
+              <ReportSection title="Scope Baseline">
+                {report.scopeStatement && (
+                  <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 8px" }}>
+                    <strong style={{ color:"#1E293B" }}>In scope. </strong>{report.scopeStatement}
+                  </p>
+                )}
+                {report.outOfScope && (
+                  <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>
+                    <strong style={{ color:"#1E293B" }}>Out of scope. </strong>{report.outOfScope}
+                  </p>
+                )}
+              </ReportSection>
+            )}
+            {Array.isArray(report.deliverables) && report.deliverables.length > 0 && (
+              <ReportSection title="Key Deliverables">
+                <ReportTable head={["ID","Deliverable","Owner","Acceptance"]}
+                  rows={report.deliverables.map((d:any)=>[d.id,d.deliverable,d.owner,d.acceptance])} />
+              </ReportSection>
+            )}
+            {Array.isArray(report.scheduleBaseline) && report.scheduleBaseline.length > 0 && (
+              <ReportSection title="Schedule Baseline">
+                <ReportTable head={["Phase","Key deliverable","Target date","Gate owner"]}
+                  rows={report.scheduleBaseline.map((r2:any)=>[r2.phase,r2.deliverable,r2.targetDate,r2.gateOwner])} />
+              </ReportSection>
+            )}
+            {report.criticalPath && (
+              <ReportSection title="Critical Path">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.criticalPath}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.costBaseline) && report.costBaseline.length > 0 && (
+              <ReportSection title="Cost Baseline">
+                <ReportTable head={["Category","Amount","Basis"]}
+                  rows={report.costBaseline.map((c:any)=>[c.category,c.amount,c.notes])} />
+              </ReportSection>
+            )}
+            {report.budgetControls && (
+              <ReportSection title="Budget Controls and Earned Value">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.budgetControls}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.governance) && report.governance.length > 0 && (
+              <ReportSection title="Governance and Organization">
+                <ReportTable head={["Role","Holder","Responsibility"]}
+                  rows={report.governance.map((g:any)=>[g.role,g.holder,g.responsibility])} />
+              </ReportSection>
+            )}
+            {report.decisionRights && (
+              <ReportSection title="Decision Rights">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.decisionRights}</p>
+              </ReportSection>
+            )}
+            {report.meetingCadence && (
+              <ReportSection title="Reporting Cadence">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.meetingCadence}</p>
+              </ReportSection>
+            )}
+            {report.riskManagement && (
+              <ReportSection title="Risk Management">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 10px" }}>{report.riskManagement}</p>
+                {Array.isArray(report.topRisks) && report.topRisks.length > 0 && (
+                  <ReportTable head={["Risk","Score","Response"]}
+                    rows={report.topRisks.map((r2:any)=>[r2.risk,r2.score,r2.response])} />
+                )}
+              </ReportSection>
+            )}
+            {report.qualityAndAcceptance && (
+              <ReportSection title="Quality and Acceptance">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.qualityAndAcceptance}</p>
+              </ReportSection>
+            )}
+            {report.changeControl && (
+              <ReportSection title="Change Control">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.changeControl}</p>
+              </ReportSection>
+            )}
+            {Array.isArray(report.communications) && report.communications.length > 0 && (
+              <ReportSection title="Communications">
+                <ReportTable head={["Audience","Content","Frequency","Channel"]}
+                  rows={report.communications.map((c:any)=>[c.audience,c.content,c.frequency,c.channel])} />
+              </ReportSection>
+            )}
+            {Array.isArray(report.successCriteria) && report.successCriteria.length > 0 && (
+              <ReportSection title="Success Criteria">
+                {report.successCriteria.map((c:string,i:number) => <ReportBullet key={i} text={c} />)}
+              </ReportSection>
+            )}
+            {(Array.isArray(report.assumptions) || Array.isArray(report.constraints)) && (
+              <ReportSection title="Assumptions and Constraints">
+                {(report.assumptions||[]).map((a:string,i:number) => <ReportBullet key={`a${i}`} text={`Assumption — ${a}`} />)}
+                {(report.constraints||[]).map((c:string,i:number) => <ReportBullet key={`c${i}`} text={`Constraint — ${c}`} />)}
+              </ReportSection>
+            )}
+            {report.approval && (
+              <ReportSection title="Baseline Approval">
+                <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 22px" }}>{report.approval}</p>
+                <div style={{ display:"flex", gap:40, flexWrap:"wrap" }}>
+                  {["Executive Sponsor","Project Manager"].map(role => (
+                    <div key={role} style={{ minWidth:200 }}>
+                      <div style={{ borderBottom:"1px solid #94A3B8", height:34 }} />
+                      <div style={{ fontSize:11, color:"#64748B", marginTop:5 }}>{role} · Date</div>
+                    </div>
+                  ))}
+                </div>
+              </ReportSection>
+            )}
+          </>
+        )}
 
         {/* PROJECT BRIEF — onboarding document, document-grounded */}
         {reportType==="BRIEF" && (

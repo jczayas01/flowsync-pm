@@ -13,7 +13,7 @@ import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
 
 const schema = z.object({
-  reportType: z.enum(["STATUS","EXECUTIVE","PHASE_GATE","EVM","RISK_SUMMARY","BRIEF"]),
+  reportType: z.enum(["STATUS","EXECUTIVE","PHASE_GATE","EVM","RISK_SUMMARY","BRIEF","PLAN"]),
   audience:   z.enum(["TEAM","SPONSOR","STEERING_COMMITTEE","PMO"]).default("TEAM"),
   locale:     z.enum(["en","es"]).default("en"),
   additionalNotes: z.string().max(2000).optional(),
@@ -218,6 +218,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     period = {
       start: pStart, end: pEnd,
       label: `${pStart.toLocaleDateString()} – ${pEnd.toLocaleDateString()}`,
+
+    PLAN: `Generate a PROJECT MANAGEMENT PLAN — the integrated baseline document a sponsor signs and a PMO audits, not a status update. Write it as the plan of record: definitive, in present and future tense, describing how the project WILL be executed, monitored and controlled. Ground every section in the project's real data; where the data is thin, say what is still to be determined rather than inventing detail. Return ONLY valid JSON:
+{"reportTitle":"Project Management Plan — ${project.name}","documentPurpose":"2-3 sentences on what this plan governs and which documents it integrates","backgroundAndJustification":"the problem that motivated the project and the business case for solving it","objectives":["measurable objective"],"deliveryApproach":"the methodology and why it fits this project, including how phases and iterations are used","scopeStatement":"what is included, in prose","outOfScope":"what is explicitly excluded, or 'To be confirmed' if undocumented","deliverables":[{"id":"D1","deliverable":"name","owner":"role","acceptance":"how it is accepted"}],"scheduleBaseline":[{"phase":"phase name","deliverable":"what closes it","targetDate":"YYYY-MM-DD","gateOwner":"role"}],"criticalPath":"the driving sequence of work and what consumes float","costBaseline":[{"category":"cost category","amount":"formatted amount","notes":"basis of the number"}],"budgetControls":"contingency authority, thresholds, and how earned value is measured and reported","governance":[{"role":"role","holder":"name or role","responsibility":"what they decide or approve"}],"decisionRights":"who decides what, and what must escalate","meetingCadence":"the reporting and review rhythm","riskManagement":"how risks are scored, reviewed and escalated","topRisks":[{"risk":"risk title","score":"numeric score","response":"planned response"}],"qualityAndAcceptance":"quality metrics, review points, and how deliverables are formally accepted","changeControl":"the path a change request takes and the thresholds that require sponsor approval","communications":[{"audience":"who","content":"what they receive","frequency":"how often","channel":"how"}],"successCriteria":["measurable criterion"],"assumptions":["assumption"],"constraints":["constraint"],"approval":"who must sign this plan for it to become the performance measurement baseline"}`,
       completedTitles: completedInPeriod.slice(0, 10).map((t: any) => t.title),
       milestonesDue: milestonesInPeriod.slice(0, 5).map((m: any) => `${m.name} (${new Date(m.dueDate).toLocaleDateString()}) [${m.status}]`),
       evidence, evidenceNames,
