@@ -141,4 +141,11 @@ export const LANDING_ES: Record<string, string> = {
   "Directory sync, white-label, DPA, personal onboarding.":
     "Sincronización de directorio, marca blanca, DPA y acompañamiento personal.",
   "Contact sales": "Hablar con ventas",
+
+  // ── Billing, stated plainly for Latin America ──
+  "Billing and invoicing": "Facturación y comprobantes",
+  "Can I pay in local currency?": "¿Puedo pagar en moneda local?",
+  "How does billing work outside the United States?": "¿Cómo funciona la facturación fuera de Estados Unidos?",
+  "Prices are in US dollars and payment is by credit or debit card through Stripe — cards issued anywhere in the Americas work. Formal invoices are issued for customers in the United States and Puerto Rico. We do not issue country-specific tax documents elsewhere, including CFDI in Mexico. Every customer gets a Stripe receipt with our business details, which is valid proof of purchase but not a local tax invoice. If your organization requires local tax invoicing to buy, write to billing@flowsyncpm.com before subscribing and we'll tell you honestly whether we can serve you today.":
+    "Los precios están en dólares y el pago es con tarjeta de crédito o débito a través de Stripe — funcionan tarjetas emitidas en cualquier país de América. Emitimos facturas formales para clientes de Estados Unidos y Puerto Rico. No emitimos documentos fiscales de otros países, incluido el CFDI en México. Todo cliente recibe un recibo de Stripe con nuestros datos, válido como comprobante de compra pero no como factura fiscal local. Si tu organización necesita facturación fiscal local para poder comprar, escríbenos a billing@flowsyncpm.com antes de suscribirte y te decimos con franqueza si hoy podemos atenderte.",
 }

@@ -365,6 +365,17 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
         <div style={{ marginBottom:10, padding:"8px 11px", background:"#FEF2F2",
           border:"1px solid #FECACA", borderRadius:8, fontSize:12, color:"#B91C1C" }}>{err}</div>
       )}
+      {/* Said before the card is entered, not discovered afterwards. */}
+      <div style={{ background:"var(--surface-2,#F8FAFC)", border:"1px solid var(--border)",
+        borderRadius:9, padding:"11px 14px", marginBottom:12, fontSize:12, color:"var(--text-3)",
+        lineHeight:1.7 }}>
+        Billed in <strong style={{ color:"var(--text-2)" }}>US dollars</strong> by card through Stripe;
+        cards issued anywhere in the Americas are accepted. Formal invoices are issued for customers in
+        the <strong style={{ color:"var(--text-2)" }}>United States and Puerto Rico</strong> — we don't
+        issue country-specific tax documents elsewhere, including CFDI in Mexico. You'll receive a Stripe
+        receipt with our business details, valid as proof of purchase.
+      </div>
+
 
       <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
         <button onClick={checkout} disabled={busy}

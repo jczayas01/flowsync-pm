@@ -116,6 +116,8 @@ const FAQS = [
     a:"Upload a project plan in Word, Excel or PDF and it extracts phases, milestones, tasks with dates and effort, risks with scoring, budget lines, and requirements. You review everything before it commits — nothing is written to your project until you approve it." },
   { q:"Does it support Waterfall, Agile and Hybrid in one workspace?",
     a:"Yes — all three share the same data model. A predictive project shows phases and a Gantt. An agile one shows a backlog and sprint board. Hybrid runs both. You can run all three at once, in one portfolio." },
+  { q:"How does billing work outside the United States?",
+    a:"Prices are in US dollars and payment is by credit or debit card through Stripe — cards issued anywhere in the Americas work. Formal invoices are issued for customers in the United States and Puerto Rico. We do not issue country-specific tax documents elsewhere, including CFDI in Mexico. Every customer gets a Stripe receipt with our business details, which is valid proof of purchase but not a local tax invoice. If your organization requires local tax invoicing to buy, write to billing@flowsyncpm.com before subscribing and we'll tell you honestly whether we can serve you today." },
   { q:"Is it suitable for regulated or audited work?",
     a:"The platform keeps a full audit log, role-based data controls, and a governance repository holding charter, quality plan, decisions, minutes and handover records. Enterprise adds a Data Processing Agreement and custom terms." },
 ]

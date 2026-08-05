@@ -249,11 +249,34 @@ export function PricingPage() {
         </div>
       </div>
 
+      {/* Billing terms — said up front. A buyer in Mexico or Colombia should
+          learn what we can and cannot issue here, not after they've paid. */}
+      <div style={{ maxWidth:900, margin:"0 auto", padding:"0 40px 44px" }}>
+        <div style={{ background:"#F8FAFC", border:"1px solid #E2E8F0", borderRadius:12,
+          padding:"20px 24px" }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1E293B", marginBottom:8 }}>
+            Billing and invoicing
+          </div>
+          <ul style={{ margin:0, paddingLeft:18, fontSize:13, color:"#475569", lineHeight:1.85 }}>
+            <li><strong>Currency.</strong> All prices are in US dollars (USD). Your bank converts at its own rate.</li>
+            <li><strong>Payment method.</strong> Credit and debit cards only, processed by Stripe. Cards issued anywhere in the Americas are accepted.</li>
+            <li><strong>Invoices.</strong> Formal invoices are issued for customers in the United States and Puerto Rico. We do not issue country-specific tax documents elsewhere — including <em>CFDI</em> in Mexico, <em>nota fiscal</em> in Brazil, or <em>factura electrónica</em> in other Latin American countries.</li>
+            <li><strong>Receipts.</strong> Every customer receives a Stripe payment receipt with our business details, valid as proof of purchase but not as a local tax document.</li>
+          </ul>
+          <p style={{ fontSize:12.5, color:"#64748B", lineHeight:1.7, margin:"12px 0 0" }}>
+            If your organization requires local tax invoicing to purchase, write to{" "}
+            <a href="mailto:billing@flowsyncpm.com" style={{ color:"#1B6CA8", fontWeight:600 }}>
+              billing@flowsyncpm.com
+            </a>{" "}before subscribing so we can tell you honestly whether we can serve you today.
+          </p>
+        </div>
+      </div>
+
       {/* FAQ strip */}
       <div style={{ background:"#1a3a5c", padding:"40px 40px", textAlign:"center", color:"#fff" }}>
         <h2 style={{ fontSize:22, fontWeight:700, marginBottom:8 }}>Questions?</h2>
         <p style={{ fontSize:14, opacity:.7, marginBottom:20 }}>
-          All paid plans include a 14-day free trial. No credit card required.
+          Two full months free on every plan. No credit card required.
         </p>
         <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
           <a href="mailto:sales@flowsyncpm.com"
