@@ -176,7 +176,9 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const els = rootRef.current?.querySelectorAll(".rv")
     if (!els?.length) return
-    if (reduce) { els.forEach(el => el.classList.add("in")); return }
+    if (reduce || typeof IntersectionObserver === "undefined") return   // page stays readable
+    // Only now is it safe to hide anything: we know we can bring it back.
+    rootRef.current?.classList.add("fs-anim")
     // threshold 0.12 required 12% of the element to be on screen. On a phone the
     // sections stack and grow far taller than the viewport, so a long section can
     // never reach 12% — it stayed at opacity:0 and the page looked like it ended
@@ -191,6 +193,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
     // we didn't anticipate would otherwise hide the page permanently.
     const rescue = window.setTimeout(() => {
       els.forEach(el => el.classList.add("in"))
+      rootRef.current?.classList.remove("fs-anim")
     }, 2500)
 
     // $197 counts up the first time the pricing band reveals.
@@ -283,7 +286,9 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
         /* The hero starts hidden and animates in. If animations are suppressed —
            battery saver, an embedded browser — it must still end up visible, so
            the fallback is a plain opacity transition rather than opacity:0. */
-        .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:0; animation:fsUp .7s cubic-bezier(.16,1,.3,1) both; }
+        .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:1; }
+        .fs-anim .fs-l1,.fs-anim .fs-l2,.fs-anim .fs-l3,.fs-anim .fs-l4,.fs-anim .fs-l5 {
+          opacity:0; animation:fsUp .7s cubic-bezier(.16,1,.3,1) both; }
         @media (prefers-reduced-motion: reduce) {
           .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:1; animation:none; transform:none; }
           .rv { opacity:1; transform:none; }
@@ -311,10 +316,17 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
         .fs-auroraB { animation:fsDriftB 22s ease-in-out infinite; }
 
         /* ── Scroll reveals ─────────────────────────────────────────────── */
-        .rv { opacity:0; transform:translateY(18px);
+        /* Progressive enhancement, the strict version: text is visible by
+           default and only hidden once JavaScript has confirmed it can reveal
+           it again. Any failure — blocked script, dead observer, battery saver,
+           an embedded browser — now degrades to a plain readable page instead
+           of a blank one. Hiding content by default is a bet that JS always
+           wins, and on real phones it doesn't. */
+        .rv { opacity:1; transform:none; }
+        .fs-anim .rv { opacity:0; transform:translateY(18px);
               transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
               transition-delay:calc(var(--i,0) * 90ms); }
-        .rv.in { opacity:1; transform:none; }
+        .fs-anim .rv.in { opacity:1; transform:none; }
 
         /* ── Micro-interactions ─────────────────────────────────────────── */
         .fs-card { transition:transform .22s cubic-bezier(.16,1,.3,1), box-shadow .22s ease, border-color .22s ease; }
