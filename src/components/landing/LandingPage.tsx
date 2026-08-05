@@ -177,10 +177,21 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
     const els = rootRef.current?.querySelectorAll(".rv")
     if (!els?.length) return
     if (reduce) { els.forEach(el => el.classList.add("in")); return }
+    // threshold 0.12 required 12% of the element to be on screen. On a phone the
+    // sections stack and grow far taller than the viewport, so a long section can
+    // never reach 12% — it stayed at opacity:0 and the page looked like it ended
+    // halfway down. Any intersection at all is enough to reveal.
     const ob = new IntersectionObserver(entries => {
       for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); ob.unobserve(e.target) }
-    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" })
+    }, { threshold: 0, rootMargin: "0px 0px -40px 0px" })
     els.forEach(el => ob.observe(el))
+
+    // Safety net: content that is invisible by default must never depend solely
+    // on an observer firing. Battery saver, an old WebView, or a scroll container
+    // we didn't anticipate would otherwise hide the page permanently.
+    const rescue = window.setTimeout(() => {
+      els.forEach(el => el.classList.add("in"))
+    }, 2500)
 
     // $197 counts up the first time the pricing band reveals.
     const priceEl = rootRef.current?.querySelector(".fs-197")
@@ -198,7 +209,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
       }, { threshold: .5 })
       priceOb.observe(priceEl)
     }
-    return () => { ob.disconnect(); priceOb?.disconnect() }
+    return () => { ob.disconnect(); window.clearTimeout(rescue); priceOb?.disconnect() }
   }, [])
 
   // The import counter ticks to 31s while the Gantt draws itself, then the whole
@@ -226,6 +237,9 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     let raf = 0
+    // Parallax is a desktop nicety. On a phone the hero already fills the screen,
+    // and translating it on scroll only pushes content out of reach.
+    if (window.matchMedia("(max-width: 900px)").matches) { setHeroY(0); return }
     const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setHeroY(window.scrollY * -0.06)) }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf) }
@@ -266,7 +280,14 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
 
         /* ── Load choreography: hero copy rises in sequence ─────────────── */
         @keyframes fsUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
-        .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:0; animation:fsUp .7s cubic-bezier(.16,1,.3,1) forwards; }
+        /* The hero starts hidden and animates in. If animations are suppressed —
+           battery saver, an embedded browser — it must still end up visible, so
+           the fallback is a plain opacity transition rather than opacity:0. */
+        .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:0; animation:fsUp .7s cubic-bezier(.16,1,.3,1) both; }
+        @media (prefers-reduced-motion: reduce) {
+          .fs-l1,.fs-l2,.fs-l3,.fs-l4,.fs-l5 { opacity:1; animation:none; transform:none; }
+          .rv { opacity:1; transform:none; }
+        }
         .fs-l1 { animation-delay:.05s } .fs-l2 { animation-delay:.15s }
         .fs-l3 { animation-delay:.28s } .fs-l4 { animation-delay:.42s } .fs-l5 { animation-delay:.55s }
 
