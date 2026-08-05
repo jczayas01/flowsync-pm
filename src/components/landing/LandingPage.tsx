@@ -10,6 +10,7 @@
 // prefers-reduced-motion disables all of it.
 
 import { useEffect, useRef, useState } from "react"
+import { LANDING_ES } from "@/lib/landing-es"
 import Link from "next/link"
 import { Space_Grotesk } from "next/font/google"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
@@ -127,7 +128,31 @@ const GANTT_BARS = [
 ]
 const TODAY_X = 64
 
-export default function LandingPage() {
+export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}) {
+  // One landing, two languages: Spanish gets the same hero motion, the same live
+  // S-curve and the same Gantt. A separate Spanish page always ends up looking
+  // like the cheap cousin. Strings with no translation fall back to English
+  // instead of breaking the layout.
+  const t  = (x: string) => (lang === "es" ? (LANDING_ES[x] ?? x) : x)
+  const tr = (o: any, keys: string[]) => {
+    if (lang !== "es") return o
+    const c: any = { ...o }
+    for (const k of keys) {
+      if (typeof c[k] === "string") c[k] = t(c[k])
+      else if (Array.isArray(c[k])) c[k] = c[k].map((v: any) => typeof v === "string" ? t(v) : v)
+    }
+    return c
+  }
+
+  // Localised copies of the content arrays. The originals stay untouched so the
+  // English page renders byte-identical to before.
+  const NAV     = NAV_LINKS.map(x => tr(x, ["label"]))
+  const EXTRACT = EXTRACTED.map(x => tr(x, ["label", "desc"]))
+  const AUDS    = AUDIENCES.map(x => tr(x, ["role", "line", "points"]))
+  const FEATS   = FEATURES.map(x => tr(x, ["title", "desc"]))
+  const QAS     = FAQS.map(x => tr(x, ["q", "a"]))
+  const PLNS    = PLANS.map(x => tr(x, ["name", "blurb", "cta", "ribbon", "features"]))
+
   const [demoOpen, setDemoOpen] = useState(false)
   const [openFaq, setOpenFaq]   = useState<number | null>(0)
   const [scrolled, setScrolled] = useState(false)
@@ -344,7 +369,7 @@ export default function LandingPage() {
           </Link>
 
           <div style={{ display:"flex", gap:2, marginRight:"auto" }}>
-            {NAV_LINKS.map(l => (
+            {NAV.map(l => (
               <a key={l.href} href={l.href} className="fs-link"
                 style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
                   padding:"6px 10px", borderRadius:6, whiteSpace:"nowrap" }}>
@@ -355,24 +380,24 @@ export default function LandingPage() {
 
           {/* The Spanish landing existed but nothing pointed at it — a visitor who
               reads Spanish had no way to find the page written for them. */}
-          <Link href="/es" className="fs-link"
+          <Link href={lang === "es" ? "/" : "/es"} className="fs-link"
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
               padding:"6px 10px", whiteSpace:"nowrap" }}>
-            Español
+            {t("Español")}
           </Link>
           <button onClick={() => setDemoOpen(true)} className="fs-link"
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", background:"none", border:"none",
               cursor:"pointer", padding:"6px 10px", fontFamily:"inherit", whiteSpace:"nowrap" }}>
-            Request a demo
+            {t("Request a demo")}
           </button>
           <Link href="/auth/signin" className="fs-link"
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"6px 10px" }}>
-            Sign in
+            {t("Sign in")}
           </Link>
           <Link href="/auth/signup" className="fs-cta"
             style={{ padding:"8px 16px", background:AMBER, color:NAVY, borderRadius:8,
               fontSize:13, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
-            Start free
+            {t("Start free")}
           </Link>
         </div>
       </nav>
@@ -399,14 +424,14 @@ export default function LandingPage() {
                 <span className="fs-offer-dot" style={{ width:6, height:6, borderRadius:"50%",
                   background:AMBER, boxShadow:`0 0 8px ${AMBER}` }} />
                 <span style={{ fontSize:11.5, fontWeight:700, color:AMBER, letterSpacing:".04em" }}>
-                  Launch offer · 2 months free — limited time
+                  {t("Launch offer · 2 months free — limited time")}
                 </span>
               </div>
 
               <h1 style={{ fontSize:"clamp(34px,4.6vw,58px)", fontWeight:800, lineHeight:1.06,
                 letterSpacing:"-.035em", color:"#fff", marginBottom:20 }}>
-                <span className="fs-l2" style={{ display:"block" }}>Your plan is already written.</span>
-                <span className="fs-l3 fs-shimmer" style={{ display:"block" }}>Turn it into a live project.</span>
+                <span className="fs-l2" style={{ display:"block" }}>{t("Your plan is already written.")}</span>
+                <span className="fs-l3 fs-shimmer" style={{ display:"block" }}>{t("Turn it into a live project.")}</span>
               </h1>
 
               <p className="fs-l4" style={{ fontSize:17, lineHeight:1.65, color:"rgba(255,255,255,.6)",
@@ -421,13 +446,13 @@ export default function LandingPage() {
                   <Link href="/auth/signup" className="fs-cta"
                     style={{ padding:"14px 26px", background:AMBER, color:NAVY, borderRadius:10,
                       fontSize:14.5, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
-                    Start 2-month free trial →
+                    {t("Start 2-month free trial →")}
                   </Link>
                   <button onClick={() => setDemoOpen(true)} className="fs-ghost"
                     style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
                       border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
                       fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
-                    Request a demo
+                    {t("Request a demo")}
                   </button>
                 </div>
                 <p style={{ fontSize:12.5, color:"rgba(255,255,255,.35)", lineHeight:1.6 }}>
@@ -440,7 +465,7 @@ export default function LandingPage() {
             {/* Right — the signature: a document visibly BECOMING a project.
                 Replays every 9s (key={runId}); floats on scroll (parallax). */}
             <div style={{ position:"relative", transform:`translateY(${heroY}px)`, willChange:"transform" }}>
-              <div aria-hidden className="fs-chip fs-chipA">RISK-001 · scored 15</div>
+              <div aria-hidden className="fs-chip fs-chipA">{t("RISK-001 · scored 15")}</div>
               <div aria-hidden className="fs-chip fs-chipB">✓ 47 tasks imported</div>
               <div aria-hidden className="fs-chip fs-chipC">$ 1.2M → EVM</div>
             <div key={runId} className="fs-shot" style={{ background:"#fff", borderRadius:14, overflow:"hidden",
@@ -462,7 +487,7 @@ export default function LandingPage() {
               {/* Title bar */}
               <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${LINE}` }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <div style={{ fontSize:13.5, fontWeight:700, color:INK }}>ERP Rollout — Phase 2</div>
+                  <div style={{ fontSize:13.5, fontWeight:700, color:INK }}>{t("ERP Rollout — Phase 2")}</div>
                   <span className="fs-stamp" style={{ fontSize:9.5, fontWeight:700, padding:"2px 7px", borderRadius:4,
                     background:"#FFFBEB", color:"#B45309", fontFamily:MONO }}>AT RISK</span>
                 </div>
@@ -543,11 +568,11 @@ export default function LandingPage() {
           <div className="rv" style={{ maxWidth:640, marginBottom:44 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
-              How it works
+              {t("How it works")}
             </div>
             <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
               letterSpacing:"-.025em", marginBottom:14 }}>
-              One document in. A governed project out.
+              {t("One document in. A governed project out.")}
             </h2>
             <p style={{ fontSize:16.5, color:SLATE, lineHeight:1.65 }}>
               Most tools hand you an empty workspace and wish you luck. Upload the plan you already
@@ -557,7 +582,7 @@ export default function LandingPage() {
           </div>
 
           <div className="fs-grid3">
-            {EXTRACTED.map((e, i) => (
+            {EXTRACT.map((e, i) => (
               <div key={e.label} className="fs-card rv" 
                 style={{ ["--i" as any]: i % 3, border:`1px solid ${LINE}`, borderRadius:12, padding:"18px 18px 20px",
                   borderLeft:`3px solid ${STEEL}` }}>
@@ -572,7 +597,7 @@ export default function LandingPage() {
 
           <div className="rv" style={{ marginTop:26, padding:"16px 20px", background:PAPER,
             borderRadius:12, border:`1px solid ${LINE}`, fontSize:13.5, color:SLATE, lineHeight:1.65 }}>
-            <strong style={{ color:INK }}>It works in reverse too.</strong>{" "}
+            <strong style={{ color:INK }}>{t("It works in reverse too.")}</strong>{" "}
             Download a blank charter, WBS or quality plan from the template library, fill it in,
             upload it, and the project updates itself. Eighteen templates, Word and Excel, English
             and Spanish.
@@ -586,16 +611,16 @@ export default function LandingPage() {
           <div className="rv" style={{ maxWidth:640, marginBottom:40 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
-              Who it's for
+              {t("Who it's for")}
             </div>
             <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
               letterSpacing:"-.025em" }}>
-              Three people, one source of truth
+              {t("Three people, one source of truth")}
             </h2>
           </div>
 
           <div className="fs-grid3">
-            {AUDIENCES.map((a, i) => (
+            {AUDS.map((a, i) => (
               <div key={a.role} className="fs-card rv"
                 style={{ ["--i" as any]: i, background:"#fff", border:`1px solid ${LINE}`,
                   borderRadius:12, padding:"22px 20px", borderTop:`3px solid ${a.accent}` }}>
@@ -621,11 +646,11 @@ export default function LandingPage() {
           <div className="rv" style={{ maxWidth:640, marginBottom:40 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
-              Features
+              {t("Features")}
             </div>
             <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
               letterSpacing:"-.025em", marginBottom:14 }}>
-              The depth a PMO needs, without the enterprise tax
+              {t("The depth a PMO needs, without the enterprise tax")}
             </h2>
             <p style={{ fontSize:16.5, color:SLATE, lineHeight:1.65 }}>
               Everything below ships today. No roadmap promises, no "coming soon" badges.
@@ -633,7 +658,7 @@ export default function LandingPage() {
           </div>
 
           <div className="fs-grid3">
-            {FEATURES.map((f, i) => (
+            {FEATS.map((f, i) => (
               <div key={f.title} className="fs-card rv"
                 style={{ ["--i" as any]: i % 3, border:`1px solid ${LINE}`, borderRadius:12, padding:"20px", background:"#fff" }}>
                 <div style={{ width:38, height:38, borderRadius:9, background:`${f.tagColor}10`,
@@ -669,7 +694,7 @@ export default function LandingPage() {
               </div>
               <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
                 letterSpacing:"-.025em", marginBottom:14, color:"#fff" }}>
-                Enterprise-grade from day one
+                {t("Enterprise-grade from day one")}
               </h2>
               <p style={{ fontSize:16.5, color:"#94A3B8", lineHeight:1.65, marginBottom:28, maxWidth:520 }}>
                 The controls your IT and compliance review will ask about are already in
@@ -708,7 +733,7 @@ export default function LandingPage() {
                   <div style={{ display:"flex", alignItems:"center", gap:9 }}>
                     <span style={{ width:8, height:8, borderRadius:99, background:AMBER }}/>
                     <span style={{ fontFamily:MONO, fontSize:11.5, fontWeight:700, color:"#E2E8F0",
-                      letterSpacing:".04em" }}>WEEKLY STATUS — PRJ-006</span>
+                      letterSpacing:".04em" }}>{t("WEEKLY STATUS — PRJ-006")}</span>
                   </div>
                   <span style={{ fontFamily:MONO, fontSize:10, fontWeight:700, padding:"3px 8px",
                     borderRadius:5, background:`${"#7C3AED"}2b`, color:"#C4B5FD" }}>AI DRAFT</span>
@@ -752,7 +777,7 @@ export default function LandingPage() {
                     <circle cx="296" cy="14" r="3.4" fill={AMBER} stroke="#0D1B2A" strokeWidth="1.5"
                       style={{ filter:`drop-shadow(0 0 5px ${AMBER})` }} />
                     <text x="6" y="12" fill="#7DA9CC" fontSize="8.5" fontWeight="700"
-                      letterSpacing=".12em" fontFamily={MONO}>EARNED VALUE — LIVE</text>
+                      letterSpacing=".12em" fontFamily={MONO}>{t("EARNED VALUE — LIVE")}</text>
                   </svg>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap",
@@ -763,7 +788,7 @@ export default function LandingPage() {
                       color:c as string, background:`${c}14` }}>{t}</span>
                   ))}
                   <span style={{ marginLeft:"auto", fontSize:11.5, color:"#64748B" }}>
-                    Drafted by AI · Reviewed by you
+                    {t("Drafted by AI · Reviewed by you")}
                   </span>
                 </div>
               </div>
@@ -779,11 +804,11 @@ export default function LandingPage() {
           <div className="rv" style={{ maxWidth:640, marginBottom:32 }}>
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
-              Pricing
+              {t("Pricing")}
             </div>
             <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
               letterSpacing:"-.025em", marginBottom:14 }}>
-              Pay for the people who drive the work
+              {t("Pay for the people who drive the work")}
             </h2>
             <p style={{ fontSize:16.5, color:SLATE, lineHeight:1.65 }}>
               Every other tool charges full price for the person who logs in twice a month to look at
@@ -795,7 +820,7 @@ export default function LandingPage() {
           <div className="fs-band rv" style={{ background:NAVY, borderRadius:14, padding:"24px 28px", marginBottom:24 }}>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:15, fontWeight:700, color:"#fff", marginBottom:6 }}>
-                A PMO with 3 managers and 40 contributors
+                {t("A PMO with 3 managers and 40 contributors")}
               </div>
               <div style={{ fontSize:13.5, color:"rgba(255,255,255,.55)", lineHeight:1.65 }}>
                 The three who run projects are paid seats. The other forty — team members,
@@ -815,7 +840,7 @@ export default function LandingPage() {
 
           {/* Plans */}
           <div className="fs-grid3">
-            {PLANS.map((p, i) => (
+            {PLNS.map((p, i) => (
               <div key={p.name} className="fs-card rv"
                 style={{ ["--i" as any]: i, background:"#fff", borderRadius:14, overflow:"hidden",
                   border: p.featured ? `2px solid ${AMBER}` : `1px solid ${LINE}`,
@@ -824,7 +849,7 @@ export default function LandingPage() {
                 {p.featured && (
                   <div style={{ background:AMBER, color:NAVY, textAlign:"center", padding:"5px",
                     fontSize:10.5, fontWeight:800, letterSpacing:".08em", textTransform:"uppercase" }}>
-                    Most popular
+                    {t("Most popular")}
                   </div>
                 )}
                 {(p as any).ribbon && (
@@ -875,9 +900,9 @@ export default function LandingPage() {
             borderLeft:`3px solid ${NAVY}`, borderRadius:14, padding:"24px 28px" }}>
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".08em",
-                textTransform:"uppercase", color:NAVY, marginBottom:8 }}>Enterprise</div>
+                textTransform:"uppercase", color:NAVY, marginBottom:8 }}>{t("Enterprise")}</div>
               <div style={{ fontSize:17, fontWeight:700, marginBottom:8, lineHeight:1.3 }}>
-                Running a portfolio, or a regulated program?
+                {t("Running a portfolio, or a regulated program?")}
               </div>
               <div style={{ fontSize:13.5, color:SLATE, lineHeight:1.65, maxWidth:560 }}>
                 Custom pricing, directory sync and advanced SSO, white-labeling, a Data Processing
@@ -900,16 +925,16 @@ export default function LandingPage() {
           <div className="rv">
             <div style={{ fontFamily:MONO, fontSize:11, fontWeight:700, letterSpacing:".1em",
               textTransform:"uppercase", color:STEEL, marginBottom:12 }}>
-              FAQ
+              {t("FAQ")}
             </div>
             <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, lineHeight:1.18,
               letterSpacing:"-.025em", marginBottom:32 }}>
-              Questions worth answering
+              {t("Questions worth answering")}
             </h2>
           </div>
 
           <div className="rv" style={{ display:"flex", flexDirection:"column", gap:2 }}>
-            {FAQS.map((f, i) => (
+            {QAS.map((f, i) => (
               <div key={f.q} style={{ borderBottom:`1px solid ${LINE}` }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
@@ -943,7 +968,7 @@ export default function LandingPage() {
         <div className="rv" style={{ maxWidth:640, margin:"0 auto", padding:"0 24px", position:"relative" }}>
           <h2 style={{ fontSize:"clamp(26px,3.4vw,40px)", fontWeight:700, color:"#fff",
             letterSpacing:"-.025em", marginBottom:14, lineHeight:1.18 }}>
-            Bring a real plan. See it running.
+            {t("Bring a real plan. See it running.")}
           </h2>
           <p style={{ fontSize:16, color:"rgba(255,255,255,.5)", marginBottom:30, lineHeight:1.65 }}>
             Two months free, the whole product. The fastest way to judge this is to upload a project
@@ -959,11 +984,11 @@ export default function LandingPage() {
               style={{ padding:"14px 24px", background:"rgba(255,255,255,.06)", color:"#fff",
                 border:"1.5px solid rgba(255,255,255,.16)", borderRadius:10, fontSize:14.5,
                 fontWeight:600, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
-              Request a demo
+              {t("Request a demo")}
             </button>
           </div>
           <p style={{ fontSize:12.5, color:"rgba(255,255,255,.3)" }}>
-            Free for two months · No credit card required · English and Español
+            {t("Free for two months · No credit card required · English and Español")}
           </p>
         </div>
       </section>
@@ -978,13 +1003,13 @@ export default function LandingPage() {
           </div>
           <div style={{ display:"flex", gap:18, marginLeft:"auto", flexWrap:"wrap" }}>
             <Link href="/pricing" className="fs-link"
-              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Pricing</Link>
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>{t("Pricing")}</Link>
             <Link href="/legal/terms" className="fs-link"
               style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Terms</Link>
             <Link href="/legal/dpa" className="fs-link"
               style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>DPA</Link>
             <Link href="/auth/signin" className="fs-link"
-              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Sign in</Link>
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>{t("Sign in")}</Link>
           </div>
           <div style={{ fontSize:11.5, color:"rgba(255,255,255,.25)", width:"100%" }}>
             © 2026 FlowSync PM · Built for PMOs, in English and Español
