@@ -32,6 +32,7 @@ const updateTaskSchema = z.object({
   percentComplete:z.number().int().min(0).max(100).optional(),
   phaseId:        z.string().min(1).optional().nullable(),
   budgetItemId:   z.string().min(1).optional().nullable(),
+  budgetItemIds:  z.array(z.string()).max(12).optional(),
   sprintId:       z.string().min(1).optional().nullable(),
   parentId:       z.string().min(1).optional().nullable(),
   sortOrder:      z.number().int().optional(),
@@ -44,6 +45,7 @@ async function getTask(ctx: ApiContext, params?: Record<string,string>) {
   const task = await db.task.findUnique({
     where: { id: params?.taskId },
     include: {
+            budgetLines: { select: { budgetItemId: true, share: true } },
       owner:        { select: { id:true, name:true, avatarUrl:true } },
       assignees:    { include: { projectMember: { include: { user: { select: { id:true, name:true, avatarUrl:true } } } } } },
       subtasks:     { orderBy: { createdAt: "asc" } },
@@ -85,7 +87,9 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
   const parsed = await parseBody(ctx.req, updateTaskSchema)
   if ("error" in parsed) return parsed.error
 
-  const { assigneeIds, ...rest } = parsed.data
+  // budgetItemIds is a relation, written separately — leaving it in the spread
+  // breaks Prisma's update typing, the same way allocations did on procurement.
+  const { assigneeIds, budgetItemIds, ...rest } = parsed.data
 
   let prevAssignees: string[] = []
   if (assigneeIds !== undefined) {
@@ -141,6 +145,22 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
 
     return t
   })
+  // Replace-all semantics: the picker sends the full set it wants.
+  if (budgetItemIds) {
+    await db.$transaction(async tx => {
+      await tx.taskBudgetLine.deleteMany({ where: { taskId: id } })
+      for (const bid of budgetItemIds) {
+        await tx.taskBudgetLine.create({ data: { taskId: id, budgetItemId: bid } })
+      }
+      // Keep the legacy single column pointing at the first line so anything
+      // still reading it stays coherent instead of going stale.
+      await tx.task.update({
+        where: { id },
+        data: { budgetItemId: budgetItemIds[0] || null },
+      })
+    }).catch(() => { /* link write must not fail the task update */ })
+  }
+
 
   await audit(ctx.workspaceId, ctx.userId, "task.updated", "task", id, task as any, updated as any)
 

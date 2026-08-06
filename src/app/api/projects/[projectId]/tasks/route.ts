@@ -97,6 +97,7 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
           orderBy: [{ phaseId: 'asc' }, { startDate: 'asc' }],
           include: {
             owner: { select: { id: true, name: true, avatarUrl: true } },
+            budgetLines: { select: { budgetItemId: true, share: true } },
             assignees: {
               include: {
                 projectMember: {

@@ -184,7 +184,9 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
           status:          d.data.status || "TODO",
           priority:        d.data.priority || "MEDIUM",
           phaseId:         d.data.phaseId || "",
-          budgetItemId:    d.data.budgetItemId || "",
+          budgetItemIds:   (d.data.budgetLines?.length
+                             ? d.data.budgetLines.map((l:any) => l.budgetItemId)
+                             : (d.data.budgetItemId ? [d.data.budgetItemId] : [])),
           startDate:       toDateInput(d.data.startDate),
           dueDate:         toDateInput(d.data.dueDate),
           completedAt:     toDateInput(d.data.completedAt),
@@ -214,7 +216,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
           status:          form.status,
           priority:        form.priority,
           phaseId:         form.phaseId || null,
-          budgetItemId:    form.budgetItemId || null,
+          budgetItemIds:   form.budgetItemIds || [],
           startDate:       toISO(form.startDate),
           dueDate:         toISO(form.dueDate),
           completedAt:     toISO(form.completedAt),
@@ -445,21 +447,46 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                     </select>
                   </div>
 
-                  {/* Budget line (control account) */}
-                  {budgetLines.length > 0 && (
-                    <div style={fieldRow}>
-                      <label style={lbl}>Budget line</label>
-                      <select style={sel} value={form.budgetItemId || ""}
-                        onChange={e => setForm((f:any) => ({ ...f, budgetItemId:e.target.value }))}>
-                        <option value="">— not linked —</option>
-                        {budgetLines.map((b:any) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name} (${Number(b.plannedCost||0).toLocaleString()})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  {/* Budget lines (control accounts). Toggle chips rather than a
+                      multi-select: ctrl-clicking a <select multiple> is a desktop
+                      trick most people don't know and can't do on a phone. */}
+                  {budgetLines.length > 0 && (() => {
+                    const picked: string[] = form.budgetItemIds || []
+                    const toggle = (id: string) => setForm((f:any) => {
+                      const cur: string[] = f.budgetItemIds || []
+                      return { ...f, budgetItemIds: cur.includes(id)
+                        ? cur.filter(x => x !== id)
+                        : [...cur, id] }
+                    })
+                    return (
+                      <div style={fieldRow}>
+                        <label style={lbl}>
+                          Budget lines{picked.length > 1 ? ` (${picked.length} — effort splits evenly)` : ""}
+                        </label>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                          {budgetLines.map((b:any) => {
+                            const on = picked.includes(b.id)
+                            return (
+                              <button key={b.id} type="button" onClick={() => toggle(b.id)}
+                                style={{ padding:"5px 11px", borderRadius:16, cursor:"pointer",
+                                  fontSize:12, fontWeight:600, fontFamily:"var(--font)",
+                                  border:`1px solid ${on ? "var(--steel)" : "var(--border)"}`,
+                                  background: on ? "#EFF6FF" : "#fff",
+                                  color: on ? "var(--steel)" : "var(--text-3)" }}>
+                                {on ? "✓ " : ""}{b.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        {picked.length === 0 && (
+                          <div style={{ fontSize:11, color:"var(--text-4)", marginTop:5 }}>
+                            Not linked — this task's progress spreads across the whole budget instead of
+                            earning value on a specific line.
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* % Complete */}
                   <div style={fieldRow}>

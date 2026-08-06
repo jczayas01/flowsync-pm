@@ -92,13 +92,29 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         setPhasingTasks(rows)
         const acc: Record<string, { weighted: number; weight: number; count: number }> = {}
         for (const t of rows) {
-          if (!t.budgetItemId || t.status === "CANCELLED") continue
-          const w = Number(t.estimatedHours) || 1
-          const a = acc[t.budgetItemId] || { weighted: 0, weight: 0, count: 0 }
-          a.weighted += (t.percentComplete || 0) * w
-          a.weight   += w
-          a.count    += 1
-          acc[t.budgetItemId] = a
+          if (t.status === "CANCELLED") continue
+          // A task can consume several lines; its effort divides across them so
+          // one task never counts at full weight on two accounts.
+          const links = (t.budgetLines?.length
+            ? t.budgetLines
+            : (t.budgetItemId ? [{ budgetItemId: t.budgetItemId, share: null }] : []))
+            .filter((l: any) => l?.budgetItemId)
+          if (!links.length) continue
+          const shares = links.map((l: any) => {
+            const n = Number(l.share)
+            return Number.isFinite(n) && n > 0 ? n : 0
+          })
+          const given = shares.reduce((x: number, y: number) => x + y, 0)
+          const base  = Number(t.estimatedHours) || 1
+          links.forEach((l: any, i: number) => {
+            const portion = given > 0 ? shares[i] / given : 1 / links.length
+            const w = base * portion
+            const a = acc[l.budgetItemId] || { weighted: 0, weight: 0, count: 0 }
+            a.weighted += (t.percentComplete || 0) * w
+            a.weight   += w
+            a.count    += 1
+            acc[l.budgetItemId] = a
+          })
         }
         const out: Record<string, { pct: number; count: number }> = {}
         for (const [id, a] of Object.entries(acc)) {

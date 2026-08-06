@@ -39,18 +39,39 @@ export async function recomputeProjectEV(client: Tx, projectId: string, pct?: nu
   // value from ITS OWN work — hours-weighted, same rule as the project rollup.
   // Onboarding finished and implementation not started must not average into a
   // single percentage smeared across both lines.
+  // A task can sit on several lines; its effort divides across them by share,
+  // evenly when no share is set. Reading only `budgetItemId` would count a
+  // multi-line task at full weight on one line and ignore the others.
   const linked = await client.task.findMany({
-    where: { projectId, budgetItemId: { not: null }, status: { notIn: ["CANCELLED"] } },
-    select: { budgetItemId: true, percentComplete: true, estimatedHours: true },
+    where: { projectId, status: { notIn: ["CANCELLED"] } },
+    select: {
+      budgetItemId: true, percentComplete: true, estimatedHours: true,
+      budgetLines: { select: { budgetItemId: true, share: true } },
+    },
   })
   const byLine = new Map<string, { weighted: number; weight: number }>()
-  for (const t of linked) {
-    const id = t.budgetItemId as string
-    const w  = Number(t.estimatedHours) || 1
-    const acc = byLine.get(id) || { weighted: 0, weight: 0 }
-    acc.weighted += (t.percentComplete || 0) * w
-    acc.weight   += w
-    byLine.set(id, acc)
+  for (const t of linked as any[]) {
+    const links = (t.budgetLines?.length
+      ? t.budgetLines
+      : (t.budgetItemId ? [{ budgetItemId: t.budgetItemId, share: null }] : []))
+      .filter((l: any) => l?.budgetItemId)
+    if (!links.length) continue
+
+    const shares = links.map((l: any) => {
+      const n = Number(l.share)
+      return Number.isFinite(n) && n > 0 ? n : 0
+    })
+    const given = shares.reduce((a: number, b: number) => a + b, 0)
+    const base  = Number(t.estimatedHours) || 1
+
+    links.forEach((l: any, i: number) => {
+      const portion = given > 0 ? shares[i] / given : 1 / links.length
+      const w = base * portion
+      const acc = byLine.get(l.budgetItemId) || { weighted: 0, weight: 0 }
+      acc.weighted += (t.percentComplete || 0) * w
+      acc.weight   += w
+      byLine.set(l.budgetItemId, acc)
+    })
   }
 
   for (const item of items) {

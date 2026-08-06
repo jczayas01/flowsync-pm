@@ -24,6 +24,8 @@
 export interface PhasingTask {
   id?: string
   budgetItemId?: string | null
+  /** Lines this task consumes. When several, its effort splits across them. */
+  budgetLines?: { budgetItemId: string; share?: number | string | null }[] | null
   startDate?: string | Date | null
   dueDate?: string | Date | null
   estimatedHours?: number | string | null
@@ -83,14 +85,29 @@ export function costWeights(tasks: PhasingTask[], lines: PhasingLine[], bac: num
   let unphased = 0
   let total = 0
 
-  const linkedByLine = new Map<string, PhasingTask[]>()
+  // A task can now sit on several lines. Its effort is divided by `share` when
+  // given, evenly otherwise — so linking two lines needs no extra input and a
+  // task never contributes its full weight twice.
+  const linkedByLine = new Map<string, { task: PhasingTask; portion: number }[]>()
   const unlinked: PhasingTask[] = []
   for (const t of tasks) {
     if (t.status === "CANCELLED") continue
-    if (t.budgetItemId) {
-      linkedByLine.set(t.budgetItemId, [...(linkedByLine.get(t.budgetItemId) || []), t])
-    } else {
-      unlinked.push(t)
+    const links = (t.budgetLines?.length
+      ? t.budgetLines
+      : (t.budgetItemId ? [{ budgetItemId: t.budgetItemId, share: null }] : []))
+      .filter(l => l?.budgetItemId)
+
+    if (!links.length) { unlinked.push(t); continue }
+
+    const shares = links.map(l => {
+      const n = Number(l.share)
+      return Number.isFinite(n) && n > 0 ? n : 0
+    })
+    const given = shares.reduce((a, b) => a + b, 0)
+    for (let i = 0; i < links.length; i++) {
+      const portion = given > 0 ? shares[i] / given : 1 / links.length
+      const id = links[i].budgetItemId
+      linkedByLine.set(id, [...(linkedByLine.get(id) || []), { task: t, portion }])
     }
   }
 
@@ -104,9 +121,10 @@ export function costWeights(tasks: PhasingTask[], lines: PhasingLine[], bac: num
       total += cost
       const own = linkedByLine.get(line.id)
       if (own?.length) {
-        const w = own.reduce((s, t) => s + weight(t), 0) || 1
-        for (const t of own) {
-          taskCost.set(t, (taskCost.get(t) || 0) + cost * (weight(t) / w))
+        const w = own.reduce((s, e) => s + weight(e.task) * e.portion, 0) || 1
+        for (const e of own) {
+          const share = (weight(e.task) * e.portion) / w
+          taskCost.set(e.task, (taskCost.get(e.task) || 0) + cost * share)
         }
       } else {
         poolMoney += cost

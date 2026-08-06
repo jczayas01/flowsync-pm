@@ -18,6 +18,7 @@ const createTaskSchema = z.object({
   projectId:      z.string().min(1),
   phaseId:        z.string().min(1).optional().nullable(),
   budgetItemId:   z.string().min(1).optional().nullable(),
+  budgetItemIds:  z.array(z.string()).max(12).optional(),
   sprintId:       z.string().min(1).optional().nullable(),
   parentId:       z.string().min(1).optional().nullable(),
   title:          z.string().min(1).max(500),

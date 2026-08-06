@@ -254,10 +254,6 @@ model Project {
   name              String
   description       String?
   methodology       Methodology
-  /// Language this project is documented in. Set at import so a PM handed an
-  /// English plan can document in Spanish without changing any setting, and so
-  /// reports default to the sponsor's language regardless of who opens them.
-  docLocale       String?
   status            ProjectStatus          @default(DRAFT)
   approvalRequestedAt   DateTime?
   approvalRequestedById String?
@@ -410,6 +406,7 @@ model Task {
   owner           User?            @relation("TaskOwner", fields: [ownerId], references: [id])
   parent          Task?            @relation("SubTasks", fields: [parentId], references: [id])
   budgetItem      BudgetItem?      @relation(fields: [budgetItemId], references: [id], onDelete: SetNull)
+  budgetLines     TaskBudgetLine[]
   subtasks        Task[]           @relation("SubTasks")
   phase           Phase?           @relation(fields: [phaseId], references: [id])
   project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -903,6 +900,24 @@ model ProcurementAllocation {
   @@map("procurement_allocations")
 }
 
+/// A task can consume more than one budget line — a migration task that spends
+/// consulting hours and software licence money at the same time. `share` is the
+/// portion of the task's effort attributable to that line (0–1). Left null, the
+/// task splits evenly across its lines, so the simple case needs no input.
+model TaskBudgetLine {
+  id           String     @id @default(cuid())
+  taskId       String
+  budgetItemId String
+  share        Decimal?   @db.Decimal(6, 4)
+  createdAt    DateTime   @default(now())
+  task         Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  budgetItem   BudgetItem @relation(fields: [budgetItemId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, budgetItemId])
+  @@index([budgetItemId])
+  @@map("task_budget_lines")
+}
+
 model BudgetItem {
   id          String         @id @default(cuid())
   projectId   String
@@ -928,6 +943,7 @@ model BudgetItem {
   expenses    Expense[]
   procurementItems ProcurementItem[]
   tasks       Task[]
+  taskLinks   TaskBudgetLine[]
   allocations ProcurementAllocation[]
 
   @@map("budget_items")
