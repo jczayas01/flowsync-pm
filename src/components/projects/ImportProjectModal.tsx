@@ -1,6 +1,6 @@
 "use client"
 // src/components/projects/ImportProjectModal.tsx — New Project from Document (flagship)
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -17,6 +17,7 @@ const SECTION_META: Record<string, { icon: string; label: string }> = {
 
 export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
   const t = useTranslations("import")
+  const locale = useLocale()
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [stage, setStage] = useState<Stage>("upload")
@@ -31,6 +32,12 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
   // project; every selected file is attached to the project's Docs after
   // creation, so nothing you brought gets discarded.
   const [allFiles, setAllFiles] = useState<File[]>([])
+  // Documentation language. A new user should never have to know a setting
+  // exists: they arrive with an English plan, they document in Spanish, and the
+  // question is asked here — before the import — rather than in Settings after.
+  const [docLang, setDocLang] = useState<"auto" | "en" | "es">(
+    (locale === "es" ? "es" : "en") as "en" | "es"
+  )
 
   function startAnalyze(list: FileList | File[]) {
     const files = Array.from(list)
@@ -44,6 +51,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
     try {
       const fd = new FormData()
       fd.append("file", file)
+      fd.append("outputLocale", docLang)
       const res = await fetch("/api/projects/import/analyze", {
         method: "POST", headers: { "x-workspace-id": workspaceId }, body: fd,
       })
@@ -83,6 +91,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
       milestones: pick("milestones"),
       risks: pick("risks"),
       budget: pick("budget"),
+      docLocale: docLang === "auto" ? null : docLang,
       sourceFile: data.sourceFile,
     }
     try {
@@ -153,6 +162,36 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: 22 }}>
+          {stage === "upload" && (
+            <div style={{ marginBottom: 14, border: "1px solid var(--border)", borderRadius: 10,
+              padding: "12px 14px", background: "var(--surface)" }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-2)", marginBottom: 3 }}>
+                {locale === "es" ? "Idioma de la documentación" : "Documentation language"}
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--text-3)", lineHeight: 1.6, marginBottom: 9 }}>
+                {locale === "es"
+                  ? "La IA escribirá tareas, riesgos y descripciones en este idioma, sin importar en qué idioma esté el archivo."
+                  : "The AI will write tasks, risks and descriptions in this language, whatever language the file is in."}
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {([
+                  ["es",   "Español"],
+                  ["en",   "English"],
+                  ["auto", locale === "es" ? "Igual que el documento" : "Same as the document"],
+                ] as const).map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setDocLang(val)}
+                    style={{ padding: "6px 14px", borderRadius: 20, cursor: "pointer",
+                      fontSize: 12.5, fontWeight: 600, fontFamily: "var(--font)",
+                      border: `1px solid ${docLang === val ? "var(--steel)" : "var(--border)"}`,
+                      background: docLang === val ? "#EFF6FF" : "#fff",
+                      color: docLang === val ? "var(--steel)" : "var(--text-3)" }}>
+                    {docLang === val ? "✓ " : ""}{label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {stage === "upload" && (
             <div
               onDragOver={e => { e.preventDefault(); setDrag(true) }}

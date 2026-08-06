@@ -19,6 +19,7 @@ const commitSchema = z.object({
     outOfScope: z.string().max(3000).nullable().optional(),
     economicImpact: z.string().max(3000).nullable().optional(),
     background: z.string().max(3000).nullable().optional(),
+    docLocale: z.enum(["en","es"]).optional().nullable(),
     methodology: z.enum(["WATERFALL", "AGILE", "SCRUM", "HYBRID"]),
     startDate: iso,
     endDate: iso,
@@ -80,6 +81,7 @@ async function commit(ctx: ApiContext) {
         // prompt is more useful than "Imported from …".
         description: d.project.description || null,
         background: d.project.background || null,
+        docLocale: d.project.docLocale || null,
         outOfScope: d.project.outOfScope || null,
         economicImpact: d.project.economicImpact || null,
         methodology: d.project.methodology as any,

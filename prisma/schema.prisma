@@ -254,6 +254,10 @@ model Project {
   name              String
   description       String?
   methodology       Methodology
+  /// Language this project is documented in. Set at import so a PM handed an
+  /// English plan can document in Spanish without changing any setting, and so
+  /// reports default to the sponsor's language regardless of who opens them.
+  docLocale       String?
   status            ProjectStatus          @default(DRAFT)
   approvalRequestedAt   DateTime?
   approvalRequestedById String?

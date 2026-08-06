@@ -924,7 +924,13 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           reportType, audience, additionalNotes: notes || undefined,
-          locale: locale === "es" ? "es" : "en",
+          // The project's documentation language wins over the reader's UI
+          // language: a project documented in Spanish for a Spanish-speaking
+          // sponsor must not switch to English because an English-speaking PM
+          // happened to generate the report.
+          locale: (project?.docLocale === "es" || project?.docLocale === "en")
+            ? project.docLocale
+            : (locale === "es" ? "es" : "en"),
           ...(reportType === "STATUS" ? {
             periodStart: new Date(reportWeek).toISOString(),
             periodEnd: reportWeekEnd(reportWeek).toISOString(),

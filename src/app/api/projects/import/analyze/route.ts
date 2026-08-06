@@ -70,6 +70,17 @@ export async function POST(req: NextRequest) {
 
   const form = await req.formData().catch(() => null)
   const file = form?.get("file") as File | null
+  // The document's language and the language the project should be documented in
+  // are different things. A PM handed an English plan who reports to a
+  // Spanish-speaking sponsor needs the second — and shouldn't have to discover a
+  // setting to get it.
+  const outputLocale = String(form?.get("outputLocale") || "auto")
+  const langDirective =
+    outputLocale === "es"
+      ? `WRITE EVERY EXTRACTED VALUE IN SPANISH — phase names, task titles, milestone names, risk titles and responses, requirement text, budget line names, and the objective, scope, out-of-scope, background and economic impact. Translate them when the source document is in another language. Use natural Latin American Spanish, never a literal word-for-word translation. Leave untranslated only: people's names, vendor and product names, and codes such as REQ-001.\n\n`
+      : outputLocale === "en"
+      ? `WRITE EVERY EXTRACTED VALUE IN ENGLISH — phase names, task titles, milestone names, risk titles and responses, requirement text, budget line names, and the objective, scope, out-of-scope, background and economic impact. Translate them when the source document is in another language. Leave untranslated only: people's names, vendor and product names, and codes.\n\n`
+      : ""
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 })
   if (file.size > MAX_FILE) return NextResponse.json({ error: "File too large (max 8 MB)" }, { status: 413 })
 
@@ -94,7 +105,7 @@ export async function POST(req: NextRequest) {
   }
   content.push({
     type: "text",
-    text: `${RULES}\n\nJSON spec:\n${SPEC}\n\n${usableText
+    text: `${langDirective}${RULES}\n\nJSON spec:\n${SPEC}\n\n${usableText
       ? `Document "${file.name}":\n\n${text}`
       : `The document "${file.name}" is attached as a PDF — read it visually, including tables.`}`,
   })
@@ -146,7 +157,7 @@ export async function POST(req: NextRequest) {
           model: "claude-sonnet-4-6",
           max_tokens: 8000,
           messages: [{ role: "user", content: [{ type: "text",
-            text: `${RULES}\n\nJSON spec:\n${SPEC}\n\nIMPORTANT: the document below DOES contain phases, tasks or other structure — extract it. Empty arrays are only acceptable when the document truly contains none of that content.\n\nDocument "${file.name}":\n\n${text}` }] }],
+            text: `${langDirective}${RULES}\n\nJSON spec:\n${SPEC}\n\nIMPORTANT: the document below DOES contain phases, tasks or other structure — extract it. Empty arrays are only acceptable when the document truly contains none of that content.\n\nDocument "${file.name}":\n\n${text}` }] }],
         }),
       }).catch(() => null)
       if (retry?.ok) {
