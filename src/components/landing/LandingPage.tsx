@@ -762,7 +762,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
                 <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 16,
                   border: "1px solid rgba(255,255,255,.10)", padding: "22px 24px" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 20 }}>
-                    <span style={{ fontSize: 14.5, fontWeight: 700 }}>Robot hardware — Ponce</span>
+                    <span style={{ fontSize: 14.5, fontWeight: 700 }}>Equipment — Site B</span>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,.45)", fontFamily: MONO }}>
                       EQUIPMENT · earns 0/100
                     </span>
