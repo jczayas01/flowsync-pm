@@ -13,10 +13,23 @@ import { TaskDetailModal } from "@/components/tasks/TaskDetailModal"
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ROW_H  = 40          // row height — industry standard 40px
-const LEFT_W = 340         // wider left panel for name + dates
+const LEFT_W = 420         // name + owner + dates + duration
 const HDR_H  = 56          // double header: month + day/week
 const MIN_BAR = 6
-const COL_W  = { name:180, start:62, end:62, dur:36 }  // left panel columns
+// An initial in a circle floating over the task name told you someone owned the
+// row but not who. A named column is readable, sortable by eye, and survives two
+// people whose names start with the same letter.
+const COL_W  = { name:170, owner:92, start:60, end:60, dur:32 }
+
+const OWNER_X = COL_W.name + 10
+
+/** "María Rodríguez" → "María R." — a full name never fits, an initial says nothing. */
+function shortName(n: string): string {
+  const parts = String(n).trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 12)
+  const out = `${parts[0]} ${parts[1][0]}.`
+  return out.length > 14 ? `${parts[0].slice(0, 11)}…` : out
+}
 
 const STATUS_COLOR: Record<string,string> = {
   DONE:        "#059669",
@@ -917,9 +930,11 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           {/* Column headers */}
           <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">TASK NAME</text>
           <line x1={COL_W.name+10} y1={0} x2={COL_W.name+10} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-          <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
-          <line x1={COL_W.name+10+COL_W.start} y1={0} x2={COL_W.name+10+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-          <text x={COL_W.name+COL_W.start+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
+          <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">OWNER</text>
+          <line x1={OWNER_X+COL_W.owner} y1={0} x2={OWNER_X+COL_W.owner} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+          <text x={OWNER_X+COL_W.owner+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
+          <line x1={OWNER_X+COL_W.owner+COL_W.start} y1={0} x2={OWNER_X+COL_W.owner+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+          <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
           <line x1={LEFT_W-COL_W.dur-4} y1={0} x2={LEFT_W-COL_W.dur-4} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
           <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">DAYS</text>
 
@@ -983,42 +998,42 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                 <text x={indent+14} y={y+ROW_H/2+4} fontSize={11}
                   fontWeight={row.depth===0?500:400}
                   fill={task.status==="DONE"?"#94A3B8":"#1E293B"}>
-                  {task.title?.slice(0,22)}{task.title?.length>22?"…":""}
+                  {task.title?.slice(0,21)}{task.title?.length>21?"…":""}
                 </text>
 
                 {/* ⚡ Critical indicator */}
                 {isCrit && (
-                  <text x={COL_W.name} y={y+ROW_H/2+4} fontSize={9} fill="#DC2626">⚡</text>
+                  <text x={COL_W.name-2} y={y+ROW_H/2+4} fontSize={9} fill="#DC2626">⚡</text>
                 )}
-                {/* Assignee avatar circle */}
+                {/* Owner — a column, not a badge on the name */}
                 {(() => {
                   const assignee = task.assignees?.[0]
                   const user = assignee?.projectMember?.user || assignee?.user
-                  if (!user) return null
-                  const initials = (user.name||"?").charAt(0).toUpperCase()
-                  const ax = COL_W.name - 18
-                  const ay = y + ROW_H/2
+                  const extra = (task.assignees?.length || 0) - 1
+                  const label = user?.name
+                    ? shortName(user.name) + (extra > 0 ? ` +${extra}` : "")
+                    : "—"
                   return (
-                    <g>
-                      <circle cx={ax} cy={ay} r={9} fill="#1B6CA8" />
-                      <text x={ax} y={ay+4} fontSize={8} fontWeight={700}
-                        fill="#fff" textAnchor="middle">{initials}</text>
-                    </g>
+                    <text x={OWNER_X + 8} y={y+ROW_H/2+4} fontSize={9.5}
+                      fill={user ? "#475569" : "#CBD5E1"}>
+                      {label}
+                    </text>
                   )
                 })()}
 
                 {/* Column dividers */}
                 <line x1={COL_W.name+10} y1={y} x2={COL_W.name+10} y2={y+ROW_H} stroke="#F1F5F9" />
-                <line x1={COL_W.name+10+COL_W.start} y1={y} x2={COL_W.name+10+COL_W.start} y2={y+ROW_H} stroke="#F1F5F9" />
+                <line x1={OWNER_X+COL_W.owner} y1={y} x2={OWNER_X+COL_W.owner} y2={y+ROW_H} stroke="#F1F5F9" />
+                <line x1={OWNER_X+COL_W.owner+COL_W.start} y1={y} x2={OWNER_X+COL_W.owner+COL_W.start} y2={y+ROW_H} stroke="#F1F5F9" />
                 <line x1={LEFT_W-COL_W.dur-4} y1={y} x2={LEFT_W-COL_W.dur-4} y2={y+ROW_H} stroke="#F1F5F9" />
 
                 {/* Start date */}
-                <text x={COL_W.name+14} y={y+ROW_H/2+4} fontSize={9} fill="#64748B">
+                <text x={OWNER_X+COL_W.owner+8} y={y+ROW_H/2+4} fontSize={9} fill="#64748B">
                   {start ? fmtShort(start) : "—"}
                 </text>
 
                 {/* End date */}
-                <text x={COL_W.name+COL_W.start+14} y={y+ROW_H/2+4} fontSize={9} fill="#64748B">
+                <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={y+ROW_H/2+4} fontSize={9} fill="#64748B">
                   {due ? fmtShort(due) : "—"}
                 </text>
 
@@ -1117,9 +1132,11 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
             <line x1={LEFT_W} y1={0} x2={LEFT_W} y2={HDR_H} stroke="#E2E8F0" strokeWidth={1.5} />
             <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">TASK NAME</text>
             <line x1={COL_W.name+10} y1={0} x2={COL_W.name+10} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-            <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
-            <line x1={COL_W.name+10+COL_W.start} y1={0} x2={COL_W.name+10+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-            <text x={COL_W.name+COL_W.start+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
+            <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">OWNER</text>
+            <line x1={OWNER_X+COL_W.owner} y1={0} x2={OWNER_X+COL_W.owner} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+            <text x={OWNER_X+COL_W.owner+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
+            <line x1={OWNER_X+COL_W.owner+COL_W.start} y1={0} x2={OWNER_X+COL_W.owner+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
+            <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
             <line x1={LEFT_W-COL_W.dur-4} y1={0} x2={LEFT_W-COL_W.dur-4} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
             <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">DAYS</text>
           </g>
