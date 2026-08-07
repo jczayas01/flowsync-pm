@@ -22,6 +22,13 @@ const schema = z.object({
   startDate:     z.string().optional().nullable(),
   endDate:       z.string().optional().nullable(),
   budgetItemId:  z.string().optional().nullable(),
+  // A contract that covers two budget lines is just as common on the day it is
+  // entered as on the day it is corrected.
+  allocations:   z.array(z.object({
+    budgetItemId: z.string(),
+    amount:       z.number().min(0),
+    note:         z.string().max(200).optional().nullable(),
+  })).max(20).optional(),
   status:        z.enum(["DRAFT","ACTIVE","COMPLETED","CANCELLED","ON_HOLD"]).default("ACTIVE"),
   deliverables:  z.string().max(3000).optional().nullable(),
   notes:         z.string().max(3000).optional().nullable(),
@@ -85,6 +92,21 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
       createdBy: { select:{ id:true, name:true } },
     },
   })
+  if (d.allocations?.length) {
+    try {
+      for (const a of d.allocations) {
+        if (a.amount <= 0) continue
+        await db.procurementAllocation.create({
+          data: { procurementItemId: item.id, budgetItemId: a.budgetItemId,
+                  amount: a.amount, note: a.note || null },
+        })
+      }
+    } catch (e: any) {
+      // Surfacing this beats a contract that silently lost its split.
+      console.error("[Procurement] allocation write failed:", e)
+    }
+  }
+
   return ok({ ...item, value:item.value?Number(item.value):null }, 201)
 }
 

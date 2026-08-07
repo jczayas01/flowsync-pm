@@ -114,6 +114,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     type:"CONTRACT", title:"", poNumber:"", contractRef:"",
     value:"", currency:"USD", startDate:"", endDate:"",
     status:"ACTIVE", deliverables:"", notes:"", ownerId:"", budgetItemId:"",
+    allocations: [] as { budgetItemId:string; amount:number }[],
   })
 
   // Budget lines for the "bill against" picker (Budget automation #2)
@@ -131,7 +132,8 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     setForm({ vendorName:"", vendorContact:"", vendorEmail:"", vendorPhone:"", vendorLocation:"",
       type:"CONTRACT", title:"", poNumber:"", contractRef:"",
       value:"", currency:"USD", startDate:"", endDate:"",
-      status:"ACTIVE", deliverables:"", notes:"", ownerId:"", budgetItemId:"" })
+      status:"ACTIVE", deliverables:"", notes:"", ownerId:"", budgetItemId:"",
+      allocations: [] })
   }
 
   async function save() {
@@ -153,6 +155,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
           vendorPhone: form.vendorPhone || null,
           vendorLocation: form.vendorLocation || null,
         budgetItemId: form.budgetItemId || null,
+        allocations: (form.allocations||[]).filter((a:any)=>a.budgetItemId && a.amount>0),
       }),
       })
       if (!res.ok) {
@@ -367,6 +370,66 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <div style={{ fontSize:10.5, color:"var(--text-3)", marginTop:3 }}>
                   When linked, marking this item Completed posts its value as an
                   expense on that budget line automatically.
+                </div>
+
+                {/* Split across lines — the edit form had this and creation didn't,
+                    which meant a contract covering two lines had to be entered
+                    wrong first and corrected afterwards. */}
+                <div style={{ marginTop:8, border:"1px solid var(--border)", borderRadius:8,
+                  padding:"10px 12px", background:"var(--surface,#F8FAFC)" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                    <span style={{ fontSize:11.5, fontWeight:700, color:"var(--text-3)",
+                      textTransform:"uppercase", letterSpacing:".05em" }}>
+                      Split across lines {(form.allocations||[]).length>0 ? `(${form.allocations.length})` : ""}
+                    </span>
+                    <button type="button"
+                      onClick={()=>setForm(f=>({...f, allocations:[...(f.allocations||[]), { budgetItemId:"", amount:0 }]}))}
+                      style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
+                        background:"#fff", border:"1px solid var(--border)", borderRadius:6,
+                        padding:"3px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>
+                      + Add line
+                    </button>
+                  </div>
+
+                  {(form.allocations||[]).length===0 && (
+                    <div style={{ fontSize:11.5, color:"var(--text-4)", lineHeight:1.5 }}>
+                      Leave empty to bill the whole value to the single line above. Add lines when one
+                      contract covers several budget items — each posts its own expense on completion.
+                    </div>
+                  )}
+
+                  {(form.allocations||[]).map((a:any,i:number)=>(
+                    <div key={i} style={{ display:"flex", gap:6, marginBottom:6 }}>
+                      <select style={{...inp,cursor:"pointer",flex:1}} value={a.budgetItemId}
+                        onChange={e=>setForm(f=>{ const n=[...f.allocations]; n[i]={...n[i],budgetItemId:e.target.value}; return {...f,allocations:n} })}>
+                        <option value="">— choose line —</option>
+                        {budgetLines.map(b=>(<option key={b.id} value={b.id}>{b.name}</option>))}
+                      </select>
+                      <input type="number" min={0} step="0.01" value={a.amount||""} placeholder="0.00"
+                        onChange={e=>setForm(f=>{ const n=[...f.allocations]; n[i]={...n[i],amount:Number(e.target.value)||0}; return {...f,allocations:n} })}
+                        style={{...inp,width:120}} />
+                      <button type="button"
+                        onClick={()=>setForm(f=>({...f, allocations:f.allocations.filter((_:any,j:number)=>j!==i)}))}
+                        style={{ border:"1px solid #FECACA", background:"none", color:"var(--red)",
+                          borderRadius:6, fontSize:12, cursor:"pointer", padding:"0 10px",
+                          fontFamily:"var(--font)" }}>✕</button>
+                    </div>
+                  ))}
+
+                  {(form.allocations||[]).length>0 && (() => {
+                    const sum = form.allocations.reduce((s2:number,a:any)=>s2+(Number(a.amount)||0),0)
+                    const val = Number(form.value)||0
+                    const diff = Math.round((val - sum) * 100) / 100
+                    return (
+                      <div style={{ fontSize:11.5, marginTop:4,
+                        color: diff === 0 ? "var(--green)" : "var(--amber)", fontWeight:600 }}>
+                        Allocated ${sum.toLocaleString()} of ${val.toLocaleString()}
+                        {diff === 0 ? " — balanced ✓"
+                          : diff > 0 ? ` — $${diff.toLocaleString()} unallocated`
+                          : ` — over by $${Math.abs(diff).toLocaleString()}`}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
               <div>
