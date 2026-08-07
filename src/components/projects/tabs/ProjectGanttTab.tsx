@@ -249,90 +249,32 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
 
   const totalH = HDR_H + rows.length * ROW_H + 20
 
-  // ── Export: PNG and print ─────────────────────────────────────────────────
-  // The chart is an inline SVG, so both paths start the same way: clone it,
-  // inline the CSS variables it inherits from the page (a detached SVG resolves
-  // var(--steel) to nothing and renders a black-on-black chart), then either
-  // rasterise it or hand it to a print window.
+  // ── Export: the schedule as a spreadsheet ─────────────────────────────────
+  // A rasterised SVG was worse than the screenshot people were already taking,
+  // and neither can be worked with. The Excel export carries the task list and
+  // a real timeline grid, so the person who receives it can filter, re-sort and
+  // paste it into their own deck — usually someone with no login here.
   const [exporting, setExporting] = useState(false)
 
-  function serializeChart(): string | null {
-    const src = svgRef.current
-    if (!src) return null
-    const clone = src.cloneNode(true) as SVGSVGElement
-    const cs = getComputedStyle(document.documentElement)
-    const vars = ["--steel","--amber","--green","--red","--navy","--text","--text-2",
-                  "--text-3","--text-4","--border","--surface","--font"]
-    const style = vars.map(v => `${v}:${cs.getPropertyValue(v).trim()}`).join(";")
-    clone.setAttribute("style", `${style};background:#fff`)
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
-    clone.setAttribute("width", String(svgWidth))
-    clone.setAttribute("height", String(totalH))
-    // A white plate behind everything: a transparent PNG dropped into a deck or
-    // an email reads as a black rectangle.
-    const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    bg.setAttribute("width", String(svgWidth))
-    bg.setAttribute("height", String(totalH))
-    bg.setAttribute("fill", "#ffffff")
-    clone.insertBefore(bg, clone.firstChild)
-    return new XMLSerializer().serializeToString(clone)
-  }
-
-  async function downloadChart() {
-    const svgText = serializeChart()
-    if (!svgText) return
+  async function exportExcel() {
     setExporting(true)
     try {
-      const scale = 2   // legible when dropped into a slide
-      const blob  = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" })
-      const url   = URL.createObjectURL(blob)
-      const img   = new Image()
-      await new Promise<void>((res, rej) => {
-        img.onload = () => res(); img.onerror = () => rej(new Error("render failed"))
-        img.src = url
-      })
-      const canvas = document.createElement("canvas")
-      canvas.width  = svgWidth * scale
-      canvas.height = totalH  * scale
-      const ctx = canvas.getContext("2d")
-      if (!ctx) throw new Error("no canvas")
-      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height)
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      URL.revokeObjectURL(url)
-      const a = document.createElement("a")
-      a.href = canvas.toDataURL("image/png")
-      a.download = `${project?.code || "project"}_gantt_${new Date().toISOString().slice(0,10)}.png`
+      const res = await fetch(`/api/projects/${projectId}/export-gantt`)
+      if (!res.ok) {
+        const d = await res.json().catch(() => null)
+        alert(d?.error || `Export failed (${res.status})`)
+        return
+      }
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement("a")
+      a.href = url
+      a.download = `${project?.code || "project"}_gantt_${new Date().toISOString().slice(0,10)}.xlsx`
       a.click()
+      URL.revokeObjectURL(url)
     } catch {
-      alert("Could not export the chart. Try narrowing the date range and exporting again.")
+      alert("Could not export the schedule.")
     } finally { setExporting(false) }
-  }
-
-  function printChart() {
-    const svgText = serializeChart()
-    if (!svgText) return
-    // A separate window rather than @media print: the Gantt lives inside a
-    // scrolling container, and printing the page only ever captured the visible
-    // slice. Landscape, scaled to the paper, with the project named on it.
-    const w = window.open("", "_blank", "width=1200,height=800")
-    if (!w) { alert("Allow pop-ups to print the chart."); return }
-    const title = `${project?.code ? project.code + " — " : ""}${project?.name || "Project"} — Schedule`
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
-      <style>
-        @page { size: landscape; margin: 10mm; }
-        body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
-        h1 { font-size:14px; margin:0 0 4px; color:#0D1B2A; }
-        .meta { font-size:10px; color:#64748B; margin-bottom:10px; }
-        svg { width:100%; height:auto; }
-      </style></head><body>
-      <h1>${title}</h1>
-      <div class="meta">Printed ${new Date().toLocaleDateString()}</div>
-      ${svgText}
-      </body></html>`)
-    w.document.close()
-    w.focus()
-    // Give the browser a beat to lay the SVG out before the dialog opens.
-    setTimeout(() => { w.print() }, 350)
   }
 
   // ── Drag a sponsor milestone to a new date ────────────────────────────────
@@ -551,9 +493,8 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
 
         {SEP}
 
-        <button style={TB} onClick={printChart}>🖨 Print</button>
-        <button style={TB} onClick={downloadChart} disabled={exporting}>
-          {exporting ? "Exporting…" : "⬇ PNG"}
+        <button style={TB} onClick={exportExcel} disabled={exporting}>
+          {exporting ? "Building…" : "⬇ Excel"}
         </button>
 
         {SEP}
