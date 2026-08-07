@@ -130,6 +130,7 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
         orderBy: { createdAt: 'asc' },
         include: {
           owner: { select: { id: true, name: true, avatarUrl: true } },
+          budgetLines: { select: { budgetItemId: true, share: true } },
           assignees: {
             include: {
               projectMember: {
@@ -187,6 +188,7 @@ export const GET = withAuth(async (req: NextRequest, ctx: AuthContext, params) =
         take: query.perPage,
         include: {
           owner: { select: { id: true, name: true, avatarUrl: true } },
+          budgetLines: { select: { budgetItemId: true, share: true } },
           assignees: {
             include: {
               projectMember: {
