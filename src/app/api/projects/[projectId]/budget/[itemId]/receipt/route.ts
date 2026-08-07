@@ -21,6 +21,10 @@ const MAX_BYTES = 10_000_000
 
 async function extractReceipt(imageB64: string, mediaType: string): Promise<{
   vendor: string; date: string | null; amount: number | null; currency: string; summary: string
+  /** The invoice's own charge lines. A document covering two budget lines already
+   *  says so on the page; making the PM post it twice loses the link between the
+   *  halves and invites a double-count. */
+  lines: { description: string; amount: number }[]
 } | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null
   const res = await fetch("https://api.anthropic.com/v1/messages", {
