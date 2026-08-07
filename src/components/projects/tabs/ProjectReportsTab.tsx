@@ -924,13 +924,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           reportType, audience, additionalNotes: notes || undefined,
-          // The project's documentation language wins over the reader's UI
-          // language: a project documented in Spanish for a Spanish-speaking
-          // sponsor must not switch to English because an English-speaking PM
-          // happened to generate the report.
-          locale: (project?.docLocale === "es" || project?.docLocale === "en")
-            ? project.docLocale
-            : (locale === "es" ? "es" : "en"),
+          locale: locale === "es" ? "es" : "en",
           ...(reportType === "STATUS" ? {
             periodStart: new Date(reportWeek).toISOString(),
             periodEnd: reportWeekEnd(reportWeek).toISOString(),
@@ -1150,7 +1144,8 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                   textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>Report type</label>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                   {REPORT_TYPES.map(rt => (
-                    <div key={rt.value} onClick={() => setReportType(rt.value)}
+                    <div key={rt.value} title={rt.desc}
+                      onClick={() => setReportType(rt.value)}
                       style={{ padding:"12px 14px", borderRadius:"var(--radius)", cursor:"pointer",
                         border:`2px solid ${reportType===rt.value?"var(--steel)":"var(--border)"}`,
                         background:reportType===rt.value?"#EFF6FF":"#fff" }}>

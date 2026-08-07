@@ -508,15 +508,21 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                 {/* EVM metrics row */}
                 <div className="fs-cols-3" style={{ marginBottom:14 }}>
                   {[
-                    { label:tx("Budget (BAC)"),  value:fmtCurrency(totalBAC), color:"var(--text)" },
+                    { label:tx("Budget (BAC)"),  value:fmtCurrency(totalBAC), color:"var(--text)",
+                      tip:"Budget at Completion — the total authorised budget across these projects. The figure the sponsor approved." },
                     { label:tx("Actual Cost"),   value:fmtCurrency(totalSpent),
-                      color:totalSpent>totalBAC?"var(--red)":"var(--text)" },
-                    { label:tx("Earned Value"),  value:fmtCurrency(totalEV), color:"var(--steel)" },
+                      color:totalSpent>totalBAC?"var(--red)":"var(--text)",
+                      tip:"Money actually paid out so far. Not what has been committed, and not what has been delivered — just what has left the account." },
+                    { label:tx("Earned Value"),  value:fmtCurrency(totalEV), color:"var(--steel)",
+                      tip:"The budgeted value of work actually delivered. Compare it with Actual Cost: earned above actual means you are getting more than you are paying for." },
                   ].map(m => (
-                    <div key={m.label} style={{ background:"var(--surface)",
+                    <div key={m.label} title={(m as any).tip || undefined}
+                      style={{ background:"var(--surface)", cursor:(m as any).tip ? "help" : "default",
                       borderRadius:"var(--radius)", padding:"10px 12px" }}>
                       <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)",
-                        textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>
+                        textTransform:"uppercase", letterSpacing:".05em", marginBottom:4,
+                        borderBottom:(m as any).tip ? "1px dotted var(--border)" : "none",
+                        display:"inline-block", paddingBottom:1 }}>
                         {m.label}
                       </div>
                       <div style={{ fontSize:16, fontWeight:700, color:m.color }}>{m.value}</div>

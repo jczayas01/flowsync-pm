@@ -518,12 +518,14 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
         {SEP}
 
         <button style={TBA(showDeps)}     onClick={() => setShowDeps(d=>!d)}>Dependencies</button>
-        <button style={TBA(showBaseline)} onClick={() => setShowBaseline(b=>!b)}>Baseline</button>
+        <button style={TBA(showBaseline)} onClick={() => setShowBaseline(b=>!b)}
+          title="Draw the approved baseline under each bar. The gap between the two is schedule variance — how far the plan has moved since it was signed.">Baseline</button>
         <button style={{ ...TBA(showCritical),
           background:showCritical?"#FEF2F2":"#fff",
           color:showCritical?"#DC2626":"#374151",
           borderColor:showCritical?"#FECACA":"#E2E8F0" }}
-          onClick={() => setShowCritical(c=>!c)}>⚡ Critical path</button>
+          onClick={() => setShowCritical(c=>!c)}
+          title="Highlight the chain of tasks with no slack. A day lost on any of them is a day lost on the project — everything else has room to slip first.">⚡ Critical path</button>
         <div style={{ display:"inline-flex", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
           <button style={{ ...TBA(weekendMode==="highlight"), border:"none", borderRadius:0 }}
             title="Shade Saturdays and Sundays"
@@ -564,7 +566,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <div style={{ width:12, height:8, borderRadius:3, background:"#EF4444",
             backgroundImage:"repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.55) 2px,rgba(255,255,255,.55) 4px)" }} />
-          <span>Critical path</span>
+          <span title="Tasks with zero float. Delay one and the finish date moves.">Critical path</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}
           title="Sponsor milestone — a governance checkpoint tracked on the Dashboard and in reports">
@@ -578,15 +580,15 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <svg width={17} height={10}><line x1={1} y1={5} x2={12} y2={5} stroke="#94A3B8" strokeWidth={1.5} /><polygon points="12,2 17,5 12,8" fill="#94A3B8" /></svg>
-          <span>Dependency</span>
+          <span title="This task cannot start until the one the arrow comes from finishes.">Dependency</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <div style={{ width:14, height:4, borderRadius:2, background:"#1B6CA8", opacity:.7 }} />
-          <span>Phase rollup</span>
+          <span title="A summary bar spanning all the tasks in a phase, from the earliest start to the latest finish.">Phase rollup</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <div style={{ width:2, height:10, background:"#EF4444" }} />
-          <span>Today</span>
+          <span title="The current date. Bars ending to its left that are not complete are overdue.">Today</span>
         </div>
       </div>
 

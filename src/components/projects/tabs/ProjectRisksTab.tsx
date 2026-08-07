@@ -436,14 +436,14 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Probability</label>
+                  <label style={lbl} title="How likely this is to happen, 1 (rare) to 5 (near certain). Judge it as of today — a risk that was unlikely at kickoff may not be now.">Probability</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.probability}
                     onChange={e => setForm(f=>({...f,probability:e.target.value}))}>
                     {Object.entries(PROB_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Impact</label>
+                  <label style={lbl} title="What it costs the project if it happens, 1 (minor) to 5 (severe). Score the consequence after your existing controls, not the raw worst case.">Impact</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.impact}
                     onChange={e => setForm(f=>({...f,impact:e.target.value}))}>
                     {Object.entries(IMPACT_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}

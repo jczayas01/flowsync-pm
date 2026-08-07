@@ -448,10 +448,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               sub: phasingTasks.length ? t("Scheduled work to date") : t("Scheduled work to date (by calendar)"),
               color:"var(--text-2)", tip:"Authorized budget assigned to scheduled work" },
           ].map((k,i) => (
-            <div key={k.label} style={{ padding:"14px 16px",
+            <div key={k.label} title={(k as any).tip || undefined}
+              style={{ padding:"14px 16px", cursor:(k as any).tip ? "help" : "default",
               borderRight:i<3?"1px solid var(--border)":"none" }}>
               <div style={{ fontSize:10, fontWeight:600, color:"var(--text-3)",
-                textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>
+                textTransform:"uppercase", letterSpacing:".05em", marginBottom:4,
+                borderBottom:(k as any).tip ? "1px dotted var(--border)" : "none",
+                display:"inline-block", paddingBottom:1 }}>
                 {k.label}
               </div>
               <div style={{ fontSize:20, fontWeight:700, color:k.color, lineHeight:1 }}>

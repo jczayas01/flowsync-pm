@@ -789,26 +789,34 @@ export function ProjectDashboardTab({
       <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
         {[
           { icon:"✅", label:td("Tasks complete"),
+            tip:"Tasks marked Done out of every task on the project. Cancelled tasks are excluded.",
             value:`${doneTasks.length}/${tasks.length}`,
             color:"var(--text)" },
           { icon:"⏰", label:td("Overdue tasks"),
+            tip:"Tasks whose due date has passed and are neither Done nor Cancelled. Blocked tasks count here — a blocker doesn't stop the calendar.",
             value:overdueTasks.length,
             color:overdueTasks.length>0?"var(--red)":"var(--text)" },
           { icon:"⚠",  label:td("Overall risk"),
+            tip:"The highest exposure among open risks, scored probability × impact. It follows the worst risk, not the average — an average hides the one that can end the project.",
             value:overallRisk,
             color:riskColor, bg:riskBg },
           { icon:"💰", label:td("Budget used"),
+            tip:"Money actually spent as a share of the total budget. It counts payments made, not work delivered — the Budget tab shows earned value beside it.",
             value:`${budgetPct}%`,
             color:budgetPct>90?"var(--red)":budgetPct>75?"var(--amber)":"var(--text)" },
           { icon:"📊", label:td("Progress"),
+            tip:"Share of tasks complete, weighted by estimated hours. This measures work done, not money spent, so it will not match Budget used.",
             value:`${project?.percentComplete||0}%`,
             color:"var(--steel)" },
         ].map(kpi => (
-          <div key={kpi.label} style={{ background: (kpi as any).bg || "#fff",
+          <div key={kpi.label} title={(kpi as any).tip || undefined}
+            style={{ background: (kpi as any).bg || "#fff", cursor:(kpi as any).tip ? "help" : "default",
             border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"12px 14px" }}>
             <div style={{ fontSize:18, marginBottom:6 }}>{kpi.icon}</div>
             <div style={{ fontSize:22, fontWeight:700, color:kpi.color, lineHeight:1 }}>{kpi.value}</div>
-            <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>{kpi.label}</div>
+            <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4,
+              borderBottom:(kpi as any).tip ? "1px dotted var(--border)" : "none",
+              display:"inline-block", paddingBottom:1 }}>{kpi.label}</div>
           </div>
         ))}
       </div>
