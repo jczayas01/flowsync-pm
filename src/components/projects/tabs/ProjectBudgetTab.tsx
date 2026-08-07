@@ -694,6 +694,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const workDelivered = planned > 0 && earned >= planned - 0.5
                 const paidAhead  = gapWorthShowing && !workDelivered
                 const overspent  = gapWorthShowing && workDelivered
+                // The mirror case: delivered, but paid less than the value earned.
+                // That is either a genuine saving or an invoice that hasn't arrived
+                // — and the difference matters, because one is money you keep and
+                // the other is a liability sitting outside the budget. An open
+                // commitment on the line is the tell; without one, the PM is the
+                // only person who can confirm the invoices are all in.
+                const underBy    = earned - actual
+                const underspent = workDelivered && underBy > Math.max(500, earned * 0.03)
                 // Over-commitment is a governance signal, not a footnote: a line
                 // with $3K planned and $42K in signed POs must read as a problem.
                 const exposure = actual + committed
@@ -817,6 +825,17 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             <div title={`Paid ${fmt(aheadBy,currency)} more than the value delivered so far on this line. CPI ${lineCPI!.toFixed(2)}. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.`}
                               style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--amber)" }}>
                               ⚠ paid {fmt(aheadBy,currency)} ahead of value · CPI {lineCPI!.toFixed(2)}
+                            </div>
+                          )}
+                          {underspent && (
+                            <div title={committed > 0
+                              ? `This line is fully delivered but ${fmt(underBy,currency)} of its value is unpaid, and ${fmt(committed,currency)} is still committed on an open purchase order. That points to an unpaid balance — a final payment or retainage — rather than a saving.`
+                              : `This line is fully delivered and cost ${fmt(underBy,currency)} less than the value earned. That is a saving only if every invoice has been received. Confirm nothing is outstanding before counting it.`}
+                              style={{ fontSize:10.5, fontWeight:700, marginTop:2,
+                                color: committed > 0 ? "var(--amber)" : "var(--green)" }}>
+                              {committed > 0
+                                ? `⚠ ${fmt(underBy,currency)} delivered but unpaid — likely an outstanding balance`
+                                : `✓ delivered ${fmt(underBy,currency)} under plan — confirm no invoices are outstanding`}
                             </div>
                           )}
                           {overspent && (
