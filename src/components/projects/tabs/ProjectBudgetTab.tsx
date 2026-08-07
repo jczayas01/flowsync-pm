@@ -20,6 +20,23 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
 }) {
   // Budget automation #1: Auto earned value toggle (Project.autoEv)
   const [autoEv, setAutoEv] = useState<boolean>(project?.autoEv !== false)
+  const [recalcing, setRecalcing] = useState(false)
+
+  // Stored earned value only updates when a task changes. Linking a task to a
+  // line without touching its progress leaves the figure behind, so there has to
+  // be a way to bring it current without editing something at random.
+  async function recomputeEv() {
+    setRecalcing(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/budget/recompute-ev`, { method: "POST" })
+      if (!res.ok) {
+        const d = await res.json().catch(() => null)
+        alert(d?.error || `Could not recalculate (${res.status})`)
+        return
+      }
+      router.refresh()
+    } finally { setRecalcing(false) }
+  }
   // Budget automation #5: scan a receipt photo → AI drafts the expense
   const [receiptBusyId, setReceiptBusyId] = useState<string | null>(null)
   const [receiptMsg, setReceiptMsg] = useState("")
@@ -90,7 +107,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         const rows = d?.data?.items || d?.data || []
         if (!Array.isArray(rows)) return
         setPhasingTasks(rows)
-        const acc: Record<string, { weighted: number; weight: number; count: number }> = {}
+        const acc: Record<string, { weighted: number; weight: number; count: number; names: string[] }> = {}
         for (const t of rows) {
           if (t.status === "CANCELLED") continue
           // A task can consume several lines; its effort divides across them so
@@ -109,16 +126,19 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           links.forEach((l: any, i: number) => {
             const portion = given > 0 ? shares[i] / given : 1 / links.length
             const w = base * portion
-            const a = acc[l.budgetItemId] || { weighted: 0, weight: 0, count: 0 }
+            const a = acc[l.budgetItemId] || { weighted: 0, weight: 0, count: 0, names: [] as string[] }
             a.weighted += (t.percentComplete || 0) * w
             a.weight   += w
             a.count    += 1
+            // Which tasks, not just how many: "1 linked task · 0% complete" is
+            // impossible to argue with until you can see whose task it is.
+            if (a.names.length < 8) a.names.push(`${t.code || ""} ${t.title || ""}`.trim() + ` — ${t.percentComplete || 0}%`)
             acc[l.budgetItemId] = a
           })
         }
-        const out: Record<string, { pct: number; count: number }> = {}
+        const out: Record<string, { pct: number; count: number; names: string[] }> = {}
         for (const [id, a] of Object.entries(acc)) {
-          out[id] = { pct: a.weight ? Math.round(a.weighted / a.weight) : 0, count: a.count }
+          out[id] = { pct: a.weight ? Math.round(a.weighted / a.weight) : 0, count: a.count, names: a.names }
         }
         setLineTasks(out)
       })
@@ -353,6 +373,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 style={{ accentColor:"#F59E0B", width:14, height:14, cursor:"pointer" }} />
               Auto EV
             </label>
+            <button onClick={recomputeEv} disabled={recalcing}
+              title="Recalculate earned value on every line from current task progress"
+              style={{ padding:"4px 10px", borderRadius:6, cursor:recalcing?"wait":"pointer",
+                fontSize:11, fontWeight:600, fontFamily:"var(--font)",
+                background:"rgba(255,255,255,.12)", border:"1px solid rgba(255,255,255,.25)",
+                color:"#fff" }}>
+              {recalcing ? "Recalculating…" : "↻ Recalculate EV"}
+            </button>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.7)" }}>
             {project?.percentComplete || 0}% complete
           </div>
@@ -612,7 +640,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           <table style={{ width:"100%", borderCollapse:"collapse" , minWidth:680 }}>
             <thead>
               <tr style={{ background:"var(--surface)" }}>
-                {["Description","Category","Planned","Earned","Actual","CV (EV−AC)",""].map(h => (
+                {["Description","Category","Planned","Earned","Actual","Variance",""].map(h => (
                   <th key={h} style={{ padding:"8px 14px", textAlign:"left", fontSize:10,
                     fontWeight:600, color:"var(--text-3)", letterSpacing:".05em",
                     textTransform:"uppercase", borderBottom:"1px solid var(--border)" }}>
@@ -633,11 +661,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // with $3K planned and $42K in signed POs must read as a problem.
                 const exposure = actual + committed
                 const overCommitted = planned > 0 && exposure > planned
-                // Cost variance is earned minus actual. The old `planned - actual`
-                // was an unspent-budget balance wearing a variance label: a line
-                // 25% done that had burned 84% of its money read "+$15K" in green,
-                // and an untouched line read as the best performer on the page.
-                const variance = earned - actual
+                const variance = planned - actual
                 const isEditing = editId === item.id
                 return (<React.Fragment key={item.id}>
                   <tr style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)",
@@ -698,10 +722,24 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           )}
                           {lineTasks[item.id] && (
                             <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
-                              {lineTasks[item.id].count} linked task{lineTasks[item.id].count === 1 ? "" : "s"}
+                              <span title={lineTasks[item.id].names.join("\n")}
+                                style={{ borderBottom:"1px dotted var(--border)", cursor:"help" }}>
+                                {lineTasks[item.id].count} linked task{lineTasks[item.id].count === 1 ? "" : "s"}
+                              </span>
                               {" · "}
                               <span style={{ color: lineTasks[item.id].pct >= 100 ? "var(--green)" : "var(--steel)",
                                 fontWeight:600 }}>{lineTasks[item.id].pct}% complete</span>
+                              {/* Stored earned value disagreeing with live task
+                                  progress means the figure is stale, not wrong. */}
+                              {(() => {
+                                const planned = Number(item.plannedCost||item.plannedAmount||0)
+                                const ev = Number(item.earnedValue||0)
+                                const evPct = planned > 0 ? Math.round((ev/planned)*100) : 0
+                                return Math.abs(evPct - lineTasks[item.id].pct) > 2 ? (
+                                  <span title={`Earned value on this line is ${evPct}% of plan but its tasks are ${lineTasks[item.id].pct}% complete. Recalculate to bring them in line.`}
+                                    style={{ color:"var(--amber)", fontWeight:700, marginLeft:6 }}>⚠ stale</span>
+                                ) : null
+                              })()}
                             </div>
                           )}
                         </td>
