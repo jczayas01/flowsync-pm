@@ -3,7 +3,8 @@
 import { SITE_URL } from "@/lib/site-url"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import LandingPage, { FAQS } from "@/components/landing/LandingPage"
+import LandingPage from "@/components/landing/LandingPage"
+import { FAQS } from "@/lib/landing-faqs"
 import { MetaPixel } from "@/components/marketing/MetaPixel"
 
 const SITE = SITE_URL
