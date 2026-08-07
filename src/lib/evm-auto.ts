@@ -39,7 +39,7 @@ export async function recomputeProjectEV(
 
   const items = await client.budgetItem.findMany({
     where: { projectId },
-    select: { id: true, plannedCost: true, earnedValue: true },
+    select: { id: true, plannedCost: true, earnedValue: true, earnRule: true },
   })
 
   // Control accounts: when tasks are linked to a budget line, that line earns
@@ -81,12 +81,30 @@ export async function recomputeProjectEV(
     })
   }
 
+  /**
+   * Turn a line's task progress into the fraction of value it has earned.
+   * Effort-based lines track progress directly. Everything else deliberately
+   * ignores partial progress: a robot half-installed has delivered nothing, and
+   * crediting it half its value is what lets an advance payment hide.
+   */
+  const applyRule = (rule: string | null | undefined, taskPct: number, started: boolean): number => {
+    switch (rule) {
+      case "ZERO_HUNDRED": return taskPct >= 99.5 ? 1 : 0
+      case "FIFTY_FIFTY":  return taskPct >= 99.5 ? 1 : started ? 0.5 : 0
+      case "MILESTONE":    return taskPct >= 99.5 ? 1 : 0
+      default:             return Math.min(100, Math.max(0, taskPct)) / 100
+    }
+  }
+
   for (const item of items) {
     const acc = byLine.get(item.id)
     // A line with its own tasks uses their progress; a line with none keeps the
     // proportional behaviour, so existing projects are unaffected.
-    const fraction = acc && acc.weight > 0
-      ? Math.min(100, Math.max(0, acc.weighted / acc.weight)) / 100
+    const taskPct  = acc && acc.weight > 0 ? acc.weighted / acc.weight : null
+    const fraction = taskPct !== null
+      ? applyRule((item as any).earnRule, taskPct, taskPct > 0)
+      // No linked tasks: the proportional fallback is an estimate, and applying
+      // a delivery rule to an estimate would dress a guess as a measurement.
       : projectFraction
     const target = Math.round(Number(item.plannedCost || 0) * fraction * 100) / 100
     if (Number(item.earnedValue || 0) !== target) {

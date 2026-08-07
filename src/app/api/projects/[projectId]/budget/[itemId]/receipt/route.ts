@@ -41,7 +41,10 @@ async function extractReceipt(imageB64: string, mediaType: string): Promise<{
           `This is a receipt or invoice (it may be a multi-page PDF; use the grand total, not a subtotal or a page total). ` +
           `Extract and respond with ONLY a JSON object, no markdown fences, no commentary: ` +
           `{"vendor": string, "date": "YYYY-MM-DD" or null, "amount": number (grand total) or null, ` +
-          `"currency": 3-letter code (default "USD"), "summary": short description of what was purchased}` },
+          `"currency": 3-letter code (default "USD"), "summary": short description of what was purchased, ` +
+          `"lines": [{"description": string, "amount": number}] — one entry per charge line printed on the ` +
+          `document, excluding subtotals, tax and the grand total; return an empty array when the document ` +
+          `is not itemised}` },
       ]}],
     }),
   })
@@ -55,6 +58,15 @@ async function extractReceipt(imageB64: string, mediaType: string): Promise<{
       vendor:   String(j.vendor || "Unknown vendor").slice(0, 120),
       date:     typeof j.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(j.date) ? j.date : null,
       amount:   typeof j.amount === "number" && j.amount > 0 ? Math.round(j.amount * 100) / 100 : null,
+      lines:    Array.isArray(j.lines)
+        ? j.lines
+            .filter((l: any) => l && typeof l.amount === "number" && l.amount > 0)
+            .slice(0, 20)
+            .map((l: any) => ({
+              description: String(l.description || "").slice(0, 200),
+              amount: Math.round(l.amount * 100) / 100,
+            }))
+        : [],
       currency: typeof j.currency === "string" ? j.currency.slice(0, 3).toUpperCase() : "USD",
       summary:  String(j.summary || "").slice(0, 300),
     }
@@ -109,6 +121,40 @@ async function post(ctx: ApiContext, params?: Record<string, string>) {
 
   const amount = parsed.amount ?? 0
 
+  // An invoice can cover several budget lines. When the caller sends a split,
+  // each part posts its own expense against its own line, all pointing at the
+  // same stored document — so the paper trail stays whole instead of becoming
+  // two unrelated receipts that nobody can reconcile later.
+  let split: { budgetItemId: string; amount: number; note?: string }[] = []
+  const splitRaw = form.get("split")
+  if (typeof splitRaw === "string" && splitRaw.trim()) {
+    try {
+      const arr = JSON.parse(splitRaw)
+      if (Array.isArray(arr)) {
+        split = arr
+          .filter((x: any) => x?.budgetItemId && Number(x.amount) > 0)
+          .slice(0, 20)
+          .map((x: any) => ({
+            budgetItemId: String(x.budgetItemId),
+            amount: Math.round(Number(x.amount) * 100) / 100,
+            note: x.note ? String(x.note).slice(0, 200) : undefined,
+          }))
+      }
+    } catch { /* a malformed split falls back to a single posting */ }
+  }
+  if (split.length) {
+    const lines = await db.budgetItem.findMany({
+      where: { projectId, id: { in: split.map(x => x.budgetItemId) } },
+      select: { id: true },
+    })
+    const valid = new Set(lines.map(l => l.id))
+    split = split.filter(x => valid.has(x.budgetItemId))
+    const sum = split.reduce((a, b) => a + b.amount, 0)
+    if (amount > 0 && Math.abs(sum - amount) > 0.5) {
+      return err(`The split adds up to $${sum.toLocaleString()} but the document totals $${amount.toLocaleString()}. Adjust the amounts so they match.`, 400)
+    }
+  }
+
   // Duplicate guard: the same receipt drafted onto a second line silently
   // double-counts spend. Same amount + same vendor wording anywhere in this
   // project => 409 unless the client confirms with ?force=1.
@@ -129,21 +175,30 @@ async function post(ctx: ApiContext, params?: Record<string, string>) {
       }
     }
   }
+  const postings = split.length
+    ? split
+    : [{ budgetItemId: itemId, amount, note: undefined as string | undefined }]
+
   const expense = await db.$transaction(async tx => {
-    const e = await tx.expense.create({ data: {
-      budgetItemId: itemId,
-      description:  `${parsed.vendor}${parsed.summary ? ` — ${parsed.summary}` : ""} (AI-drafted from receipt — verify)`,
-      amount,
-      currency:     parsed.currency,
-      date:         parsed.date ? new Date(parsed.date + "T00:00:00Z") : new Date(),
-      receiptUrl:   up.error ? null : path,
-      createdById:  ctx.userId,
-    }})
-    if (amount > 0) {
+    let e: any = null
+    for (const post of postings) {
+      if (!(post.amount > 0)) continue
+      const created = await tx.expense.create({ data: {
+        budgetItemId: post.budgetItemId,
+        description:  `${parsed.vendor}${post.note ? ` — ${post.note}` : parsed.summary ? ` — ${parsed.summary}` : ""} (AI-drafted from receipt — verify)`,
+        amount:       post.amount,
+        currency:     parsed.currency,
+        date:         parsed.date ? new Date(parsed.date + "T00:00:00Z") : new Date(),
+        receiptUrl:   up.error ? null : path,
+        createdById:  ctx.userId,
+      }})
+      e = e || created
       await tx.budgetItem.update({
-        where: { id: itemId },
-        data:  { actualCost: { increment: amount } },
+        where: { id: post.budgetItemId },
+        data:  { actualCost: { increment: post.amount } },
       })
+    }
+    if (amount > 0) {
       const agg = await tx.budgetItem.aggregate({ where: { projectId }, _sum: { actualCost: true } })
       await tx.project.update({ where: { id: projectId },
         data: { budgetSpent: agg._sum.actualCost ?? 0 } })

@@ -34,6 +34,7 @@ const schema = z.object({
   plannedAmount: z.number().min(0).optional(),
   actualAmount:  z.number().min(0).optional(),
   notes:         z.string().optional().nullable(),
+  earnRule: z.enum(["EFFORT","ZERO_HUNDRED","FIFTY_FIFTY","MILESTONE"]).optional(),
 })
 
 async function update(ctx: ApiContext, params?: Record<string,string>) {

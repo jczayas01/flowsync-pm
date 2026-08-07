@@ -45,10 +45,21 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   // Budget automation #5: scan a receipt photo → AI drafts the expense
   const [receiptBusyId, setReceiptBusyId] = useState<string | null>(null)
   const [receiptMsg, setReceiptMsg] = useState("")
-  async function scanReceipt(itemId: string, file: File, force = false) {
+  // An invoice covering two budget lines is normal — one for the robot, one for
+  // the integration parts. Preview the document's own lines and let the PM map
+  // them, rather than making them post the same paper twice and hope the two
+  // halves stay associated.
+  const [split, setSplit] = useState<null | {
+    itemId: string; file: File; vendor: string; total: number
+    rows: { budgetItemId: string; amount: number; note?: string }[]
+  }>(null)
+
+  async function scanReceipt(itemId: string, file: File, force = false,
+                             rows?: { budgetItemId: string; amount: number; note?: string }[]) {
     setReceiptBusyId(itemId); setReceiptMsg("")
     try {
       const fd = new FormData(); fd.append("file", file)
+      if (rows?.length) fd.append("split", JSON.stringify(rows))
       const res = await fetch(`/api/projects/${projectId}/budget/${itemId}/receipt${force ? "?force=1" : ""}`, {
         method: "POST",
         headers: workspaceId ? { "x-workspace-id": workspaceId } : {},
@@ -64,6 +75,18 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       }
       if (!res.ok) { setReceiptMsg(d?.error || `Scan failed (${res.status})`); return }
       const r = d.data
+      // Itemised document, no split chosen yet: offer the mapping instead of
+      // dropping the whole total on the line that happened to be clicked.
+      if (!rows?.length && Array.isArray(r.lines) && r.lines.length > 1) {
+        setSplit({
+          itemId, file, vendor: r.vendor || "Invoice", total: Number(r.amount) || 0,
+          rows: r.lines.map((l: any) => ({
+            budgetItemId: itemId, amount: Number(l.amount) || 0, note: l.description,
+          })),
+        })
+        setReceiptMsg("")
+        return
+      }
       setReceiptMsg(`✓ ${r.vendor} — ${r.amount ? `$${Number(r.amount).toLocaleString()}` : "amount not detected, edit the expense"} posted${r.date ? ` (${r.date})` : ""}`)
       window.location.reload()
     } catch { setReceiptMsg("Scan failed — network error") }
@@ -658,6 +681,92 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           </div>
         ) : (
           <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+      {/* Map an itemised invoice onto budget lines */}
+      {split && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(13,27,42,.45)", zIndex:200,
+          display:"grid", placeItems:"center", padding:20 }}
+          onClick={() => setSplit(null)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:"#fff", borderRadius:14, padding:22, width:"min(640px,100%)",
+              maxHeight:"85vh", overflowY:"auto", boxShadow:"0 24px 60px rgba(13,27,42,.28)" }}>
+            <div style={{ fontSize:15, fontWeight:800, color:"var(--text)", marginBottom:4 }}>
+              Split this invoice across budget lines
+            </div>
+            <div style={{ fontSize:12.5, color:"var(--text-3)", lineHeight:1.6, marginBottom:14 }}>
+              {split.vendor} · {fmt(split.total, currency)} — the document lists {split.rows.length} charges.
+              Assign each to the line it belongs to. One expense posts per line, all linked to this same document.
+            </div>
+
+            {split.rows.map((r, i) => (
+              <div key={i} style={{ display:"flex", gap:8, marginBottom:8, alignItems:"flex-start" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:11.5, color:"var(--text-3)", marginBottom:3 }}>
+                    {r.note || `Line ${i+1}`}
+                  </div>
+                  <select value={r.budgetItemId}
+                    onChange={e => setSplit(sp => sp && ({ ...sp,
+                      rows: sp.rows.map((x,j) => j===i ? { ...x, budgetItemId: e.target.value } : x) }))}
+                    style={{ width:"100%", padding:"7px 9px", fontSize:12.5, borderRadius:6,
+                      border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
+                    {budgetItems.map((b:any) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ width:120 }}>
+                  <div style={{ fontSize:11.5, color:"var(--text-3)", marginBottom:3 }}>Amount</div>
+                  <input type="number" step="0.01" min={0} value={r.amount}
+                    onChange={e => setSplit(sp => sp && ({ ...sp,
+                      rows: sp.rows.map((x,j) => j===i ? { ...x, amount: Number(e.target.value)||0 } : x) }))}
+                    style={{ width:"100%", padding:"7px 9px", fontSize:12.5, borderRadius:6,
+                      border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+                </div>
+                <button onClick={() => setSplit(sp => sp && ({ ...sp, rows: sp.rows.filter((_,j)=>j!==i) }))}
+                  title="Remove this charge"
+                  style={{ marginTop:20, border:"1px solid #FECACA", background:"none", color:"var(--red)",
+                    borderRadius:6, cursor:"pointer", padding:"6px 9px", fontFamily:"var(--font)" }}>✕</button>
+              </div>
+            ))}
+
+            {(() => {
+              const sum = split.rows.reduce((a,b) => a + (Number(b.amount)||0), 0)
+              const diff = Math.round((split.total - sum) * 100) / 100
+              const ok = Math.abs(diff) < 0.5
+              return (
+                <>
+                  <div style={{ fontSize:12.5, fontWeight:700, marginTop:6,
+                    color: ok ? "var(--green)" : "var(--amber)" }}>
+                    Assigned {fmt(sum, currency)} of {fmt(split.total, currency)}
+                    {ok ? " — balanced ✓" : diff > 0
+                      ? ` — ${fmt(diff, currency)} unassigned`
+                      : ` — over by ${fmt(Math.abs(diff), currency)}`}
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginTop:16 }}>
+                    <button disabled={!ok || receiptBusyId !== null}
+                      onClick={() => { const sp = split; setSplit(null); scanReceipt(sp.itemId, sp.file, true, sp.rows) }}
+                      style={{ flex:1, padding:"10px 0", background: ok ? "var(--steel)" : "var(--border)",
+                        color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:700,
+                        cursor: ok ? "pointer" : "not-allowed", fontFamily:"var(--font)" }}>
+                      Post {split.rows.length} expense{split.rows.length===1?"":"s"}
+                    </button>
+                    <button onClick={() => { const sp = split; setSplit(null); scanReceipt(sp.itemId, sp.file, true) }}
+                      style={{ padding:"10px 16px", background:"none", border:"1px solid var(--border)",
+                        borderRadius:8, fontSize:13, cursor:"pointer", color:"var(--text-2)",
+                        fontFamily:"var(--font)" }}>
+                      Post all to one line
+                    </button>
+                    <button onClick={() => setSplit(null)}
+                      style={{ padding:"10px 14px", background:"none", border:"none",
+                        fontSize:13, cursor:"pointer", color:"var(--text-3)",
+                        fontFamily:"var(--font)" }}>Cancel</button>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
           <table style={{ width:"100%", borderCollapse:"collapse" , minWidth:680 }}>
             <thead>
               <tr style={{ background:"var(--surface)" }}>
@@ -691,8 +800,17 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // close. Once the line has earned its full plan, nothing is coming
                 // to close it: that is an overrun, and calling it "ahead of value"
                 // would tell a PM to wait for something that will never arrive.
-                const workDelivered = planned > 0 && earned >= planned - 0.5
-                const paidAhead  = gapWorthShowing && !workDelivered
+                // "Delivered" is a claim about work, and the only evidence of work
+                // is a task. Without linked tasks the earned value is either a
+                // manual entry or the project-wide proportional fallback — telling
+                // a PM a line is "delivered under plan" on that basis is the system
+                // asserting something nobody measured.
+                const taskEvidence  = lineTasks[item.id]?.count || 0
+                const tasksComplete = taskEvidence > 0 && (lineTasks[item.id]?.pct ?? 0) >= 99
+                const workDelivered = tasksComplete
+                // Payment-vs-value warnings need task evidence too: a line with no
+                // tasks has no measured value to be ahead of.
+                const paidAhead  = gapWorthShowing && taskEvidence > 0 && !workDelivered
                 const overspent  = gapWorthShowing && workDelivered
                 // The mirror case: delivered, but paid less than the value earned.
                 // That is either a genuine saving or an invoice that hasn't arrived
@@ -825,6 +943,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             <div title={`Paid ${fmt(aheadBy,currency)} more than the value delivered so far on this line. CPI ${lineCPI!.toFixed(2)}. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.`}
                               style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--amber)" }}>
                               ⚠ paid {fmt(aheadBy,currency)} ahead of value · CPI {lineCPI!.toFixed(2)}
+                            </div>
+                          )}
+                          {taskEvidence === 0 && earned > 0 && (
+                            <div title="No task is linked to this line, so its earned value comes from the project-wide proportional split or from a manual entry — not from measured progress. Link the tasks that consume this line to make the figure mean something."
+                              style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
+                              earned value not measured — no linked tasks
                             </div>
                           )}
                           {underspent && (

@@ -14,6 +14,7 @@ const schema = z.object({
   recurrence:    z.enum(["MONTHLY"]).optional().nullable(),
   actualAmount:  z.number().min(0).default(0),
   notes:         z.string().optional().nullable(),
+  earnRule: z.enum(["EFFORT","ZERO_HUNDRED","FIFTY_FIFTY","MILESTONE"]).optional(),
 })
 
 
@@ -67,6 +68,9 @@ async function create(ctx: ApiContext, params?: Record<string,string>) {
         description: parsed.data.description,
         category:    parsed.data.category as any,
         plannedCost: parsed.data.plannedAmount,
+        earnRule: parsed.data.earnRule
+          ?? (["EQUIPMENT","MATERIALS"].includes(String(parsed.data.category))
+                ? "ZERO_HUNDRED" : "EFFORT"),
         // A new line's first figure is its approved baseline; later edits move
         // plannedCost and the difference becomes visible variance.
         approvedCost: parsed.data.plannedAmount,

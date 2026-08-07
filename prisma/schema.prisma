@@ -933,6 +933,14 @@ model BudgetItem {
   /// the difference between them is the story a PMO must be able to tell.
   approvedCost Decimal?      @db.Decimal(15, 2)
   approvedAt   DateTime?
+  /// How this line earns value. Spreading a task's percentage across equipment
+  /// credits value for meetings held rather than robots delivered, which is how
+  /// a CPI reads 1.00 while an advance sits paid against nothing received.
+  ///   EFFORT     — value follows task progress (labour, consulting, services)
+  ///   ZERO_HUNDRED — nothing until delivered, all of it on delivery (equipment, materials)
+  ///   FIFTY_FIFTY  — half on start, half on completion (long work packages)
+  ///   MILESTONE  — credited when the linked milestone is achieved
+  earnRule    EarnRule       @default(EFFORT)
   actualCost  Decimal        @default(0) @db.Decimal(15, 2)
   earnedValue Decimal        @default(0) @db.Decimal(15, 2)
   recurrence  String?        // "MONTHLY" — cron posts plannedCost each cycle
@@ -1588,6 +1596,15 @@ enum ChangeStatus {
   APPROVED
   REJECTED
   IMPLEMENTED
+}
+
+/// Earning rules per PM Standard practice. Which one fits depends on whether the
+/// spend buys effort over time or a thing that either arrives or doesn't.
+enum EarnRule {
+  EFFORT
+  ZERO_HUNDRED
+  FIFTY_FIFTY
+  MILESTONE
 }
 
 enum BudgetCategory {
