@@ -97,7 +97,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
 
   // Control accounts: tasks linked to each budget line drive that line's
   // earned value, so the PM should see whose work is behind each number.
-  const [lineTasks, setLineTasks] = useState<Record<string, { pct: number; count: number }>>({})
+  const [lineTasks, setLineTasks] = useState<Record<string, { pct: number; count: number; names: string[] }>>({})
   const [phasingTasks, setPhasingTasks] = useState<any[]>([])
   useEffect(() => {
     fetch(`/api/projects/${projectId}/tasks?limit=500`,
