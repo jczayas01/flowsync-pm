@@ -21,12 +21,19 @@ type Tx = Pick<typeof db, "project" | "budgetItem" | "task">
  * @param projectId project to recompute
  * @param pct optional already-known percent complete (0–100); fetched if omitted
  */
-export async function recomputeProjectEV(client: Tx, projectId: string, pct?: number) {
+export async function recomputeProjectEV(
+  client: Tx, projectId: string, pct?: number,
+  /** Explicit user action: recompute even with Auto EV switched off. */
+  force = false,
+) {
   const project = await client.project.findUnique({
     where: { id: projectId },
     select: { autoEv: true, percentComplete: true },
   })
-  if (!project || project.autoEv === false) return
+  if (!project) return
+  // Auto EV off means the PM curates earned value by hand, so automatic passes
+  // must leave it alone — but a deliberate "recalculate" is not an automatic pass.
+  if (project.autoEv === false && !force) return
 
   const projectFraction = Math.min(100, Math.max(0, pct ?? project.percentComplete ?? 0)) / 100
 

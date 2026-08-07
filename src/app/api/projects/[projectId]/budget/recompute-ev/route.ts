@@ -37,7 +37,21 @@ async function recompute(ctx: ApiContext, params?: Record<string, string>) {
     await db.project.update({ where: { id: projectId }, data: { percentComplete: pct } })
   }
 
-  await recomputeProjectEV(db, projectId, pct)
+  // Auto EV off used to make this a silent no-op that still reported success —
+  // press the button, watch nothing change, learn nothing. Say so instead, and
+  // let the caller decide whether to overwrite hand-entered figures.
+  const proj = await db.project.findUnique({
+    where: { id: projectId }, select: { autoEv: true },
+  })
+  const force = new URL(ctx.req.url).searchParams.get("force") === "1"
+  if (proj?.autoEv === false && !force) {
+    return err(
+      "Auto EV is off for this project, so earned value is entered by hand. Recalculating would overwrite those figures.",
+      409,
+    )
+  }
+
+  await recomputeProjectEV(db, projectId, pct, true)
 
   const items = await db.budgetItem.findMany({
     where: { projectId },

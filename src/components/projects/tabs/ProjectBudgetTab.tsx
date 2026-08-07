@@ -28,7 +28,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   async function recomputeEv() {
     setRecalcing(true)
     try {
-      const res = await fetch(`/api/projects/${projectId}/budget/recompute-ev`, { method: "POST" })
+      let res = await fetch(`/api/projects/${projectId}/budget/recompute-ev`, { method: "POST" })
+      if (res.status === 409) {
+        const d = await res.json().catch(() => null)
+        if (!confirm(`${d?.error || "Auto EV is off."}\n\nRecalculate anyway and overwrite them?`)) return
+        res = await fetch(`/api/projects/${projectId}/budget/recompute-ev?force=1`, { method: "POST" })
+      }
       if (!res.ok) {
         const d = await res.json().catch(() => null)
         alert(d?.error || `Could not recalculate (${res.status})`)
