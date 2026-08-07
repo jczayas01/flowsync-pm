@@ -676,6 +676,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const approved = item.approvedCost == null ? null : Number(item.approvedCost)
                 const revised  = approved != null && Math.abs(approved - planned) > 0.5
                 const committed = remainingCommitment(item.id)
+                // Cost performance for this line alone. Paying ahead of delivered
+                // value isn't a mistake — a contractual advance is normal — but it
+                // is exposure: if the vendor fails now, the gap is money out with
+                // nothing received for it. The project-level CPI hides this inside
+                // an average, so a single bad line never surfaces.
+                const lineCPI  = actual > 0 ? earned / actual : null
+                const aheadBy  = actual - earned
+                const paidAhead = actual > 100 && aheadBy > Math.max(500, actual * 0.05)
                 // Over-commitment is a governance signal, not a footnote: a line
                 // with $3K planned and $42K in signed POs must read as a problem.
                 const exposure = actual + committed
@@ -795,6 +803,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               textUnderlineOffset:3 }}>
                             {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
                           </button>
+                          {paidAhead && (
+                            <div title={`Paid ${fmt(aheadBy,currency)} more than the value delivered on this line. CPI ${lineCPI!.toFixed(2)} — every dollar spent has returned ${lineCPI!.toFixed(2)} of value so far. Normal for a contractual advance; worth watching if the delivery slips.`}
+                              style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--amber)" }}>
+                              ⚠ paid {fmt(aheadBy,currency)} ahead of value · CPI {lineCPI!.toFixed(2)}
+                            </div>
+                          )}
                           {committed > 0 && (
                             <div title={overCommitted
                               ? `Spent + committed is ${Math.round((exposure/planned)*100)}% of this line's plan — the obligation already exceeds the budget.`
