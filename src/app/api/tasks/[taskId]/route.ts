@@ -97,6 +97,31 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
     prevAssignees = existing.map(a => a.userId)
   }
 
+  // Budget-line links are written first, on purpose: the transaction below
+  // recomputes project progress and earned value, and it must see the links the
+  // user just chose. Writing them afterwards meant the recompute ran against the
+  // old set and the completion never reached the line.
+  if (budgetItemIds) {
+    try {
+      await db.$transaction(async tx => {
+        await tx.taskBudgetLine.deleteMany({ where: { taskId: id } })
+        for (const bid of budgetItemIds) {
+          await tx.taskBudgetLine.create({ data: { taskId: id, budgetItemId: bid } })
+        }
+        // The legacy single column follows the first line so anything still
+        // reading it stays coherent rather than going quietly stale.
+        await tx.task.update({
+          where: { id },
+          data: { budgetItemId: budgetItemIds[0] || null },
+        })
+      })
+    } catch (e: any) {
+      // A swallowed failure here looks exactly like "the feature doesn't work".
+      console.error("[Task] budget line links failed:", e)
+      return err(`Could not save the budget lines: ${e?.message || "unknown error"}`, 500)
+    }
+  }
+
   const updated = await db.$transaction(async tx => {
     const t = await tx.task.update({
       where: { id },
@@ -145,21 +170,6 @@ async function updateTask(ctx: ApiContext, params?: Record<string,string>) {
 
     return t
   })
-  // Replace-all semantics: the picker sends the full set it wants.
-  if (budgetItemIds) {
-    await db.$transaction(async tx => {
-      await tx.taskBudgetLine.deleteMany({ where: { taskId: id } })
-      for (const bid of budgetItemIds) {
-        await tx.taskBudgetLine.create({ data: { taskId: id, budgetItemId: bid } })
-      }
-      // Keep the legacy single column pointing at the first line so anything
-      // still reading it stays coherent instead of going stale.
-      await tx.task.update({
-        where: { id },
-        data: { budgetItemId: budgetItemIds[0] || null },
-      })
-    }).catch(() => { /* link write must not fail the task update */ })
-  }
 
 
   await audit(ctx.workspaceId, ctx.userId, "task.updated", "task", id, task as any, updated as any)

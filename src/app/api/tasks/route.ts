@@ -116,6 +116,7 @@ async function createTask(ctx: ApiContext) {
         parentId:       data.parentId,
         code,
         title:          data.title,
+        budgetItemId:   data.budgetItemId ?? data.budgetItemIds?.[0] ?? null,
         description:    data.description,
         status:         data.status,
         priority:       data.priority,
@@ -128,6 +129,14 @@ async function createTask(ctx: ApiContext) {
     })
 
     // Add assignees
+    // Budget-line links, written in the same transaction as the task itself so a
+    // task never exists for a moment without the lines it was created with.
+    if (data.budgetItemIds?.length) {
+      for (const bid of data.budgetItemIds) {
+        await tx.taskBudgetLine.create({ data: { taskId: t.id, budgetItemId: bid } })
+      }
+    }
+
     if (data.assigneeIds.length) {
       const members = await tx.projectMember.findMany({
         where: { projectId: data.projectId, userId: { in: data.assigneeIds } },
