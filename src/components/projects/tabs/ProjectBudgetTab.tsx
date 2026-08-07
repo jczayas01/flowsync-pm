@@ -98,7 +98,20 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
-  const committedTotal = Object.values(committedBy).reduce((a, b) => a + b, 0)
+  // A signed $59K contract with $18K already paid still exposes $59K in total,
+  // not $77K. Money paid against a purchase order is a drawdown of that
+  // commitment, so the amount still owed is what remains — otherwise every
+  // staged payment counts twice and lines with normal progress payments read as
+  // over plan when they're exactly on it.
+  const remainingCommitment = (lineId: string) => {
+    const committed = committedBy[lineId] || 0
+    if (committed <= 0) return 0
+    const line = budgetItems.find((b: any) => b.id === lineId)
+    const paid = Number(line?.actualCost ?? line?.actualAmount ?? 0)
+    return Math.max(0, committed - paid)
+  }
+  const committedTotal = Object.keys(committedBy)
+    .reduce((a, id) => a + remainingCommitment(id), 0)
 
   // Control accounts: tasks linked to each budget line drive that line's
   // earned value, so the PM should see whose work is behind each number.
@@ -500,7 +513,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             background:pct>90?"var(--red)":pct>75?"var(--amber)":"var(--steel)",
             transition:"width .5s" }} />
           {committedTotal > 0 && BAC > 0 && (
-            <div title="Committed — signed POs not yet completed"
+            <div title="Still committed — the part of signed POs you haven't paid yet"
               style={{ height:"100%", width:`${Math.min((committedTotal/BAC)*100, 100-Math.min(pct,100))}%`,
                 background:"repeating-linear-gradient(45deg, var(--amber), var(--amber) 4px, transparent 4px, transparent 8px)",
                 opacity:.75, transition:"width .5s" }} />
@@ -508,8 +521,9 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         </div>
         {committedTotal > 0 && (
           <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:6 }}>
-            Committed (open POs): <strong style={{ color:"var(--amber)" }}>{fmt(committedTotal,currency)}</strong>
-            {" · "}True exposure (spent + committed):{" "}
+            Still committed (open POs, net of payments made):{" "}
+            <strong style={{ color:"var(--amber)" }}>{fmt(committedTotal,currency)}</strong>
+            {" · "}True exposure (spent + still committed):{" "}
             <strong style={{ color:"var(--text)" }}>{fmt(AC+committedTotal,currency)}</strong> of {fmt(BAC,currency)}
             {" "}({BAC>0 ? Math.round(((AC+committedTotal)/BAC)*100) : 0}%)
           </div>
@@ -661,7 +675,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const earned   = Number(item.earnedValue||0)
                 const approved = item.approvedCost == null ? null : Number(item.approvedCost)
                 const revised  = approved != null && Math.abs(approved - planned) > 0.5
-                const committed = committedBy[item.id] || 0
+                const committed = remainingCommitment(item.id)
                 // Over-commitment is a governance signal, not a footnote: a line
                 // with $3K planned and $42K in signed POs must read as a problem.
                 const exposure = actual + committed
@@ -787,7 +801,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               : "Committed — signed POs on this line, not yet completed"}
                               style={{ fontSize:10.5, fontWeight:700, marginTop:2,
                                 color: overCommitted ? "var(--red)" : "var(--amber)" }}>
-                              {overCommitted ? "⚠ " : "+"}{fmt(committed,currency)} committed
+                              {overCommitted ? "⚠ " : "+"}{fmt(committed,currency)} still committed
                               {overCommitted && planned > 0 && (
                                 <span style={{ fontWeight:600 }}>
                                   {" · "}{Math.round((exposure / planned) * 100)}% of plan
