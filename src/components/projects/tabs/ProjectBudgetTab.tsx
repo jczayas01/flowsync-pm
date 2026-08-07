@@ -400,7 +400,9 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               {recalcing ? "Recalculating…" : "↻ Recalculate EV"}
             </button>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.7)" }}>
-            {project?.percentComplete || 0}% complete
+            <span title="Share of tasks complete, weighted by estimated hours. The earned value card shows the share of budget earned — the two differ when expensive work and time-consuming work aren't the same work.">
+              {project?.percentComplete || 0}% of tasks
+            </span>
           </div>
           </div>
         </div>
@@ -411,7 +413,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           {[
             { label:t("Budget at Completion (BAC)"), value:fmt(BAC,currency), sub:t("Total project budget"),
               color:"var(--text)", tip:"The total authorized budget for the project" },
-            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:`${evPct}% ${t("work done")}`,
+            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:`${evPct}% of budget earned`,
               color:"var(--steel)", tip:"Value of work actually performed" },
             { label:t("Actual Cost (AC)"), value:fmt(AC,currency), sub:t("Spent to date"),
               color:AC>EV?"var(--red)":"var(--text)", tip:"Total costs incurred for work performed" },
@@ -683,7 +685,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // an average, so a single bad line never surfaces.
                 const lineCPI  = actual > 0 ? earned / actual : null
                 const aheadBy  = actual - earned
-                const paidAhead = actual > 100 && aheadBy > Math.max(500, actual * 0.05)
+                const gapWorthShowing = actual > 100 && aheadBy > Math.max(500, actual * 0.05)
+                // The same gap means two different things depending on whether the
+                // work is finished. Mid-delivery it's an advance — timing that will
+                // close. Once the line has earned its full plan, nothing is coming
+                // to close it: that is an overrun, and calling it "ahead of value"
+                // would tell a PM to wait for something that will never arrive.
+                const workDelivered = planned > 0 && earned >= planned - 0.5
+                const paidAhead  = gapWorthShowing && !workDelivered
+                const overspent  = gapWorthShowing && workDelivered
                 // Over-commitment is a governance signal, not a footnote: a line
                 // with $3K planned and $42K in signed POs must read as a problem.
                 const exposure = actual + committed
@@ -804,9 +814,15 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
                           </button>
                           {paidAhead && (
-                            <div title={`Paid ${fmt(aheadBy,currency)} more than the value delivered on this line. CPI ${lineCPI!.toFixed(2)} — every dollar spent has returned ${lineCPI!.toFixed(2)} of value so far. Normal for a contractual advance; worth watching if the delivery slips.`}
+                            <div title={`Paid ${fmt(aheadBy,currency)} more than the value delivered so far on this line. CPI ${lineCPI!.toFixed(2)}. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.`}
                               style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--amber)" }}>
                               ⚠ paid {fmt(aheadBy,currency)} ahead of value · CPI {lineCPI!.toFixed(2)}
+                            </div>
+                          )}
+                          {overspent && (
+                            <div title={`This line is fully delivered — it has earned its whole planned value — and cost ${fmt(aheadBy,currency)} more than planned. CPI ${lineCPI!.toFixed(2)}. Unlike an advance, this gap will not close: it is a cost overrun on completed work.`}
+                              style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--red)" }}>
+                              ⚠ overspent by {fmt(aheadBy,currency)} on delivered work · CPI {lineCPI!.toFixed(2)}
                             </div>
                           )}
                           {committed > 0 && (
