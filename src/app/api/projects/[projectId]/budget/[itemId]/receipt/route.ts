@@ -179,6 +179,21 @@ async function post(ctx: ApiContext, params?: Record<string, string>) {
       }
     }
   }
+  // An itemised invoice with no split supplied posts nothing yet. Posting first
+  // and asking afterwards is how the confirmation ends up creating a second copy
+  // of the same expense — the split call would post again on top of it.
+  if (!split.length && !force && (parsed.lines?.length || 0) > 1) {
+    return NextResponse.json({
+      needsSplit: true,
+      vendor: parsed.vendor,
+      amount,
+      currency: parsed.currency,
+      date: parsed.date,
+      lines: parsed.lines,
+      message: "This invoice lists several charges. Assign each to a budget line, or confirm to post the whole amount here.",
+    }, { status: 409 })
+  }
+
   const postings = split.length
     ? split
     : [{ budgetItemId: itemId, amount, note: undefined as string | undefined }]

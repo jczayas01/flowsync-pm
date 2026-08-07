@@ -66,6 +66,20 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         body: fd,
       })
       const d = await res.json().catch(() => ({}))
+      if (res.status === 409 && d?.needsSplit) {
+        // Nothing was posted: the document has several charges and the server is
+        // waiting to be told where each one goes.
+        setSplit({
+          itemId, file,
+          vendor: d.vendor || "Invoice",
+          total: Number(d.amount) || 0,
+          rows: (d.lines || []).map((l: any) => ({
+            budgetItemId: itemId, amount: Number(l.amount) || 0, note: l.description,
+          })),
+        })
+        setReceiptMsg("")
+        return
+      }
       if (res.status === 409) {
         if (confirm(`${d?.error || "Possible duplicate receipt."}\n\nPost it anyway?`)) {
           setReceiptBusyId(null)
@@ -75,18 +89,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       }
       if (!res.ok) { setReceiptMsg(d?.error || `Scan failed (${res.status})`); return }
       const r = d.data
-      // Itemised document, no split chosen yet: offer the mapping instead of
-      // dropping the whole total on the line that happened to be clicked.
-      if (!rows?.length && Array.isArray(r.lines) && r.lines.length > 1) {
-        setSplit({
-          itemId, file, vendor: r.vendor || "Invoice", total: Number(r.amount) || 0,
-          rows: r.lines.map((l: any) => ({
-            budgetItemId: itemId, amount: Number(l.amount) || 0, note: l.description,
-          })),
-        })
-        setReceiptMsg("")
-        return
-      }
+
       setReceiptMsg(`✓ ${r.vendor} — ${r.amount ? `$${Number(r.amount).toLocaleString()}` : "amount not detected, edit the expense"} posted${r.date ? ` (${r.date})` : ""}`)
       window.location.reload()
     } catch { setReceiptMsg("Scan failed — network error") }
@@ -290,6 +293,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           plannedAmount: Number(editForm.plannedAmount)||0,
           actualAmount:  Number(editForm.actualAmount)||0,
           category:      editForm.category,
+          earnRule:      editForm.earnRule,
           notes:         editForm.notes||null,
         }),
       })
@@ -842,6 +846,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           </select>
                         </td>
                         <td style={{ padding:"6px 10px" }}>
+                          <select style={{ ...inpS, marginTop:4 }} value={editForm.earnRule || "EFFORT"}
+                            title="How this line earns value"
+                            onChange={e=>setEditForm((f:any)=>({...f,earnRule:e.target.value}))}>
+                            <option value="EFFORT">Earns with effort</option>
+                            <option value="ZERO_HUNDRED">Earns 0/100 (on delivery)</option>
+                            <option value="FIFTY_FIFTY">Earns 50/50</option>
+                            <option value="MILESTONE">Earns at milestone</option>
+                          </select>
+                        </td>
+                        <td style={{ padding:"6px 10px" }}>
                           <input type="number" style={inpS} value={editForm.plannedAmount}
                             onChange={e=>setEditForm((f:any)=>({...f,plannedAmount:e.target.value}))} />
                         </td>
@@ -898,8 +912,19 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                 const planned = Number(item.plannedCost||item.plannedAmount||0)
                                 const ev = Number(item.earnedValue||0)
                                 const evPct = planned > 0 ? Math.round((ev/planned)*100) : 0
-                                return Math.abs(evPct - lineTasks[item.id].pct) > 2 ? (
-                                  <span title={`Earned value on this line is ${evPct}% of plan but its tasks are ${lineTasks[item.id].pct}% complete. Recalculate to bring them in line.`}
+                                // What the line *should* have earned depends on its rule.
+                                // A 0/100 line whose tasks are 25% done is meant to be at
+                                // zero — comparing raw percentages called that stale and
+                                // taught the PM to ignore the warning.
+                                const rule = item.earnRule || "EFFORT"
+                                const tp = lineTasks[item.id].pct
+                                const expected = rule === "ZERO_HUNDRED" || rule === "MILESTONE"
+                                  ? (tp >= 99 ? 100 : 0)
+                                  : rule === "FIFTY_FIFTY"
+                                  ? (tp >= 99 ? 100 : tp > 0 ? 50 : 0)
+                                  : tp
+                                return Math.abs(evPct - expected) > 2 ? (
+                                  <span title={`Earned value on this line is ${evPct}% of plan; under its ${rule === "EFFORT" ? "effort-based" : rule === "ZERO_HUNDRED" ? "0/100" : rule === "FIFTY_FIFTY" ? "50/50" : "milestone"} rule it should be ${expected}%. Recalculate to bring them in line.`}
                                     style={{ color:"var(--amber)", fontWeight:700, marginLeft:6 }}>⚠ stale</span>
                                 ) : null
                               })()}
@@ -908,6 +933,26 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                         </td>
                         <td style={{ padding:"10px 14px" }}>
                           <Badge variant="gray">{item.category || "—"}</Badge>
+                          {/* How this line earns value. Shown only when it isn't
+                              the default, so the table stays quiet until the rule
+                              is doing something a reader needs to know about. */}
+                          {(() => {
+                            const rule = item.earnRule || "EFFORT"
+                            if (rule === "EFFORT") return null
+                            const label = rule === "ZERO_HUNDRED" ? "earns 0/100"
+                                        : rule === "FIFTY_FIFTY"  ? "earns 50/50" : "earns on milestone"
+                            const why = rule === "ZERO_HUNDRED"
+                              ? "Earns nothing until the work is complete, then all of it. Right for equipment and materials — a half-installed robot has delivered nothing, and crediting it half its value is how an advance payment hides."
+                              : rule === "FIFTY_FIFTY"
+                              ? "Earns half when the work starts and the rest on completion. Used for long work packages."
+                              : "Earns its full value when the work is complete, credited at the milestone."
+                            return (
+                              <div title={why} style={{ fontSize:10, fontWeight:700, marginTop:3,
+                                color:"var(--steel)", cursor:"help" }}>
+                                {label}
+                              </div>
+                            )
+                          })()}
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
                           {fmt(planned,currency)}
@@ -998,6 +1043,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                 // blank, and saving a blank one failed silently.
                                 description:   item.name || item.description || "",
                                 category:      item.category||"OTHER",
+                                earnRule:      item.earnRule||"EFFORT",
                                 plannedAmount: planned,
                                 actualAmount:  actual,
                                 notes:         item.notes||"",
