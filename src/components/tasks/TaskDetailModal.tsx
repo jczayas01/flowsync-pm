@@ -139,6 +139,8 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   // Control account: which budget line this work consumes. Lines with linked
   // tasks earn value from their own progress instead of the project average.
   const [budgetLines, setBudgetLines] = useState<any[]>([])
+  const [blOpen, setBlOpen]   = useState(false)
+  const [blQuery, setBlQuery] = useState("")
   useEffect(() => {
     fetch(`/api/projects/${projectId}/budget`)
       .then(r => r.json()).catch(() => null)
@@ -447,38 +449,113 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                     </select>
                   </div>
 
-                  {/* Budget lines (control accounts). Toggle chips rather than a
-                      multi-select: ctrl-clicking a <select multiple> is a desktop
-                      trick most people don't know and can't do on a phone. */}
+                  {/* Budget lines (control accounts).
+                      Chips worked for six lines and collapsed into a wall of text
+                      at eighteen. This is a searchable list grouped by budget
+                      category, with the chosen lines shown as removable tokens —
+                      the shape that stays usable whether a project has three
+                      lines or eighty. */}
                   {budgetLines.length > 0 && (() => {
                     const picked: string[] = form.budgetItemIds || []
                     const toggle = (id: string) => setForm((f:any) => {
                       const cur: string[] = f.budgetItemIds || []
-                      return { ...f, budgetItemIds: cur.includes(id)
-                        ? cur.filter(x => x !== id)
-                        : [...cur, id] }
+                      return { ...f, budgetItemIds: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] }
                     })
+                    const q = (blQuery || "").trim().toLowerCase()
+                    const matches = budgetLines.filter((b:any) =>
+                      !q || String(b.name).toLowerCase().includes(q) ||
+                            String(b.category || "").toLowerCase().includes(q))
+                    const groups: Record<string, any[]> = {}
+                    for (const b of matches) {
+                      const g = String(b.category || "OTHER").replace(/_/g, " ")
+                      ;(groups[g] = groups[g] || []).push(b)
+                    }
+                    const nameOf = (id: string) =>
+                      budgetLines.find((b:any) => b.id === id)?.name || "Budget line"
+
                     return (
                       <div style={fieldRow}>
                         <label style={lbl}>
-                          Budget lines{picked.length > 1 ? ` (${picked.length} — effort splits evenly)` : ""}
+                          Budget lines{picked.length > 1 ? ` — effort splits evenly across ${picked.length}` : ""}
                         </label>
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                          {budgetLines.map((b:any) => {
-                            const on = picked.includes(b.id)
-                            return (
-                              <button key={b.id} type="button" onClick={() => toggle(b.id)}
-                                style={{ padding:"5px 11px", borderRadius:16, cursor:"pointer",
-                                  fontSize:12, fontWeight:600, fontFamily:"var(--font)",
-                                  border:`1px solid ${on ? "var(--steel)" : "var(--border)"}`,
-                                  background: on ? "#EFF6FF" : "#fff",
-                                  color: on ? "var(--steel)" : "var(--text-3)" }}>
-                                {on ? "✓ " : ""}{b.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                        {picked.length === 0 && (
+
+                        {/* Chosen lines, removable */}
+                        {picked.length > 0 && (
+                          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:7 }}>
+                            {picked.map(id => (
+                              <span key={id} style={{ display:"inline-flex", alignItems:"center", gap:6,
+                                padding:"4px 8px 4px 11px", borderRadius:16, fontSize:12, fontWeight:600,
+                                background:"#EFF6FF", border:"1px solid #BFDBFE", color:"var(--steel)" }}>
+                                {nameOf(id)}
+                                <button type="button" onClick={() => toggle(id)} aria-label="Remove"
+                                  style={{ border:"none", background:"none", cursor:"pointer",
+                                    color:"var(--steel)", fontSize:13, lineHeight:1, padding:0 }}>×</button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <button type="button" onClick={() => setBlOpen(o => !o)}
+                          style={{ ...sel, textAlign:"left", cursor:"pointer", display:"flex",
+                            alignItems:"center", justifyContent:"space-between" }}>
+                          <span style={{ color: picked.length ? "var(--text)" : "var(--text-4)" }}>
+                            {picked.length
+                              ? `${picked.length} line${picked.length === 1 ? "" : "s"} selected`
+                              : "Choose budget lines…"}
+                          </span>
+                          <span style={{ color:"var(--text-4)", fontSize:11 }}>{blOpen ? "▲" : "▼"}</span>
+                        </button>
+
+                        {blOpen && (
+                          <div style={{ marginTop:6, border:"1px solid var(--border)", borderRadius:8,
+                            background:"#fff", boxShadow:"0 10px 28px rgba(13,27,42,.12)", overflow:"hidden" }}>
+                            <input autoFocus value={blQuery} placeholder="Search lines…"
+                              onChange={e => setBlQuery(e.target.value)}
+                              style={{ width:"100%", padding:"9px 11px", fontSize:12.5, border:"none",
+                                borderBottom:"1px solid var(--border)", fontFamily:"var(--font)",
+                                outline:"none", boxSizing:"border-box" }} />
+                            <div style={{ maxHeight:230, overflowY:"auto" }}>
+                              {Object.keys(groups).length === 0 && (
+                                <div style={{ padding:"12px 12px", fontSize:12, color:"var(--text-3)" }}>
+                                  No lines match "{blQuery}".
+                                </div>
+                              )}
+                              {Object.entries(groups).map(([g, items]) => (
+                                <div key={g}>
+                                  <div style={{ padding:"7px 12px 4px", fontSize:10, fontWeight:800,
+                                    letterSpacing:".06em", textTransform:"uppercase", color:"var(--text-4)",
+                                    background:"var(--surface)" }}>{g}</div>
+                                  {items.map((b:any) => {
+                                    const on = picked.includes(b.id)
+                                    return (
+                                      <label key={b.id}
+                                        style={{ display:"flex", alignItems:"center", gap:9, padding:"7px 12px",
+                                          cursor:"pointer", fontSize:12.5,
+                                          background: on ? "#F5FAFF" : "transparent" }}>
+                                        <input type="checkbox" checked={on} onChange={() => toggle(b.id)} />
+                                        <span style={{ flex:1, color:"var(--text)" }}>{b.name}</span>
+                                        <span style={{ fontSize:11, color:"var(--text-4)", fontFamily:"monospace" }}>
+                                          ${Number(b.plannedCost || 0).toLocaleString()}
+                                        </span>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                              padding:"7px 12px", borderTop:"1px solid var(--border)", background:"var(--surface)" }}>
+                              <button type="button" onClick={() => setForm((f:any) => ({ ...f, budgetItemIds: [] }))}
+                                style={{ border:"none", background:"none", cursor:"pointer", fontSize:11.5,
+                                  color:"var(--text-3)", fontFamily:"var(--font)" }}>Clear</button>
+                              <button type="button" onClick={() => { setBlOpen(false); setBlQuery("") }}
+                                style={{ border:"none", background:"none", cursor:"pointer", fontSize:11.5,
+                                  fontWeight:700, color:"var(--steel)", fontFamily:"var(--font)" }}>Done</button>
+                            </div>
+                          </div>
+                        )}
+
+                        {picked.length === 0 && !blOpen && (
                           <div style={{ fontSize:11, color:"var(--text-4)", marginTop:5 }}>
                             Not linked — this task's progress spreads across the whole budget instead of
                             earning value on a specific line.

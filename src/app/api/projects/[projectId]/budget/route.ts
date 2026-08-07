@@ -43,10 +43,12 @@ async function list(ctx: ApiContext, params?: Record<string,string>) {
   if (!access.ok) return notFound("Project")
   const items = await db.budgetItem.findMany({
     where: { projectId },
-    select: { id: true, name: true, plannedCost: true },
+    select: { id: true, name: true, category: true, plannedCost: true },
     orderBy: { createdAt: "asc" },
   })
-  return ok({ items: items.map(i => ({ id: i.id, name: i.name, plannedCost: Number(i.plannedCost || 0) })) })
+  // Category comes along so pickers can group: a project with eighteen budget
+  // lines is unusable as one flat list.
+  return ok({ items: items.map(i => ({ id: i.id, name: i.name, category: (i as any).category || "OTHER", plannedCost: Number(i.plannedCost || 0) })) })
 }
 
 async function create(ctx: ApiContext, params?: Record<string,string>) {
