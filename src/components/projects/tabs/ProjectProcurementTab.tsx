@@ -128,6 +128,28 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
+  /** Start a new agreement with a vendor already on the project. */
+  function newAgreementFor(v: any) {
+    setForm(f => ({
+      ...f,
+      vendorName:    v.name || "",
+      vendorContact: v.contact || "",
+      vendorEmail:   v.email || "",
+      vendorPhone:   v.phone || "",
+      vendorLocation: v.location || "",
+      // Everything specific to the agreement stays blank — copying a title or a
+      // value from the last PO is how duplicates get created by accident.
+      title: "", poNumber: "", contractRef: "", value: "",
+      startDate: "", endDate: "", deliverables: "", notes: "",
+      budgetItemId: "", allocations: [],
+      status: "ACTIVE",
+    }))
+    setShowForm(true)
+    setTimeout(() => {
+      document.getElementById("fs-proc-form")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 60)
+  }
+
   function resetForm() {
     setForm({ vendorName:"", vendorContact:"", vendorEmail:"", vendorPhone:"", vendorLocation:"",
       type:"CONTRACT", title:"", poNumber:"", contractRef:"",
@@ -289,7 +311,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
 
         {/* Add form */}
         {showForm && (
-          <div style={{ background:"#fff", border:"1px solid var(--border)",
+          <div id="fs-proc-form" style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20, marginBottom:16 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"var(--text)", marginBottom:16 }}>
               New Procurement Item
@@ -576,8 +598,19 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                         {v.phone}{v.phone && v.location ? " · " : ""}{v.location}
                       </div>
                     )}
-                    <div style={{ fontSize:11, color:"var(--text-2)", marginTop:6, fontWeight:600 }}>
-                      {v.count} agreement{v.count!==1?"s":""}{v.total>0 ? ` · ${fmtCurrency(v.total)}` : ""}
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6 }}>
+                      <span style={{ fontSize:11, color:"var(--text-2)", fontWeight:600 }}>
+                        {v.count} agreement{v.count!==1?"s":""}{v.total>0 ? ` · ${fmtCurrency(v.total)}` : ""}
+                      </span>
+                      <button
+                        onClick={e => { e.stopPropagation(); newAgreementFor(v) }}
+                        title={`Add another agreement with ${v.name} — their details are filled in for you`}
+                        style={{ marginLeft:"auto", width:22, height:22, borderRadius:6,
+                          border:"1px solid var(--border)", background:"#fff", cursor:"pointer",
+                          color:"var(--steel)", fontSize:14, fontWeight:700, lineHeight:1,
+                          fontFamily:"var(--font)", display:"grid", placeItems:"center" }}>
+                        +
+                      </button>
                     </div>
                   </div>
                 ))}
