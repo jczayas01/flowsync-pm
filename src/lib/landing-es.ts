@@ -148,4 +148,30 @@ export const LANDING_ES: Record<string, string> = {
   "How does billing work outside the United States?": "¿Cómo funciona la facturación fuera de Estados Unidos?",
   "Prices are in US dollars and payment is by credit or debit card through Stripe — cards issued anywhere in the Americas work. Formal invoices are issued for customers in the United States and Puerto Rico. We do not issue country-specific tax documents elsewhere, including CFDI in Mexico. Every customer gets a Stripe receipt with our business details, which is valid proof of purchase but not a local tax invoice. If your organization requires local tax invoicing to buy, write to billing@flowsyncpm.com before subscribing and we'll tell you honestly whether we can serve you today.":
     "Los precios están en dólares y el pago es con tarjeta de crédito o débito a través de Stripe — funcionan tarjetas emitidas en cualquier país de América. Emitimos facturas formales para clientes de Estados Unidos y Puerto Rico. No emitimos documentos fiscales de otros países, incluido el CFDI en México. Todo cliente recibe un recibo de Stripe con nuestros datos, válido como comprobante de compra pero no como factura fiscal local. Si tu organización necesita facturación fiscal local para poder comprar, escríbenos a billing@flowsyncpm.com antes de suscribirte y te decimos con franqueza si hoy podemos atenderte.",
+
+  // ── The four verdicts ──
+  "The same $59,000, four different truths": "Los mismos $59,000, cuatro verdades distintas",
+  "A budget line is telling you something. Most tools only show you the number.":
+    "Una línea de presupuesto te está diciendo algo. La mayoría de las herramientas solo te enseñan el número.",
+  "One equipment line, one contract, four situations a project manager has to tell apart. Watch what changes — and what the tool says about it.":
+    "Una línea de equipo, un contrato, cuatro situaciones que un gerente de proyecto tiene que saber distinguir. Mira qué cambia — y qué dice la herramienta al respecto.",
+  "Paid ahead of delivery": "Pagado antes de recibir",
+  "Delivered, on plan": "Entregado, en plan",
+  "Delivered, over cost": "Entregado, con sobrecosto",
+  "Delivered, not yet paid": "Entregado, sin pagar",
+  "A 30% advance on equipment that hasn't arrived. Most tools call this on plan, because 30% paid against 30% of a task looks balanced. It isn't: nothing has been delivered.":
+    "Un adelanto del 30% sobre equipo que no ha llegado. La mayoría de las herramientas dicen que va en plan, porque 30% pagado contra 30% de una tarea parece cuadrar. No cuadra: no se ha entregado nada.",
+  "The equipment arrived and the line earned its full value. Cost came in slightly under. This is what a healthy line looks like at close.":
+    "El equipo llegó y la línea acreditó todo su valor. El costo salió ligeramente por debajo. Así se ve una línea sana al cierre.",
+  "Delivered, and $16,500 over. Nothing is coming to close that gap — this is an overrun on finished work, not a timing difference waiting to resolve.":
+    "Entregado, y $16,500 por encima. Nada va a cerrar esa brecha — es un sobrecosto sobre trabajo terminado, no un desfase de tiempo esperando a resolverse.",
+  "Under budget only if every invoice is in. A missing invoice is a liability living outside the budget — which is how a project reports a saving and closes over.":
+    "Bajo presupuesto solo si llegaron todas las facturas. Una factura ausente es un pasivo que vive fuera del presupuesto — así es como un proyecto reporta ahorro y cierra por encima.",
+  "Every figure here comes from the same place your project would: tasks linked to budget lines, purchase orders, and the invoices you upload.":
+    "Cada cifra aquí sale del mismo lugar que saldría en tu proyecto: tareas enlazadas a líneas de presupuesto, órdenes de compra y las facturas que subes.",
+
+  // ── Feature copy that changed ──
+  "Budget that knows what it is looking at": "Un presupuesto que sabe qué está mirando",
+  "Invoices and purchase orders that land where they belong":
+    "Facturas y órdenes de compra que caen donde corresponden",
 }

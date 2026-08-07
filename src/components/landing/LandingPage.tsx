@@ -73,13 +73,60 @@ const FeatureIcon = ({ name, color }: { name: string; color: string }) => {
   )
 }
 
+/**
+ * The four things a budget line can be telling you.
+ *
+ * This is the page's second signature, and it earns its place because the claim
+ * is impossible to fake: a competitor can write "earned value" on a feature
+ * list, but showing the four verdicts — and the money that produces each one —
+ * only works if the product actually reasons about them. It reuses the hero's
+ * language (the amber beacon on a value curve) rather than inventing a second
+ * visual system.
+ */
+const LINE_STATES = [
+  {
+    key: "advance",
+    label: "Paid ahead of delivery",
+    planned: 59000, earned: 0, actual: 18000, taskPct: 30,
+    verdict: "Paid $18,000 · earned $0 · CPI 0.00",
+    read: "A 30% advance on equipment that hasn't arrived. Most tools call this on plan, because 30% paid against 30% of a task looks balanced. It isn't: nothing has been delivered.",
+    tone: "amber",
+  },
+  {
+    key: "delivered",
+    label: "Delivered, on plan",
+    planned: 59000, earned: 59000, actual: 58200, taskPct: 100,
+    verdict: "Paid $58,200 · earned $59,000 · CPI 1.01",
+    read: "The equipment arrived and the line earned its full value. Cost came in slightly under. This is what a healthy line looks like at close.",
+    tone: "green",
+  },
+  {
+    key: "overrun",
+    label: "Delivered, over cost",
+    planned: 59000, earned: 59000, actual: 75500, taskPct: 100,
+    verdict: "Paid $75,500 · earned $59,000 · CPI 0.78",
+    read: "Delivered, and $16,500 over. Nothing is coming to close that gap — this is an overrun on finished work, not a timing difference waiting to resolve.",
+    tone: "red",
+  },
+  {
+    key: "unpaid",
+    label: "Delivered, not yet paid",
+    planned: 59000, earned: 59000, actual: 44000, taskPct: 100,
+    verdict: "Paid $44,000 · earned $59,000 · $15,000 outstanding",
+    read: "Under budget only if every invoice is in. A missing invoice is a liability living outside the budget — which is how a project reports a saving and closes over.",
+    tone: "steel",
+  },
+] as const
+
 const FEATURES = [
   { icon:"gantt", title:"Interactive Gantt + critical path", tag:"Predictive", tagColor:STEEL,
     desc:"Drag-and-drop scheduling with FS/SS/FF dependencies, baseline overlays, and critical path highlighting. Export to PDF or share a live link." },
-  { icon:"evm", title:"Budget tracking with EVM", tag:"Built-in", tagColor:GREEN,
-    desc:"Planned value, earned value, CPI, SPI, EAC and VAC calculated from your task data. No spreadsheet required." },
+  { icon:"evm", title:"Budget that knows what it is looking at", tag:"Built-in", tagColor:GREEN,
+    desc:"Earned value, CPI, SPI and forecast from your task data — with earning rules per line, so equipment credits value when it arrives, not when a meeting about it ends. Committed money is counted net of what you've already paid." },
   { icon:"ai", title:"AI status reports", tag:"AI-powered", tagColor:"#7C3AED",
     desc:"One click produces a weekly status report — accomplishments, risks, milestones, budget — drafted by AI, reviewed by you." },
+  { icon:"receipt", title:"Invoices and purchase orders that land where they belong", tag:"OCR", tagColor:"#92400E",
+    desc:"Photograph a receipt or drop a PDF invoice: it reads vendor, date and total. An invoice covering two budget lines is split across both from one document, so the paper trail stays whole. A purchase order shows as committed until it's paid, then as spent — never as both." },
   { icon:"doc", title:"Document template library", tag:"18 templates", tagColor:"#92400E",
     desc:"Charter, WBS, risk register, minutes, handover and more, in Word and Excel. Fill one in, upload it, and it populates the project." },
   { icon:"shield", title:"Roles, permissions and audit", tag:"Enterprise", tagColor:"#DC2626",
@@ -162,7 +209,19 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
   const [importSecs, setImportSecs] = useState(0)
   const [runId, setRunId] = useState(0)          // each increment replays the import
   const [heroY, setHeroY] = useState(0)          // parallax depth on the hero card
+  const [lineState, setLineState] = useState(0)  // which budget verdict is on show
+  const [lineAuto, setLineAuto]   = useState(true)
   const rootRef = useRef<HTMLDivElement>(null)
+
+
+  // The budget line advances on its own until someone takes over. Auto-play
+  // earns attention; refusing to stop when a visitor clicks loses it.
+  useEffect(() => {
+    if (!lineAuto) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const id = window.setInterval(() => setLineState(i => (i + 1) % LINE_STATES.length), 4200)
+    return () => window.clearInterval(id)
+  }, [lineAuto])
 
   // Glass nav after the page moves.
   useEffect(() => {
@@ -271,6 +330,8 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
           .fs-spark .fs-spark-fill { animation: none; opacity: 1; }
           .fs-spark .fs-ping { animation: none; opacity: 0; }
         }
+        .fs-verdict { display:grid; grid-template-columns:1fr; gap:18px; align-items:start; }
+        @media (min-width:840px) { .fs-verdict { grid-template-columns:250px 1fr; gap:26px; } }
         .fs-grid3 { display:grid; grid-template-columns:1fr; gap:16px; }
         .fs-grid2 { display:grid; grid-template-columns:1fr; gap:14px; }
         .fs-band  { display:flex; flex-direction:column; gap:20px; }
@@ -641,6 +702,111 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
             upload it, and the project updates itself. Eighteen templates, Word and Excel, English
             and Spanish.
           </div>
+        </div>
+      </section>
+
+      {/* ── The four verdicts ──────────────────────────────────────────────
+          A budget line, live, moving through the states it can be in. The claim
+          is unfakeable: any tool can print "earned value" on a feature list, but
+          the four readings only exist if the product reasons about them. Reuses
+          the hero's amber-beacon language rather than inventing a second one. */}
+      <section style={{ background: NAVY, color: "#fff", padding: "88px 24px" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <div className="rv" style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".14em",
+            textTransform: "uppercase", color: AMBER, marginBottom: 14, fontFamily: MONO }}>
+            {t("The same $59,000, four different truths")}
+          </div>
+          <h2 className="rv" style={{ fontSize: "clamp(26px,3.6vw,40px)", fontWeight: 800,
+            letterSpacing: "-.025em", lineHeight: 1.12, margin: "0 0 14px", maxWidth: 760 }}>
+            {t("A budget line is telling you something. Most tools only show you the number.")}
+          </h2>
+          <p className="rv" style={{ fontSize: 16, color: "#B6C4D6", lineHeight: 1.7,
+            maxWidth: 620, margin: "0 0 34px" }}>
+            {t("One equipment line, one contract, four situations a project manager has to tell apart. Watch what changes — and what the tool says about it.")}
+          </p>
+
+          <div className="fs-verdict">
+            {/* Selector */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {LINE_STATES.map((st, i) => {
+                const on = i === lineState
+                return (
+                  <button key={st.key}
+                    onClick={() => { setLineState(i); setLineAuto(false) }}
+                    style={{ textAlign: "left", padding: "12px 14px", borderRadius: 10,
+                      cursor: "pointer", fontFamily: "inherit", transition: "all .35s cubic-bezier(.16,1,.3,1)",
+                      background: on ? "rgba(245,158,11,.10)" : "transparent",
+                      border: `1px solid ${on ? "rgba(245,158,11,.45)" : "rgba(255,255,255,.10)"}`,
+                      color: on ? "#fff" : "rgba(255,255,255,.62)" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                        background: on ? AMBER : "rgba(255,255,255,.25)",
+                        boxShadow: on ? `0 0 0 4px rgba(245,158,11,.18)` : "none",
+                        transition: "all .35s" }} />
+                      <span style={{ fontSize: 13.5, fontWeight: on ? 700 : 500 }}>{t(st.label)}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* The line itself */}
+            {(() => {
+              const st = LINE_STATES[lineState]
+              const tone = st.tone === "amber" ? AMBER
+                         : st.tone === "green" ? "#34D399"
+                         : st.tone === "red"   ? "#F87171" : "#60A5FA"
+              const pctOf = (v: number) => Math.min(100, (v / st.planned) * 100)
+              const money = (v: number) => `$${v.toLocaleString()}`
+              return (
+                <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,.10)", padding: "22px 24px" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 20 }}>
+                    <span style={{ fontSize: 14.5, fontWeight: 700 }}>Robot hardware — Ponce</span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,.45)", fontFamily: MONO }}>
+                      EQUIPMENT · earns 0/100
+                    </span>
+                  </div>
+
+                  {[
+                    { k: "Planned",  v: st.planned, fill: "rgba(255,255,255,.16)" },
+                    { k: "Earned",   v: st.earned,  fill: tone },
+                    { k: "Paid",     v: st.actual,  fill: "rgba(255,255,255,.42)" },
+                  ].map(bar => (
+                    <div key={bar.k} style={{ marginBottom: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between",
+                        fontSize: 11.5, marginBottom: 5 }}>
+                        <span style={{ color: "rgba(255,255,255,.62)", fontFamily: MONO,
+                          letterSpacing: ".04em" }}>{bar.k.toUpperCase()}</span>
+                        <span style={{ fontFamily: MONO, fontWeight: 700 }}>{money(bar.v)}</span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,.07)",
+                        overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pctOf(bar.v)}%`, background: bar.fill,
+                          borderRadius: 99, transition: "width .8s cubic-bezier(.16,1,.3,1)" }} />
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{ marginTop: 18, paddingTop: 16,
+                    borderTop: "1px solid rgba(255,255,255,.10)" }}>
+                    <div style={{ fontSize: 12.5, fontFamily: MONO, color: tone,
+                      fontWeight: 700, marginBottom: 8, transition: "color .5s" }}>
+                      {st.verdict}
+                    </div>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: "#C7D3E3", margin: 0 }}>
+                      {t(st.read)}
+                    </p>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          <p className="rv" style={{ fontSize: 13.5, color: "rgba(255,255,255,.5)",
+            marginTop: 26, maxWidth: 640, lineHeight: 1.7 }}>
+            {t("Every figure here comes from the same place your project would: tasks linked to budget lines, purchase orders, and the invoices you upload.")}
+          </p>
         </div>
       </section>
 
