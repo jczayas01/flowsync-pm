@@ -174,4 +174,6 @@ export const LANDING_ES: Record<string, string> = {
   "Budget that knows what it is looking at": "Un presupuesto que sabe qué está mirando",
   "Invoices and purchase orders that land where they belong":
     "Facturas y órdenes de compra que caen donde corresponden",
+  "Compare": "Comparar",
+  "Free templates": "Plantillas gratis",
 }

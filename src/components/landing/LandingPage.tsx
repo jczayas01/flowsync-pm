@@ -154,7 +154,7 @@ const PLANS = [
     cta:"Start free trial" },
 ]
 
-const FAQS = [
+export const FAQS = [
   { q:"Can I try it before paying?",
     a:"Yes. Every account starts with a two-month free trial of the full product, with no feature limits — and no credit card. When you're ready, subscribe from Settings → Billing; if you do it during the trial, your card isn't charged until the trial actually ends. If two months pass and you haven't subscribed, nothing is charged — your work stays safe and read-only until you do." },
   { q:"Do I pay for everyone on the team?",
@@ -1209,6 +1209,10 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
           <div style={{ display:"flex", gap:18, marginLeft:"auto", flexWrap:"wrap" }}>
             <Link href="/pricing" className="fs-link"
               style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>{t("Pricing")}</Link>
+            <Link href="/compare" className="fs-link"
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>{t("Compare")}</Link>
+            <Link href="/free-templates" className="fs-link"
+              style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>{t("Free templates")}</Link>
             <Link href="/legal/terms" className="fs-link"
               style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", textDecoration:"none" }}>Terms</Link>
             <Link href="/legal/dpa" className="fs-link"

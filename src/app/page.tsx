@@ -3,12 +3,18 @@
 import { SITE_URL } from "@/lib/site-url"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import LandingPage from "@/components/landing/LandingPage"
+import LandingPage, { FAQS } from "@/components/landing/LandingPage"
 import { MetaPixel } from "@/components/marketing/MetaPixel"
 
 const SITE = SITE_URL
 
 export const metadata = {
+  // "Enterprise Project & PMO Management" is how the company describes itself;
+  // "project management software" is what people type. The title has to answer
+  // the search, and the differentiator has to survive truncation at ~60 chars.
+  title: "Project management software with earned value — FlowSync PM",
+  description:
+    "Upload the project plan you already wrote — Word, Excel or PDF — and the AI builds the project: phases, tasks, milestones, risks and budget. Earned value, Gantt with critical path, and status reports written in English or Spanish. Two months free, no card.",
   alternates: {
     languages: { "en-US": "https://flowsyncpm.com", "es-MX": "https://flowsyncpm.com/es" }, canonical: '/' },
 }
@@ -16,6 +22,17 @@ export const metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
+    {
+      // Built from the array the page actually renders. Marking up answers that
+      // differ from the visible ones is both a penalty and a lie; sharing the
+      // source makes drift impossible.
+      "@type": "FAQPage",
+      mainEntity: FAQS.map(f => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
     {
       "@type": "Organization",
       name: "FlowSync PM",
