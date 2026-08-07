@@ -32,6 +32,8 @@ export interface PhasingTask {
   status?: string | null
   completedAt?: string | Date | null
   updatedAt?: string | Date | null
+  /** 0-1 or 0-100. Used for partial earned value credit. */
+  percentComplete?: number | string | null
 }
 
 export interface PhasingLine {
@@ -53,8 +55,19 @@ const planned = (l: PhasingLine) => num(l.plannedCost ?? l.plannedAmount)
 const weight = (t: PhasingTask) => Math.max(num(t.estimatedHours), 0) || 1
 
 /** Fraction of a task that is *scheduled* to be done by time x (linear ramp). */
-export function taskRamp(t: PhasingTask, x: number): number {
-  const s = ms(t.startDate), e = ms(t.dueDate)
+export function taskRamp(
+  t: PhasingTask,
+  x: number,
+  fallback?: { start?: number | null; end?: number | null },
+): number {
+  let s = ms(t.startDate), e = ms(t.dueDate)
+  // A task with no dates used to contribute 0 PV forever while its cost still
+  // counted toward BAC — that silently deflates PV and inflates SPI. Borrow the
+  // project window instead.
+  if (s == null && e == null && fallback) {
+    s = fallback.start ?? null
+    e = fallback.end ?? null
+  }
   if (e == null) return s != null && x >= s ? 1 : 0   // no due date: counts once started
   if (s == null || e <= s) return x >= e ? 1 : 0      // milestone-like: step at the due date
   return Math.min(1, Math.max(0, (x - s) / (e - s)))
@@ -65,6 +78,14 @@ export function taskDoneBy(t: PhasingTask, x: number): boolean {
   if (t.status !== "DONE") return false
   const c = ms(t.completedAt) ?? ms(t.updatedAt)
   return c != null && c <= x
+}
+
+/** Fraction of a task actually earned by time x, with partial credit. */
+export function taskProgress(t: PhasingTask, x: number): number {
+  if (taskDoneBy(t, x)) return 1
+  const raw = num(t.percentComplete)
+  const frac = raw > 1 ? raw / 100 : raw
+  return Math.min(1, Math.max(0, frac))
 }
 
 export interface CostWeights {
@@ -135,7 +156,10 @@ export function costWeights(tasks: PhasingTask[], lines: PhasingLine[], bac: num
     total = bac
   }
 
-  const pool = unlinked.length ? unlinked : tasks.filter(t => t.status !== "CANCELLED")
+  // Only genuinely unlinked tasks may absorb orphan-line money. Falling back to
+  // *all* tasks double-loaded the ones that already carry their own line's cost
+  // and made the curve follow six tasks' dates instead of the project calendar.
+  const pool = unlinked
   if (poolMoney > 0 && pool.length) {
     const w = pool.reduce((s, t) => s + weight(t), 0) || 1
     for (const t of pool) {
@@ -166,19 +190,33 @@ export interface PhasingInput {
 export function plannedValueAt(input: PhasingInput, at: number = Date.now()): number {
   const { tasks, lines, bac } = input
   const w = costWeights(tasks, lines, bac)
+  const win = { start: ms(input.projectStart), end: ms(input.projectEnd) }
   let pv = 0
-  w.taskCost.forEach((cost, t) => { pv += cost * taskRamp(t, at) })
+  w.taskCost.forEach((cost, t) => { pv += cost * taskRamp(t, at, win) })
   if (w.unphased > 0) {
     pv += w.unphased * windowRamp(at, ms(input.projectStart), ms(input.projectEnd))
   }
   return Math.round(pv * 100) / 100
 }
 
-/** Earned value actually completed by time x (historical, for curves). */
-export function earnedValueAt(input: PhasingInput, at: number = Date.now()): number {
+/**
+ * Earned value completed by time x.
+ *
+ * `partial` gives credit for work in progress, matching the per-line percentages
+ * the budget table already shows. Leave it off for strict historical curves:
+ * percentComplete is a *current* figure, so replaying it at past timestamps
+ * overstates what was earned back then.
+ */
+export function earnedValueAt(
+  input: PhasingInput,
+  at: number = Date.now(),
+  opts: { partial?: boolean } = {},
+): number {
   const { tasks, lines, bac } = input
   const w = costWeights(tasks, lines, bac)
   let ev = 0
-  w.taskCost.forEach((cost, t) => { if (taskDoneBy(t, at)) ev += cost })
+  w.taskCost.forEach((cost, t) => {
+    ev += cost * (opts.partial ? taskProgress(t, at) : (taskDoneBy(t, at) ? 1 : 0))
+  })
   return Math.round(ev * 100) / 100
 }
