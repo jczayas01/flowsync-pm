@@ -78,6 +78,12 @@ async function createBaseline(ctx: ApiContext, params?: Record<string,string>) {
     },
   })
 
+  const budgetLines = await db.budgetItem.findMany({
+    where:  { projectId },
+    select: { id: true, name: true, category: true, plannedCost: true, approvedCost: true, earnRule: true },
+    orderBy: { createdAt: "asc" },
+  })
+
   const snapshotData = {
     capturedAt: new Date().toISOString(),
     tasks: tasks.map(t => ({
@@ -93,7 +99,20 @@ async function createBaseline(ctx: ApiContext, params?: Record<string,string>) {
       estimatedHours:  t.estimatedHours ? Number(t.estimatedHours) : null,
       sortOrder:       t.sortOrder,
     })),
-    budget: { total: Number(project.budgetTotal) },
+    // The line detail, not just the total. A rebaseline that records only
+    // "$450,000 became $525,000" cannot answer the question a sponsor actually
+    // asks — which line moved, and by how much.
+    budget: {
+      total: Number(project.budgetTotal),
+      lines: budgetLines.map(b => ({
+        id:           b.id,
+        name:         b.name,
+        category:     b.category,
+        plannedCost:  Number(b.plannedCost || 0),
+        approvedCost: b.approvedCost == null ? null : Number(b.approvedCost),
+        earnRule:     (b as any).earnRule || "EFFORT",
+      })),
+    },
     schedule: { startDate: project.startDate, endDate: project.endDate },
   }
 

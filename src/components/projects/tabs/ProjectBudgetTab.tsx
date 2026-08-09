@@ -27,6 +27,24 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   // line without touching its progress leaves the figure behind, so there has to
   // be a way to bring it current without editing something at random.
   const [eacBusy, setEacBusy] = useState(false)
+  // Cost baseline history. A project's budget rarely moves once — it moves
+  // several times, each move approved for a reason, and the chain between the
+  // original and today's number is the thing a PMO has to be able to recite.
+  const [baselines, setBaselines] = useState<any[] | null>(null)
+  const [blOpenHist, setBlOpenHist] = useState(false)
+
+  useEffect(() => {
+    let dead = false
+    fetch(`/api/projects/${projectId}/baselines`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (dead) return
+        const arr = Array.isArray(d?.data) ? d.data : Array.isArray(d?.data?.items) ? d.data.items : []
+        setBaselines(arr.filter((b: any) => b.isApproved))
+      })
+      .catch(() => {})
+    return () => { dead = true }
+  }, [projectId])
   const [etcDraft, setEtcDraft] = useState<string>(String(project?.eacManualEtc || ""))
 
   async function saveEacMethod(method: string, etc?: number) {
@@ -616,6 +634,104 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           </div>
         )}
       </div>
+
+      {/* ── Cost baseline history ──────────────────────────────────────────
+          The chain from the original approved budget to today's number. Without
+          it, "the budget is $525,000" is a fact with no provenance; with it, it
+          is a decision someone made, on a date, for a reason. */}
+      {baselines && baselines.length > 0 && (() => {
+        const sorted = [...baselines].sort((a, b) =>
+          new Date(a.approvedAt || a.createdAt).getTime() - new Date(b.approvedAt || b.createdAt).getTime())
+        const original = Number(sorted[0]?.budgetTotal || 0)
+        const latest   = Number(sorted[sorted.length - 1]?.budgetTotal || 0)
+        const drift    = BAC - latest
+        const growth   = original > 0 ? ((BAC - original) / original) * 100 : 0
+
+        return (
+          <div style={{ ...card, marginBottom:16 }}>
+            <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
+              <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text)" }}>
+                Cost baseline
+              </span>
+              <span style={{ fontSize:11.5, color:"var(--text-3)" }}>
+                {sorted.length} approved {sorted.length === 1 ? "version" : "versions"}
+              </span>
+              <button onClick={() => setBlOpenHist(o => !o)}
+                style={{ marginLeft:"auto", background:"none", border:"none", cursor:"pointer",
+                  fontSize:11.5, fontWeight:600, color:"var(--steel)", fontFamily:"var(--font)" }}>
+                {blOpenHist ? "Hide history" : "Show history"}
+              </button>
+            </div>
+
+            <div style={{ display:"flex", gap:22, flexWrap:"wrap", marginTop:8 }}>
+              <span title="The first approved cost baseline — what the sponsor originally signed."
+                style={{ fontSize:12.5, color:"var(--text-3)", cursor:"help" }}>
+                Original <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(original,currency)}</strong>
+              </span>
+              <span title="The most recent approved baseline. Every step between it and the original was an approved change."
+                style={{ fontSize:12.5, color:"var(--text-3)", cursor:"help" }}>
+                Current baseline <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(latest,currency)}</strong>
+              </span>
+              {Math.abs(growth) >= 0.5 && (
+                <span title="How far the approved budget has moved from the original. This is baseline growth, and it is the number a PMO is asked about."
+                  style={{ fontSize:12.5, color: growth > 0 ? "var(--amber)" : "var(--green)",
+                    fontWeight:700, cursor:"help" }}>
+                  {growth > 0 ? "▲" : "▼"} {Math.abs(growth).toFixed(1)}% since original
+                </span>
+              )}
+              {Math.abs(drift) > 0.5 && (
+                <span title="The working plan no longer matches the approved baseline. Either the change was never approved, or the baseline was never recaptured — both are worth resolving before the next report."
+                  style={{ fontSize:12.5, color:"var(--red)", fontWeight:700, cursor:"help" }}>
+                  ⚠ plan is {fmt(Math.abs(drift),currency)} {drift > 0 ? "above" : "below"} the approved baseline
+                </span>
+              )}
+            </div>
+
+            {blOpenHist && (
+              <div style={{ marginTop:12, borderTop:"1px solid var(--border)", paddingTop:10 }}>
+                {sorted.map((b, i) => {
+                  const total = Number(b.budgetTotal || 0)
+                  const prev  = i > 0 ? Number(sorted[i-1].budgetTotal || 0) : null
+                  const delta = prev == null ? null : total - prev
+                  return (
+                    <div key={b.id} style={{ display:"flex", gap:12, alignItems:"baseline",
+                      padding:"7px 0", borderBottom: i < sorted.length-1 ? "1px solid var(--border)" : "none" }}>
+                      <span style={{ fontSize:11, color:"var(--text-4)", fontFamily:"monospace",
+                        flex:"0 0 78px" }}>
+                        {b.approvedAt
+                          ? new Date(b.approvedAt).toLocaleDateString(dateLocale(), { month:"short", day:"numeric", year:"2-digit", timeZone:"UTC" })
+                          : "—"}
+                      </span>
+                      <span style={{ flex:1, fontSize:12.5, color:"var(--text)", fontWeight:600 }}>
+                        {b.name}
+                        {b.linkedCrId && (
+                          <span style={{ fontSize:10.5, color:"var(--steel)", marginLeft:7, fontWeight:600 }}>
+                            via change request
+                          </span>
+                        )}
+                        {b.approvalNotes && (
+                          <div style={{ fontSize:11, color:"var(--text-3)", fontWeight:400, marginTop:2 }}>
+                            {b.approvalNotes}
+                          </div>
+                        )}
+                      </span>
+                      <span style={{ fontSize:12.5, fontFamily:"monospace", color:"var(--text-2)" }}>
+                        {fmt(total,currency)}
+                      </span>
+                      <span style={{ flex:"0 0 92px", textAlign:"right", fontSize:11.5,
+                        fontFamily:"monospace", fontWeight:700,
+                        color: delta == null ? "var(--text-4)" : delta > 0 ? "var(--amber)" : delta < 0 ? "var(--green)" : "var(--text-4)" }}>
+                        {delta == null ? "original" : delta === 0 ? "no change"
+                          : `${delta > 0 ? "+" : "−"}${fmt(Math.abs(delta),currency)}`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Forecast assumption ────────────────────────────────────────────
           The EAC has always carried an assumption; it just wasn't visible. Making
