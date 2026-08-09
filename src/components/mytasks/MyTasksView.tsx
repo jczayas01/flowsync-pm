@@ -1,4 +1,5 @@
 "use client"
+import { useTranslations } from "next-intl"
 // src/components/mytasks/MyTasksView.tsx
 import { useState, useMemo } from "react"
 import { dateLocale } from "@/lib/date-locale"
@@ -48,6 +49,7 @@ type SharedDoc = { id:string; name:string; fileUrl:string; fileType:string; crea
 export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenProject = true, sharedDocs = [] }: {
   tasks:Task[]; userName:string; userId:string; userLevel?:number; canOpenProject?:boolean; sharedDocs?:SharedDoc[]
 }) {
+  const mt = useTranslations("myTasks")
   const [filter, setFilter]     = useState<"all"|"active"|"overdue"|"done">("active")
   const router = useRouter()
   const [rows, setRows]         = useState<Task[]>(tasks)
@@ -87,7 +89,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
       })
       if (!res.ok && prev) {
         setRows(rs => rs.map(t => t.id===taskId ? { ...t, percentComplete:prev.percentComplete, status:prev.status } : t))
-        alert("Couldn't save progress — you may not have permission to update this task.")
+        alert(mt("saveFailed"))
       } else {
         router.refresh()
       }
@@ -139,29 +141,29 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
   return (
     <div style={{ flex:1, overflowY:"auto" }}>
     <div style={{ padding:"28px 32px", maxWidth:1100, margin:"0 auto", fontFamily:"var(--font)" }}>
-      <h1 style={{ fontSize:24, fontWeight:700, color:"var(--text-1)", margin:"0 0 4px" }}>My Tasks</h1>
+      <h1 style={{ fontSize:24, fontWeight:700, color:"var(--text-1)", margin:"0 0 4px" }}>{mt("My Tasks")}</h1>
       <p style={{ fontSize:13, color:"var(--text-3)", margin:"0 0 20px" }}>
-        Your assigned work across all projects — update progress and log your contributions.
+        {mt("headerDesc")}
       </p>
 
       <div style={{ display:"flex", gap:12, marginBottom:20, flexWrap:"wrap" }}>
-        {stat("Active",   counts.active,  "#1B6CA8")}
-        {stat("Overdue",  counts.overdue, "#DC2626")}
-        {stat("Due ≤ 7d", counts.soon,    "#EA580C")}
-        {stat("Completed",counts.done,    "#059669")}
+        {stat(mt("Active"),   counts.active,  "#1B6CA8")}
+        {stat(mt("Overdue"),  counts.overdue, "#DC2626")}
+        {stat(mt("Due ≤ 7d"), counts.soon,    "#EA580C")}
+        {stat(mt("Completed"),counts.done,    "#059669")}
       </div>
 
       <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" }}>
-        {tab("active","Active",counts.active)}
-        {tab("overdue","Overdue",counts.overdue)}
-        {tab("done","Completed",counts.done)}
-        {tab("all","All",counts.all)}
+        {tab("active",mt("Active"),counts.active)}
+        {tab("overdue",mt("Overdue"),counts.overdue)}
+        {tab("done",mt("Completed"),counts.done)}
+        {tab("all",mt("All"),counts.all)}
         {projectCount > 1 && (
           <button onClick={() => setGrouped(g => !g)}
             style={{ marginLeft:"auto", padding:"6px 12px", borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
               fontFamily:"var(--font)", border:"1px solid " + (groupOn ? "var(--steel)" : "var(--border)"),
               background: groupOn ? "var(--steel)" : "#fff", color: groupOn ? "#fff" : "var(--text-3)" }}>
-            ▤ Group by project
+            {mt("Group by project")}
           </button>
         )}
       </div>
@@ -172,17 +174,17 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
             padding:"44px 24px", textAlign:"center" }}>
             <div style={{ fontSize:34, marginBottom:10 }}>{userLevel >= 50 ? "🗂️" : "✅"}</div>
             <div style={{ fontSize:15, fontWeight:600, color:"var(--text-1)", marginBottom:6 }}>
-              {userLevel >= 50 ? "No tasks assigned to you" : "You're all caught up"}
+              {userLevel >= 50 ? mt("emptyTitleLead") : mt("emptyTitleMember")}
             </div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:440, margin:"0 auto 18px", lineHeight:1.5 }}>
               {userLevel >= 50
-                ? "Your work lives in the projects and portfolio you oversee. Any task assigned directly to you would appear here."
-                : "No tasks are assigned to you yet. Work your project manager assigns will show up here — you'll get a notification when it does."}
+                ? mt("emptyDescLead")
+                : mt("emptyDescMember")}
             </div>
             <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
               <Link href="/projects" style={{ padding:"8px 16px", border:"1px solid var(--border)", background:"#fff",
                 borderRadius:"var(--radius)", fontSize:13, color:"var(--text-2)", textDecoration:"none", fontWeight:500 }}>
-                Browse projects
+                {mt("Browse projects")}
               </Link>
               {userLevel >= 65 && (
                 <Link href="/executive" style={{ padding:"8px 16px", border:"1px solid var(--border)", background:"#fff",
@@ -264,7 +266,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
                   <div style={{ padding:"4px 20px 20px 44px", background:"#F8FAFC", borderTop:"1px solid var(--border)" }}>
                     {/* Update progress */}
                     <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap", padding:"14px 0" }}>
-                      <span style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".05em" }}>Update progress</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".05em" }}>{mt("Update progress")}</span>
                       <select value={t.status}
                         onChange={e => updateProgress(t.id, t.percentComplete||0, e.target.value)}
                         style={{ padding:"5px 8px", fontSize:12, borderRadius:"var(--radius)", border:"1px solid var(--border)",
@@ -291,7 +293,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
                     <div style={{ marginTop:6 }}>
                       <textarea value={noteInput[t.id]||""} rows={2}
                         onChange={e => setNoteInput(n => ({ ...n, [t.id]:e.target.value }))}
-                        placeholder="Log a contribution, note, or status update on this task…"
+                        placeholder={mt("notePlaceholder")}
                         style={{ width:"100%", padding:"8px 10px", fontSize:12.5, borderRadius:"var(--radius)",
                           border:"1px solid var(--border)", fontFamily:"var(--font)", color:"var(--text-1)",
                           resize:"vertical", boxSizing:"border-box" }} />
@@ -301,7 +303,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
                             border:"none", cursor:"pointer", fontFamily:"var(--font)",
                             background: (noteInput[t.id]||"").trim() ? "var(--steel)" : "var(--border)",
                             color: (noteInput[t.id]||"").trim() ? "#fff" : "var(--text-3)" }}>
-                          {busy===t.id+"-note" ? "Posting…" : "Post update"}
+                          {busy===t.id+"-note" ? mt("Posting…") : mt("Post update")}
                         </button>
                       </div>
                     </div>
@@ -309,7 +311,7 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
                     {/* Contribution timeline */}
                     <div style={{ marginTop:10 }}>
                       {t.contributions.length === 0 ? (
-                        <div style={{ fontSize:12, color:"var(--text-3)", padding:"6px 0" }}>No contributions yet — add the first one above.</div>
+                        <div style={{ fontSize:12, color:"var(--text-3)", padding:"6px 0" }}>{mt("noContributions")}</div>
                       ) : (
                         t.contributions.map(c => (
                           <div key={c.id} style={{ display:"flex", gap:10, padding:"8px 0", borderTop:"1px solid var(--border)" }}>
@@ -339,9 +341,9 @@ export function MyTasksView({ tasks, userName, userId, userLevel = 30, canOpenPr
 
       {sharedDocs.length > 0 && (
         <div style={{ marginTop:28 }}>
-          <h2 style={{ fontSize:15, fontWeight:700, color:"var(--text-1)", margin:"0 0 4px" }}>Shared with me</h2>
+          <h2 style={{ fontSize:15, fontWeight:700, color:"var(--text-1)", margin:"0 0 4px" }}>{mt("Shared with me")}</h2>
           <p style={{ fontSize:12, color:"var(--text-3)", margin:"0 0 12px" }}>
-            Documents your team has shared with you.
+            {mt("sharedDesc")}
           </p>
           <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
             {sharedDocs.map((d,i) => (

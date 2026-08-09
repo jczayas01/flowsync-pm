@@ -1,5 +1,6 @@
-﻿"use client"
 // src/components/auth/SignUpForm.tsx
+"use client"
+import { useTranslations } from "next-intl"
 import { sendGAEvent } from "@next/third-parties/google"
 import { trackSignUpStarted, trackSignUpFailed } from "@/lib/track"
 import { pixelTrack } from '@/components/marketing/MetaPixel'
@@ -9,9 +10,10 @@ import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export function SignUpForm() {
+  const t = useTranslations('auth')
   // Arriving from "no account found" on the sign-in page carries ?email= so the
   // person doesn't type it a third time. ?callbackUrl= carries where they were
-  // headed â€” an invite link, most importantly: registering must accept the
+  // headed — an invite link, most importantly: registering must accept the
   // invitation, not dump them into onboarding to build a second workspace.
   const params = useSearchParams()
   const callbackUrl = params.get('callbackUrl') || ''
@@ -40,19 +42,19 @@ export function SignUpForm() {
       })
       if (!res.ok) {
         const d = await res.json()
-        const msg = d.error || 'Registration failed'
+        const msg = d.error || t('Registration failed')
         trackSignUpFailed(msg)
         setError(msg)
         setLoading(false); return
       }
       sendGAEvent('event', 'sign_up', { method: 'password' })
       pixelTrack('CompleteRegistration')
-      // Account exists but can't sign in until the email is confirmed â€”
+      // Account exists but can't sign in until the email is confirmed —
       // show the check-your-inbox panel instead of signing in.
       setSent(true)
       setLoading(false)
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('somethingWentWrong'))
       setLoading(false)
     }
   }
@@ -66,18 +68,15 @@ export function SignUpForm() {
   if (sent) {
     return (
       <div style={{ textAlign:'center', padding:'8px 0' }}>
-        <div style={{ fontSize:40, marginBottom:12 }}>ðŸ“¬</div>
+        <div style={{ fontSize:40, marginBottom:12 }}>📬</div>
         <div style={{ fontSize:16, fontWeight:700, color:'#fff', marginBottom:8 }}>
-          Check your email Â· Revise su correo
+          {t('checkEmailTitle')}
         </div>
         <p style={{ fontSize:13, color:'rgba(255,255,255,.75)', lineHeight:1.6, marginBottom:16 }}>
-          We sent a confirmation link to <strong>{form.email}</strong>. Click it to
-          activate your workspace, then sign in.<br/>
-          <em>Le enviamos un enlace de confirmaciÃ³n. Haga clic para activar su
-          workspace y luego inicie sesiÃ³n.</em>
+          {t('checkEmailBody', { email: form.email })}
         </p>
         <p style={{ fontSize:12, color:'rgba(255,255,255,.5)' }}>
-          Didn&apos;t get it? Check spam, or resend from the sign-in page.
+          {t('checkEmailSpam')}
         </p>
       </div>
     )
@@ -93,11 +92,11 @@ export function SignUpForm() {
         </div>
       )}
       <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
-        <input type="text" placeholder="Your full name" required value={form.name} onFocus={noteStart}
+        <input type="text" placeholder={t('Your full name')} required value={form.name} onFocus={noteStart}
           onChange={e => setForm({...form, name:e.target.value})} style={inputStyle} />
-        <input type="email" placeholder="Work email" required value={form.email}
+        <input type="email" placeholder={t('Work email')} required value={form.email}
           onChange={e => setForm({...form, email:e.target.value})} style={inputStyle} />
-        <input type="password" placeholder="Password (8+ characters)" required minLength={8}
+        <input type="password" placeholder={t('Password (8+ characters)')} required minLength={8}
           value={form.password} onChange={e => setForm({...form, password:e.target.value})}
           style={inputStyle} />
         {/* Consent: required legal acceptance, optional newsletter. */}
@@ -107,12 +106,12 @@ export function SignUpForm() {
           onChange={e => setAcceptLegal(e.target.checked)}
           style={{ marginTop:2, accentColor:'var(--amber)' }} />
         <span>
-          I agree to the{' '}
+          {t('agreeToThe')}{' '}
           <a href="/legal/terms" target="_blank" rel="noopener"
-            style={{ color:'var(--amber)', textDecoration:'none', fontWeight:600 }}>Terms of Service</a>
-          {' '}and{' '}
+            style={{ color:'var(--amber)', textDecoration:'none', fontWeight:600 }}>{t('Terms of Service')}</a>
+          {' '}{t('and')}{' '}
           <a href="/legal/privacy" target="_blank" rel="noopener"
-            style={{ color:'var(--amber)', textDecoration:'none', fontWeight:600 }}>Privacy Policy</a>.
+            style={{ color:'var(--amber)', textDecoration:'none', fontWeight:600 }}>{t('Privacy Policy')}</a>.
         </span>
       </label>
         <label style={{ display:'flex', gap:9, alignItems:'flex-start', fontSize:12.5,
@@ -120,14 +119,14 @@ export function SignUpForm() {
         <input type="checkbox" checked={newsletter}
           onChange={e => setNewsletter(e.target.checked)}
           style={{ marginTop:2, accentColor:'var(--amber)' }} />
-        <span>Send me occasional product updates and PM resources. No spam, unsubscribe any time.</span>
+        <span>{t('newsletterOptIn')}</span>
       </label>
         <button type="submit" disabled={loading} style={{
           width:'100%', padding:12, background:'var(--amber)', color:'var(--navy)', border:'none',
           borderRadius:'var(--radius)', fontSize:14, fontWeight:700, cursor:'pointer',
           fontFamily:'var(--font)', marginTop:4,
         }}>
-          {loading ? 'Creating accountâ€¦' : 'Create free account â†’'}
+          {loading ? t('Creating account…') : t('Create free account →')}
         </button>
       </form>
       <p style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,.3)', marginTop:16, lineHeight:1.6 }}>

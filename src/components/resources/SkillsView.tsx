@@ -1,7 +1,7 @@
 "use client"
 // src/components/resources/SkillsView.tsx
 import { useState } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { Avatar, Badge, EmptyState } from "@/components/ui"
 
@@ -14,6 +14,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
   members:any[]; workspaceId:string
 }) {
   const locale = useLocale()
+  const sk = useTranslations("skills")
   const members = initialMembers
   const isDemo  = false
 
@@ -62,8 +63,8 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
         method:"PATCH", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ skills: member?.skills })
       })
-      showToast("✓ Skills saved")
-    } catch { showToast("✗ Save failed") }
+      showToast(sk("✓ Skills saved"))
+    } catch { showToast(sk("✗ Save failed")) }
     setEditMember(null)
   }
 
@@ -81,11 +82,11 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
           <div>
             <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>
-              Skill directory
+              {sk("Skill directory")}
             </h1>
             <p style={{fontSize:12,color:"var(--text-3)"}}>
-              {localMembers.length} team member{localMembers.length!==1?"s":""} · {allSkills.length} unique skills
-              {isDemo&&" · "}{isDemo&&<span style={{color:"var(--amber)",fontWeight:500}}>Sample data</span>}
+              {sk("memberSkillCount", { m: localMembers.length, s: allSkills.length })}
+              {isDemo&&" · "}{isDemo&&<span style={{color:"var(--amber)",fontWeight:500}}>{sk("Sample data")}</span>}
             </p>
           </div>
         </div>
@@ -97,7 +98,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
         <div style={{background:"#fff",border:"1px solid var(--border)",borderRadius:"var(--radius)",
           padding:16,marginBottom:20}}>
           <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:12}}>
-            Skills across your team
+            {sk("Skills across your team")}
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {skillFreq.map(({skill,count})=>{
@@ -105,7 +106,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
               const active = filterSkill===skill
               return (
                 <button key={skill} onClick={()=>setFilterSkill(active?"":skill)}
-                  title={`${count} team member${count!==1?"s":""} have this skill`}
+                  title={sk("skillCountTitle", { n: count })}
                   style={{padding:`${Math.max(4,count*2)}px ${Math.max(10,count*4)}px`,
                     border:`1.5px solid ${active?"var(--steel)":"var(--border)"}`,
                     borderRadius:20, fontSize:Math.max(11,10+count),fontWeight:500,
@@ -132,7 +133,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
 
         {/* Search */}
         <div style={{marginBottom:14,display:"flex",gap:8}}>
-          <input placeholder="Search members or skills…" value={search}
+          <input placeholder={sk("Search members or skills…")} value={search}
             onChange={e=>setSearch(e.target.value)}
             style={{padding:"7px 11px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
               fontSize:12,fontFamily:"var(--font)",outline:"none",width:240}} />
@@ -183,7 +184,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
                     </div>
                   ))}
                   {(m.skills||[]).length===0&&(
-                    <span style={{fontSize:12,color:"var(--text-4)"}}>No skills listed</span>
+                    <span style={{fontSize:12,color:"var(--text-4)"}}>{sk("No skills listed")}</span>
                   )}
                 </div>
 
@@ -192,7 +193,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
                     <div style={{display:"flex",gap:6,marginBottom:8}}>
                       <input value={newSkill} onChange={e=>setNewSkill(e.target.value)}
                         onKeyDown={e=>{ if(e.key==="Enter"){ e.preventDefault(); addSkill(m.id) } }}
-                        placeholder="Add skill…" autoFocus
+                        placeholder={sk("Add skill…")} autoFocus
                         style={{flex:1,padding:"6px 9px",border:"1px solid var(--border)",
                           borderRadius:"var(--radius)",fontSize:12,fontFamily:"var(--font)",outline:"none"}} />
                       <button onClick={()=>addSkill(m.id)}

@@ -1,10 +1,12 @@
-﻿"use client"
 // src/components/shared/FieldCard.tsx
 // Read view for free-text document fields, styled to match the WBS Dictionary
-// entry card â€” accent rail, monospace label chip, formatted content. Used by
+// entry card — accent rail, monospace label chip, formatted content. Used by
 // Governance and the Quality tab so every document section reads the same way.
+"use client"
+import { useTranslations } from "next-intl"
 
 export function FieldCard({ label, value, icon }: { label: string; value: string; icon?: string }) {
+  const sh = useTranslations("shared")
   const empty = !value?.trim()
   return (
     <div style={{ background:"var(--surface)", borderRadius:"var(--radius)",
@@ -19,7 +21,7 @@ export function FieldCard({ label, value, icon }: { label: string; value: string
         </span>
         <div style={{ flex:1, minWidth:0 }}>
           {empty ? (
-            <div style={{ fontSize:12, color:"var(--text-4)", fontStyle:"italic" }}>Not documented yet</div>
+            <div style={{ fontSize:12, color:"var(--text-4)", fontStyle:"italic" }}>{sh("Not documented yet")}</div>
           ) : (
             <p style={{ fontSize:12.5, color:"var(--text-2)", margin:0, lineHeight:1.6,
               whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{value}</p>
@@ -30,7 +32,7 @@ export function FieldCard({ label, value, icon }: { label: string; value: string
   )
 }
 
-/** Right-aligned Edit / Cancel toggle â€” same placement as WBS's "+ Add WBS entry". */
+/** Right-aligned Edit / Cancel toggle — same placement as WBS's "+ Add WBS entry". */
 export function EditToggle({ editing, onClick }: { editing: boolean; onClick: () => void }) {
   return (
     <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
@@ -39,7 +41,7 @@ export function EditToggle({ editing, onClick }: { editing: boolean; onClick: ()
           color: editing ? "var(--text-2)" : "#fff",
           border: editing ? "1px solid var(--border)" : "none",
           borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)" }}>
-        {editing ? "Cancel" : "âœï¸ Edit"}
+        {editing ? "Cancel" : "✏️ Edit"}
       </button>
     </div>
   )

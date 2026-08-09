@@ -119,7 +119,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, tasks 
           <div style={{padding:20}}>
             {/* Legend */}
             <div style={{display:"flex",gap:14,marginBottom:14,flexWrap:"wrap"}}>
-              <span style={{fontSize:11,fontWeight:600,color:"var(--text-2)"}}>Workload:</span>
+              <span style={{fontSize:11,fontWeight:600,color:"var(--text-2)"}}>{t("Workload:")}</span>
               {[
                 {bg:"#F0FFF4",text:"#166534",label:"0–50% Free"},
                 {bg:"#ECFDF5",text:"#059669",label:"51–80% Optimal"},
@@ -284,7 +284,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, tasks 
                     {alloc.total<CAPACITY_HRS&&(
                       <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,opacity:.5}}>
                         <div style={{width:8,height:8,borderRadius:2,background:"var(--border)",flexShrink:0}}/>
-                        <span style={{flex:1,color:"var(--text-3)"}}>Available</span>
+                        <span style={{flex:1,color:"var(--text-3)"}}>{t("Available")}</span>
                         <span style={{color:"var(--text-3)"}}>{CAPACITY_HRS-alloc.total}h</span>
                       </div>
                     )}

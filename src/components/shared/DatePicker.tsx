@@ -3,9 +3,9 @@
 // Deterministic behavior: browsing never closes; picking a day commits immediately.
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { useTranslations } from "next-intl"
 
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"]
+
 
 const pad = (n: number) => String(n).padStart(2, "0")
 const toStr = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
@@ -16,6 +16,7 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
   onClear?: () => void
   onClose: () => void
 , anchor?: DOMRect | null }) {
+  const sh = useTranslations("shared")
   const ref = useRef<HTMLDivElement>(null)
   const init = /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? (value as string) : null
   const today = new Date()
@@ -83,20 +84,20 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        <button style={navBtn} title="Previous year" onClick={() => nav(-12)}>«</button>
-        <button style={navBtn} title="Previous month" onClick={() => nav(-1)}>‹</button>
+        <button style={navBtn} title={sh("Previous year")} onClick={() => nav(-12)}>«</button>
+        <button style={navBtn} title={sh("Previous month")} onClick={() => nav(-1)}>‹</button>
         <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-          {MONTHS[m]} {y}
+          {sh(("mon." + m) as any)} {y}
         </div>
-        <button style={navBtn} title="Next month" onClick={() => nav(1)}>›</button>
-        <button style={navBtn} title="Next year" onClick={() => nav(12)}>»</button>
+        <button style={navBtn} title={sh("Next month")} onClick={() => nav(1)}>›</button>
+        <button style={navBtn} title={sh("Next year")} onClick={() => nav(12)}>»</button>
       </div>
 
       {/* Weekdays */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 2 }}>
-        {DOW.map(d => (
+        {[0,1,2,3,4,5,6].map(d => (
           <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700,
-            color: "var(--text-4)", padding: "3px 0" }}>{d}</div>
+            color: "var(--text-4)", padding: "3px 0" }}>{sh(("dow." + d) as any)}</div>
         ))}
       </div>
 
@@ -131,12 +132,12 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
         paddingTop: 8, borderTop: "1px solid var(--border)" }}>
         {onClear
           ? <button onClick={onClear} style={{ background: "none", border: "none", cursor: "pointer",
-              fontSize: 12, color: "var(--text-3)", fontFamily: "var(--font)" }}>Clear</button>
+              fontSize: 12, color: "var(--text-3)", fontFamily: "var(--font)" }}>{sh("Clear")}</button>
           : <span />}
         <button onClick={() => onSelect(toStr(today.getFullYear(), today.getMonth(), today.getDate()))}
           style={{ background: "none", border: "none", cursor: "pointer",
             fontSize: 12, fontWeight: 600, color: "var(--steel)", fontFamily: "var(--font)" }}>
-          Today
+          {sh("Today")}
         </button>
       </div>
     </div>

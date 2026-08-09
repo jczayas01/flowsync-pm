@@ -1,5 +1,5 @@
-﻿"use client"
 // src/components/dashboard/DashboardView.tsx
+"use client"
 
 import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { WelcomeBanner } from './WelcomeBanner'
 import { can as rbacCan, mapDbRoleToRbac, ROLE_LEVEL } from '@/lib/rbac/roles'
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ──────────────────────────────────
 function healthColor(h: string) {
   return h === 'GREEN' ? 'var(--green)' : h === 'AMBER' ? 'var(--amber)' : 'var(--red)'
 }
@@ -32,7 +32,7 @@ function fmtCurrency(n: number, currency = 'USD') {
   return new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:0}).format(n)
 }
 
-// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main component ───────────────────────────
 export function DashboardView({ projects, milestones, risks, activity,
   healthCounts, workspaceId, userRole = 'MEMBER' }: {
   projects:     any[]
@@ -48,13 +48,13 @@ export function DashboardView({ projects, milestones, risks, activity,
   const can  = (p:string) => rbacCan(rbac, p as any)
   const t = useTranslations("dashboard")
   // Budget figures are permission-gated (TEAM_MEMBER/VIEWER/CLIENT have
-  // budget:view DENY in the matrix) â€” the dashboard must honor it too.
+  // budget:view DENY in the matrix) — the dashboard must honor it too.
   const canSeeBudget = rbacCan(mapDbRoleToRbac(userRole as any), "budget:view")
   const quickActions = [
-    { href:'/my-tasks',  label:t('myTasks'),       icon:'âœ”',  show:true },
-    { href:'/projects',  label:t('newProject'),    icon:'ï¼‹', show:can('projects:create') },
-    { href:'/intake',    label:t('submitIdea'), icon:'ðŸ’¡', show:lvl > 5 },
-    { href:'/executive', label:t('executiveView'), icon:'ðŸ‘”', show:can('projects:view_all') },
+    { href:'/my-tasks',  label:t('myTasks'),       icon:'✔',  show:true },
+    { href:'/projects',  label:t('newProject'),    icon:'＋', show:can('projects:create') },
+    { href:'/intake',    label:t('submitIdea'), icon:'💡', show:lvl > 5 },
+    { href:'/executive', label:t('executiveView'), icon:'👔', show:can('projects:view_all') },
   ].filter(a => a.show)
 
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
@@ -79,7 +79,7 @@ export function DashboardView({ projects, milestones, risks, activity,
       {/* Welcome banner (shown after onboarding) */}
       <WelcomeBanner workspaceName="your workspace" />
 
-      {/* â”€â”€ Quick actions (role-aware launchpad) â”€â”€ */}
+      {/* ── Quick actions (role-aware launchpad) ── */}
       <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
         {quickActions.map(a => (
           <Link key={a.href} href={a.href}
@@ -94,13 +94,13 @@ export function DashboardView({ projects, milestones, risks, activity,
         ))}
         <button onClick={async () => {
             const btn = document.getElementById("deck-btn-dash") as HTMLButtonElement | null
-            if (btn) { btn.disabled = true; btn.textContent = "Buildingâ€¦" }
+            if (btn) { btn.disabled = true; btn.textContent = "Building…" }
             try {
               const res = await fetch(`/api/workspace/export-pptx`, {
                 method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
                 body: JSON.stringify({ flavor:"DASHBOARD" }),
               })
-              if (!res.ok) { alert("Deck generation failed"); return }
+              if (!res.ok) { alert(t("Deck generation failed")); return }
               const blob = await res.blob()
               const url = URL.createObjectURL(blob)
               const a = document.createElement("a"); a.href = url; a.download = "Portfolio_Dashboard_Deck.pptx"; a.click()
@@ -112,25 +112,25 @@ export function DashboardView({ projects, milestones, risks, activity,
             background:'#fff', color:'var(--text-2)', border:'1px solid var(--border)',
             borderRadius:'var(--radius)', fontSize:13, fontWeight:500, cursor:'pointer',
             fontFamily:'var(--font)' }}>
-          ðŸŽ¬ Deck
+          🎬 Deck
         </button>
       </div>
 
-      {/* â”€â”€ KPI row â”€â”€ */}
+      {/* ── KPI row ── */}
       <div className="fs-cols-4" style={{ marginBottom:16 }}>
         {[
           { label:t('Active projects'), value:projects.length, sub:`${healthCounts.RED} ${t('at risk')}`,
-            subColor: healthCounts.RED > 0 ? 'var(--red)' : 'var(--text-3)', icon:'ðŸ“' },
+            subColor: healthCounts.RED > 0 ? 'var(--red)' : 'var(--text-3)', icon:'📁' },
           { label:t('Overall completion'), value:`${avgComplete}%`,
             sub: projects.length===1 ? t('project progress') : t('across all projects'),
-            hint:'Simple average of each project\u2019s % complete', subColor:'var(--text-3)', icon:'ðŸ“Š' },
+            hint:'Simple average of each project\u2019s % complete', subColor:'var(--text-3)', icon:'📊' },
           { label:t('Total budget'), value:fmtCurrency(totalBudget), sub:`${fmtCurrency(totalSpent)} ${t('spent')}`,
             hint: totalBudget>0 ? `${Math.round((totalSpent/totalBudget)*100)}% of budget spent` : undefined,
-            subColor: totalBudget > 0 && totalSpent/totalBudget > .9 ? 'var(--red)' : 'var(--text-3)', icon:'ðŸ’°' },
-          { label:t('Open high risks'), value:risks.length, sub:t('score â‰¥ 9'),
-            hint:'Risks with probability Ã— impact score of 9 or higher',
-            subColor: risks.length > 0 ? 'var(--amber)' : 'var(--text-3)', icon:'âš ' },
-        ].filter((kpi:any) => canSeeBudget || kpi.icon !== 'ðŸ’°').map((kpi:any) => (
+            subColor: totalBudget > 0 && totalSpent/totalBudget > .9 ? 'var(--red)' : 'var(--text-3)', icon:'💰' },
+          { label:t('Open high risks'), value:risks.length, sub:t('score ≥ 9'),
+            hint:'Risks with probability × impact score of 9 or higher',
+            subColor: risks.length > 0 ? 'var(--amber)' : 'var(--text-3)', icon:'⚠' },
+        ].filter((kpi:any) => canSeeBudget || kpi.icon !== '💰').map((kpi:any) => (
           <div key={kpi.label} title={kpi.hint || undefined} style={{ ...card, padding:'14px 16px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
               <span style={{ fontSize:18 }}>{kpi.icon}</span>
@@ -147,7 +147,7 @@ export function DashboardView({ projects, milestones, risks, activity,
         ))}
       </div>
 
-      {/* â”€â”€ Health strip â”€â”€ */}
+      {/* ── Health strip ── */}
       <div style={{ ...card, padding:'12px 16px', marginBottom:16,
         display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
         <span style={{ fontSize:12, fontWeight:600, color:'var(--text-2)' }}>
@@ -167,7 +167,7 @@ export function DashboardView({ projects, milestones, risks, activity,
           </div>
         ))}
         <div style={{ marginLeft:'auto' }}
-          title={`${healthCounts.GREEN} on track Â· ${healthCounts.AMBER} at risk Â· ${healthCounts.RED} off track`}>
+          title={`${healthCounts.GREEN} on track · ${healthCounts.AMBER} at risk · ${healthCounts.RED} off track`}>
           <div style={{ height:6, width:200, background:'var(--border)', borderRadius:3,
             overflow:'hidden', display:'flex' }}>
             {['GREEN','AMBER','RED'].map(h => {
@@ -181,7 +181,7 @@ export function DashboardView({ projects, milestones, risks, activity,
         </div>
       </div>
 
-      {/* â”€â”€ Main grid â”€â”€ */}
+      {/* ── Main grid ── */}
       <div className="fs-cols-main" style={{ marginBottom:16 }}>
 
         {/* Projects table */}
@@ -190,7 +190,7 @@ export function DashboardView({ projects, milestones, risks, activity,
             display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('activeProjectsSection')}</span>
             <Link href="/projects" style={{ fontSize:12, color:'var(--steel)', textDecoration:'none' }}>
-              {t('View all')} â†’
+              {t('View all')} →
             </Link>
           </div>
           {methodChips.length > 2 && (
@@ -208,7 +208,7 @@ export function DashboardView({ projects, milestones, risks, activity,
           )}
           {projects.length === 0 ? (
             <div style={{ padding:'32px 20px', textAlign:'center' }}>
-              <div style={{ fontSize:32, marginBottom:8 }}>ðŸ“</div>
+              <div style={{ fontSize:32, marginBottom:8 }}>📁</div>
               <div style={{ fontSize:14, fontWeight:500, color:'var(--text)', marginBottom:6 }}>
                 No projects yet
               </div>
@@ -236,10 +236,10 @@ export function DashboardView({ projects, milestones, risks, activity,
                 letterSpacing:'.05em', textTransform:'uppercase',
                 borderBottom:'1px solid var(--surface-1,#F1F5F9)' }}>
                 <div/>
-                <div>Project</div>
-                <div>Progress</div>
-                <div>{canSeeBudget ? 'Budget' : ''}</div>
-                <div>Health</div>
+                <div>{t("col.Project")}</div>
+                <div>{t("col.Progress")}</div>
+                <div>{canSeeBudget ? t("col.Budget") : ''}</div>
+                <div>{t("col.Health")}</div>
               </div>
               {shownProjects.slice(0, 8).map(p => {
                 const budgetPct = Number(p.budgetTotal) > 0
@@ -263,8 +263,8 @@ export function DashboardView({ projects, milestones, risks, activity,
                         {p.name}
                       </div>
                       <div style={{ fontSize:11, color:'var(--text-3)' }}>
-                        {p.code} Â· {p.methodology}
-                        {pm && ` Â· ${pm.name.split(' ')[0]}`}
+                        {p.code} · {p.methodology}
+                        {pm && ` · ${pm.name.split(' ')[0]}`}
                       </div>
                     </div>
                     <div>
@@ -278,7 +278,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                     </div>
                     <div style={{ fontSize:11,
                       color: budgetPct > 90 ? 'var(--red)' : budgetPct > 75 ? 'var(--amber)' : 'var(--text-3)' }}>
-                      {canSeeBudget ? `${budgetPct}% spent` : 'â€”'}
+                      {canSeeBudget ? `${budgetPct}% spent` : '—'}
                     </div>
                     <div>
                       <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px',
@@ -301,7 +301,7 @@ export function DashboardView({ projects, milestones, risks, activity,
             <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)',
               display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('milestones30')}</span>
-              <span style={{ fontSize:20 }}>ðŸŽ¯</span>
+              <span style={{ fontSize:20 }}>🎯</span>
             </div>
             {milestones.length === 0 ? (
               <div style={{ padding:'20px 14px', textAlign:'center',
@@ -320,7 +320,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                       onMouseOver={e => (e.currentTarget.style.background='var(--surface)')}
                       onMouseOut={e  => (e.currentTarget.style.background='transparent')}
                     >
-                      <span style={{ fontSize:12 }}>â—‡</span>
+                      <span style={{ fontSize:12 }}>◇</span>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:12, fontWeight:500, color:'var(--text)',
                           overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
@@ -346,7 +346,7 @@ export function DashboardView({ projects, milestones, risks, activity,
             <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)',
               display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('highScoreRisks')}</span>
-              <span style={{ fontSize:20 }}>âš ï¸</span>
+              <span style={{ fontSize:20 }}>⚠️</span>
             </div>
             {risks.length === 0 ? (
               <div style={{ padding:'20px 14px', textAlign:'center',
@@ -387,13 +387,13 @@ export function DashboardView({ projects, milestones, risks, activity,
         </div>
       </div>
 
-      {/* â”€â”€ Recent activity â”€â”€ */}
+      {/* ── Recent activity ── */}
       <div style={card}>
         <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)',
           display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('recentActivity')}</span>
           <Link href="/settings/security" style={{ fontSize:12, color:'var(--steel)', textDecoration:'none' }}>
-            Audit log â†’
+            Audit log →
           </Link>
         </div>
         {activity.length === 0 ? (

@@ -4,6 +4,7 @@
 // (Risks "Scan documents", Budget "Scan documents", and future M365 sources).
 import { useEffect, useState } from "react"
 import { dateLocale } from "@/lib/date-locale"
+import { useTranslations } from "next-intl"
 
 export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
   projectId: string
@@ -11,6 +12,7 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
   scanning: boolean
   onScan: (documentIds: string[]) => void
 }) {
+  const sh = useTranslations("shared")
   const [docs, setDocs]         = useState<any[]|null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [openWeeks, setOpenWeeks] = useState<Set<string>>(new Set())
@@ -31,10 +33,10 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
   }
   const thisWeekTs = weekStartOf(new Date()).getTime()
   const weekLabel = (s: Date) => {
-    if (s.getTime() === thisWeekTs) return "This week"
+    if (s.getTime() === thisWeekTs) return sh("This week")
     const end = new Date(s); end.setDate(s.getDate() + 6)
     const f = (d: Date) => d.toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })
-    return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
+    return sh("weekOf", { from: f(s), to: f(end), year: end.getFullYear() })
   }
   const groups = (() => {
     const gs: { start: Date; docs: any[] }[] = []
@@ -53,13 +55,13 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
     return next
   })
 
-  if (docs === null) return <div style={{ fontSize:12, color:"var(--text-3)", padding:8 }}>Loading documents…</div>
-  if (!docs.length)  return <div style={{ fontSize:12, color:"var(--text-3)", padding:8 }}>No documents in this project yet — upload files in the Docs tab first.</div>
+  if (docs === null) return <div style={{ fontSize:12, color:"var(--text-3)", padding:8 }}>{sh("Loading documents…")}</div>
+  if (!docs.length)  return <div style={{ fontSize:12, color:"var(--text-3)", padding:8 }}>{sh("noDocs")}</div>
 
   return (
     <div>
       <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:8 }}>
-        Pick a week to open its documents. Checking a week selects all its documents.
+        {sh("pickWeekHint")}
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:4, maxHeight:220, overflowY:"auto" }}>
         {groups.map((g, gi) => {
@@ -90,7 +92,7 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
                   <span style={{ fontSize:10 }}>{open ? "▼" : "▶"}</span>
                   {weekLabel(g.start)}
                   <span style={{ marginLeft:"auto", fontWeight:400, color:"var(--text-3)" }}>
-                    {g.docs.length} file{g.docs.length !== 1 ? "s" : ""}
+                    {sh("fileCount", { n: g.docs.length })}
                   </span>
                 </button>
               </div>
@@ -115,7 +117,7 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
           fontFamily:"var(--font)",
           cursor: scanning || selected.size === 0 ? "not-allowed" : "pointer",
           opacity: scanning || selected.size === 0 ? 0.6 : 1 }}>
-        {scanning ? "⏳ Scanning…" : `🤖 Scan ${selected.size || ""} document${selected.size === 1 ? "" : "s"} →`}
+        {scanning ? sh("⏳ Scanning…") : sh("scanN", { n: selected.size })}
       </button>
     </div>
   )

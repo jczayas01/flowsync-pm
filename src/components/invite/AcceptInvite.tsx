@@ -1,4 +1,5 @@
 "use client"
+import { useTranslations } from "next-intl"
 // src/components/invite/AcceptInvite.tsx
 import { sendGAEvent } from "@next/third-parties/google"
 import { LogoMark, Wordmark } from "@/components/shared/Logo"
@@ -11,6 +12,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
   workspaceName: string; role: string; email: string
   signedIn: boolean; signedInEmail: string; hasAccount: boolean
 }) {
+  const ai = useTranslations("acceptInvite")
   const router = useRouter()
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState("")
@@ -28,7 +30,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
         body: JSON.stringify({ name, password }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok) { setError(d?.error || "Couldn't create your account."); setBusy(false); return }
+      if (!res.ok) { setError(d?.error || ai("couldNotCreate")); setBusy(false); return }
 
       const signInRes = await signIn("credentials", { email, password, redirect: false })
       if (signInRes?.error) {
@@ -39,7 +41,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
       sendGAEvent('event', 'invite_accepted', {})
       window.location.href = "/dashboard"
     } catch {
-      setError("Connection lost — try again")
+      setError(ai("connectionLost"))
       setBusy(false)
     }
   }
@@ -51,7 +53,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
       const d = await res.json().catch(() => null)
       if (!res.ok) { setError(d?.error || `Failed (${res.status})`); return }
       router.push(d?.data?.redirectTo || "/dashboard")
-    } catch { setError("Connection lost — try again") }
+    } catch { setError(ai("connectionLost")) }
     finally { setBusy(false) }
   }
 
@@ -76,28 +78,28 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
         </div>
 
         {state === "not_found" && (
-          <p style={{ color: "#475569", fontSize: 14 }}>This invitation link is invalid or was removed.</p>
+          <p style={{ color: "#475569", fontSize: 14 }}>{ai("linkInvalid")}</p>
         )}
         {state === "accepted" && (
           <>
-            <p style={{ color: "#475569", fontSize: 14 }}>This invitation was already accepted.</p>
-            <a href="/auth/signin" style={{ color: "#1B6CA8", fontSize: 13 }}>Sign in →</a>
+            <p style={{ color: "#475569", fontSize: 14 }}>{ai("alreadyAccepted")}</p>
+            <a href="/auth/signin" style={{ color: "#1B6CA8", fontSize: 13 }}>{ai("Sign in →")}</a>
           </>
         )}
         {state === "expired" && (
           <p style={{ color: "#475569", fontSize: 14 }}>
-            This invitation has expired. Ask your workspace admin to send a new one.
+            {ai("expired")}
           </p>
         )}
 
         {state === "valid" && (
           <>
             <h1 style={{ fontSize: 18, color: "#0D1B2A", margin: "16px 0 6px" }}>
-              You&apos;re invited to <strong>{workspaceName}</strong>
+              {ai("invitedTo")} <strong>{workspaceName}</strong>
             </h1>
             <p style={{ color: "#64748B", fontSize: 13, marginBottom: 20 }}>
-              as <strong>{role.replace(/_/g, " ").toLowerCase()
-                .replace(/\b\w/g, c => c.toUpperCase())}</strong> · sent to {email}
+              {ai("asRole")} <strong>{role.replace(/_/g, " ").toLowerCase()
+                .replace(/\b\w/g, c => c.toUpperCase())}</strong> {ai("sentTo", { email })}
             </p>
 
             {/* Not signed in, no account yet → join right here. No detour. */}
@@ -105,43 +107,43 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
               <form onSubmit={registerAndJoin}
                 style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}>
                 <label style={{ fontSize: 11.5, fontWeight: 600, color: "#64748B" }}>
-                  Your name
+                  {ai("Your name")}
                   <input value={name} onChange={e => setName(e.target.value)} required autoFocus
-                    placeholder="Alex Rivera" style={field} />
+                    placeholder={ai("namePlaceholder")} style={field} />
                 </label>
                 <label style={{ fontSize: 11.5, fontWeight: 600, color: "#64748B" }}>
-                  Create a password
+                  {ai("Create a password")}
                   <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                    required minLength={8} placeholder="At least 8 characters" style={field} />
+                    required minLength={8} placeholder={ai("passwordPlaceholder")} style={field} />
                 </label>
                 <button type="submit" disabled={busy}
                   style={{ padding: "11px 22px", background: "#1B6CA8", color: "#fff", border: "none",
                     borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: busy ? "wait" : "pointer",
                     fontFamily: "inherit", marginTop: 4 }}>
-                  {busy ? "Joining…" : `Join ${workspaceName} →`}
+                  {busy ? ai("Joining…") : ai("joinWorkspace", { workspace: workspaceName })}
                 </button>
                 <div style={{ position: "relative", margin: "10px 0 6px", textAlign: "center" }}>
                   <div style={{ height: 1, background: "#E2E8F0" }} />
                   <span style={{ position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%,-50%)", background: "#fff", padding: "0 10px",
-                    fontSize: 11, color: "#94A3B8" }}>or</span>
+                    fontSize: 11, color: "#94A3B8" }}>{ai("or")}</span>
                 </div>
                 <button type="button" onClick={() => signIn("google", { callbackUrl: `/invite/${token}` })}
                   style={{ padding: "10px", background: "#fff", border: "1px solid #E2E8F0",
                     borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer",
                     fontFamily: "inherit", color: "#0D1B2A" }}>
-                  Continue with Google
+                  {ai("Continue with Google")}
                 </button>
                 <button type="button" onClick={() => signIn("microsoft-entra-id", { callbackUrl: `/invite/${token}` })}
                   style={{ padding: "10px", background: "#fff", border: "1px solid #E2E8F0",
                     borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer",
                     fontFamily: "inherit", color: "#0D1B2A" }}>
-                  Continue with Microsoft
+                  {ai("Continue with Microsoft")}
                 </button>
                 <p style={{ fontSize: 11, color: "#94A3B8", textAlign: "center", marginTop: 4, lineHeight: 1.5 }}>
-                  Use the same email the invitation was sent to. By joining, you agree to the{" "}
-                  <a href="/legal/terms" target="_blank" rel="noopener" style={{ color: "#1B6CA8" }}>Terms</a> and{" "}
-                  <a href="/legal/privacy" target="_blank" rel="noopener" style={{ color: "#1B6CA8" }}>Privacy Policy</a>.
+                  {ai("sameEmailNotice")}{" "}
+                  <a href="/legal/terms" target="_blank" rel="noopener" style={{ color: "#1B6CA8" }}>{ai("Terms")}</a> {ai("and")}{" "}
+                  <a href="/legal/privacy" target="_blank" rel="noopener" style={{ color: "#1B6CA8" }}>{ai("Privacy Policy")}</a>.
                 </p>
               </form>
             )}
@@ -150,12 +152,12 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
             {!signedIn && hasAccount && (
               <>
                 <p style={{ color: "#475569", fontSize: 13, marginBottom: 16 }}>
-                  You already have an account with <strong>{email}</strong>. Sign in to accept.
+                  {ai("hasAccount")} <strong>{email}</strong>. {ai("signInToAccept")}
                 </p>
                 <a href={`/auth/signin?callbackUrl=/invite/${token}`}
                   style={{ display: "inline-block", padding: "10px 22px", background: "#1B6CA8",
                     color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: "none" }}>
-                  Sign in to accept →
+                  {ai("Sign in to accept →")}
                 </a>
               </>
             )}
@@ -165,8 +167,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
                 <p style={{ color: "#B45309", fontSize: 13, background: "#FFFBEB",
                   border: "1px solid #FDE68A", borderRadius: 8, padding: "10px 12px",
                   textAlign: "left", lineHeight: 1.55, marginBottom: 14 }}>
-                  You&apos;re signed in as <strong>{signedInEmail}</strong>, but this invitation
-                  was sent to <strong>{email}</strong>.
+                  {ai("wrongAccountA")} <strong>{signedInEmail}</strong>{ai("wrongAccountB")} <strong>{email}</strong>.
                 </p>
                 {/* Telling someone to "sign out and come back" without a button strands
                     them: they'd have to find sign-out, then dig the invite link back
@@ -175,10 +176,10 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
                   style={{ padding: "10px 22px", background: "#1B6CA8", color: "#fff",
                     border: "none", borderRadius: 8, fontSize: 14, fontWeight: 500,
                     cursor: "pointer", fontFamily: "inherit" }}>
-                  Sign out & continue as {email.split("@")[0]} →
+                  {ai("signOutContinue", { name: email.split("@")[0] })}
                 </button>
                 <p style={{ color: "#94A3B8", fontSize: 11.5, marginTop: 10 }}>
-                  You&apos;ll come straight back here to accept.
+                  {ai("comeBackHere")}
                 </p>
               </>
             )}
@@ -187,7 +188,7 @@ export function AcceptInvite({ token, state, workspaceName, role, email, signedI
               <button onClick={accept} disabled={busy}
                 style={{ padding: "10px 26px", background: "#1B6CA8", color: "#fff", border: "none",
                   borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: busy ? "wait" : "pointer" }}>
-                {busy ? "Joining…" : "Accept invitation →"}
+                {busy ? ai("Joining…") : ai("Accept invitation →")}
               </button>
             )}
             {error && <p style={{ color: "#B91C1C", fontSize: 13, marginTop: 12 }}>✗ {error}</p>}

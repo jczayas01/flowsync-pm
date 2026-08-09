@@ -6,6 +6,7 @@
 //     renderCandidate={(c)=>..} commit={async (chosen)=>failedCount} />
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { DocScanPicker } from "@/components/shared/DocScanPicker"
 
 export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, renderCandidate, commit }: {
@@ -16,6 +17,7 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
   renderCandidate: (c: any) => React.ReactNode      // card body (checkbox handled here)
   commit: (chosen: any[]) => Promise<number>        // returns count of failures
 }) {
+  const sh = useTranslations("shared")
   const router = useRouter()
   const [open, setOpen]             = useState(false)
   // The dropdown is right-anchored, so a button near the left edge would push
@@ -43,12 +45,12 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
         body: JSON.stringify({ domain, documentIds }),
       })
       const d = await res.json().catch(() => null)
-      if (!res.ok) { setError(d?.error || `Scan failed (${res.status})`); return }
+      if (!res.ok) { setError(d?.error || sh("scanFailed", { status: res.status })); return }
       const c = d?.data?.candidates || []
       setSkipped(d?.data?.skippedDocs || [])
       setCandidates(c)
       setPicked(new Set(c.map((_: any, i: number) => i)))
-    } catch { setError("Connection lost — try again") }
+    } catch { setError(sh("connectionLost")) }
     finally { setScanning(false) }
   }
 
@@ -59,21 +61,21 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
     setCommitting(true); setError("")
     try {
       const failed = await commit(chosen)
-      if (failed) setError(`${failed} item(s) could not be added`)
+      if (failed) setError(sh("commitFailed", { n: failed }))
       setCandidates(null); setOpen(false)
       router.refresh()
-    } catch { setError("Connection lost — try again") }
+    } catch { setError(sh("connectionLost")) }
     finally { setCommitting(false) }
   }
 
   return (
     <div style={{ position:"relative", display:"inline-block" }}>
       <button ref={btnRef} onClick={() => { setOpen(o => !o); setCandidates(null); setError("") }}
-        title="AI-scan project documents and add findings here"
+        title={sh("scanTitle")}
         style={{ padding:"7px 14px", background:"#fff", color:"var(--text-2)",
           border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:12,
           fontWeight:500, cursor:"pointer", fontFamily:"var(--font)", whiteSpace:"nowrap" }}>
-        🤖 Scan documents
+        {sh("🤖 Scan documents")}
       </button>
 
       {open && (
@@ -87,8 +89,8 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
             <div>
               <div style={{ fontSize:12, fontWeight:700, color:"var(--text)", marginBottom:8 }}>
                 {candidates.length
-                  ? `Found ${candidates.length} candidate${candidates.length === 1 ? "" : "s"} — review and add:`
-                  : "Nothing relevant found in the selected documents."}
+                  ? sh("foundCandidates", { n: candidates.length })
+                  : sh("nothingFound")}
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:8, maxHeight:320, overflowY:"auto" }}>
                 {candidates.map((c: any, i: number) => (
@@ -117,26 +119,26 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
                     borderRadius:"var(--radius)", fontSize:12, fontWeight:500, fontFamily:"var(--font)",
                     cursor: committing || picked.size === 0 ? "not-allowed" : "pointer",
                     opacity: committing || picked.size === 0 ? 0.6 : 1 }}>
-                  {committing ? "Adding…" : `＋ Add ${picked.size} ${commitLabel}`}
+                  {committing ? sh("Adding…") : sh("addN", { n: picked.size, label: commitLabel })}
                 </button>
                 )}
                 <button onClick={() => setCandidates(null)}
                   style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                     fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                  ← Pick different documents
+                  {sh("pickDifferent")}
                 </button>
                 <button onClick={() => setOpen(false)}
                   style={{ marginLeft:"auto", padding:"7px 10px", background:"none", border:"none",
                     fontSize:12, cursor:"pointer", fontFamily:"var(--font)", color:"var(--text-3)" }}>
-                  Close
+                  {sh("Close")}
                 </button>
               </div>
             </div>
           )}
           {skipped.length > 0 && candidates && (
             <div style={{ fontSize:11, color:"#B45309", marginTop:8 }}>
-              ⚠ Skipped: {skipped.map(x => `${x.name} (${x.reason})`).join(" · ")}
+              {sh("Skipped")} {skipped.map(x => `${x.name} (${x.reason})`).join(" · ")}
             </div>
           )}
           {error && <div style={{ fontSize:12, color:"#B91C1C", marginTop:8 }}>✗ {error}</div>}

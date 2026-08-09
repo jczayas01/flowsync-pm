@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 
 interface ChecklistItem {
   id:       string
@@ -27,52 +28,53 @@ interface Props {
 export function OnboardingChecklist({
   projectCount, memberCount, hasM365, hasAutomation, hasTemplate, workspaceName
 }: Props) {
+  const oc = useTranslations("onboardingChecklist")
   const [dismissed, setDismissed] = useState(false)
   const [expanded,  setExpanded]  = useState(true)
 
   const items: ChecklistItem[] = [
     {
       id:    "workspace",
-      label: "Set up your workspace",
-      desc:  "Add your organization name, logo, and brand color.",
+      label: oc("workspace.label"),
+      desc:  oc("workspace.desc"),
       href:  "/settings/workspace",
-      cta:   "Open settings",
+      cta:   oc("workspace.cta"),
       icon:  "🏢",
       done:  true, // Always done — they created the workspace
     },
     {
       id:    "project",
-      label: "Create your first project",
-      desc:  "Start a new project or install one of our 47 industry templates.",
+      label: oc("project.label"),
+      desc:  oc("project.desc"),
       href:  "/projects",
-      cta:   "Create project",
+      cta:   oc("project.cta"),
       icon:  "📁",
       done:  projectCount > 0,
     },
     {
       id:    "team",
-      label: "Invite your team",
-      desc:  "Add colleagues so they can collaborate on projects.",
+      label: oc("team.label"),
+      desc:  oc("team.desc"),
       href:  "/settings/team",
-      cta:   "Invite members",
+      cta:   oc("team.cta"),
       icon:  "👥",
       done:  memberCount > 1,
     },
     {
       id:    "template",
-      label: "Explore the template marketplace",
-      desc:  "Ready-made templates for IT, construction, finance, and more.",
+      label: oc("template.label"),
+      desc:  oc("template.desc"),
       href:  "/templates",
-      cta:   "Browse templates",
+      cta:   oc("template.cta"),
       icon:  "📦",
       done:  hasTemplate,
     },
     {
       id:    "m365",
-      label: "Connect Microsoft 365",
-      desc:  "Auto-tag project emails, sync Planner tasks, and log Teams meetings.",
+      label: oc("m365.label"),
+      desc:  oc("m365.desc"),
       href:  "/settings/workspace#integrations",
-      cta:   "Connect M365",
+      cta:   oc("m365.cta"),
       icon:  "🔵",
       done:  hasM365,
     },
@@ -110,11 +112,11 @@ export function OnboardingChecklist({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
-              Get started with FlowSync PM
+              {oc("Get started with FlowSync PM")}
             </span>
             <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
               background: "var(--steel-pale,#EFF6FF)", color: "var(--steel)" }}>
-              {doneCount}/{items.length} complete
+              {oc("completeCount", { done: doneCount, total: items.length })}
             </span>
           </div>
           <div style={{ height: 5, background: "var(--surface-1,#F1F5F9)", borderRadius: 3, overflow: "hidden" }}>
@@ -128,7 +130,7 @@ export function OnboardingChecklist({
             onClick={e => { e.stopPropagation(); dismiss() }}
             style={{ fontSize: 18, color: "var(--text-3)", background: "none", border: "none",
               cursor: "pointer", lineHeight: 1, padding: "2px 4px" }}
-            title="Dismiss checklist"
+            title={oc("Dismiss checklist")}
           >
             ×
           </button>

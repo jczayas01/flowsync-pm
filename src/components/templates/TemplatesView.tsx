@@ -1,6 +1,6 @@
 "use client"
 // src/components/templates/TemplatesView.tsx
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { DocTemplateLibrary } from "@/components/templates/DocTemplateLibrary"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
@@ -47,6 +47,7 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
   workspaceTemplates:any[]; workspaceId:string; filters:any
 }) {
   const locale = useLocale() as "en" | "es"
+  const tp = useTranslations("templates")
   const es = locale === "es"
   const [section,  setSection]  = useState<"projects"|"documents">("projects")
   const [cat,      setCat]      = useState("all")
@@ -191,7 +192,7 @@ export function TemplatesView({ workspaceTemplates, workspaceId, filters }:{
         <div style={{flex:1,overflowY:"auto",padding:20}}>
           {/* Filter bar */}
           <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>
-            <input placeholder="Search templates…" value={search}
+            <input placeholder={tp("Search templates…")} value={search}
               onChange={e=>setSearch(e.target.value)}
               style={{padding:"7px 11px",border:"1px solid var(--border)",
                 borderRadius:"var(--radius)",fontSize:12,fontFamily:"var(--font)",

@@ -2,6 +2,7 @@
 // src/components/documents/DocumentEditor.tsx
 // Rich-text project wiki editor — block-based, stored per project
 import { useState, useRef, useCallback } from "react"
+import { useTranslations } from "next-intl"
 
 interface DocBlock {
   id:      string
@@ -40,6 +41,7 @@ const DEFAULT_BLOCKS: DocBlock[] = [
 export function DocumentEditor({ projectId, workspaceId, initialBlocks, readonly=false }:{
   projectId:string; workspaceId:string; initialBlocks?:DocBlock[]; readonly?:boolean
 }) {
+  const de = useTranslations("documentEditor")
   const [blocks, setBlocks]   = useState<DocBlock[]>(initialBlocks || DEFAULT_BLOCKS)
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
@@ -150,7 +152,7 @@ export function DocumentEditor({ projectId, workspaceId, initialBlocks, readonly
           <textarea value={block.content} readOnly={readonly}
             ref={el=>{ refs.current[block.id]=el }}
             style={{...baseStyle,flex:1,fontSize:14,color:cc.color,lineHeight:1.65,minHeight:24}}
-            placeholder="Type a callout message…"
+            placeholder={de("Type a callout message…")}
             onFocus={()=>setFocused(block.id)} onBlur={()=>setFocused(null)}
             onChange={e=>updateContent(block.id,e.target.value)}
             onKeyDown={e=>handleKeyDown(e,block)}
@@ -181,7 +183,7 @@ export function DocumentEditor({ projectId, workspaceId, initialBlocks, readonly
               style={{width:12,height:20,background:"none",border:"none",cursor:"pointer",
                 color:"var(--text-4)",fontSize:16,lineHeight:1,padding:0,display:"flex",
                 alignItems:"center",justifyContent:"center"}}
-              title="Change block type">
+              title={de("Change block type")}>
               +
             </button>
           </div>
@@ -193,7 +195,7 @@ export function DocumentEditor({ projectId, workspaceId, initialBlocks, readonly
           <textarea value={block.content} readOnly={readonly}
             ref={el=>{ refs.current[block.id]=el }}
             style={{...baseStyle,...STYLES.code,flex:1,minHeight:60}}
-            placeholder="// code here…"
+            placeholder={de("// code here…")}
             onFocus={()=>setFocused(block.id)} onBlur={()=>setFocused(null)}
             onChange={e=>updateContent(block.id,e.target.value)}
             onKeyDown={e=>handleKeyDown(e,block)}

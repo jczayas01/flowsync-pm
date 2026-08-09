@@ -2,16 +2,18 @@
 // src/components/layout/NotificationBell.tsx
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 function timeAgo(d:string) {
   const s = Math.floor((Date.now() - new Date(d).getTime())/1000)
-  if (s < 60) return "just now"
+  if (s < 60) return null
   const m = Math.floor(s/60); if (m < 60) return `${m}m ago`
   const h = Math.floor(m/60); if (h < 24) return `${h}h ago`
   const days = Math.floor(h/24); return `${days}d ago`
 }
 
 export function NotificationBell() {
+  const nb = useTranslations("notifications")
   const router = useRouter()
   const [open, setOpen]     = useState(false)
   const [items, setItems]   = useState<any[]>([])
@@ -51,7 +53,7 @@ export function NotificationBell() {
   return (
     <div style={{ position:"relative" }}>
       <button onClick={() => { setOpen(o => !o); if (!open) load() }}
-        title="Notifications"
+        title={nb("Notifications")}
         style={{ position:"relative", background:"none", border:"none", cursor:"pointer",
           fontSize:16, padding:6, color:"#CBD5E1", lineHeight:1 }}>
         🔔
@@ -74,12 +76,12 @@ export function NotificationBell() {
             fontFamily:"var(--font)" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
               padding:"10px 14px", borderBottom:"1px solid var(--border)" }}>
-              <span style={{ fontSize:13, fontWeight:700, color:"var(--text-1)" }}>Notifications</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"var(--text-1)" }}>{nb("Notifications")}</span>
               <span style={{ display:"flex", gap:10 }}>
                 {unread > 0 && (
                   <button onClick={markAll}
                     style={{ background:"none", border:"none", cursor:"pointer", fontSize:11, color:"var(--steel)", fontFamily:"var(--font)" }}>
-                    Mark all read
+                    {nb("Mark all read")}
                   </button>
                 )}
                 {items.some(i => i.read) && (
@@ -105,10 +107,10 @@ export function NotificationBell() {
                     <div style={{ fontSize:12.5, fontWeight:500, color:"var(--text-1)" }}>{it.title}</div>
                     {it.body && <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:2,
                       overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{it.body}</div>}
-                    <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>{timeAgo(it.createdAt)}</div>
+                    <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>{timeAgo(it.createdAt) ?? nb("just now")}</div>
                   </div>
                   <button onClick={e => { e.stopPropagation(); removeOne(it.id) }}
-                    title="Remove this notification"
+                    title={nb("Remove this notification")}
                     style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-4)",
                       fontSize:12, lineHeight:1, padding:"0 2px", flexShrink:0, fontFamily:"var(--font)" }}>✕</button>
                 </div>

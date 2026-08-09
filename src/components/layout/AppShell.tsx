@@ -137,7 +137,7 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
           </Link>
           <div style={{ position:"relative" }}>
             <button onClick={() => setWsOpen(o => !o)} aria-expanded={wsOpen}
-              aria-label="Switch workspace"
+              aria-label={t("Switch workspace")}
               style={{width:"100%",background:"rgba(255,255,255,.07)",borderRadius:5,padding:"5px 9px",
                 fontSize:11,color:"rgba(255,255,255,.5)",display:"flex",alignItems:"center",
                 justifyContent:"space-between",cursor:"pointer",border:"none",fontFamily:"inherit",
@@ -269,7 +269,7 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
               borderRadius:5,textDecoration:"none",
               background:isSettings?"rgba(255,255,255,.07)":"transparent"}}>
             <span style={{fontSize:13}}>⚙</span>
-            <span style={{fontSize:11,color:"rgba(255,255,255,.45)"}}>Settings</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,.45)"}}>{t("Settings")}</span>
           </Link>
           <div onClick={()=>setMenu(!menu)}
             style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",
@@ -353,7 +353,7 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
               <span>⏳ Your free trial ends {days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}. Nothing is charged unless you subscribe.</span>
               <a href="/settings/billing" style={{ background:"#F59E0B", color:"#0D1B2A",
                 padding:"5px 14px", borderRadius:7, fontWeight:700, fontSize:12.5,
-                textDecoration:"none", whiteSpace:"nowrap" }}>Subscribe</a>
+                textDecoration:"none", whiteSpace:"nowrap" }}>{t("Subscribe")}</a>
             </div>
           )
           return (
@@ -363,12 +363,12 @@ export function AppShell({ user, workspace, workspaces, userRole, isPlatformAdmi
               <span>🔒 Your trial has ended — this workspace is read-only. Your data is safe, and you can still view and export everything.</span>
               <a href="/settings/billing" style={{ background:"#DC2626", color:"#fff",
                 padding:"5px 14px", borderRadius:7, fontWeight:700, fontSize:12.5,
-                textDecoration:"none", whiteSpace:"nowrap" }}>Subscribe to continue</a>
+                textDecoration:"none", whiteSpace:"nowrap" }}>{t("Subscribe to continue")}</a>
             </div>
           )
         })()}
         <div className="fs-mobilebar">
-          <button onClick={() => setMobileNav(true)} aria-label="Menu"
+          <button onClick={() => setMobileNav(true)} aria-label={t("Menu")}
             style={{background:"none",border:"none",color:"#fff",fontSize:20,cursor:"pointer",
               padding:"0 2px",lineHeight:1}}>☰</button>
           <span style={{fontWeight:800,fontSize:14,letterSpacing:".01em"}}>
