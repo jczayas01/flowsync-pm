@@ -59,6 +59,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
 
   // Auto-generate next code
   function nextCode() {
+  const locale = useLocale()
     if (requirements.length === 0) return "REQ-001"
     const nums = requirements.map(r => parseInt((r.code||"").replace(/^REQ-/,""),10)).filter(n=>!isNaN(n))
     const max  = nums.length ? Math.max(...nums) : 0

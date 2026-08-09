@@ -436,6 +436,7 @@ export function ProjectDashboardTab({
   function EditablePanel({ field, label, icon, value, hint }: {
     field:string; label:string; icon:string; value?:string|null; hint:string
   }) {
+    const locale = useLocale()
     const isEditing = editField === field
     return (
       <div style={card}>

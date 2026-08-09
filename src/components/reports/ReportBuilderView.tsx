@@ -173,6 +173,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
 
   // ── Preview renderer ──────────────────────────
   function renderBlock(block: ReportBlock) {
+  const locale = useLocale()
     const card: React.CSSProperties = {
       background:"#fff", border:"1px solid var(--border)",
       borderRadius:"var(--radius)", padding:20, marginBottom:14

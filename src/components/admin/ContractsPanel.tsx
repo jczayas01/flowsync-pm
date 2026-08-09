@@ -160,6 +160,7 @@ export function ContractsPanel({ workspaces }: {
   }
 
   const daysLeft = (c: any) => {
+  const locale = useLocale()
     const anchor = Math.min(new Date(c.endDate).getTime(),
       c.renewalDate ? new Date(c.renewalDate).getTime() : Infinity)
     return Math.ceil((anchor - Date.now()) / 864e5)

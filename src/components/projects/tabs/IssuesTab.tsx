@@ -43,6 +43,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
   projectId:string; workspaceId:string; issues:any[]; members:any[]
 }) {
   const tip = useTranslations("tips")
+  const locale = useLocale()
   const { can } = usePermissions()
   const router = useRouter()
   const [creating, setCreating] = useState(false)

@@ -26,6 +26,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
   const canCreate = !["VIEWER","CLIENT","MEMBER"].includes(userRole)
 
   function applyFilter(key:string, val:string) {
+  const locale = useLocale()
     const params = new URLSearchParams(window.location.search)
     if (val) params.set(key, val); else params.delete(key)
     router.push(`/projects?${params.toString()}`)

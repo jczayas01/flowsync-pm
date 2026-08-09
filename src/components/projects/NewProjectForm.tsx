@@ -64,6 +64,7 @@ export function NewProjectForm({ workspaceId, members }:{
   const docInputRef = useRef<HTMLInputElement>(null)
   const MAX_DOC_MB = 20
   function stageFiles(list: FileList | File[]) {
+  const locale = useLocale()
     const incoming = Array.from(list).filter(f => f.size <= MAX_DOC_MB * 1024 * 1024)
     setStagedDocs(prev => {
       const seen = new Set(prev.map(f => f.name + f.size))

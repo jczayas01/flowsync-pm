@@ -1090,6 +1090,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // from figures it has already said not to trust. Silence is the
                 // honest output until someone recalculates.
                 const isStale = (() => {
+  const locale = useLocale()
                   if (taskEvidence === 0 || planned <= 0) return false
                   const rule = item.earnRule || "EFFORT"
                   const tp = lineTasks[item.id]?.pct ?? 0

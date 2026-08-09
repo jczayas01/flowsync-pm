@@ -36,6 +36,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
   function showToast(msg:string){ setToast(msg); setTimeout(()=>setToast(""),3000) }
 
   const filtered = localGoals.filter(g=>{
+  const locale = useLocale()
     if(filter==="all") return true
     if(filter==="active") return !["COMPLETED","DRAFT"].includes(g.status)
     return g.status===filter

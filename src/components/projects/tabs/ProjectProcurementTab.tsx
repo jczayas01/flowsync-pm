@@ -53,6 +53,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
   projectId:string; items:any[]; members:any[]; workspaceId:string
 }) {
   const tip = useTranslations("tips")
+  const locale = useLocale()
   const { can } = usePermissions()
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)

@@ -48,6 +48,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
   }
 
   function removeSkill(memberId:string, skill:string) {
+  const locale = useLocale()
     setLocalMembers(ms=>ms.map(m=>m.id===memberId
       ? {...m, skills:(m.skills||[]).filter((s:string)=>s!==skill)}
       : m

@@ -106,6 +106,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
   changeRequests:any[]; benefits:any[];
   decisions:any[]; budgetItems:any[]; pendingBaselines?:any[]; workspaceId:string
 }) {
+  const locale = useLocale()
   const [milestoneWindow, setMilestoneWindow] = useState<30|60|90>(30)
 
   // ── Portfolio KPIs ─────────────────────────────────────────────────────
