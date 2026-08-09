@@ -67,7 +67,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
   }
 
   async function save() {
-    if (!form.title.trim()) { setError("Title required"); return }
+    if (!form.title.trim()) { setError(tip("titleRequired")); return }
     setSaving(true); setError("")
     try {
       const code = form.code || nextCode()
@@ -76,7 +76,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
         headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ ...form, code, linkedTaskId:form.linkedTaskId||null }),
       })
-      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||"Failed"); return }
+      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||tip("genFailed")); return }
       setShowForm(false); resetForm(); router.refresh()
     } finally { setSaving(false) }
   }
@@ -85,13 +85,13 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
   const [editF, setEditF]   = useState<any>({})
 
   async function removeReq(r: any) {
-    if (!confirm(`Delete ${r.code} — "${r.title}"?\n\nThis cannot be undone.`)) return
+    if (!confirm(tip("reqConfirmDelete",{c:r.code}) + ` — "${r.title}"?\n\nThis cannot be undone.`)) return
     const res = await fetch(`/api/projects/${projectId}/requirements/${r.id}`, { method: "DELETE" })
       .catch(() => null)
     if (res?.ok) router.refresh()
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not delete this requirement.")
+      alert(d?.error || tip("reqDeleteFailed"))
     }
   }
 
@@ -109,7 +109,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
     if (res?.ok) { setEditId(null); router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not save this requirement.")
+      alert(d?.error || tip("reqSaveFailed"))
     }
   }
 
@@ -180,8 +180,8 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
       {/* Sub-tabs */}
       <div style={{ display:"flex", borderBottom:"1px solid var(--border)", background:"#fff", flexShrink:0 }}>
         {[
-          { id:"register", label:`Requirements Register (${total})` },
-          { id:"matrix",   label:"Traceability Matrix" },
+          { id:"register", label:tip("reqRegisterTab",{n:total}) },
+          { id:"matrix",   label:tip("reqMatrixTab") },
         ].map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id as any)}
             style={{ padding:"10px 18px", fontSize:12, fontWeight:500, cursor:"pointer",
@@ -217,7 +217,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                 <label style={lbl}>{tip("titleReq")}</label>
                 <input style={inp} value={form.title}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))}
-                  placeholder="e.g. System must support 500 concurrent users" />
+                  placeholder={tip("reqPhTitle")} />
               </div>
             </div>
             <div style={{ marginBottom:10 }}>
@@ -254,7 +254,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                 <label style={lbl}>{tip("qSource")}</label>
                 <input style={inp} value={form.source}
                   onChange={e=>setForm(f=>({...f,source:e.target.value}))}
-                  placeholder="Who requested this?" />
+                  placeholder={tip("reqPhSource")} />
               </div>
               <div>
                 <label style={lbl}>{tip("qLinkTask")}</label>
@@ -270,14 +270,14 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
               <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                 value={form.acceptanceCriteria}
                 onChange={e=>setForm(f=>({...f,acceptanceCriteria:e.target.value}))}
-                placeholder="What must be true for this requirement to be verified?" />
+                placeholder={tip("reqPhAcceptance")} />
             </div>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={save} disabled={saving||!form.title.trim()}
                 style={{ padding:"9px 20px", background:"var(--steel)", color:"#fff",
                   border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
                   cursor:"pointer", fontFamily:"var(--font)", opacity:!form.title.trim()?0.5:1 }}>
-                {saving?"Saving…":"Add requirement"}
+                {saving?tip("saving"):tip("reqAdd")}
               </button>
               <button onClick={()=>{setShowForm(false);resetForm();setError("")}}
                 style={{ padding:"9px 16px", background:"#fff", border:"1px solid var(--border)",
@@ -389,8 +389,8 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                       {editId === r.id && (
                         <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)",
                           display:"flex", flexDirection:"column", gap:8 }}>
-                          {([["title","Title"],["description","Description"],
-                             ["acceptanceCriteria","Acceptance criteria"],["source","Source"]] as const).map(([k,label]) => (
+                          {([["title",tip("title")],["description",tip("description")],
+                             ["acceptanceCriteria",tip("qAcceptance")],["source",tip("qSource")]] as const).map(([k,label]) => (
                             <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>
                               {label}
                               <input value={editF[k] || ""}
@@ -466,7 +466,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                 <table style={{ width:"100%", borderCollapse:"collapse" }}>
                   <thead>
                     <tr style={{ background:"var(--steel)" }}>
-                      {["REQ ID","Title","Type","Priority","Status","Linked Task","Task Status","Verified"].map(h=>(
+                      {[tip("reqColId"),tip("title"),tip("qType"),tip("priority"),tip("status"),tip("reqColLinked"),tip("reqColTaskStatus"),tip("reqColVerified")].map(h=>(
                         <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:10,
                           fontWeight:700, color:"#fff", whiteSpace:"nowrap" }}>{h}</th>
                       ))}
@@ -522,9 +522,9 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                   <span>{tip("qTotal")}<strong>{total}</strong></span>
                   <span style={{ color:"#059669" }}>{tip("qVerified")}<strong>{verified}</strong></span>
                   <span style={{ color:"#1B6CA8" }}>{tip("qApproved")}<strong>{approved}</strong></span>
-                  <span style={{ color:"#D97706" }}>Linked: <strong>{linked}/{total}</strong></span>
+                  <span style={{ color:"#D97706" }}>{tip("reqLinked")}: <strong>{linked}/{total}</strong></span>
                   <span style={{ color:total>0&&verified===total?"#059669":"#D97706", fontWeight:700 }}>
-                    Coverage: {total>0?Math.round((verified/total)*100):0}%
+                    {tip("reqCoverage")}: {total>0?Math.round((verified/total)*100):0}%
                   </span>
                 </div>
               </div>

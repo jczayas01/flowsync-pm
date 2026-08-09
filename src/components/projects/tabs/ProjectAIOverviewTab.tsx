@@ -5,6 +5,7 @@
 // ledger), findings fanned out into per-tab groups for review, then applied
 // through the existing apply route. Per-tab scanners remain for scoped work —
 // this tab is the "read everything, route everything" front door.
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -25,6 +26,7 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
   projectId: string; workspaceId: string; documents: { id: string; name: string; createdAt?: string }[]
   fromImport?: boolean; driverName?: string
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
   const [picked, setPicked] = useState<Set<string>>(
     // Arriving from project creation: the driver already built the skeleton —
@@ -213,10 +215,10 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
                 style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6,
                   border: "1px solid var(--border)", background: "#fff",
                   color: "var(--text)", fontFamily: "var(--font)" }}>
-                <option value="email">Email</option>
-                <option value="teams_meeting">Meeting transcript</option>
-                <option value="teams_chat">Chat thread</option>
-                <option value="notes">Notes</option>
+                <option value="email">{tip("srcEmail")}</option>
+                <option value="teams_meeting">{tip("srcTeamsMeeting")}</option>
+                <option value="teams_chat">{tip("srcTeamsChat")}</option>
+                <option value="notes">{tip("srcNotes")}</option>
               </select>
               {pasted.trim().length >= 30 && (
                 <button onClick={runPasted} disabled={phase === "running"}
@@ -228,7 +230,7 @@ export function ProjectAIOverviewTab({ projectId, workspaceId, documents, fromIm
               )}
             </div>
             <textarea rows={4} value={pasted} onChange={e => setPasted(e.target.value)}
-              placeholder="Paste an email, a Teams meeting transcript, or notes — the AI extracts action items, risks and decisions and routes them to their tabs."
+              placeholder={tip("aiPastePh")}
               style={{ width: "100%", padding: "9px 11px", borderRadius: 8, resize: "vertical",
                 border: "1px solid var(--border)", fontSize: 12.5, lineHeight: 1.6,
                 fontFamily: "var(--font)", color: "var(--text)", background: "#fff" }} />

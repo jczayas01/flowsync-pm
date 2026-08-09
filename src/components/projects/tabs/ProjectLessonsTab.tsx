@@ -65,7 +65,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
 
   async function createLesson() {
     if (!form.title.trim() || !form.situation.trim() || !form.lesson.trim() || !form.recommendation.trim()) {
-      setError("Title, Situation, Lesson, and Recommendation are all required")
+      setError(tip("lessAllRequired"))
       return
     }
     setSaving(true); setError("")
@@ -77,13 +77,13 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
       })
       if (!res.ok) {
         const d = await res.json().catch(()=>({}))
-        setError(d.error || "Failed to save")
+        setError(d.error || tip("lessSaveFailed"))
         return
       }
       setView("list")
       setForm(emptyForm)
       router.refresh()
-    } catch { setError("Network error") }
+    } catch { setError(tip("netError")) }
     finally { setSaving(false) }
   }
 
@@ -107,12 +107,12 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
     if (res?.ok) { setEditing(false); router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not save this lesson.")
+      alert(d?.error || tip("lessSaveFailed2"))
     }
   }
 
   async function deleteLesson(lessonId: string) {
-    if (!confirm("Delete this lesson? This cannot be undone.")) return
+    if (!confirm(tip("lessConfirmDelete"))) return
     setDeletingId(lessonId)
     try {
       await fetch(`/api/projects/${projectId}/lessons/${lessonId}`, {
@@ -165,17 +165,14 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
               borderRadius:"var(--radius)", padding:"12px 14px", marginBottom:20,
               fontSize:12, color:"#1E40AF", lineHeight:1.6 }}>
-              <strong>PM Best Practices — Continuous Improvement:</strong> Lessons learned capture
-              knowledge gained during a project to improve future performance.
-              Record both what went wrong (threats) and what went well (opportunities) —
-              both are valuable for the organization.
+              {tip("lessIntro")}
             </div>
 
             <div style={card}>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:14 }}>
                 <div style={{ gridColumn:"1/-1" }}>
                   <label style={lbl}>{tip("titleReq")}</label>
-                  <input style={inp} value={form.title} placeholder="Brief summary of the lesson..."
+                  <input style={inp} value={form.title} placeholder={tip("lessPhSummary")}
                     onChange={e => setForm(f=>({...f,title:e.target.value}))} />
                 </div>
                 <div>
@@ -310,7 +307,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
                     .map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
               </label>
-              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{tip("lPhase")}<input value={editF.phase || ""} placeholder="e.g. Phase 2 — Build"
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{tip("lPhase")}<input value={editF.phase || ""} placeholder={tip("lessPhPhase")}
                   onChange={e=>setEditF((f:any)=>({...f,phase:e.target.value}))}
                   style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
                     border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
@@ -324,7 +321,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
               </label>
             </div>
             {([["situation","What happened"],["lesson","What was learned"],
-               ["recommendation","What to do differently"]] as const).map(([k,label])=>(
+               ["recommendation",tip("lessRecommend")]] as const).map(([k,label])=>(
               <label key={k} style={{ fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{label}
                 <textarea rows={3} value={editF[k]}
                   onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
@@ -377,9 +374,9 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             </div>
 
             {[
-              { icon:"📋", label:"Situation", text:l.situation, bg:"var(--surface)" },
-              { icon:"💡", label:"Lesson Learned", text:l.lesson, bg:"#FFFBEB" },
-              { icon:"→",  label:"Recommendation", text:l.recommendation, bg:"#EFF6FF" },
+              { icon:"📋", label:tip("lessSituation"), text:l.situation, bg:"var(--surface)" },
+              { icon:"💡", label:tip("lessLearned"), text:l.lesson, bg:"#FFFBEB" },
+              { icon:"→",  label:tip("lessRecommendation"), text:l.recommendation, bg:"#EFF6FF" },
             ].map(section => (
               <div key={section.label} style={{ background:section.bg,
                 borderRadius:"var(--radius)", padding:"14px 16px", marginBottom:16 }}>

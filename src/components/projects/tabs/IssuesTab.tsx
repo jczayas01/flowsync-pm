@@ -59,28 +59,28 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
   const displayed = issues.filter(i => !statusFilter || i.status === statusFilter)
 
   async function removeIssue(i: any) {
-    if (!confirm(`Delete ${i.code || "this issue"} — "${i.title}"?\n\nThis cannot be undone.`)) return
+    if (!confirm(tip("issConfirmDelete",{c:i.code||"", t:i.title}))) return
     const res = await fetch(`/api/projects/${projectId}/issues/${i.id}`, { method: "DELETE" }).catch(() => null)
     if (res?.ok) { setSelected(null); router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not delete this issue.")
+      alert(d?.error || tip("issDeleteFailed"))
     }
   }
 
   async function create() {
-    if (!form.title.trim()) { setError("Title required"); return }
+    if (!form.title.trim()) { setError(tip("titleRequired")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/projects/${projectId}/issues`, {
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ ...form, ownerId:form.ownerId||null, dueDate:form.dueDate?new Date(form.dueDate+"T00:00:00Z").toISOString():null }),
       })
-      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||"Failed"); return }
+      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||tip("genFailed")); return }
       setCreating(false)
       setForm({ title:"", description:"", category:"Technical", priority:"MEDIUM", impact:"", ownerId:"", dueDate:"" })
       router.refresh()
-    } catch { setError("Network error") } finally { setSaving(false) }
+    } catch { setError(tip("netError")) } finally { setSaving(false) }
   }
 
   async function updateStatus(issueId: string, status: string, extra?: any) {
@@ -158,7 +158,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
         </div>
         <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}
           style={{ ...inp, width:"auto", padding:"5px 10px", fontSize:12 }}>
-          <option value="">All</option>
+          <option value="">{tip("allStatuses")}</option>
           {Object.entries(STATUS_CFG).map(([v,c])=><option key={v} value={v}>{enumLabel(v, locale)}</option>)}
         </select>
         <div style={{ marginLeft:"auto" }}>
@@ -249,7 +249,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>🚩</div>
             <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-              {statusFilter ? `No ${STATUS_CFG[statusFilter]?.label.toLowerCase()} issues` : "No issues logged"}
+              {statusFilter ? tip("issEmptyFiltered",{s:enumLabel(statusFilter, locale)}) : tip("issEmpty")}
             </div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:380, margin:"0 auto 20px" }}>
               Issues are current problems that need resolution — distinct from risks which are potential future threats.
@@ -259,7 +259,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ background:"var(--surface)", borderBottom:"1px solid var(--border)" }}>
-                {["Code","Issue","Category","Priority","Owner","Due","Status",""].map((h,i)=>(
+                {[tip("colCode"),tip("issCol"),tip("colCategory"),tip("priority"),tip("owner"),tip("issDue"),tip("status"),""].map((h,i)=>(
                   <th key={i} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:700,
                     color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".05em" }}>{h}</th>
                 ))}
@@ -291,7 +291,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                     </td>
                     <td style={{ padding:"9px 12px" }}>
                       <span style={{ padding:"3px 9px", borderRadius:12, fontSize:10, fontWeight:700,
-                        color:sc.color, background:sc.bg }}>{sc.label}</span>
+                        color:sc.color, background:sc.bg }}>{enumLabel(issue.status, locale)}</span>
                     </td>
                     <td style={{ padding:"9px 12px", fontSize:11, color:"var(--steel)" }}>{tip("view")}</td>
                   </tr>
@@ -338,7 +338,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                     fontFamily:"var(--font)", border:"1px solid var(--border)", borderRadius:"var(--radius)",
                     background:selected.status===v?c.color:"#fff",
                     color:selected.status===v?"#fff":c.color }}>
-                  {c.label}
+                  {enumLabel(v, locale)}
                 </button>
               ))}
             </div>
@@ -348,7 +348,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                 borderRadius:8, padding:14, display:"flex", flexDirection:"column", gap:10, marginBottom:16 }}>
                 <div>
                   <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                    letterSpacing:".05em", marginBottom:4 }}>Title</div>
+                    letterSpacing:".05em", marginBottom:4 }}>{tip("title")}</div>
                   <input style={inp} value={editIssue.title}
                     onChange={e=>setEditIssue((f:any)=>({...f, title:e.target.value}))} />
                 </div>

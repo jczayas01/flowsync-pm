@@ -8,6 +8,8 @@ import { dateLocale } from "@/lib/date-locale"
 import { FieldCard, EditToggle } from "@/components/shared/FieldCard"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { useRouter } from "next/navigation"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -111,6 +113,9 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
   charter:any; qmp:any; wbsEntries:any[]; requirements:any[];
   minutes:any[]; handover:any; tasks:any[]; members:any[]
 }) {
+  const gh = useTranslations("govHub")
+  const locale = useLocale()
+
   const router = useRouter()
   const [activeDoc, setActiveDoc] = useState("charter")
   const [editing, setEditing] = useState<Record<string,boolean>>({})
@@ -145,7 +150,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         headers:{ "x-workspace-id":workspaceId },
       })
       const d = await res.json()
-      if (!res.ok) { setIngestMsg(`✗ ${d.error||"Ingestion failed"}${d.details ? ` — ${d.details}` : ""}`); return }
+      if (!res.ok) { setIngestMsg(`✗ ${d.error||gh("Ingestion failed")}${d.details ? ` — ${d.details}` : ""}`); return }
       setIngestMsg(`✓ ${d.message}`)
       setTimeout(()=>setIngestMsg(""), 4000)
       router.refresh()
@@ -177,7 +182,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify(charterForm),
       })
-      if (!res.ok) { setError("Save failed"); return }
+      if (!res.ok) { setError(gh("Save failed")); return }
       showSuccess("Team Charter saved"); router.refresh()
     } finally { setSaving(false) }
   }
@@ -195,7 +200,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ ...wbsForm, taskId:wbsForm.taskId||null }),
       })
-      if (!res.ok) { setError("Save failed"); return }
+      if (!res.ok) { setError(gh("Save failed")); return }
       showSuccess("WBS entry added"); setShowWbsForm(false)
       setWbsForm({ code:"", title:"", description:"", acceptanceCriteria:"", responsible:"", taskId:"" })
       router.refresh()
@@ -203,7 +208,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
   }
 
   async function deleteWbsEntry(id:string) {
-    if (!confirm("Delete this WBS entry?")) return
+    if (!confirm(gh("Delete this WBS entry?"))) return
     await fetch(`/api/projects/${projectId}/wbs/${id}`, {
       method:"DELETE", headers:{"x-workspace-id":workspaceId}
     })
@@ -224,7 +229,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ ...reqForm, linkedTaskId:reqForm.linkedTaskId||null }),
       })
-      if (!res.ok) { setError("Save failed"); return }
+      if (!res.ok) { setError(gh("Save failed")); return }
       showSuccess("Requirement added"); setShowReqForm(false)
       setReqForm({ code:"", title:"", description:"", type:"FUNCTIONAL", priority:"MEDIUM", status:"DRAFT", source:"", acceptanceCriteria:"", linkedTaskId:"" })
       router.refresh()
@@ -267,7 +272,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify(qmpForm),
       })
-      if (!res.ok) { setError("Save failed"); return }
+      if (!res.ok) { setError(gh("Save failed")); return }
       showSuccess("Quality Plan saved"); router.refresh()
     } finally { setSaving(false) }
   }
@@ -289,7 +294,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify(minutesForm),
       })
-      if (!res.ok) { setError("Save failed"); return }
+      if (!res.ok) { setError(gh("Save failed")); return }
       showSuccess("Minutes saved"); setShowMinutesForm(false)
       setMinutesForm({ title:"", meetingDate:new Date().toISOString().split("T")[0], meetingType:"STATUS", attendees:"", agenda:"", discussion:"", decisions:"", actionItems:"", nextMeeting:"" })
       router.refresh()
@@ -341,7 +346,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify(handoverForm),
       })
-      if (!res.ok) { setError("Save failed"); return }
+      if (!res.ok) { setError(gh("Save failed")); return }
       showSuccess("Handover Plan saved"); router.refresh()
     } finally { setSaving(false) }
   }
@@ -350,10 +355,10 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
 
   const docStatus = {
     charter:      charter ? "✓" : "—",
-    wbs:          wbsEntries.length > 0 ? `${wbsEntries.length} entries` : "—",
-    requirements: requirements.length > 0 ? `${requirements.length} items` : "—",
+    wbs:          wbsEntries.length > 0 ? gh("entriesCount",{n:wbsEntries.length}) : "—",
+    requirements: requirements.length > 0 ? gh("itemsCount",{n:requirements.length}) : "—",
     quality:      qmp ? "✓" : "—",
-    minutes:      minutes.length > 0 ? `${minutes.length} records` : "—",
+    minutes:      minutes.length > 0 ? gh("recordsCount",{n:minutes.length}) : "—",
     handover:     handover ? "✓" : "—",
   } as Record<string,string>
 
@@ -378,7 +383,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
               <span style={{ fontSize:14 }}>{d.icon}</span>
               <div>
-                <div style={{ fontSize:12, fontWeight:500, color:"#fff" }}>{d.label}</div>
+                <div style={{ fontSize:12, fontWeight:500, color:"#fff" }}>{gh(d.label as any)}</div>
                 <div style={{ fontSize:9, color:"rgba(255,255,255,.4)" }}>{d.standardRef}</div>
               </div>
             </div>
@@ -397,7 +402,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
           marginBottom:14, display:"flex", alignItems:"center", gap:10,
           border:"1px solid var(--border)" }}>
           <span style={{ fontSize:11, color:"var(--text-3)", flex:1 }}>
-            📄 Download a pre-filled Word template · complete it offline · upload to auto-populate project data
+            {gh("templateHint")}
           </span>
           {ingestMsg && (
             <span style={{ fontSize:11, color:ingestMsg.startsWith("✓")?"var(--green)":"var(--red)",
@@ -408,7 +413,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
               borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
               fontFamily:"var(--font)", color:"var(--steel)", fontWeight:600,
               whiteSpace:"nowrap" }}>
-            ⬇ Download template
+            ⬇ {gh("Download template")}
           </button>
           <input type="file" accept=".txt,.docx,.pdf,.doc"
             style={{ display:"none" }}
@@ -418,7 +423,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
             style={{ padding:"6px 12px", background:"var(--steel)", color:"#fff",
               border:"none", borderRadius:"var(--radius)", fontSize:11, fontWeight:600,
               cursor:ingesting?"wait":"pointer", fontFamily:"var(--font)", whiteSpace:"nowrap" }}>
-            {ingesting ? "⏳ Reading…" : "🤖 Upload & AI ingest"}
+            {ingesting ? gh("⏳ Reading…") : gh("🤖 Upload & AI ingest")}
           </button>
         </div>
 
@@ -435,52 +440,52 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="charter" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="Team Charter" guide="governance" icon="🤝"
-                standardRef="PM Standard — Team Performance Domain · Defines team norms, values, and working agreements" />
+              <SectionHeader title={gh("Team Charter")} guide="governance" icon="🤝"
+                standardRef={gh("charterRef")} />
               <EditToggle editing={isEditing("charter")} onClick={()=>toggleEdit("charter")} />
 
               {!isEditing("charter") ? (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  <FieldCard label="Team Vision" icon="🎯" value={charterForm.vision} />
-                  <FieldCard label="Objectives & Success Criteria" icon="✅" value={charterForm.objectives} />
-                  <FieldCard label="Values & Working Agreements" icon="🤝" value={charterForm.values} />
-                  <FieldCard label="Working Norms" icon="⏰" value={charterForm.norms} />
-                  <FieldCard label="Decision-Making" icon="⚖️" value={charterForm.decisionMaking} />
-                  <FieldCard label="Conflict Resolution" icon="🔀" value={charterForm.conflictResolution} />
-                  <FieldCard label="Communication Plan" icon="📢" value={charterForm.communicationPlan} />
-                  <FieldCard label="Tools & Processes" icon="🛠" value={charterForm.toolsAndProcesses} />
+                  <FieldCard label={gh("Team Vision")} icon="🎯" value={charterForm.vision} />
+                  <FieldCard label={gh("Objectives & Success Criteria")} icon="✅" value={charterForm.objectives} />
+                  <FieldCard label={gh("Values & Working Agreements")} icon="🤝" value={charterForm.values} />
+                  <FieldCard label={gh("Working Norms")} icon="⏰" value={charterForm.norms} />
+                  <FieldCard label={gh("Decision-Making")} icon="⚖️" value={charterForm.decisionMaking} />
+                  <FieldCard label={gh("Conflict Resolution")} icon="🔀" value={charterForm.conflictResolution} />
+                  <FieldCard label={gh("Communication Plan")} icon="📢" value={charterForm.communicationPlan} />
+                  <FieldCard label={gh("Tools & Processes")} icon="🛠" value={charterForm.toolsAndProcesses} />
                 </div>
               ) : (
                 <>
-                <TextArea label="Team Vision" value={charterForm.vision}
+                <TextArea label={gh("Team Vision")} value={charterForm.vision}
                   onChange={v=>setCharterForm(f=>({...f,vision:v}))}
-                  placeholder="What does this team aim to achieve together?" />
-                <TextArea label="Objectives & Success Criteria" value={charterForm.objectives}
+                  placeholder={gh("ph0")} />
+                <TextArea label={gh("Objectives & Success Criteria")} value={charterForm.objectives}
                   onChange={v=>setCharterForm(f=>({...f,objectives:v}))}
-                  placeholder="What does success look like for this team?" />
-                <TextArea label="Values & Working Agreements" value={charterForm.values}
+                  placeholder={gh("ph1")} />
+                <TextArea label={gh("Values & Working Agreements")} value={charterForm.values}
                   onChange={v=>setCharterForm(f=>({...f,values:v}))}
-                  placeholder="e.g. Transparency, respect, accountability, quality..." />
-                <TextArea label="Working Norms" value={charterForm.norms}
+                  placeholder={gh("ph2")} />
+                <TextArea label={gh("Working Norms")} value={charterForm.norms}
                   onChange={v=>setCharterForm(f=>({...f,norms:v}))}
-                  placeholder="e.g. Core hours 9-5, daily standup at 9am, no meeting Fridays..." />
-                <TextArea label="Decision-Making" value={charterForm.decisionMaking}
+                  placeholder={gh("ph3")} />
+                <TextArea label={gh("Decision-Making")} value={charterForm.decisionMaking}
                   onChange={v=>setCharterForm(f=>({...f,decisionMaking:v}))}
-                  placeholder="How are decisions made? Who has authority for what?" />
-                <TextArea label="Conflict Resolution" value={charterForm.conflictResolution}
+                  placeholder={gh("ph4")} />
+                <TextArea label={gh("Conflict Resolution")} value={charterForm.conflictResolution}
                   onChange={v=>setCharterForm(f=>({...f,conflictResolution:v}))}
-                  placeholder="How will the team handle disagreements?" />
-                <TextArea label="Communication Plan" value={charterForm.communicationPlan}
+                  placeholder={gh("ph5")} />
+                <TextArea label={gh("Communication Plan")} value={charterForm.communicationPlan}
                   onChange={v=>setCharterForm(f=>({...f,communicationPlan:v}))}
-                  placeholder="Tools used, response time expectations, escalation..." />
-                <TextArea label="Tools & Processes" value={charterForm.toolsAndProcesses}
+                  placeholder={gh("ph6")} />
+                <TextArea label={gh("Tools & Processes")} value={charterForm.toolsAndProcesses}
                   onChange={v=>setCharterForm(f=>({...f,toolsAndProcesses:v}))}
-                  placeholder="Project tools, coding standards, review processes..." />
+                  placeholder={gh("ph7")} />
                   <button onClick={async()=>{ await saveCharter(); toggleEdit("charter") }} disabled={saving}
                     style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
                       border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                       cursor:"pointer", fontFamily:"var(--font)" }}>
-                    {saving?"Saving…":"💾 Save Team Charter"}
+                    {saving?gh("Saving…"):gh("💾 Save Team Charter")}
                   </button>
                 </>
               )}
@@ -492,15 +497,15 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="wbs" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="WBS Dictionary" icon="🗂"
-                standardRef="PM Standard — Planning — Planning Domain · Deliverable descriptions, acceptance criteria per WBS element" />
+              <SectionHeader title={gh("WBS Dictionary")} icon="🗂"
+                standardRef={gh("wbsRef")} />
               <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
                 <button onClick={()=>setShowWbsForm(s=>!s)}
                   style={{ padding:"8px 16px", background:showWbsForm?"#fff":"var(--steel)",
                     color:showWbsForm?"var(--text-2)":"#fff",
                     border:showWbsForm?"1px solid var(--border)":"none",
                     borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)" }}>
-                  {showWbsForm ? "Cancel" : "+ Add WBS entry"}
+                  {showWbsForm ? gh("Cancel") : gh("+ Add WBS entry")}
                 </button>
               </div>
               {showWbsForm && (
@@ -508,39 +513,39 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                   padding:16, marginBottom:16, border:"1px solid var(--border)" }}>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 3fr", gap:12, marginBottom:12 }}>
                     <div>
-                      <label style={lbl}>WBS Code *</label>
+                      <label style={lbl}>{gh("WBS Code *")}</label>
                       <input style={inp} value={wbsForm.code} placeholder="1.2.3"
                         onChange={e=>setWbsForm(f=>({...f,code:e.target.value}))} />
                     </div>
                     <div>
-                      <label style={lbl}>Title / Deliverable name *</label>
-                      <input style={inp} value={wbsForm.title} placeholder="e.g. System Architecture Document"
+                      <label style={lbl}>{gh("Title / Deliverable name *")}</label>
+                      <input style={inp} value={wbsForm.title} placeholder={gh("ph8")}
                         onChange={e=>setWbsForm(f=>({...f,title:e.target.value}))} />
                     </div>
                   </div>
                   <div style={{ marginBottom:10 }}>
-                    <label style={lbl}>Description — What this deliverable is</label>
+                    <label style={lbl}>{gh("Description — What this deliverable is")}</label>
                     <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
-                      value={wbsForm.description} placeholder="Describe this WBS element..."
+                      value={wbsForm.description} placeholder={gh("ph9")}
                       onChange={e=>setWbsForm(f=>({...f,description:e.target.value}))} />
                   </div>
                   <div style={{ marginBottom:10 }}>
-                    <label style={lbl}>Acceptance Criteria</label>
+                    <label style={lbl}>{gh("Acceptance Criteria")}</label>
                     <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
-                      value={wbsForm.acceptanceCriteria} placeholder="What must be true for this to be accepted?"
+                      value={wbsForm.acceptanceCriteria} placeholder={gh("ph10")}
                       onChange={e=>setWbsForm(f=>({...f,acceptanceCriteria:e.target.value}))} />
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
                     <div>
-                      <label style={lbl}>Responsible</label>
-                      <input style={inp} value={wbsForm.responsible} placeholder="Role or person"
+                      <label style={lbl}>{gh("Responsible")}</label>
+                      <input style={inp} value={wbsForm.responsible} placeholder={gh("ph11")}
                         onChange={e=>setWbsForm(f=>({...f,responsible:e.target.value}))} />
                     </div>
                     <div>
-                      <label style={lbl}>Link to task</label>
+                      <label style={lbl}>{gh("Link to task")}</label>
                       <select style={{...inp,cursor:"pointer"}} value={wbsForm.taskId}
                         onChange={e=>setWbsForm(f=>({...f,taskId:e.target.value}))}>
-                        <option value="">No linked task</option>
+                        <option value="">{gh("No linked task")}</option>
                         {tasks.map(t=><option key={t.id} value={t.id}>{t.code}: {t.title}</option>)}
                       </select>
                     </div>
@@ -549,13 +554,13 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                     style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff",
                       border:"none", borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", opacity:(!wbsForm.code||!wbsForm.title)?0.5:1 }}>
-                    {saving?"Saving…":"Add entry"}
+                    {saving?gh("Saving…"):gh("Add entry")}
                   </button>
                 </div>
               )}
               {wbsEntries.length === 0 && !showWbsForm ? (
                 <div style={{ textAlign:"center", padding:"40px", color:"var(--text-3)", fontSize:13 }}>
-                  No WBS entries yet. Click "+ Add WBS entry" to document deliverables.
+                  {gh("wbsEmpty")}
                 </div>
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -592,8 +597,8 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {/* ── REQUIREMENTS ── */}
         {activeDoc==="requirements" && (
           <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24 }}>
-            <SectionHeader title="Requirements Documentation" icon="📋"
-              standardRef="PM Standard — Delivery — Delivery Domain · Functional, non-functional, and business requirements" />
+            <SectionHeader title={gh("Requirements Documentation")} icon="📋"
+              standardRef={gh("reqRef")} />
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
               <div style={{ fontSize:12, color:"var(--text-3)" }}>{requirements.length} requirements</div>
               <button onClick={()=>setShowReqForm(s=>!s)}
@@ -601,7 +606,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                   color:showReqForm?"var(--text-2)":"#fff",
                   border:showReqForm?"1px solid var(--border)":"none",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)" }}>
-                {showReqForm?"Cancel":"+ Add requirement"}
+                {showReqForm?gh("Cancel"):gh("+ Add requirement")}
               </button>
             </div>
             {showReqForm && (
@@ -609,47 +614,47 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                 padding:16, marginBottom:16, border:"1px solid var(--border)" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 3fr", gap:12, marginBottom:10 }}>
                   <div>
-                    <label style={lbl}>Code *</label>
+                    <label style={lbl}>{gh("Code *")}</label>
                     <input style={inp} value={reqForm.code} placeholder="REQ-001"
                       onChange={e=>setReqForm(f=>({...f,code:e.target.value}))} />
                   </div>
                   <div>
-                    <label style={lbl}>Title *</label>
+                    <label style={lbl}>{gh("Title *")}</label>
                     <input style={inp} value={reqForm.title}
                       onChange={e=>setReqForm(f=>({...f,title:e.target.value}))} />
                   </div>
                 </div>
                 <div style={{ marginBottom:10 }}>
-                  <label style={lbl}>Description</label>
+                  <label style={lbl}>{gh("Description")}</label>
                   <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
                     value={reqForm.description}
                     onChange={e=>setReqForm(f=>({...f,description:e.target.value}))} />
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
                   <div>
-                    <label style={lbl}>Type</label>
+                    <label style={lbl}>{gh("Type")}</label>
                     <select style={{...inp,cursor:"pointer"}} value={reqForm.type}
                       onChange={e=>setReqForm(f=>({...f,type:e.target.value}))}>
-                      {REQ_TYPES.map(t=><option key={t}>{t.replace("_"," ")}</option>)}
+                      {REQ_TYPES.map(t=><option key={t} value={t}>{enumLabel(t, locale)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={lbl}>Priority</label>
+                    <label style={lbl}>{gh("Priority")}</label>
                     <select style={{...inp,cursor:"pointer"}} value={reqForm.priority}
                       onChange={e=>setReqForm(f=>({...f,priority:e.target.value}))}>
-                      {["CRITICAL","HIGH","MEDIUM","LOW"].map(p=><option key={p}>{p}</option>)}
+                      {["CRITICAL","HIGH","MEDIUM","LOW"].map(p=><option key={p} value={p}>{enumLabel(p, locale)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={lbl}>Status</label>
+                    <label style={lbl}>{gh("Status")}</label>
                     <select style={{...inp,cursor:"pointer"}} value={reqForm.status}
                       onChange={e=>setReqForm(f=>({...f,status:e.target.value}))}>
-                      {["DRAFT","APPROVED","IMPLEMENTED","VERIFIED","REJECTED"].map(s=><option key={s}>{s}</option>)}
+                      {["DRAFT","APPROVED","IMPLEMENTED","VERIFIED","REJECTED"].map(s=><option key={s} value={s}>{enumLabel(s, locale)}</option>)}
                     </select>
                   </div>
                 </div>
                 <div style={{ marginBottom:10 }}>
-                  <label style={lbl}>Acceptance Criteria</label>
+                  <label style={lbl}>{gh("Acceptance Criteria")}</label>
                   <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                     value={reqForm.acceptanceCriteria}
                     onChange={e=>setReqForm(f=>({...f,acceptanceCriteria:e.target.value}))} />
@@ -658,7 +663,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                   style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff",
                     border:"none", borderRadius:"var(--radius)", fontSize:12,
                     cursor:"pointer", fontFamily:"var(--font)" }}>
-                  {saving?"Saving…":"Add requirement"}
+                  {saving?gh("Saving…"):gh("Add requirement")}
                 </button>
               </div>
             )}
@@ -685,7 +690,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
               })}
               {requirements.length===0 && !showReqForm && (
                 <div style={{ textAlign:"center", padding:40, color:"var(--text-3)", fontSize:13 }}>
-                  No requirements yet. Click "+ Add requirement" to start.
+                  {gh("reqEmpty")}
                 </div>
               )}
             </div>
@@ -696,52 +701,52 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="quality" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="Quality Management Plan" guide="governance" icon="✅"
-                standardRef="PM Standard — Measurement — Delivery Domain · Quality standards, objectives, processes and metrics" />
+              <SectionHeader title={gh("Quality Management Plan")} guide="governance" icon="✅"
+                standardRef={gh("qmpRef")} />
               <EditToggle editing={isEditing("quality")} onClick={()=>toggleEdit("quality")} />
 
               {!isEditing("quality") ? (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  <FieldCard label="Standards" icon="📏" value={qmpForm.qualityStandards} />
-                  <FieldCard label="Objectives" icon="🎯" value={qmpForm.qualityObjectives} />
-                  <FieldCard label="Roles" icon="👥" value={qmpForm.roles} />
-                  <FieldCard label="QA Processes" icon="⚙️" value={qmpForm.processes} />
-                  <FieldCard label="QC Tools" icon="🛠" value={qmpForm.tools} />
-                  <FieldCard label="Metrics" icon="📊" value={qmpForm.metrics} />
-                  <FieldCard label="Audit Schedule" icon="🔍" value={qmpForm.audits} />
-                  <FieldCard label="Non-Conformance" icon="⚠️" value={qmpForm.nonConformance} />
+                  <FieldCard label={gh("Standards")} icon="📏" value={qmpForm.qualityStandards} />
+                  <FieldCard label={gh("Objectives")} icon="🎯" value={qmpForm.qualityObjectives} />
+                  <FieldCard label={gh("Roles")} icon="👥" value={qmpForm.roles} />
+                  <FieldCard label={gh("QA Processes")} icon="⚙️" value={qmpForm.processes} />
+                  <FieldCard label={gh("QC Tools")} icon="🛠" value={qmpForm.tools} />
+                  <FieldCard label={gh("Metrics")} icon="📊" value={qmpForm.metrics} />
+                  <FieldCard label={gh("Audit Schedule")} icon="🔍" value={qmpForm.audits} />
+                  <FieldCard label={gh("Non-Conformance")} icon="⚠️" value={qmpForm.nonConformance} />
                 </div>
               ) : (
                 <>
-                <TextArea label="Standards" value={qmpForm.qualityStandards}
+                <TextArea label={gh("Standards")} value={qmpForm.qualityStandards}
                   onChange={v=>setQmpForm(f=>({...f,qualityStandards:v}))}
-                  placeholder="e.g. ISO 9001, CMMI Level 3, organizational quality standards..." />
-                <TextArea label="Objectives" value={qmpForm.qualityObjectives}
+                  placeholder={gh("ph12")} />
+                <TextArea label={gh("Objectives")} value={qmpForm.qualityObjectives}
                   onChange={v=>setQmpForm(f=>({...f,qualityObjectives:v}))}
-                  placeholder="Measurable quality targets for this project..." />
-                <TextArea label="Roles" value={qmpForm.roles}
+                  placeholder={gh("ph13")} />
+                <TextArea label={gh("Roles")} value={qmpForm.roles}
                   onChange={v=>setQmpForm(f=>({...f,roles:v}))}
-                  placeholder="Who owns quality? Reviewers, approvers, QA lead..." />
-                <TextArea label="QA Processes" value={qmpForm.processes}
+                  placeholder={gh("ph14")} />
+                <TextArea label={gh("QA Processes")} value={qmpForm.processes}
                   onChange={v=>setQmpForm(f=>({...f,processes:v}))}
-                  placeholder="Reviews, testing approach, inspections, sign-off process..." />
-                <TextArea label="QC Tools" value={qmpForm.tools}
+                  placeholder={gh("ph15")} />
+                <TextArea label={gh("QC Tools")} value={qmpForm.tools}
                   onChange={v=>setQmpForm(f=>({...f,tools:v}))}
-                  placeholder="Tools used for quality assurance and control..." />
-                <TextArea label="Metrics" value={qmpForm.metrics}
+                  placeholder={gh("ph16")} />
+                <TextArea label={gh("Metrics")} value={qmpForm.metrics}
                   onChange={v=>setQmpForm(f=>({...f,metrics:v}))}
-                  placeholder="Defect rate, test coverage, satisfaction targets..." />
-                <TextArea label="Audit Schedule" value={qmpForm.audits}
+                  placeholder={gh("ph17")} />
+                <TextArea label={gh("Audit Schedule")} value={qmpForm.audits}
                   onChange={v=>setQmpForm(f=>({...f,audits:v}))}
-                  placeholder="Planned quality audits, dates and focus..." />
-                <TextArea label="Non-Conformance" value={qmpForm.nonConformance}
+                  placeholder={gh("ph18")} />
+                <TextArea label={gh("Non-Conformance")} value={qmpForm.nonConformance}
                   onChange={v=>setQmpForm(f=>({...f,nonConformance:v}))}
-                  placeholder="What happens when standards are not met..." />
+                  placeholder={gh("ph19")} />
                   <button onClick={async()=>{ await saveQmp(); toggleEdit("quality") }} disabled={saving}
                     style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
                       border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                       cursor:"pointer", fontFamily:"var(--font)" }}>
-                    {saving?"Saving…":"💾 Save Quality Plan"}
+                    {saving?gh("Saving…"):gh("💾 Save Quality Plan")}
                   </button>
                 </>
               )}
@@ -755,15 +760,15 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
                 <div>
-                  <SectionHeader title="Meeting Minutes" icon="📝"
-                    standardRef="PM Standard — Delivery — Delivery Domain · Formal meeting records, decisions, and action items" />
+                  <SectionHeader title={gh("Meeting Minutes")} icon="📝"
+                    standardRef={gh("minutesRef")} />
                 </div>
                 <button onClick={()=>setShowMinutesForm(s=>!s)}
                   style={{ padding:"8px 16px", background:showMinutesForm?"#fff":"var(--steel)",
                     color:showMinutesForm?"var(--text-2)":"#fff",
                     border:showMinutesForm?"1px solid var(--border)":"none",
                     borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)" }}>
-                  {showMinutesForm?"Cancel":"+ New minutes"}
+                  {showMinutesForm?gh("Cancel"):gh("+ New minutes")}
                 </button>
               </div>
 
@@ -772,43 +777,43 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                   padding:16, marginBottom:16, border:"1px solid var(--border)" }}>
                   <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:12, marginBottom:12 }}>
                     <div>
-                      <label style={lbl}>Meeting title *</label>
+                      <label style={lbl}>{gh("Meeting title *")}</label>
                       <input style={inp} value={minutesForm.title}
                         onChange={e=>setMinutesForm(f=>({...f,title:e.target.value}))}
-                        placeholder="e.g. Sprint 4 Planning Meeting" />
+                        placeholder={gh("ph20")} />
                     </div>
                     <div>
-                      <label style={lbl}>Date</label>
+                      <label style={lbl}>{gh("Date")}</label>
                       <DateField  style={inp} value={minutesForm.meetingDate}
                         onChange={e=>setMinutesForm(f=>({...f,meetingDate:e.target.value}))} />
                     </div>
                     <div>
-                      <label style={lbl}>Type</label>
+                      <label style={lbl}>{gh("Type")}</label>
                       <select style={{...inp,cursor:"pointer"}} value={minutesForm.meetingType}
                         onChange={e=>setMinutesForm(f=>({...f,meetingType:e.target.value}))}>
-                        {MTG_TYPES.map(t=><option key={t}>{t.replace("_"," ")}</option>)}
+                        {MTG_TYPES.map(t=><option key={t} value={t}>{enumLabel(t, locale)}</option>)}
                       </select>
                     </div>
                   </div>
                   <div style={{ marginBottom:10 }}>
-                    <label style={lbl}>Attendees</label>
-                    <input style={inp} value={minutesForm.attendees} placeholder="Names, roles..."
+                    <label style={lbl}>{gh("Attendees")}</label>
+                    <input style={inp} value={minutesForm.attendees} placeholder={gh("ph21")}
                       onChange={e=>setMinutesForm(f=>({...f,attendees:e.target.value}))} />
                   </div>
-                  <TextArea label="Agenda" value={minutesForm.agenda}
+                  <TextArea label={gh("Agenda")} value={minutesForm.agenda}
                     onChange={v=>setMinutesForm(f=>({...f,agenda:v}))} rows={2}
-                    placeholder="Topics discussed..." />
-                  <TextArea label="Discussion / Notes" value={minutesForm.discussion}
+                    placeholder={gh("ph22")} />
+                  <TextArea label={gh("Discussion / Notes")} value={minutesForm.discussion}
                     onChange={v=>setMinutesForm(f=>({...f,discussion:v}))} rows={4}
-                    placeholder="Key discussion points, context..." />
-                  <TextArea label="Decisions Made" value={minutesForm.decisions}
+                    placeholder={gh("ph23")} />
+                  <TextArea label={gh("Decisions Made")} value={minutesForm.decisions}
                     onChange={v=>setMinutesForm(f=>({...f,decisions:v}))} rows={2}
-                    placeholder="Decisions and their rationale..." />
-                  <TextArea label="Action Items" value={minutesForm.actionItems}
+                    placeholder={gh("ph24")} />
+                  <TextArea label={gh("Action Items")} value={minutesForm.actionItems}
                     onChange={v=>setMinutesForm(f=>({...f,actionItems:v}))} rows={2}
-                    placeholder="Who does what by when? (e.g. Juan: complete risk assessment by Jul 15)" />
+                    placeholder={gh("ph25")} />
                   <div style={{ marginBottom:12 }}>
-                    <label style={lbl}>Next meeting date</label>
+                    <label style={lbl}>{gh("Next meeting date")}</label>
                     <DateField  style={{...inp,width:"auto"}} value={minutesForm.nextMeeting}
                       onChange={e=>setMinutesForm(f=>({...f,nextMeeting:e.target.value}))} />
                   </div>
@@ -817,14 +822,14 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                       border:"none", borderRadius:"var(--radius)", fontSize:12,
                       cursor:"pointer", fontFamily:"var(--font)",
                       opacity:!minutesForm.title?0.5:1 }}>
-                    {saving?"Saving…":"Save minutes"}
+                    {saving?gh("Saving…"):gh("Save minutes")}
                   </button>
                 </div>
               )}
 
               {minutes.length===0 && !showMinutesForm ? (
                 <div style={{ textAlign:"center", padding:40, color:"var(--text-3)", fontSize:13 }}>
-                  No meeting minutes yet. Click "+ New minutes" to record your first meeting.
+                  {gh("minutesEmpty")}
                 </div>
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -868,48 +873,48 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
         {activeDoc==="handover" && (
           <div>
             <div style={{ background:"#fff", borderRadius:"var(--radius)", padding:24, marginBottom:12 }}>
-              <SectionHeader title="Transition & Handover Plan" guide="governance" icon="🔄"
-                standardRef="PM Best Practices — Closing Domain · Operational handover to sustaining organization" />
+              <SectionHeader title={gh("Transition & Handover Plan")} guide="governance" icon="🔄"
+                standardRef={gh("handoverRef")} />
               <EditToggle editing={isEditing("handover")} onClick={()=>toggleEdit("handover")} />
 
               {!isEditing("handover") ? (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  <FieldCard label="Overview" icon="📖" value={handoverForm.overview} />
-                  <FieldCard label="Receiving Team" icon="👤" value={handoverForm.operationsContact} />
-                  <FieldCard label="Systems" icon="🖥" value={handoverForm.systemsHandedOver} />
-                  <FieldCard label="Documentation" icon="📚" value={handoverForm.documentation} />
-                  <FieldCard label="Training" icon="🎓" value={handoverForm.trainingCompleted} />
-                  <FieldCard label="Known Issues" icon="⚠️" value={handoverForm.knownIssues} />
-                  <FieldCard label="Support" icon="🛟" value={handoverForm.supportArrangements} />
-                  <FieldCard label="Handover Date" icon="📅"
+                  <FieldCard label={gh("Overview")} icon="📖" value={handoverForm.overview} />
+                  <FieldCard label={gh("Receiving Team")} icon="👤" value={handoverForm.operationsContact} />
+                  <FieldCard label={gh("Systems")} icon="🖥" value={handoverForm.systemsHandedOver} />
+                  <FieldCard label={gh("Documentation")} icon="📚" value={handoverForm.documentation} />
+                  <FieldCard label={gh("Training")} icon="🎓" value={handoverForm.trainingCompleted} />
+                  <FieldCard label={gh("Known Issues")} icon="⚠️" value={handoverForm.knownIssues} />
+                  <FieldCard label={gh("Support")} icon="🛟" value={handoverForm.supportArrangements} />
+                  <FieldCard label={gh("Handover Date")} icon="📅"
                     value={handoverForm.handoverDate ? new Date(handoverForm.handoverDate + "T00:00:00")
                       .toLocaleDateString(dateLocale(),{month:"long",day:"numeric",year:"numeric"}) : ""} />
                 </div>
               ) : (
                 <>
-                <TextArea label="Overview" value={handoverForm.overview}
+                <TextArea label={gh("Overview")} value={handoverForm.overview}
                   onChange={v=>setHandoverForm(f=>({...f,overview:v}))}
-                  placeholder="Summary of what is being handed over and to whom..." />
-                <TextArea label="Receiving Team" value={handoverForm.operationsContact}
+                  placeholder={gh("ph26")} />
+                <TextArea label={gh("Receiving Team")} value={handoverForm.operationsContact}
                   onChange={v=>setHandoverForm(f=>({...f,operationsContact:v}))}
-                  placeholder="Name, role, and contact info of the receiving team/person..." />
-                <TextArea label="Systems" value={handoverForm.systemsHandedOver}
+                  placeholder={gh("ph27")} />
+                <TextArea label={gh("Systems")} value={handoverForm.systemsHandedOver}
                   onChange={v=>setHandoverForm(f=>({...f,systemsHandedOver:v}))}
-                  placeholder="Systems and deliverables being transferred..." />
-                <TextArea label="Documentation" value={handoverForm.documentation}
+                  placeholder={gh("ph28")} />
+                <TextArea label={gh("Documentation")} value={handoverForm.documentation}
                   onChange={v=>setHandoverForm(f=>({...f,documentation:v}))}
-                  placeholder="Documentation provided to the receiving team..." />
-                <TextArea label="Training" value={handoverForm.trainingCompleted}
+                  placeholder={gh("ph29")} />
+                <TextArea label={gh("Training")} value={handoverForm.trainingCompleted}
                   onChange={v=>setHandoverForm(f=>({...f,trainingCompleted:v}))}
-                  placeholder="Training sessions delivered, attendees, topics..." />
-                <TextArea label="Known Issues" value={handoverForm.knownIssues}
+                  placeholder={gh("ph30")} />
+                <TextArea label={gh("Known Issues")} value={handoverForm.knownIssues}
                   onChange={v=>setHandoverForm(f=>({...f,knownIssues:v}))}
-                  placeholder="Open issues and their workarounds..." />
-                <TextArea label="Support" value={handoverForm.supportArrangements}
+                  placeholder={gh("ph31")} />
+                <TextArea label={gh("Support")} value={handoverForm.supportArrangements}
                   onChange={v=>setHandoverForm(f=>({...f,supportArrangements:v}))}
-                  placeholder="Support period, contacts, escalation, SLA..." />
+                  placeholder={gh("ph32")} />
                   <div style={{ marginBottom:14 }}>
-                    <label style={lbl}>Handover Date</label>
+                    <label style={lbl}>{gh("Handover Date")}</label>
                     <DateField style={{...inp, width:"auto"}} value={handoverForm.handoverDate}
                       onChange={e=>setHandoverForm(f=>({...f, handoverDate:e.target.value}))} />
                   </div>
@@ -917,7 +922,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                     style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
                       border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                       cursor:"pointer", fontFamily:"var(--font)" }}>
-                    {saving?"Saving…":"💾 Save Handover Plan"}
+                    {saving?gh("Saving…"):gh("💾 Save Handover Plan")}
                   </button>
                 </>
               )}

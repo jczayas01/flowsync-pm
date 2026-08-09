@@ -6,6 +6,7 @@ import { dateLocale } from "@/lib/date-locale"
 import { M365ImportModal } from "@/components/projects/M365ImportModal"
 import { ProjectAIOverviewTab } from "@/components/projects/tabs/ProjectAIOverviewTab"
 import { useState, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
 import { DocumentEditor } from "@/components/documents/DocumentEditor"
@@ -42,11 +43,11 @@ function fmtDate(d: string | Date) {
 }
 
 const CONTENT_TYPES = [
-  { value:"email",         label:"Email" },
-  { value:"teams_meeting", label:"Teams meeting transcript" },
-  { value:"teams_chat",    label:"Teams chat" },
-  { value:"document",      label:"Document / report" },
-  { value:"notes",         label:"Meeting notes" },
+  { value:"email",         label:"srcEmail" },
+  { value:"teams_meeting", label:"srcTeamsMeeting" },
+  { value:"teams_chat",    label:"srcTeamsChat" },
+  { value:"document",      label:"srcDocument" },
+  { value:"notes",         label:"srcNotes" },
 ]
 
 const HEALTH_COLOR: Record<string,string> = {
@@ -62,6 +63,7 @@ const SENTIMENT_COLOR: Record<string,string> = {
 export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project, documents, members }: {
   projectId: string; workspaceId: string; workspaceName: string; project: any; documents: any[]; members: any[]
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
   const { can } = usePermissions()
   const canShare = can("projects:edit")
@@ -118,7 +120,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
     const errors: string[] = []
     for (let i = 0; i < items.length; i++) {
       const file = items[i]
-      setUploadSuccess(items.length > 1 ? `Uploading ${i + 1}/${items.length} — ${file.name}` : "")
+      setUploadSuccess(items.length > 1 ? tip("docUploadingN",{i:i+1,t:items.length,f:file.name}) : "")
       try {
         const fd = new FormData()
         fd.append("file", file)
@@ -129,12 +131,12 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
         if (!res.ok) errors.push(`${file.name}: ${data.error || `failed (${res.status})`}`)
         else { setFiles(f => [data.data, ...f]); okCount++ }
       } catch {
-        errors.push(`${file.name}: network error`)
+        errors.push(`${file.name}: ${tip("netError")}`)
       }
     }
     setUploading(false)
     setUploadSuccess(okCount
-      ? `${okCount} file${okCount === 1 ? "" : "s"} uploaded successfully`
+      ? tip("docUploadedOk",{n:okCount})
       : "")
     if (okCount) setTimeout(() => setUploadSuccess(""), 4000)
     setUploadError(errors.join(" · "))
@@ -147,7 +149,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   }
 
   async function handleDelete(docId: string, name: string) {
-    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+    if (!confirm(tip("docConfirmDelete",{n:name}))) return
     setDeletingId(docId)
     try {
       await fetch(`/api/projects/${projectId}/documents/${docId}`, { method:"DELETE" })
@@ -165,10 +167,10 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
   const effWeek = (doc: any) => weekStartOf(doc.weekOf || doc.createdAt)
   const thisWeekTs = weekStartOf(new Date()).getTime()
   const weekLabel = (s: Date) => {
-    if (s.getTime() === thisWeekTs) return "This week"
+    if (s.getTime() === thisWeekTs) return tip("docThisWeek")
     const end = new Date(s); end.setDate(s.getDate() + 6)
     const f = (d: Date) => d.toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })
-    return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
+    return tip("docWeekOf",{a:f(s),b:f(end),y:end.getFullYear()})
   }
   function groupByWeek(list: any[]) {
     const groups: { start: Date; docs: any[] }[] = []
@@ -209,8 +211,8 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",
         padding:"0 16px", display:"flex", gap:0, flexShrink:0 }}>
         {[
-          { id:"files", label:"📎 Files" },
-          { id:"ai",    label:"🤖 AI Analysis" },
+          { id:"files", label:"📎 "+tip("docFiles") },
+          { id:"ai",    label:"🤖 "+tip("docAI") },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             style={{ padding:"12px 16px", border:"none", background:"none",
@@ -244,14 +246,14 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
               background:"rgba(27,108,168,.06)", display:"grid", placeItems:"center" }}>
               <div style={{ background:"#fff", border:"1.5px dashed var(--steel)", borderRadius:10,
                 padding:"12px 22px", fontSize:13, fontWeight:600, color:"var(--steel)" }}>
-                Drop files to upload
+                {tip("docDrop")}
               </div>
             </div>
           )}
           <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",
             padding:"12px 16px", display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
             <span style={{ fontSize:13, color:"var(--text-3)" }}>
-              {files.length} document{files.length!==1?"s":""}
+              {tip("docCount",{n:files.length})}
             </span>
             {uploadError && (
               <span style={{ fontSize:12, color:"var(--red)" }}>✗ {uploadError}</span>
@@ -268,13 +270,13 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                 borderRadius:"var(--radius)", fontSize:13, fontWeight:600, cursor:"pointer",
                 fontFamily:"var(--font)" }}>
               <svg width="14" height="14" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
-              Import from 365
+              {tip("docImport365")}
             </button>
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
                 style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                   cursor:uploading?"wait":"pointer", fontFamily:"var(--font)" }}>
-                {uploading ? "Uploading…" : "📎 Upload file"}
+                {uploading ? tip("docUploading") : "📎 "+tip("docUploadFile")}
               </button>
             </div>
           </div>
@@ -284,16 +286,16 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
               <div style={{ textAlign:"center", padding:"60px 20px" }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>📂</div>
                 <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:6 }}>
-                  No files yet
+                  {tip("docEmptyTitle")}
                 </div>
                 <div style={{ fontSize:13, color:"var(--text-3)", marginBottom:20 }}>
-                  Upload proposals, contracts, meeting minutes, emails, or any project document.
+                  {tip("docEmptyBody")}
                 </div>
                 <button onClick={() => fileRef.current?.click()}
                   style={{ padding:"10px 20px", background:"var(--steel)", color:"#fff", border:"none",
                     borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
                     fontFamily:"var(--font)" }}>
-                  Upload first file
+                  {tip("docUploadFirst")}
                 </button>
                 <div style={{ marginTop:10 }}>
                   <button onClick={() => setM365Open(true)}
@@ -302,7 +304,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       borderRadius:"var(--radius)", fontSize:13, fontWeight:600, cursor:"pointer",
                       fontFamily:"var(--font)" }}>
                     <svg width="13" height="13" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
-                    Import from Microsoft 365
+                    {tip("docImportM365Long")}
                   </button>
                 </div>
               </div>
@@ -319,11 +321,11 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                     </span>
                     <a href={viewingPdf.url} download={viewingPdf.name}
                       style={{ fontSize:11, color:"var(--steel)", textDecoration:"none" }}>
-                      ↓ Download
+                      ↓ {tip("docDownload")}
                     </a>
                     <button onClick={()=>setViewingPdf(null)}
                       style={{ fontSize:12, color:"var(--text-3)", background:"none", border:"none",
-                        cursor:"pointer", fontFamily:"var(--font)" }}>✕ Close</button>
+                        cursor:"pointer", fontFamily:"var(--font)" }}>✕ {tip("docClose")}</button>
                   </div>
                   {viewingPdf.kind === "pdf" ? (
                     <iframe
@@ -335,10 +337,10 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                     <div style={{ height:600, overflow:"auto", padding:"24px 28px",
                       background:"#fff", color:"#111", lineHeight:1.6, fontSize:14 }}>
                       {viewingPdf.loading ? (
-                        <div style={{ color:"#666", fontSize:13 }}>Rendering preview…</div>
+                        <div style={{ color:"#666", fontSize:13 }}>{tip("docRendering")}</div>
                       ) : viewingPdf.error ? (
                         <div style={{ color:"#666", fontSize:13 }}>
-                          {viewingPdf.error} — use ↓ Download to open the file.
+                          {viewingPdf.error} — {tip("docUseDownload")}
                         </div>
                       ) : (
                         <div className="docx-preview"
@@ -406,10 +408,10 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                           try {
                             const res = await fetch(`/api/projects/${projectId}/documents/${doc.id}/preview?workspaceId=${workspaceId}`)
                             const data = await res.json()
-                            if (!res.ok) throw new Error(data?.error || "Preview unavailable")
+                            if (!res.ok) throw new Error(data?.error || tip("docNoPreview"))
                             setViewingPdf({ name:doc.name, url, kind:"docx", html:data.html })
                           } catch (e:any) {
-                            setViewingPdf({ name:doc.name, url, kind:"docx", error:e?.message || "Preview unavailable" })
+                            setViewingPdf({ name:doc.name, url, kind:"docx", error:e?.message || tip("docNoPreview") })
                           }
                         } else {
                           window.open(url, "_blank")
@@ -419,27 +421,27 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                           border:"1px solid var(--border)", borderRadius:"var(--radius)",
                           fontSize:12, color:"var(--text-2)", textDecoration:"none",
                           cursor:"pointer", fontFamily:"var(--font)", outline:"none" }}>
-                        👁 Preview
+                        👁 {tip("docPreview")}
                       </button>
                       <a href={doc.fileUrl} download={doc.name}
                         style={{ flex:1, padding:"6px 0", textAlign:"center", background:"var(--surface)",
                           border:"1px solid var(--border)", borderRadius:"var(--radius)",
                           fontSize:12, color:"var(--text-2)", textDecoration:"none",
                           cursor:"pointer", fontFamily:"var(--font)" }}>
-                        ↓ Download
+                        ↓ {tip("docDownload")}
                       </a>
                       {canShare && (
                         <div style={{ position:"relative" }}>
                           <button onClick={() => setPickerDoc(pickerDoc===doc.id ? null : doc.id)}
-                            title="Share with members or clients"
+                            title={tip("docShareTip")}
                             style={{ padding:"6px 10px", borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                               fontFamily:"var(--font)", whiteSpace:"nowrap",
                               background: (doc.shares?.length || doc.sharedWithClient) ? "#ECFDF5" : "#fff",
                               border: "1px solid " + ((doc.shares?.length || doc.sharedWithClient) ? "#6EE7B7" : "var(--border)"),
                               color: (doc.shares?.length || doc.sharedWithClient) ? "#059669" : "var(--text-2)" }}>
                             {(doc.shares?.length || doc.sharedWithClient)
-                              ? `✓ Shared${doc.shares?.length ? ` (${doc.shares.length})` : ""}`
-                              : "Share"}
+                              ? `✓ ${tip("docShared")}${doc.shares?.length ? ` (${doc.shares.length})` : ""}`
+                              : tip("docShare")}
                           </button>
                           {pickerDoc===doc.id && (
                             <>
@@ -448,7 +450,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                                 overflowY:"auto", background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)",
                                 boxShadow:"0 8px 24px rgba(0,0,0,.14)", zIndex:41, padding:8 }}>
                                 <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                                  letterSpacing:".05em", padding:"4px 6px" }}>Share with members</div>
+                                  letterSpacing:".05em", padding:"4px 6px" }}>{tip("docShareMembers")}</div>
                                 {members.map((m:any) => {
                                   const uid = m.user?.id || m.userId
                                   const checked = (doc.shares||[]).some((s:any)=>s.userId===uid)
@@ -467,7 +469,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                                   <label style={{ display:"flex", alignItems:"center", gap:8, padding:"6px",
                                     cursor:"pointer", fontSize:13 }}>
                                     <input type="checkbox" checked={!!doc.sharedWithClient} onChange={()=>toggleShare(doc)} />
-                                    <span style={{ color:"var(--text-1)" }}>All clients on this project</span>
+                                    <span style={{ color:"var(--text-1)" }}>{tip("docAllClients")}</span>
                                   </label>
                                 </div>
                               </div>
@@ -477,7 +479,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                       )}
                       <div style={{ position:"relative" }}>
                         <button onClick={() => setMovingWeekDocId(movingWeekDocId===doc.id ? null : doc.id)}
-                          title="Move this document to another week"
+                          title={tip("docMoveWeekTip")}
                           style={{ padding:"6px 10px", background:"#fff", border:"1px solid var(--border)",
                             borderRadius:"var(--radius)", fontSize:12, color:"var(--text-2)",
                             cursor:"pointer", fontFamily:"var(--font)" }}>
@@ -489,14 +491,14 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                             boxShadow:"var(--shadow-md)", padding:6, width:230, maxHeight:220, overflowY:"auto" }}>
                             <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
                               letterSpacing:".05em", color:"var(--text-3)", padding:"4px 6px" }}>
-                              Move to week
+                              {tip("docMoveWeek")}
                             </div>
                             {doc.weekOf && (
                               <button onClick={() => moveDocToWeek(doc, null)}
                                 style={{ display:"block", width:"100%", textAlign:"left", padding:"6px 8px",
                                   background:"none", border:"none", fontSize:12, color:"var(--text-2)",
                                   cursor:"pointer", fontFamily:"var(--font)" }}>
-                                ↩ Reset to upload week
+                                ↩ {tip("docResetWeek")}
                               </button>
                             )}
                             {weekOptions.map(w => {
@@ -522,7 +524,7 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
                         style={{ padding:"6px 10px", background:"#fff", border:"1px solid #FECACA",
                           borderRadius:"var(--radius)", fontSize:12, color:"var(--red)",
                           cursor:"pointer", fontFamily:"var(--font)" }}>
-                        {deletingId === doc.id ? "…" : "Delete"}
+                        {deletingId === doc.id ? "…" : tip("delete")}
                       </button>
                       )}
                     </div>

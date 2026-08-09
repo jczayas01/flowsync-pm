@@ -56,6 +56,7 @@ function startOfWeek(d: Date) {
 function MethodologyPanelAgile({ tasks, phases, milestones }: {
   tasks:any[]; phases:any[]; milestones:any[]
 }) {
+  const td = useTranslations("projectDash")
   const sprints = phases.filter(p =>
     p.name?.toLowerCase().includes("sprint") || p.name?.toLowerCase().includes("iteration")
   )
@@ -141,7 +142,7 @@ function MethodologyPanelAgile({ tasks, phases, milestones }: {
         {sprintVelocities.length >= 2 && (
           <div style={{ flexShrink:0 }}>
             <div style={{ fontSize:9, color:"#7C3AED", fontWeight:700, marginBottom:4,
-              textTransform:"uppercase", letterSpacing:".05em" }}>Velocity trend</div>
+              textTransform:"uppercase", letterSpacing:".05em" }}>{td("Velocity trend")}</div>
             <svg width={chartW} height={chartH} style={{ overflow:"visible" }}>
               <path d={pathD} fill="none" stroke="#7C3AED" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
               {points.map((p,i)=>(
@@ -184,11 +185,12 @@ function MethodologyPanelAgile({ tasks, phases, milestones }: {
 function MethodologyPanelWaterfall({ phases, milestones, tasks }: {
   phases:any[]; milestones:any[]; tasks:any[]
 }) {
+  const td = useTranslations("projectDash")
   const PHASE_STATUS: Record<string,{color:string;bg:string;label:string}> = {
-    COMPLETED:   { color:"#059669", bg:"#ECFDF5", label:"Complete"    },
-    IN_PROGRESS: { color:"#1B6CA8", bg:"#EFF6FF", label:"In Progress" },
-    PENDING:     { color:"#94A3B8", bg:"#F8FAFC", label:"Pending"     },
-    ON_HOLD:     { color:"#F59E0B", bg:"#FFFBEB", label:"On Hold"     },
+    COMPLETED:   { color:"#059669", bg:"#ECFDF5", label:td("Complete")    },
+    IN_PROGRESS: { color:"#1B6CA8", bg:"#EFF6FF", label:td("In progress") },
+    PENDING:     { color:"#94A3B8", bg:"#F8FAFC", label:td("Pending")     },
+    ON_HOLD:     { color:"#F59E0B", bg:"#FFFBEB", label:td("On hold")     },
   }
 
   // Derive each phase's progress from its tasks (matches Gantt & Tasks tab)
@@ -335,7 +337,7 @@ export function ProjectDashboardTab({
     }).catch(() => null)
     setMsBusy(null)
     if (r?.ok) { setMsAdding(false); setMsForm({ name:"", dueDate:"" }); msRouter.refresh() }
-    else alert("Could not create the milestone.")
+    else alert(td("msCreateFailed"))
   }
 
   async function msPatch(id: string, body: any) {
@@ -345,15 +347,15 @@ export function ProjectDashboardTab({
     }).catch(() => null)
     setMsBusy(null)
     if (r?.ok) { setMsEdit(null); msRouter.refresh() }
-    else alert("Could not update the milestone.")
+    else alert(td("msUpdateFailed"))
   }
 
   async function msDelete(id: string, name: string) {
-    if (!confirm(`Delete milestone "${name}"? This cannot be undone.`)) return
+    if (!confirm(td("msConfirmDelete",{n:name}))) return
     setMsBusy(id)
     const r = await fetch(`/api/projects/${projectId}/milestones/${id}`, { method:"DELETE" }).catch(() => null)
     setMsBusy(null)
-    if (r?.ok) msRouter.refresh(); else alert("Could not delete the milestone.")
+    if (r?.ok) msRouter.refresh(); else alert(td("msDeleteFailed"))
   }
 
   const td = useTranslations("projectDash")
@@ -459,12 +461,12 @@ export function ProjectDashboardTab({
                   style={{ padding:"6px 14px", background:"var(--steel)", color:"#fff",
                     border:"none", borderRadius:"var(--radius)", fontSize:12,
                     cursor:"pointer", fontFamily:"var(--font)" }}>
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? td("Saving…") : td("Save")}
                 </button>
                 <button onClick={() => setEditField(null)}
                   style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                    fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                    fontFamily:"var(--font)", color:"var(--text-2)" }}>{td("Cancel")}</button>
               </div>
             </div>
           ) : value ? (
@@ -561,7 +563,7 @@ export function ProjectDashboardTab({
 
         {msAdding && (
           <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
-            <input autoFocus value={msForm.name} placeholder="Milestone name (e.g. UAT approval)"
+            <input autoFocus value={msForm.name} placeholder={td("msNamePh")}
               onChange={e => setMsForm(f => ({ ...f, name:e.target.value }))}
               onKeyDown={e => { if (e.key === "Enter") msCreate() }}
               style={{ flex:"1 1 260px", padding:"7px 10px", fontSize:13, borderRadius:6,
@@ -618,11 +620,11 @@ export function ProjectDashboardTab({
                         })}
                         style={{ flex:1, padding:"5px 0", background:"var(--steel)", color:"#fff",
                           border:"none", borderRadius:5, fontSize:11.5, fontWeight:700,
-                          cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                          cursor:"pointer", fontFamily:"var(--font)" }}>{td("Save")}</button>
                       <button onClick={() => setMsEdit(null)}
                         style={{ padding:"5px 10px", background:"none", border:"1px solid var(--border)",
                           borderRadius:5, fontSize:11.5, cursor:"pointer", color:"var(--text-3)",
-                          fontFamily:"var(--font)" }}>Cancel</button>
+                          fontFamily:"var(--font)" }}>{td("Cancel")}</button>
                     </div>
                   </div>
                 ) : (
@@ -656,7 +658,7 @@ export function ProjectDashboardTab({
                         }}
                         style={{ fontSize:11, padding:"3px 8px", borderRadius:5, cursor:"pointer",
                           background:"none", border:"1px solid var(--border)", color:"var(--text-3)",
-                          fontFamily:"var(--font)" }}>Edit</button>
+                          fontFamily:"var(--font)" }}>{td("Edit")}</button>
                       <button onClick={() => msDelete(m.id, m.name)}
                         style={{ fontSize:11, padding:"3px 8px", borderRadius:5, cursor:"pointer",
                           background:"none", border:"1px solid #FECACA", color:"var(--red)",
@@ -687,7 +689,7 @@ export function ProjectDashboardTab({
                 {g.role}
               </div>
               {g.people.length === 0 ? (
-                <span style={{ fontSize:12, color:"var(--text-4)", fontStyle:"italic" }}>Unassigned</span>
+                <span style={{ fontSize:12, color:"var(--text-4)", fontStyle:"italic" }}>{td("Unassigned")}</span>
               ) : g.people.map(m => (
                 <div key={m.id} style={{ display:"flex", alignItems:"center", gap:7, marginBottom:6 }}>
                   <Avatar name={m.user?.name} avatarUrl={m.user?.avatarUrl} size={26} />
@@ -721,7 +723,7 @@ export function ProjectDashboardTab({
               style={{ padding:"5px 10px", fontSize:12, border:"1px solid var(--border)",
                 borderRadius:"var(--radius)", cursor:"pointer", fontFamily:"var(--font)",
                 color:"var(--text)", outline:"none", background:"#fff" }}>
-              <option value="">No portfolio assigned</option>
+              <option value="">{td("No portfolio assigned")}</option>
               {(portfolios||[]).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -743,7 +745,7 @@ export function ProjectDashboardTab({
                   style={{ padding:"5px 10px", fontSize:12, border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", cursor:"pointer", fontFamily:"var(--font)",
                     color:"var(--text)", outline:"none", background:"#fff" }}>
-                  <option value="">No program assigned</option>
+                  <option value="">{td("No program assigned")}</option>
                   {(programs||[]).map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -867,7 +869,7 @@ export function ProjectDashboardTab({
             {weekOffset !== 0 && (
               <button onClick={() => setWeekOffset(0)}
                 style={{ fontSize:11, color:"var(--steel)", background:"none", border:"none",
-                  cursor:"pointer", fontFamily:"var(--font)" }}>Today</button>
+                  cursor:"pointer", fontFamily:"var(--font)" }}>{td("Today")}</button>
             )}
           </div>
         </div>
@@ -903,17 +905,17 @@ export function ProjectDashboardTab({
             <div style={{ padding:14, minHeight:80 }}>
               {statusSection === "summary" && (
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.75, margin:0 }}>
-                  {weekStatus.summary || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>No summary recorded.</span>}
+                  {weekStatus.summary || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No summary recorded.")}</span>}
                 </p>
               )}
               {statusSection === "accomplishments" && (
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.75, margin:0, whiteSpace:"pre-line" }}>
-                  {weekStatus.accomplishments || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>No accomplishments recorded.</span>}
+                  {weekStatus.accomplishments || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No accomplishments recorded.")}</span>}
                 </p>
               )}
               {statusSection === "next" && (
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.75, margin:0, whiteSpace:"pre-line" }}>
-                  {weekStatus.nextSteps || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>No next steps recorded.</span>}
+                  {weekStatus.nextSteps || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No next steps recorded.")}</span>}
                 </p>
               )}
               {statusSection === "risks" && (
@@ -922,14 +924,14 @@ export function ProjectDashboardTab({
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--amber)",
                       textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>⚠ Risks</div>
                     <p style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.7, margin:0, whiteSpace:"pre-line" }}>
-                      {weekStatus.risks || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>None recorded.</span>}
+                      {weekStatus.risks || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("None recorded.")}</span>}
                     </p>
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--red)",
                       textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>🚩 Issues</div>
                     <p style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.7, margin:0, whiteSpace:"pre-line" }}>
-                      {weekStatus.issues || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>None recorded.</span>}
+                      {weekStatus.issues || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("None recorded.")}</span>}
                     </p>
                   </div>
                 </div>
@@ -990,10 +992,10 @@ export function ProjectDashboardTab({
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           {/* Milestones */}
           <div style={card}>
-            <div style={sTitle}>Milestones</div>
+            <div style={sTitle}>{td("Milestones")}</div>
             {milestones.length === 0 ? (
               <div style={{ padding:"16px 14px", fontSize:12, color:"var(--text-3)", textAlign:"center" }}>
-                No upcoming milestones
+                {td("No upcoming milestones")}
               </div>
             ) : milestones.slice(0,4).map(m => {
               const days = Math.ceil((new Date(m.dueDate).getTime()-Date.now())/86400000)

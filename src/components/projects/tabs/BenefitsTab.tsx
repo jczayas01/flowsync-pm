@@ -5,6 +5,7 @@
 import { DateField } from "@/components/shared/DatePicker"
 import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -27,6 +28,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
   projectId:string; workspaceId:string; benefits:any[]; members:any[]
 }) {
   const { can } = usePermissions()
+  const bt = useTranslations("benefitsTab")
   const router = useRouter()
   const [creating, setCreating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -41,7 +43,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
   const total    = benefits.length
 
   async function create() {
-    if (!form.title.trim()) { setError("Title required"); return }
+    if (!form.title.trim()) { setError(bt("Title required")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/projects/${projectId}/benefits`, {
@@ -53,18 +55,18 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
       setCreating(false)
       setForm({ title:"", description:"", category:"Financial", projectedValue:"", ownerId:"", measureBy:"" })
       router.refresh()
-    } catch { setError("Network error") } finally { setSaving(false) }
+    } catch { setError(bt("Network error")) } finally { setSaving(false) }
   }
 
   const [editId, setEditId] = useState<string|null>(null)
   const [editF, setEditF]   = useState<any>({})
 
   async function removeBenefit(b: any) {
-    if (!confirm(`Delete benefit "${b.title}"?\n\nThis cannot be undone.`)) return
+    if (!confirm(bt("confirmDelete",{t:b.title}))) return
     const res = await fetch(`/api/projects/${projectId}/benefits/${b.id}`, { method: "DELETE" })
       .catch(() => null)
     if (res?.ok) router.refresh()
-    else alert("Could not delete this benefit.")
+    else alert(bt("deleteFailed"))
   }
 
   async function saveBenefit(id: string) {
@@ -83,7 +85,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
     if (res?.ok) { setEditId(null); router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not save this benefit.")
+      alert(d?.error || bt("saveFailed"))
     }
   }
 
@@ -118,18 +120,18 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
               <div style={{ height:"100%", width:`${total>0?(realized/total)*100:0}%`,
                 background:"var(--green)", borderRadius:4 }} />
             </div>
-            <span style={{ fontSize:12, color:"var(--text-3)" }}>{realized}/{total} realized</span>
+            <span style={{ fontSize:12, color:"var(--text-3)" }}>{bt("realizedCount",{r:realized,t:total})}</span>
           </div>
         )}
         <div style={{ marginLeft:"auto", display:"flex", gap:8, alignItems:"center" }}>
           {can("projects:edit") && (<button onClick={()=>setCreating(c=>!c)}
             style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
-            {creating?"Cancel":"+ Add benefit"}
+            {creating?bt("Cancel"):bt("+ Add benefit")}
           </button>)}
           {can("projects:edit") && (
             <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="benefits"
-              commitLabel="to benefits register"
+              commitLabel={bt("to benefits register")}
               renderCandidate={(c: any) => (
                 <div>
                   <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</div>
@@ -167,24 +169,24 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
             {error && <div style={{ color:"var(--red)", fontSize:12 }}>✗ {error}</div>}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={lbl}>Benefit title *</label>
-                <input style={inp} value={form.title} placeholder="What benefit will this project deliver?"
+                <label style={lbl}>{bt("Benefit title *")}</label>
+                <input style={inp} value={form.title} placeholder={bt("phBenefitTitle")}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Category</label>
+              <div><label style={lbl}>{bt("Category")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
-                  {CATS.map(c=><option key={c} value={c}>{c}</option>)}
+                  {CATS.map(c=><option key={c} value={c}>{bt(c as any)}</option>)}
                 </select>
               </div>
-              <div><label style={lbl}>Projected value</label>
-                <input style={inp} value={form.projectedValue} placeholder="e.g. $50K/year savings"
+              <div><label style={lbl}>{bt("Projected value")}</label>
+                <input style={inp} value={form.projectedValue} placeholder={bt("phProjected")}
                   onChange={e=>setForm(f=>({...f,projectedValue:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Measure by</label>
+              <div><label style={lbl}>{bt("Measure by")}</label>
                 <DateField  style={inp} value={form.measureBy}
                   onChange={e=>setForm(f=>({...f,measureBy:e.target.value}))} />
               </div>
-              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>Description</label>
+              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>{bt("Description")}</label>
                 <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.description}
                   onChange={e=>setForm(f=>({...f,description:e.target.value}))} />
               </div>
@@ -193,7 +195,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
               style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff", border:"none",
                 borderRadius:"var(--radius)", fontSize:12, cursor:saving?"wait":"pointer",
                 fontFamily:"var(--font)", width:"fit-content", opacity:!form.title.trim()?0.5:1 }}>
-              {saving?"Saving…":"Add benefit"}
+              {saving?bt("Saving…"):bt("Add benefit")}
             </button>
           </div>
         </div>
@@ -203,9 +205,9 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
         {benefits.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>💹</div>
-            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>No benefits defined</div>
+            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{bt("emptyTitle")}</div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:400, margin:"0 auto 20px" }}>
-              project management best practices focus on value delivery. Define the benefits this project should deliver, track whether they're realized, and measure actual vs projected value.
+              {bt("emptyBody")}
             </div>
           </div>
         ) : (
@@ -219,22 +221,22 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                   <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
                     <div>
                       <div style={{ fontSize:10, color:"var(--text-3)", fontWeight:600,
-                        textTransform:"uppercase", marginBottom:4 }}>{b.category}</div>
+                        textTransform:"uppercase", marginBottom:4 }}>{CATS.includes(b.category) ? bt(b.category as any) : b.category}</div>
                       <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>{b.title}</div>
                     </div>
                     <span style={{ padding:"3px 9px", borderRadius:12, fontSize:10, fontWeight:700,
                       color:sc.color, background:sc.bg, whiteSpace:"nowrap", flexShrink:0 }}>
-                      {sc.icon} {sc.label}
+                      {sc.icon} {bt(sc.label as any)}
                     </span>
                   </div>
                   {b.description && <p style={{ fontSize:12, color:"var(--text-3)", margin:0, lineHeight:1.6 }}>{b.description}</p>}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                     <div style={{ background:"var(--surface)", borderRadius:6, padding:"8px 10px" }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)", textTransform:"uppercase", marginBottom:2 }}>Projected</div>
+                      <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)", textTransform:"uppercase", marginBottom:2 }}>{bt("Projected")}</div>
                       <div style={{ fontSize:13, fontWeight:700, color:"var(--steel)" }}>{b.projectedValue||"—"}</div>
                     </div>
                     <div style={{ background:b.actualValue?"#ECFDF5":"var(--surface)", borderRadius:6, padding:"8px 10px" }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)", textTransform:"uppercase", marginBottom:2 }}>Actual</div>
+                      <div style={{ fontSize:9, fontWeight:700, color:"var(--text-4)", textTransform:"uppercase", marginBottom:2 }}>{bt("Actual")}</div>
                       <div style={{ fontSize:13, fontWeight:700, color:b.actualValue?"var(--green)":"var(--text-4)" }}>
                         {b.actualValue||"Not yet measured"}
                       </div>
@@ -255,7 +257,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                           fontFamily:"var(--font)", border:"1px solid var(--border)", borderRadius:6,
                           background:b.status===v?c.color:"#fff",
                           color:b.status===v?"#fff":c.color }}>
-                        {c.label}
+                        {bt(c.label as any)}
                       </button>
                     ))}
                     <span style={{ marginLeft:"auto", display:"flex", gap:6 }}>
@@ -270,7 +272,7 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                         }}
                         style={{ padding:"4px 10px", fontSize:10, fontWeight:600, cursor:"pointer",
                           fontFamily:"var(--font)", border:"1px solid var(--border)", borderRadius:6,
-                          background:"#fff", color:"var(--text-2)" }}>Edit</button>
+                          background:"#fff", color:"var(--text-2)" }}>{bt("Edit")}</button>
                       <button onClick={() => removeBenefit(b)}
                         style={{ padding:"4px 9px", fontSize:10, fontWeight:600, cursor:"pointer",
                           fontFamily:"var(--font)", border:"1px solid #FECACA", borderRadius:6,
@@ -281,8 +283,8 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                   {editId === b.id && (
                     <div style={{ borderTop:"1px solid var(--border)", paddingTop:10,
                       display:"flex", flexDirection:"column", gap:8 }}>
-                      {([["title","Title"],["description","Description"],
-                         ["projectedValue","Projected value"],["actualValue","Actual value"]] as const).map(([k,label]) => (
+                      {([["title",bt("Title")],["description",bt("Description")],
+                         ["projectedValue",bt("Projected value")],["actualValue",bt("Actual value")]] as const).map(([k,label]) => (
                         <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>
                           {label}
                           <input value={editF[k] || ""} placeholder={label}
@@ -292,23 +294,23 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                         </label>
                       ))}
                       <label style={{ fontSize:11, color:"var(--text-3)" }}>
-                        Category
+                        {bt("Category")}
                         <select value={editF.category || "Financial"}
                           onChange={e => setEditF((f:any) => ({ ...f, category: e.target.value }))}
                           style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                             borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
-                          {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                          {CATS.map(c => <option key={c} value={c}>{bt(c as any)}</option>)}
                         </select>
                       </label>
                       <label style={{ fontSize:11, color:"var(--text-3)" }}>
-                        Notes
+                        {bt("Notes")}
                         <input value={editF.notes || ""}
                           onChange={e => setEditF((f:any) => ({ ...f, notes: e.target.value }))}
                           style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                             borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                       </label>
                       <label style={{ fontSize:11, color:"var(--text-3)" }}>
-                        Measure by
+                        {bt("Measure by")}
                         <input type="date" value={editF.measureBy || ""}
                           onChange={e => setEditF((f:any) => ({ ...f, measureBy: e.target.value }))}
                           style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
@@ -318,11 +320,11 @@ export function BenefitsTab({ projectId, workspaceId, benefits, members }: {
                         <button onClick={() => saveBenefit(b.id)}
                           style={{ flex:1, padding:"6px 0", background:"var(--steel)", color:"#fff",
                             border:"none", borderRadius:6, fontSize:12, fontWeight:700,
-                            cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                            cursor:"pointer", fontFamily:"var(--font)" }}>{bt("Save")}</button>
                         <button onClick={() => setEditId(null)}
                           style={{ padding:"6px 12px", background:"none", border:"1px solid var(--border)",
                             borderRadius:6, fontSize:12, cursor:"pointer", color:"var(--text-3)",
-                            fontFamily:"var(--font)" }}>Cancel</button>
+                            fontFamily:"var(--font)" }}>{bt("Cancel")}</button>
                       </div>
                     </div>
                   )}

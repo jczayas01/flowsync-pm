@@ -81,6 +81,7 @@ function ContextMenu({ x, y, task, onAction, onClose }: {
   x:number; y:number; task:any;
   onAction:(action:string,task:any)=>void; onClose:()=>void
 }) {
+  const tt = useTranslations("tasksTab")
   useEffect(() => {
     // Use mousedown (not click) and bubble phase (not capture)
     // so menu item onClick fires BEFORE this closes the menu
@@ -133,7 +134,7 @@ function ContextMenu({ x, y, task, onAction, onClose }: {
               fontFamily:"var(--font)" }}
             onMouseOver={e => (e.currentTarget.style.background = (item as any).danger ? "#FEF2F2" : "var(--surface)")}
             onMouseOut={e  => (e.currentTarget.style.background = "transparent")}>
-            {item.label}
+            {tt(item.label as any)}
           </div>
         </div>
       ))}
@@ -146,6 +147,7 @@ function ContextMenu({ x, y, task, onAction, onClose }: {
 function PhaseFilterDropdown({ phases, selected, onChange }: {
   phases:any[]; selected:Set<string>; onChange:(s:Set<string>)=>void
 }) {
+  const tt = useTranslations("tasksTab")
   const [open, setOpen] = useState(false)
   const allSelected = selected.size === 0
 
@@ -168,10 +170,10 @@ function PhaseFilterDropdown({ phases, selected, onChange }: {
             display:"flex", gap:10 }}>
             <button onClick={() => onChange(new Set())}
               style={{ fontSize:11, color:"var(--steel)", background:"none", border:"none",
-                cursor:"pointer", fontFamily:"var(--font)" }}>All</button>
+                cursor:"pointer", fontFamily:"var(--font)" }}>{tt("All")}</button>
             <button onClick={() => onChange(new Set(phases.map(p=>p.id)))}
               style={{ fontSize:11, color:"var(--text-3)", background:"none", border:"none",
-                cursor:"pointer", fontFamily:"var(--font)" }}>None</button>
+                cursor:"pointer", fontFamily:"var(--font)" }}>{tt("None")}</button>
           </div>
           {phases.map(p => {
             // Visible-phase model: empty set = all shown; otherwise show only phases in the set.
@@ -204,7 +206,7 @@ function PhaseFilterDropdown({ phases, selected, onChange }: {
           <div style={{ padding:"6px 12px", borderTop:"1px solid var(--border)" }}>
             <button onClick={() => setOpen(false)}
               style={{ fontSize:11, color:"var(--text-3)", background:"none", border:"none",
-                cursor:"pointer", fontFamily:"var(--font)" }}>Done</button>
+                cursor:"pointer", fontFamily:"var(--font)" }}>{tt("doneBtn")}</button>
           </div>
         </div>
       )}
@@ -297,7 +299,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
   }
 
   async function deleteTask(taskId: string) {
-    if (!confirm("Delete this task?")) return
+    if (!confirm(tt("confirmDeleteTask"))) return
     setLocalTasks(prev => prev.filter(t => t.id !== taskId))   // optimistic removal
     await fetch(`/api/tasks/${taskId}`, { method:"DELETE" })
     debouncedRefresh()
@@ -310,7 +312,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
       return
     }
     const ms = task.dueDate || task.startDate
-    if (!ms) { alert("Task needs a start or due date to make it a milestone."); return }
+    if (!ms) { alert(tt("msNeedsDate")); return }
     const iso = new Date(ms).toISOString()
     await patchTask(task.id, { isMilestone: true, startDate: iso, dueDate: iso })
   }
@@ -320,17 +322,17 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
   // The task stays in the schedule; the two are linked by name and date.
   async function promoteToSponsorMilestone(task: any) {
     const when = task.dueDate || task.startDate
-    if (!when) { alert("This task needs a date before it can become a sponsor milestone."); return }
-    if (!confirm(`Create a sponsor milestone "${task.title}"?\n\nIt will appear on the project Dashboard and in reports for sponsor tracking. The task stays in your schedule.`)) return
+    if (!when) { alert(tt("spMsNeedsDate")); return }
+    if (!confirm(tt("spMsConfirm", { t: task.title }))) return
     const body = {
       name: task.title,
-      description: `Promoted from schedule task ${task.code}`,
+      description: tt("promotedFrom", { c: task.code }),
       dueDate: new Date(when).toISOString(),
     }
     const r = await fetch(`/api/projects/${projectId}/milestones`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }).catch(() => null)
-    if (!r?.ok) { alert("Could not create the sponsor milestone."); return }
+    if (!r?.ok) { alert(tt("spMsFailed")); return }
     // Make sure the task itself reads as a milestone in the schedule too.
     if (!task.isMilestone) {
       const iso = new Date(when).toISOString()
@@ -569,7 +571,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
     debouncedRefresh()
   }
   async function bulkDelete() {
-    if (!confirm(`Delete ${selected.size} tasks?`)) return
+    if (!confirm(tt("confirmDeleteTasks", { n: selected.size }))) return
     const ids = new Set(selected)
     setLocalTasks(prev => prev.filter(t => !ids.has(t.id)))   // optimistic removal
     await Promise.all([...ids].map(id => fetch(`/api/tasks/${id}`, { method:"DELETE" })))
@@ -771,13 +773,13 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
             outline:"none", width:170 }} />
 
         <select style={sel} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="">All statuses</option>
-          {STATUS_OPTS.map(s => <option key={s} value={s}>{s.replace("_"," ")}</option>)}
+          <option value="">{tt("All statuses")}</option>
+          {STATUS_OPTS.map(s => <option key={s} value={s}>{tt(STATUS_COLOR[s]?.label as any)}</option>)}
         </select>
 
         <select style={sel} value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
-          <option value="">All priorities</option>
-          {PRIORITY_OPTS.map(p => <option key={p} value={p}>{p}</option>)}
+          <option value="">{tt("All priorities")}</option>
+          {PRIORITY_OPTS.map(p => <option key={p} value={p}>{tt(PRIORITY_COLOR[p]?.label as any)}</option>)}
         </select>
 
         <PhaseFilterDropdown
@@ -790,34 +792,34 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           <button onClick={() => setCollapsed(new Set())}
             style={{ padding:"5px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
               fontSize:12, background:"#fff", cursor:"pointer", color:"var(--text-2)", fontFamily:"var(--font)" }}>
-            Expand all
+            {tt("Expand all")}
           </button>
           <button onClick={() => setCollapsed(groupBy === "phase"
               ? new Set([...phases.map((p:any)=>"phase-"+p.id), "phase-unphased"])
               : new Set(groupedBlocks.map(g => "grp-"+g.key)))}
             style={{ padding:"5px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
               fontSize:12, background:"#fff", cursor:"pointer", color:"var(--text-2)", fontFamily:"var(--font)" }}>
-            Collapse all
+            {tt("Collapse all")}
           </button>
         </div>
 
         <select style={sel} value={groupBy} onChange={e=>setGroupBy(e.target.value as any)}
-          title="Group tasks by">
-          <option value="phase">Group: Phase</option>
-          <option value="status">Group: Status</option>
-          <option value="priority">Group: Priority</option>
-          <option value="assignee">Group: Assignee</option>
+          title={tt("Group tasks by")}>
+          <option value="phase">{tt("Group: Phase")}</option>
+          <option value="status">{tt("Group: Status")}</option>
+          <option value="priority">{tt("Group: Priority")}</option>
+          <option value="assignee">{tt("Group: Assignee")}</option>
         </select>
 
         <span style={{ fontSize:12, color:"var(--text-3)" }}>
-          {matchingCount} task{matchingCount!==1?"s":""}
+          {tt("taskCount", { n: matchingCount })}
         </span>
 
         {selected.size > 0 && (
           <div style={{ display:"flex", gap:6, padding:"4px 10px",
             background:"#EFF6FF", borderRadius:"var(--radius)", alignItems:"center" }}>
             <span style={{ fontSize:11, fontWeight:600, color:"var(--steel)" }}>
-              {selected.size} selected
+              {tt("selectedCount", { n: selected.size })}
             </span>
             <button onClick={clearSelection}
               style={{ fontSize:11, color:"var(--text-3)", background:"none", border:"none",
@@ -839,7 +841,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           <div style={{ position:"relative" }}>
             <button onClick={e => { e.stopPropagation(); setExcelOpen(o=>!o) }}
               style={{ ...sel, display:"flex", alignItems:"center", gap:4 }}>
-              {importing ? "Importing…" : "📊 Excel"} <span style={{ fontSize:9 }}>▾</span>
+              {importing ? tt("Importing…") : "📊 Excel"} <span style={{ fontSize:9 }}>▾</span>
             </button>
             {excelOpen && (
               <div style={{ position:"absolute", top:"100%", right:0, marginTop:4, zIndex:100,
@@ -852,7 +854,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                     textDecoration:"none", borderBottom:"1px solid var(--surface-1,#F1F5F9)" }}
                   onMouseOver={e=>(e.currentTarget.style.background="var(--surface)")}
                   onMouseOut={e =>(e.currentTarget.style.background="transparent")}>
-                  📤 Export to Excel
+                  📤 {tt("Export to Excel")}
                 </a>
                 <button onClick={() => { setExcelOpen(false); fileRef.current?.click() }}
                   style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 14px",
@@ -861,7 +863,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                     borderBottom:"1px solid var(--surface-1,#F1F5F9)" }}
                   onMouseOver={e=>(e.currentTarget.style.background="var(--surface)")}
                   onMouseOut={e =>(e.currentTarget.style.background="transparent")}>
-                  📥 Import from Excel
+                  📥 {tt("Import from Excel")}
                 </button>
                 <a href={`/api/projects/${projectId}/import/template`}
                   onClick={() => setExcelOpen(false)}
@@ -869,7 +871,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                     color:"var(--steel)", textDecoration:"none" }}
                   onMouseOver={e=>(e.currentTarget.style.background="var(--surface)")}
                   onMouseOut={e =>(e.currentTarget.style.background="transparent")}>
-                  📋 Download template
+                  📋 {tt("Download template")}
                 </a>
               </div>
             )}
@@ -912,7 +914,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           return (
             <button key={i} type="button"
               disabled={!enabled}
-              title={blockedMulti ? "Select a single task for this action" : undefined}
+              title={blockedMulti ? tt("singleTaskHint") : undefined}
               onClick={() => {
                 if (!enabled) return
                 if (btn.action==="toggle-critical") { bulkToggleCritical(); return }
@@ -943,7 +945,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
               }}
               onMouseOver={e => { if (enabled && !isDelete) e.currentTarget.style.background = needsSingle ? "rgba(129,199,245,.5)" : "rgba(255,255,255,.22)" }}
               onMouseOut={e => { if (enabled && !isDelete) e.currentTarget.style.background = needsSingle ? "rgba(129,199,245,.32)" : "rgba(255,255,255,.12)" }}>
-              {btn.label}
+              {tt(btn.label as any)}
             </button>
           )
         })}
@@ -954,19 +956,19 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           padding:"8px 14px", display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
           {error && <span style={{ fontSize:11, color:"var(--red)" }}>✗ {error}</span>}
           <input autoFocus placeholder={
-            creating.parentId ? "Child task title…" :
-            creating.insertAfter?.startsWith("above-") ? "Task title (above)…" :
-            "Task title…"}
+            creating.parentId ? tt("Child task title…") :
+            creating.insertAfter?.startsWith("above-") ? tt("Task title (above)…") :
+            tt("Task title…")}
             value={newTitle} onChange={e => setNewTitle(e.target.value)}
             onKeyDown={e => { if (e.key==="Enter") createTask(); if (e.key==="Escape") setCreating(null) }}
             style={{ flex:1, padding:"7px 10px", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)", outline:"none" }} />
           <select style={sel} value={newPriority} onChange={e => setNewPriority(e.target.value)}>
-            {PRIORITY_OPTS.map(p => <option key={p} value={p}>{p}</option>)}
+            {PRIORITY_OPTS.map(p => <option key={p} value={p}>{tt(PRIORITY_COLOR[p]?.label as any)}</option>)}
           </select>
           {!creating.phaseId && (
             <select style={sel} value={newPhaseId} onChange={e => setNewPhaseId(e.target.value)}>
-              <option value="">No phase</option>
+              <option value="">{tt("No phase")}</option>
               {phases.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
@@ -975,13 +977,13 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
               border:"none", borderRadius:"var(--radius)", fontSize:12,
               cursor:saving?"wait":"pointer", fontFamily:"var(--font)",
               opacity:!newTitle.trim()?0.5:1 }}>
-            {saving ? "Adding…" : "Add"}
+            {saving ? tt("Adding…") : tt("Add")}
           </button>
           <button onClick={() => setCreating(null)}
             style={{ padding:"7px 10px", background:"none", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
               fontFamily:"var(--font)", color:"var(--text-3)" }}>
-            Cancel
+            {tt("cancelBtn")}
           </button>
         </div>
       )}
@@ -1002,14 +1004,14 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
                 const active = sortBy?.col === h
                 return (
                 <th key={i} onClick={() => sortable && toggleSort(h)}
-                  title={sortable ? "Click to sort" : undefined}
+                  title={sortable ? tt("Click to sort") : undefined}
                   style={{ padding:"9px 10px", textAlign:"left", fontSize:10,
                   fontWeight:700, color: active ? "#fff" : "rgba(255,255,255,.65)",
                   textTransform:"uppercase", letterSpacing:".06em",
                   borderBottom:"2px solid rgba(255,255,255,.1)",
                   whiteSpace:"nowrap", cursor: sortable ? "pointer" : "default",
                   userSelect:"none" }}>
-                  {h}{active && <span style={{ marginLeft:4 }}>{sortBy?.dir===1?"▲":"▼"}</span>}
+                  {h==="#" ? h : tt(h as any)}{active && <span style={{ marginLeft:4 }}>{sortBy?.dir===1?"▲":"▼"}</span>}
                 </th>
                 )
               })}
@@ -1156,6 +1158,7 @@ function Phase({ phase, isCollapsed, rowCount, pct = 0, onToggle, onAddTask, chi
   phase:any; isCollapsed:boolean; rowCount:number; pct?:number;
   onToggle:()=>void; onAddTask:()=>void; children?:React.ReactNode
 }) {
+  const tt = useTranslations("tasksTab")
   const pctColor = pct === 100 ? "#059669" : pct >= 50 ? "#1B6CA8" : "#60A5FA"
   return (
     <>
@@ -1179,7 +1182,7 @@ function Phase({ phase, isCollapsed, rowCount, pct = 0, onToggle, onAddTask, chi
             </span>
             <span style={{ fontSize:10, color:"#93C5FD", background:"#DBEAFE",
               padding:"1px 7px", borderRadius:10, fontWeight:600 }}>
-              {rowCount} task{rowCount!==1?"s":""}
+              {tt("taskCount", { n: rowCount })}
             </span>
             {/* Phase completion */}
             <div style={{ display:"flex", alignItems:"center", gap:6 }}>
@@ -1196,7 +1199,7 @@ function Phase({ phase, isCollapsed, rowCount, pct = 0, onToggle, onAddTask, chi
                   background:"#fff", border:"1px solid #BFDBFE",
                   borderRadius:4, cursor:"pointer",
                   fontFamily:"var(--font)", padding:"3px 12px" }}>
-                + Add Task
+                {tt("+ Add task")}
               </button>
             )}
           </div>
@@ -1213,6 +1216,7 @@ function TaskActionMenu({ task, onAction, onEdit, onContextMenu }: {
   task:any; onAction:(a:string)=>void; onEdit:()=>void;
   onContextMenu:(e:React.MouseEvent)=>void
 }) {
+  const tt = useTranslations("tasksTab")
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -1245,7 +1249,7 @@ function TaskActionMenu({ task, onAction, onEdit, onContextMenu }: {
     <div ref={ref} style={{ position:"relative", display:"inline-block" }}>
       <button
         onClick={e => { e.stopPropagation(); setOpen(o=>!o) }}
-        title="Task actions"
+        title={tt("Task actions")}
         style={{ padding:"4px 8px", fontSize:16, fontWeight:700,
           cursor:"pointer", borderRadius:4,
           border:`1px solid ${open?"#BFDBFE":"#E2E8F0"}`,
@@ -1276,7 +1280,7 @@ function TaskActionMenu({ task, onAction, onEdit, onContextMenu }: {
                 onMouseOver={e=>(e.currentTarget.style.background=(item as any).danger?"#FEF2F2":"#F8FAFC")}
                 onMouseOut={e =>(e.currentTarget.style.background="transparent")}>
                 <span style={{ width:14, textAlign:"center", fontSize:11, opacity:.7 }}>{(item as any).icon}</span>
-                {item.label}
+                {tt(item.label as any)}
               </div>
             </div>
           ))}
@@ -1430,7 +1434,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
               const targetId = row?.getAttribute("data-taskid")
               if (targetId) onTouchDrop?.(targetId)
             }}
-            title="Drag to reorder"
+            title={tt("Drag to reorder")}
             style={{ cursor:"grab", color:"#CBD5E1", fontSize:12, lineHeight:1, userSelect:"none", touchAction:"none" }}>⠿</span>
           <span style={{ fontFamily:"monospace", fontSize:10, color:"#94A3B8",
             background:"#F8FAFC", padding:"2px 5px", borderRadius:3,
@@ -1438,10 +1442,10 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             {t.code}
           </span>
           {isCritical && (
-            <span title="Critical path" style={{ color:"#DC2626", fontSize:9, fontWeight:700 }}>⚡</span>
+            <span title={tt("Critical path")} style={{ color:"#DC2626", fontSize:9, fontWeight:700 }}>⚡</span>
           )}
           {t.isMilestone && (
-            <span title="Milestone" style={{ color:"#7C3AED", fontSize:11, fontWeight:700, lineHeight:1 }}>◆</span>
+            <span title={tt("Milestone")} style={{ color:"#7C3AED", fontSize:11, fontWeight:700, lineHeight:1 }}>◆</span>
           )}
         </div>
       </td>
@@ -1487,11 +1491,11 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             onBlur={cancelEdit}
             onKeyDown={e=>e.key==="Escape"&&cancelEdit()}>
             {["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"].map(s=>(
-              <option key={s} value={s}>{s.replace(/_/g," ")}</option>
+              <option key={s} value={s}>{tt(STATUS_COLOR[s]?.label as any)}</option>
             ))}
           </select>
         ) : (
-          <span title="Click to edit" style={{ padding:"3px 8px", borderRadius:10,
+          <span title={tt("Click to edit")} style={{ padding:"3px 8px", borderRadius:10,
             fontSize:10, fontWeight:600, cursor:"pointer",
             color:sc.text, background:sc.bg }}>
             {tt(sc.label as any)}
@@ -1512,7 +1516,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             ))}
           </select>
         ) : (
-          <span title="Click to edit" style={{ fontSize:11, fontWeight:700,
+          <span title={tt("Click to edit")} style={{ fontSize:11, fontWeight:700,
             cursor:"pointer", color:pc.color }}>
             {tt(pc.label as any)}
           </span>
@@ -1557,15 +1561,15 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
               <div style={{ borderTop:"1px solid var(--border)", padding:"6px 12px", display:"flex", gap:12 }}>
                 <button onClick={()=>saveCell("assignee",cellValue)}
                   style={{ fontSize:11, fontWeight:600, color:"var(--steel)", background:"none",
-                    border:"none", cursor:"pointer", fontFamily:"var(--font)" }}>Done</button>
+                    border:"none", cursor:"pointer", fontFamily:"var(--font)" }}>{tt("doneBtn")}</button>
                 <button onClick={cancelEdit}
                   style={{ fontSize:11, color:"var(--text-3)", background:"none",
-                    border:"none", cursor:"pointer", fontFamily:"var(--font)" }}>Cancel</button>
+                    border:"none", cursor:"pointer", fontFamily:"var(--font)" }}>{tt("cancelBtn")}</button>
               </div>
             </div>
           </div>
         ) : (
-          <div title="Click to edit"
+          <div title={tt("Click to edit")}
             style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer" }}>
             {assigneeUser ? (
               <>
@@ -1580,7 +1584,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
                 )}
               </>
             ) : (
-              <span style={{ fontSize:11, color:"var(--text-4)", fontStyle:"italic" }}>Unassigned</span>
+              <span style={{ fontSize:11, color:"var(--text-4)", fontStyle:"italic" }}>{tt("Unassigned")}</span>
             )}
             {t._count?.comments > 0 && (
               (t.unreadComments || 0) > 0 ? (
@@ -1624,7 +1628,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
           </div>
         ) : (
           <span onClick={() => !editingCell && startEdit("startDate", toDateInput(t.startDate))}
-            title="Click to edit"
+            title={tt("Click to edit")}
             style={{ fontSize:12, color:"var(--text-3)", cursor:"pointer", whiteSpace:"nowrap" }}>
             {fmtDate(t.startDate)||"—"}
           </span>
@@ -1647,7 +1651,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
           </div>
         ) : (
           <span onClick={() => !editingCell && startEdit("finishDate", toDateInput(t.dueDate))}
-            title="Click to edit"
+            title={tt("Click to edit")}
             style={{ fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
               color: overdue ? "var(--red)" : "var(--text-3)",
               fontWeight: overdue ? 600 : 400 }}>
@@ -1666,7 +1670,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("percentComplete",cellValue) }} />
         ) : (
           <div onClick={() => !editingCell && startEdit("percentComplete", t.percentComplete||0)}
-            title="Click to edit"
+            title={tt("Click to edit")}
             style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer" }}>
             <div style={{ flex:1, height:6, background:"#E2E8F0",
               borderRadius:3, overflow:"hidden", minWidth:50 }}>
@@ -1694,7 +1698,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
             onKeyDown={e=>{ if(e.key==="Escape") cancelEdit(); if(e.key==="Enter") saveCell("estimatedHours",cellValue) }} />
         ) : (
           <span onClick={() => !editingCell && startEdit("estimatedHours", t.estimatedHours ?? "")}
-            title="Estimated effort (hours)"
+            title={tt("Estimated effort (hours)")}
             style={{ fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
               color: (t.estimatedHours==null||t.estimatedHours==="") ? "var(--text-4)" : "var(--text-2)",
               fontWeight: (t.estimatedHours==null||t.estimatedHours==="") ? 400 : 600 }}>

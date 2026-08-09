@@ -1,5 +1,6 @@
 "use client"
 // src/components/projects/tabs/ProjectBoardTab.tsx
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
@@ -7,17 +8,18 @@ import { Avatar, Badge, EmptyState } from "@/components/ui"
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal"
 
 const COLUMNS = [
-  { id:"BACKLOG",     label:"Backlog",     color:"#94A3B8" },
-  { id:"TODO",        label:"To do",       color:"#64748B" },
-  { id:"IN_PROGRESS", label:"In progress", color:"#1B6CA8" },
-  { id:"IN_REVIEW",   label:"In review",   color:"#7C3AED" },
-  { id:"DONE",        label:"Done",        color:"#059669" },
-  { id:"BLOCKED",     label:"Blocked",     color:"#DC2626" },
+  { id:"BACKLOG",     label:"stBacklog",     color:"#94A3B8" },
+  { id:"TODO",        label:"stTodo",       color:"#64748B" },
+  { id:"IN_PROGRESS", label:"stInProgress", color:"#1B6CA8" },
+  { id:"IN_REVIEW",   label:"stInReview",   color:"#7C3AED" },
+  { id:"DONE",        label:"stDone",        color:"#059669" },
+  { id:"BLOCKED",     label:"stBlocked",     color:"#DC2626" },
 ]
 
 export function ProjectBoardTab({ projectId, tasks, members }: {
   projectId:string; tasks:any[]; members:any[]
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
   const [filter, setFilter] = useState("")
   const [openTaskId, setOpenTaskId] = useState<string|null>(null)
@@ -74,7 +76,7 @@ export function ProjectBoardTab({ projectId, tasks, members }: {
   }
 
   if (tasks.length === 0) {
-    return <EmptyState icon="🗂" title="No tasks yet"
+    return <EmptyState icon="🗂" title={tip("boardEmpty")}
       description="Add tasks to see them on the board." />
   }
 
@@ -83,7 +85,7 @@ export function ProjectBoardTab({ projectId, tasks, members }: {
       {/* Toolbar */}
       <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",
         padding:"8px 16px", display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
-        <input placeholder="Filter tasks…" value={filter}
+        <input placeholder={tip("boardFilterPh")} value={filter}
           onChange={e => setFilter(e.target.value)}
           style={{ padding:"6px 10px", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", fontSize:12, fontFamily:"var(--font)",
@@ -114,7 +116,7 @@ export function ProjectBoardTab({ projectId, tasks, members }: {
                 <div style={{ width:8, height:8, borderRadius:"50%",
                   background:col.color, flexShrink:0 }}/>
                 <span style={{ fontSize:12, fontWeight:600, color:"var(--text-2)" }}>
-                  {col.label}
+                  {tip(col.label as any)}
                 </span>
                 <span style={{ marginLeft:"auto", fontSize:11, fontWeight:600,
                   padding:"1px 7px", borderRadius:10,

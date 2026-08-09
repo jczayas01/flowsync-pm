@@ -4,20 +4,22 @@
 // RACI display, methodology relevance, and access logic summary
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
 import { PROJECT_ROLES_ORDERED, ROLE_LAYERS, getRoleDef, RACI_BY_ROLE, getRolesForMethodology, type ProjectRoleKey } from "@/lib/roles"
 
 const ACCESS_ROLES = [
-  { value:"PM",     label:"PM — full edit access" },
-  { value:"MEMBER", label:"Member — edit own tasks" },
-  { value:"VIEWER", label:"Viewer — read only" },
-  { value:"CLIENT", label:"Client — limited view" },
+  { value:"PM",     label:"tmRolePM" },
+  { value:"MEMBER", label:"tmRoleMember" },
+  { value:"VIEWER", label:"tmRoleViewer" },
+  { value:"CLIENT", label:"tmRoleClient" },
 ]
 
 export function ProjectTeamTab({ projectId, members, availableToAdd, methodology }: {
   projectId: string; members: any[]; availableToAdd: any[]; methodology?: string
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
   const [savingId, setSavingId]     = useState<string|null>(null)
   const [addOpen, setAddOpen]       = useState(false)
@@ -53,7 +55,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
   }
 
   async function removeMember(memberId: string) {
-    if (!confirm("Remove this member from the project?")) return
+    if (!confirm(tip("tmConfirmRemove"))) return
     setSavingId(memberId)
     try {
       await fetch(`/api/projects/${projectId}/members/${memberId}`, { method:"DELETE" })
@@ -98,13 +100,13 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
             style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
               fontFamily:"var(--font)", color:"var(--text-2)" }}>
-            {showRoleGuide ? "Hide role guide" : "📖 PM Standard role guide"}
+            {showRoleGuide ? tip("tmHideGuide") : "📖 "+tip("tmShowGuide")}
           </button>
           <button onClick={()=>setAddOpen(a=>!a)}
             style={{ padding:"7px 14px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
               fontFamily:"var(--font)" }}>
-            {addOpen ? "Cancel" : "+ Add member"}
+            {addOpen ? tip("cancel") : tip("tmAddMember")}
           </button>
         </div>
       </div>
@@ -163,10 +165,10 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
         <div style={{ background:"var(--surface)", borderBottom:"1px solid var(--border)", padding:14 }}>
           <input style={{...inp, marginBottom:10}} value={addSearch}
             onChange={e=>setAddSearch(e.target.value)}
-            placeholder="Search by name or email..." autoFocus />
+            placeholder={tip("tmSearchPh")} autoFocus />
           {filteredAvailable.length === 0 ? (
             <div style={{ fontSize:12, color:"var(--text-3)", textAlign:"center", padding:"8px 0" }}>
-              {addSearch ? "No matching users found" : "All workspace members are already on this project"}
+              {addSearch ? tip("tmNoMatch") : tip("tmAllAdded")}
             </div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:200, overflowY:"auto" }}>
@@ -183,7 +185,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                     style={{ padding:"6px 14px", background:"var(--steel)", color:"#fff",
                       border:"none", borderRadius:"var(--radius)", fontSize:12,
                       cursor:"pointer", fontFamily:"var(--font)" }}>
-                    {addingUserId===u.id ? "Adding…" : "Add"}
+                    {addingUserId===u.id ? tip("tmAdding") : tip("tmAdd")}
                   </button>
                 </div>
               ))}
@@ -197,9 +199,9 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
         {members.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>👥</div>
-            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>No team members yet</div>
+            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("tmEmptyTitle")}</div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:380, margin:"0 auto 20px" }}>
-              Add team members and assign their PM governance best practices roles to define who does what on this project.
+              {tip("tmEmptyBody")}
             </div>
           </div>
         ) : (
@@ -252,7 +254,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                             </div>
                             <div style={{ fontSize:9, color:"var(--text-4)", marginTop:3, textAlign:"right" }}>
                               {def.canApprove ? "✓ Can approve" : "Can edit tasks"}
-                              {def.canEdit ? "" : " · Read-only"}
+                              {def.canEdit ? "" : " · "+tip("tmReadOnly")}
                             </div>
                           </div>
                         </div>
@@ -262,7 +264,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                           <div style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>
                             {m.allocation}%
                           </div>
-                          <div style={{ fontSize:9, color:"var(--text-4)" }}>allocated</div>
+                          <div style={{ fontSize:9, color:"var(--text-4)" }}>{tip("tmAllocated")}</div>
                         </div>
 
                         {/* Role selector */}
@@ -271,7 +273,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                           style={{ padding:"5px 8px", border:"1px solid var(--border)",
                             borderRadius:"var(--radius)", fontSize:11, fontFamily:"var(--font)",
                             color:"var(--text-2)", cursor:"pointer", maxWidth:160 }}>
-                          <option value="">— No role —</option>
+                          <option value="">{tip("tmNoRole")}</option>
                           {PROJECT_ROLES_ORDERED.map(r => (
                             <option key={r.value} value={r.value}>{r.label}</option>
                           ))}
@@ -295,7 +297,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                             border:"1px solid #FECACA", borderRadius:"var(--radius)",
                             fontSize:11, color:"var(--red)", cursor:"pointer",
                             fontFamily:"var(--font)" }}>
-                          {isSaving ? "…" : "Remove"}
+                          {isSaving ? "…" : tip("tmRemove")}
                         </button>
                       </div>
                     )
@@ -327,7 +329,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                           borderRadius:"var(--radius)", fontSize:11, fontFamily:"var(--font)",
                           color:"var(--text-2)", cursor:"pointer", maxWidth:160,
                           background:"#FFFBEB" }}>
-                        <option value="">⚠ Assign role…</option>
+                        <option value="">⚠ {tip("tmAssignRole")}</option>
                         {PROJECT_ROLES_ORDERED.map(r => (
                           <option key={r.value} value={r.value}>{r.label}</option>
                         ))}
@@ -337,7 +339,7 @@ export function ProjectTeamTab({ projectId, members, availableToAdd, methodology
                           border:"1px solid #FECACA", borderRadius:"var(--radius)",
                           fontSize:11, color:"var(--red)", cursor:"pointer",
                           fontFamily:"var(--font)" }}>
-                        Remove
+                        {tip("tmRemove")}
                       </button>
                     </div>
                   ))}

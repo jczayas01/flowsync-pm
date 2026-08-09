@@ -6,6 +6,7 @@ import { FieldCard, EditToggle } from "@/components/shared/FieldCard"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 
@@ -42,6 +43,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
   projectId:string; workspaceId:string; qmp:any; checklists:any[]; tasks:any[]
 }) {
   const { can } = usePermissions()
+  const q = useTranslations("qualityTab")
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<"plan"|"checklist">("plan")
   const [saving, setSaving] = useState(false)
@@ -98,7 +100,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
   }
 
   async function addChecklist() {
-    if (!checklistForm.deliverable.trim()) { setError("Deliverable name required"); return }
+    if (!checklistForm.deliverable.trim()) { setError(q("Deliverable name required")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/projects/${projectId}/quality-checklist`, {
@@ -106,7 +108,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
         headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body:JSON.stringify(checklistForm),
       })
-      if (!res.ok) { setError("Failed to add checklist"); return }
+      if (!res.ok) { setError(q("Failed to add checklist")); return }
       setShowAddChecklist(false)
       setChecklistForm({ deliverable:"", criteria:"", inspector:"", scheduledDate:"" })
       router.refresh()
@@ -129,9 +131,9 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
     <div style={{ display:"flex", flexDirection:"column", height:"100%" }}>
       {/* Header */}
       <div style={{ background:"var(--steel)", padding:"12px 20px", color:"#fff", flexShrink:0 }}>
-        <div style={{ fontSize:16, fontWeight:700 }}>✅ Quality Management</div>
+        <div style={{ fontSize:16, fontWeight:700 }}>✅ {q("Quality Management")}</div>
         <div style={{ fontSize:11, opacity:.6, marginTop:2 }}>
-          Quality Plan · Acceptance Criteria · Inspection Checklists
+          {q("qmSubtitle")}
         </div>
       </div>
 
@@ -139,8 +141,8 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
       <div style={{ display:"flex", borderBottom:"1px solid var(--border)",
         background:"#fff", flexShrink:0 }}>
         {[
-          { id:"plan",      label:"Quality Plan" },
-          { id:"checklist", label:`Checklists (${passCount}/${totalCount} passed)` },
+          { id:"plan",      label:q("Quality Plan") },
+          { id:"checklist", label:q("checklistTabLabel",{p:passCount,t:totalCount}) },
         ].map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id as any)}
             style={{ padding:"10px 18px", fontSize:12, fontWeight:500, cursor:"pointer",
@@ -167,34 +169,34 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
           <div style={{ background:"#fff", borderRadius:"var(--radius)",
             border:"1px solid var(--border)", padding:24 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"var(--text)",
-              marginBottom:4 }}>Quality Management Plan</div>
+              marginBottom:4 }}>{q("Quality Management Plan")}</div>
             <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:18 }}>
-              PM Standard — Quality and Delivery Performance Domains
+              {q("qmpRef")}
             </div>
             <EditToggle editing={editing} onClick={()=>setEditing(e=>!e)} />
 
             {!editing ? (
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {QMP_FIELDS.map(({key,label,icon})=>(
-                  <FieldCard key={key} label={label} icon={icon} value={(qmpForm as any)[key]} />
+                  <FieldCard key={key} label={q(label as any)} icon={icon} value={(qmpForm as any)[key]} />
                 ))}
               </div>
             ) : (
               <>
                 {QMP_FIELDS.map(({key,label})=>(
                   <div key={key} style={{ marginBottom:14 }}>
-                    <label style={lbl}>{label}</label>
+                    <label style={lbl}>{q(label as any)}</label>
                     <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
                       value={(qmpForm as any)[key]}
                       onChange={e=>setQmpForm(f=>({...f,[key]:e.target.value}))}
-                      placeholder={`${label}...`} />
+                      placeholder={`${q(label as any)}...`} />
                   </div>
                 ))}
                 <button onClick={async()=>{ await saveQmp(); setEditing(false) }} disabled={saving}
                   style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff",
                     border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                     cursor:"pointer", fontFamily:"var(--font)" }}>
-                  {saving?"Saving…":"💾 Save Quality Plan"}
+                  {saving?q("Saving…"):q("💾 Save Quality Plan")}
                 </button>
               </>
             )}
@@ -207,12 +209,11 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center", marginBottom:14 }}>
               <div style={{ fontSize:13, color:"var(--text-3)" }}>
-                {totalCount === 0 ? "No checklist items yet" :
-                  `${passCount} of ${totalCount} items passed`}
+                {totalCount === 0 ? q("No checklist items yet") : q("itemsPassed",{p:passCount,t:totalCount})}
               </div>
               {can("projects:edit") && (
                 <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="quality"
-                  commitLabel="to the checklist"
+                  commitLabel={q("to the checklist")}
                   renderCandidate={(c:any)=>(
                     <div>
                       <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.deliverable}</div>
@@ -245,7 +246,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                   border:showAddChecklist?"1px solid var(--border)":"none",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                   fontFamily:"var(--font)" }}>
-                {showAddChecklist?"Cancel":"+ Add checklist item"}
+                {showAddChecklist?q("Cancel"):q("+ Add checklist item")}
               </button>)}
             </div>
 
@@ -254,26 +255,26 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                 borderRadius:"var(--radius)", padding:16, marginBottom:14 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:10 }}>
                   <div style={{ gridColumn:"1/-1" }}>
-                    <label style={lbl}>Deliverable / Item *</label>
+                    <label style={lbl}>{q("Deliverable / Item *")}</label>
                     <input style={inp} value={checklistForm.deliverable}
                       onChange={e=>setChecklistForm(f=>({...f,deliverable:e.target.value}))}
-                      placeholder="e.g. System Architecture Document" />
+                      placeholder={q("phDeliverable")} />
                   </div>
                   <div style={{ gridColumn:"1/-1" }}>
-                    <label style={lbl}>Acceptance Criteria</label>
+                    <label style={lbl}>{q("Acceptance Criteria")}</label>
                     <textarea rows={2} style={{...inp,resize:"vertical"}}
                       value={checklistForm.criteria}
                       onChange={e=>setChecklistForm(f=>({...f,criteria:e.target.value}))}
-                      placeholder="What must be true for this to pass?" />
+                      placeholder={q("phCriteria")} />
                   </div>
                   <div>
-                    <label style={lbl}>Inspector</label>
+                    <label style={lbl}>{q("Inspector")}</label>
                     <input style={inp} value={checklistForm.inspector}
                       onChange={e=>setChecklistForm(f=>({...f,inspector:e.target.value}))}
-                      placeholder="Name or role" />
+                      placeholder={q("phInspector")} />
                   </div>
                   <div>
-                    <label style={lbl}>Scheduled date</label>
+                    <label style={lbl}>{q("Scheduled date")}</label>
                     <DateField  style={inp} value={checklistForm.scheduledDate}
                       onChange={e=>setChecklistForm(f=>({...f,scheduledDate:e.target.value}))} />
                   </div>
@@ -283,7 +284,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                     border:"none", borderRadius:"var(--radius)", fontSize:12,
                     cursor:"pointer", fontFamily:"var(--font)",
                     opacity:!checklistForm.deliverable.trim()?0.5:1 }}>
-                  {saving?"Saving…":"Add item"}
+                  {saving?q("Saving…"):q("Add item")}
                 </button>
               </div>
             )}
@@ -292,17 +293,17 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
               <div style={{ textAlign:"center", padding:"50px 20px" }}>
                 <div style={{ fontSize:32, marginBottom:10 }}>✅</div>
                 <div style={{ fontSize:15, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-                  No quality checklist items
+                  {q("noItemsTitle")}
                 </div>
                 <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:400,
                   margin:"0 auto 16px", lineHeight:1.6 }}>
-                  Add acceptance criteria items to track quality inspection results per deliverable.
+                  {q("noItemsBody")}
                 </div>
                 <button onClick={()=>setShowAddChecklist(true)}
                   style={{ padding:"9px 20px", background:"var(--steel)", color:"#fff",
                     border:"none", borderRadius:"var(--radius)", fontSize:13,
                     cursor:"pointer", fontFamily:"var(--font)" }}>
-                  + Add first item
+                  {q("+ Add first item")}
                 </button>
               </div>
             ) : (
@@ -321,7 +322,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                         )}
                         {item.inspector && (
                           <div style={{ fontSize:10, color:"var(--text-4)", marginTop:3 }}>
-                            Inspector: {item.inspector}
+                            {q("Inspector")}: {item.inspector}
                           </div>
                         )}
                       </div>
@@ -334,7 +335,7 @@ export function QualityTab({ projectId, workspaceId, qmp, checklists, tasks }: {
                           background:sc.bg, color:sc.color,
                           fontFamily:"var(--font)", appearance:"none" as const }}>
                         {Object.entries(CHECKLIST_STATUS).map(([k,v])=>(
-                          <option key={k} value={k}>{v.label}</option>
+                          <option key={k} value={k}>{q(v.label as any)}</option>
                         ))}
                       </select>
                     </div>

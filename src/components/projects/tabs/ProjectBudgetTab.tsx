@@ -57,7 +57,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     }).catch(() => null)
     setEacBusy(false)
     if (res?.ok) router.refresh()
-    else alert("Could not change the forecast method.")
+    else alert(tip("bgEacFailed"))
   }
 
 
@@ -259,7 +259,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     setExpList(d?.data?.expenses || [])
   }
   async function deleteExpense(itemId: string, expenseId: string, amount: number) {
-    if (!confirm(`Delete this $${Number(amount).toLocaleString()} expense? The line's Actual decreases by that amount.`)) return
+    if (!confirm(tip("bgConfirmDeleteExpense",{a:Number(amount).toLocaleString()}))) return
     setExpBusy(true)
     await fetch(`/api/projects/${projectId}/budget/${itemId}/expenses?expenseId=${expenseId}`,
       { method: "DELETE", headers: workspaceId ? { "x-workspace-id": workspaceId } : {} }).catch(() => null)
@@ -399,7 +399,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   }
 
   async function deleteItem(itemId: string) {
-    if (!confirm("Delete this budget item?")) return
+    if (!confirm(tip("bgConfirmDeleteItem"))) return
     await fetch(`/api/projects/${projectId}/budget/${itemId}`, { method:"DELETE" })
     router.refresh()
   }
@@ -852,7 +852,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           {can("budget:edit") && (
           <div style={{ display:"flex", gap:8 }}>
           <button
-            title="AI-scan project documents for cost line items"
+            title={tip("bgScanTip")}
             style={{ padding:"6px 12px", background:"#fff", color:"var(--text-2)",
               border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:11,
               fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}
@@ -994,7 +994,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                   </select>
                 </div>
                 <div style={{ width:120 }}>
-                  <div style={{ fontSize:11.5, color:"var(--text-3)", marginBottom:3 }}>Amount</div>
+                  <div style={{ fontSize:11.5, color:"var(--text-3)", marginBottom:3 }}>{tip("bgAmount")}</div>
                   <input type="number" step="0.01" min={0} value={r.amount}
                     onChange={e => setSplit(sp => sp && ({ ...sp,
                       rows: sp.rows.map((x,j) => j===i ? { ...x, amount: Number(e.target.value)||0 } : x) }))}
@@ -1002,7 +1002,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                 </div>
                 <button onClick={() => setSplit(sp => sp && ({ ...sp, rows: sp.rows.filter((_,j)=>j!==i) }))}
-                  title="Remove this charge"
+                  title={tip("bgRemoveCharge")}
                   style={{ marginTop:20, border:"1px solid #FECACA", background:"none", color:"var(--red)",
                     borderRadius:6, cursor:"pointer", padding:"6px 9px", fontFamily:"var(--font)" }}>✕</button>
               </div>
@@ -1171,12 +1171,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                         </td>
                         <td style={{ padding:"6px 10px" }}>
                           <select style={{ ...inpS, marginTop:4 }} value={editForm.earnRule || "EFFORT"}
-                            title="How this line earns value"
+                            title={tip("bgEarnRuleTip")}
                             onChange={e=>setEditForm((f:any)=>({...f,earnRule:e.target.value}))}>
-                            <option value="EFFORT">Earns with effort</option>
-                            <option value="ZERO_HUNDRED">Earns 0/100 (on delivery)</option>
-                            <option value="FIFTY_FIFTY">Earns 50/50</option>
-                            <option value="MILESTONE">Earns at milestone</option>
+                            <option value="EFFORT">{tip("bgEarnEffort")}</option>
+                            <option value="ZERO_HUNDRED">{tip("bgEarnZeroHundred")}</option>
+                            <option value="FIFTY_FIFTY">{tip("bgEarnFiftyFifty")}</option>
+                            <option value="MILESTONE">{tip("bgEarnMilestone")}</option>
                           </select>
                         </td>
                         <td style={{ padding:"6px 10px" }}>
@@ -1278,7 +1278,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>
                           <button onClick={() => toggleExpenses(item.id)}
-                            title="View the expenses behind this amount"
+                            title={tip("bgViewExpenses")}
                             style={{ background:"none", border:"none", cursor:"pointer", padding:0,
                               fontSize:13, fontFamily:"monospace",
                               color: actual > 0 ? "var(--steel)" : "var(--text-2)",
@@ -1386,7 +1386,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
                             {tip("expensesOn")}
                           </div>
-                          {expBusy && !expList && <div style={{ fontSize:12, color:"var(--text-3)" }}>Loading…</div>}
+                          {expBusy && !expList && <div style={{ fontSize:12, color:"var(--text-3)" }}>{tip("loading")}</div>}
                           {expList && expList.length === 0 && (
                             <div style={{ fontSize:12, color:"var(--text-3)" }}>
                               {tip("noExpenses")}
@@ -1432,7 +1432,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               {can("budget:edit") && (
                                 <button onClick={() => deleteExpense(item.id, ex.id, ex.amount)}
                                   disabled={expBusy}
-                                  title="Delete this expense"
+                                  title={tip("bgDeleteExpense")}
                                   style={{ border:"1px solid #FECACA", background:"none", color:"var(--red)",
                                     borderRadius:4, fontSize:11, cursor:"pointer", padding:"2px 7px",
                                     fontFamily:"var(--font)" }}>✕</button>
@@ -1465,7 +1465,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       onChange={e=>setNewItem(f=>({...f,plannedAmount:e.target.value}))} />
                   </td>
                   <td style={{ padding:"6px 10px" }}>
-                    <label title="Post this amount as an expense automatically every month"
+                    <label title={tip("bgRecurringTip")}
                       style={{ display:"flex", alignItems:"center", gap:5, fontSize:11,
                         color:"var(--text-3)", cursor:"pointer", whiteSpace:"nowrap" }}>
                       <input type="checkbox" checked={newItem.recurrence}
@@ -1534,7 +1534,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                     {te.amount ? fmt(Number(te.amount),currency) : "—"}
                   </td>
                   <td style={{ padding:"8px 14px" }}>
-                    <Badge variant="green">Billable</Badge>
+                    <Badge variant="green">{tip("bgBillable")}</Badge>
                   </td>
                 </tr>
               ))}

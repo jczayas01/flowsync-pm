@@ -47,36 +47,36 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
     if (res?.ok) { setEditId(null); router.refresh() }
     else {
       const d2 = await res?.json().catch(() => null)
-      alert(d2?.error || "Could not save this decision.")
+      alert(d2?.error || tip("decSaveFailed"))
     }
   }
 
   // Deleting is a normal part of keeping a register honest — a mistyped entry
   // that can't be removed teaches people to stop trusting the register.
   async function removeItem(id: string, label: string) {
-    if (!confirm(`Delete ${label}?\n\nThis cannot be undone.`)) return
+    if (!confirm(tip("decConfirmDelete",{l:label}))) return
     const res = await fetch(`/api/projects/${projectId}/decisions/${id}`, { method: "DELETE" }).catch(() => null)
     if (res?.ok) { router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not delete this item.")
+      alert(d?.error || tip("decDeleteFailed"))
     }
   }
 
   async function create() {
-    if (!form.title.trim()) { setError("Title required"); return }
+    if (!form.title.trim()) { setError(tip("titleRequired")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/projects/${projectId}/decisions`, {
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ ...form, madeAt: new Date(form.madeAt+"T00:00:00Z").toISOString() }),
       })
-      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||"Failed"); return }
+      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||tip("genFailed")); return }
       setCreating(false)
       setForm({ title:"", description:"", rationale:"", alternatives:"", impact:"",
         madeAt: new Date().toISOString().split("T")[0] })
       router.refresh()
-    } catch { setError("Network error") } finally { setSaving(false) }
+    } catch { setError(tip("netError")) } finally { setSaving(false) }
   }
 
   const inp: React.CSSProperties = {
@@ -131,7 +131,7 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:12 }}>
               <div>
                 <label style={lbl}>{tip("dDecisionTitle")}</label>
-                <input style={inp} value={form.title} placeholder="What was decided?"
+                <input style={inp} value={form.title} placeholder={tip("decPhTitle")}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))} />
               </div>
               <div>
@@ -142,23 +142,23 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
             </div>
             <div><label style={lbl}>{tip("description")}</label>
               <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.description}
-                placeholder="Describe the decision in detail..."
+                placeholder={tip("decPhDetail")}
                 onChange={e=>setForm(f=>({...f,description:e.target.value}))} />
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <div><label style={lbl}>{tip("dRationale")}</label>
                 <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.rationale}
-                  placeholder="Why was this decision made?"
+                  placeholder={tip("decPhWhy")}
                   onChange={e=>setForm(f=>({...f,rationale:e.target.value}))} />
               </div>
               <div><label style={lbl}>{tip("dAlternatives")}</label>
                 <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.alternatives}
-                  placeholder="What other options were evaluated?"
+                  placeholder={tip("decPhAlt")}
                   onChange={e=>setForm(f=>({...f,alternatives:e.target.value}))} />
               </div>
             </div>
             <div><label style={lbl}>{tip("impact")}</label>
-              <input style={inp} value={form.impact} placeholder="How does this decision affect the project?"
+              <input style={inp} value={form.impact} placeholder={tip("decPhImpact")}
                 onChange={e=>setForm(f=>({...f,impact:e.target.value}))} />
             </div>
             <button onClick={create} disabled={saving||!form.title.trim()}
@@ -209,12 +209,12 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                         impact:d.impact||"",
                         madeAt: d.madeAt ? new Date(d.madeAt).toISOString().slice(0,10) : "" })
                     }}
-                    title="Edit"
+                    title={tip("edit")}
                     style={{ background:"none", border:"1px solid var(--border)", color:"var(--text-2)",
                       borderRadius:6, fontSize:11, cursor:"pointer", padding:"3px 9px",
                       flexShrink:0, fontFamily:"var(--font)", marginRight:6 }}>{tip("edit")}</button>
 <button onClick={e => { e.stopPropagation(); removeItem(d.id, `${d.code} — ${d.title}`) }}
-                    title="Delete"
+                    title={tip("delete")}
                     style={{ background:"none", border:"1px solid #FECACA", color:"var(--red)",
                       borderRadius:6, fontSize:11, cursor:"pointer", padding:"3px 8px",
                       flexShrink:0, fontFamily:"var(--font)" }}>✕</button>
@@ -255,8 +255,8 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                   <div onClick={e => e.stopPropagation()}
                     style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)",
                       display:"flex", flexDirection:"column", gap:8 }}>
-                    {([["title","Title"],["description","Description"],["rationale","Rationale"],
-                       ["alternatives","Alternatives considered"],["impact","Impact"]] as const).map(([k,label]) => (
+                    {([["title",tip("title")],["description",tip("description")],["rationale",tip("decRationale")],
+                       ["alternatives",tip("decAlternatives")],["impact",tip("decImpact")]] as const).map(([k,label]) => (
                       <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>
                         {label}
                         <input value={editF[k] || ""}

@@ -30,10 +30,10 @@ const REPORT_TYPES = [
 ]
 
 const AUDIENCES = [
-  { value:"TEAM",               label:"Project Team",       icon:"👥" },
-  { value:"SPONSOR",            label:"Executive Sponsor",  icon:"🏢" },
-  { value:"STEERING_COMMITTEE", label:"Steering Committee", icon:"⚖" },
-  { value:"PMO",                label:"PMO",                icon:"📐" },
+  { value:"TEAM",               label:"audTEAM",       icon:"👥" },
+  { value:"SPONSOR",            label:"audSPONSOR",  icon:"🏢" },
+  { value:"STEERING_COMMITTEE", label:"audSTEERING", icon:"⚖" },
+  { value:"PMO",                label:"audPMO",                icon:"📐" },
 ]
 
 function coerceReport(r: any) {
@@ -161,6 +161,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
   onDownloadPdf:()=>void; downloadingPdf:boolean; onEmail?:()=>void
   snapshot?: import("@/components/charts/ReportSnapshot").ReportSnapshotData | null
 }) {
+  const rp = useTranslations("reportDoc")
   const healthColor = HEALTH_COLOR[report.overallHealth] || "#059669"
 
   return (
@@ -214,11 +215,11 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         {/* Disclaimer */}
         <div style={{ background:"#FFFBEB", border:"1px solid #FDE68A", borderRadius:6,
           padding:"8px 14px", fontSize:11, color:"#92400E", marginBottom:20 }}>
-          ⚠ AI-generated report — review for accuracy before distributing.
+          ⚠ {rp("aiDisclaimer")}
         </div>
 
         {snapshot && (snapshot.scurve?.length || snapshot.statusCounts?.length || snapshot.budget) ? (
-          <ReportSection title="Performance Snapshot">
+          <ReportSection title={rp("Performance Snapshot")}>
             <ReportSnapshot data={snapshot} accent={accent} accent2={accent2} />
           </ReportSection>
         ) : null}
@@ -226,84 +227,84 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
         {/* PROJECT MANAGEMENT PLAN — the baseline document, not a status update */}
         {reportType==="PLAN" && (
           <>
-            <ReportSection title="Purpose of this Plan">
+            <ReportSection title={rp("Purpose of this Plan")}>
               <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.documentPurpose}</p>
             </ReportSection>
             {report.backgroundAndJustification && (
-              <ReportSection title="Background and Justification">
+              <ReportSection title={rp("Background and Justification")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.backgroundAndJustification}</p>
               </ReportSection>
             )}
             {Array.isArray(report.objectives) && report.objectives.length > 0 && (
-              <ReportSection title="Objectives">
+              <ReportSection title={rp("Objectives")}>
                 {report.objectives.map((o:string,i:number) => <ReportBullet key={i} text={o} />)}
               </ReportSection>
             )}
             {report.deliveryApproach && (
-              <ReportSection title="Delivery Approach">
+              <ReportSection title={rp("Delivery Approach")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.deliveryApproach}</p>
               </ReportSection>
             )}
             {(report.scopeStatement || report.outOfScope) && (
-              <ReportSection title="Scope Baseline">
+              <ReportSection title={rp("Scope Baseline")}>
                 {report.scopeStatement && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 8px" }}>
-                    <strong style={{ color:"#1E293B" }}>In scope. </strong>{report.scopeStatement}
+                    <strong style={{ color:"#1E293B" }}>{rp("In scope.")} </strong>{report.scopeStatement}
                   </p>
                 )}
                 {report.outOfScope && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>
-                    <strong style={{ color:"#1E293B" }}>Out of scope. </strong>{report.outOfScope}
+                    <strong style={{ color:"#1E293B" }}>{rp("Out of scope.")} </strong>{report.outOfScope}
                   </p>
                 )}
               </ReportSection>
             )}
             {Array.isArray(report.deliverables) && report.deliverables.length > 0 && (
-              <ReportSection title="Key Deliverables">
+              <ReportSection title={rp("Key Deliverables")}>
                 <ReportTable head={["ID","Deliverable","Owner","Acceptance"]}
                   rows={report.deliverables.map((d:any)=>[d.id,d.deliverable,d.owner,d.acceptance])} />
               </ReportSection>
             )}
             {Array.isArray(report.scheduleBaseline) && report.scheduleBaseline.length > 0 && (
-              <ReportSection title="Schedule Baseline">
+              <ReportSection title={rp("Schedule Baseline")}>
                 <ReportTable head={["Phase","Key deliverable","Target date","Gate owner"]}
                   rows={report.scheduleBaseline.map((r2:any)=>[r2.phase,r2.deliverable,r2.targetDate,r2.gateOwner])} />
               </ReportSection>
             )}
             {report.criticalPath && (
-              <ReportSection title="Critical Path">
+              <ReportSection title={rp("Critical Path")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.criticalPath}</p>
               </ReportSection>
             )}
             {Array.isArray(report.costBaseline) && report.costBaseline.length > 0 && (
-              <ReportSection title="Cost Baseline">
+              <ReportSection title={rp("Cost Baseline")}>
                 <ReportTable head={["Category","Amount","Basis"]}
                   rows={report.costBaseline.map((c:any)=>[c.category,c.amount,c.notes])} />
               </ReportSection>
             )}
             {report.budgetControls && (
-              <ReportSection title="Budget Controls and Earned Value">
+              <ReportSection title={rp("Budget Controls and Earned Value")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.budgetControls}</p>
               </ReportSection>
             )}
             {Array.isArray(report.governance) && report.governance.length > 0 && (
-              <ReportSection title="Governance and Organization">
+              <ReportSection title={rp("Governance and Organization")}>
                 <ReportTable head={["Role","Holder","Responsibility"]}
                   rows={report.governance.map((g:any)=>[g.role,g.holder,g.responsibility])} />
               </ReportSection>
             )}
             {report.decisionRights && (
-              <ReportSection title="Decision Rights">
+              <ReportSection title={rp("Decision Rights")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.decisionRights}</p>
               </ReportSection>
             )}
             {report.meetingCadence && (
-              <ReportSection title="Reporting Cadence">
+              <ReportSection title={rp("Reporting Cadence")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.meetingCadence}</p>
               </ReportSection>
             )}
             {report.riskManagement && (
-              <ReportSection title="Risk Management">
+              <ReportSection title={rp("Risk Management")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 10px" }}>{report.riskManagement}</p>
                 {Array.isArray(report.topRisks) && report.topRisks.length > 0 && (
                   <ReportTable head={["Risk","Score","Response"]}
@@ -312,34 +313,34 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </ReportSection>
             )}
             {report.qualityAndAcceptance && (
-              <ReportSection title="Quality and Acceptance">
+              <ReportSection title={rp("Quality and Acceptance")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.qualityAndAcceptance}</p>
               </ReportSection>
             )}
             {report.changeControl && (
-              <ReportSection title="Change Control">
+              <ReportSection title={rp("Change Control")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.changeControl}</p>
               </ReportSection>
             )}
             {Array.isArray(report.communications) && report.communications.length > 0 && (
-              <ReportSection title="Communications">
+              <ReportSection title={rp("Communications")}>
                 <ReportTable head={["Audience","Content","Frequency","Channel"]}
                   rows={report.communications.map((c:any)=>[c.audience,c.content,c.frequency,c.channel])} />
               </ReportSection>
             )}
             {Array.isArray(report.successCriteria) && report.successCriteria.length > 0 && (
-              <ReportSection title="Success Criteria">
+              <ReportSection title={rp("Success Criteria")}>
                 {report.successCriteria.map((c:string,i:number) => <ReportBullet key={i} text={c} />)}
               </ReportSection>
             )}
             {(Array.isArray(report.assumptions) || Array.isArray(report.constraints)) && (
-              <ReportSection title="Assumptions and Constraints">
+              <ReportSection title={rp("Assumptions and Constraints")}>
                 {(report.assumptions||[]).map((a:string,i:number) => <ReportBullet key={`a${i}`} text={`Assumption — ${a}`} />)}
                 {(report.constraints||[]).map((c:string,i:number) => <ReportBullet key={`c${i}`} text={`Constraint — ${c}`} />)}
               </ReportSection>
             )}
             {report.approval && (
-              <ReportSection title="Baseline Approval">
+              <ReportSection title={rp("Baseline Approval")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 22px" }}>{report.approval}</p>
                 <div style={{ display:"flex", gap:40, flexWrap:"wrap" }}>
                   {["Executive Sponsor","Project Manager"].map(role => (
@@ -361,36 +362,36 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.executiveSummary}</p>
             </ReportSection>
             {report.background && (
-              <ReportSection title="Background">
+              <ReportSection title={rp("Background")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.background}</p>
               </ReportSection>
             )}
             {Array.isArray(report.objectives) && report.objectives.length > 0 && (
-              <ReportSection title="Objectives">
+              <ReportSection title={rp("Objectives")}>
                 {report.objectives.map((o:string,i:number) => <ReportBullet key={i} text={o} />)}
               </ReportSection>
             )}
             {(report.scopeSummary || report.outOfScopeSummary) && (
-              <ReportSection title="Scope">
+              <ReportSection title={rp("Scope")}>
                 {report.scopeSummary && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 8px" }}>
-                    <strong style={{ color:"#1E293B" }}>In scope. </strong>{report.scopeSummary}
+                    <strong style={{ color:"#1E293B" }}>{rp("In scope.")} </strong>{report.scopeSummary}
                   </p>
                 )}
                 {report.outOfScopeSummary && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>
-                    <strong style={{ color:"#1E293B" }}>Out of scope. </strong>{report.outOfScopeSummary}
+                    <strong style={{ color:"#1E293B" }}>{rp("Out of scope.")} </strong>{report.outOfScopeSummary}
                   </p>
                 )}
               </ReportSection>
             )}
             {report.approach && (
-              <ReportSection title="Approach">
+              <ReportSection title={rp("Approach")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.approach}</p>
               </ReportSection>
             )}
             {Array.isArray(report.keyDeliverables) && report.keyDeliverables.length > 0 && (
-              <ReportSection title="Key Deliverables">
+              <ReportSection title={rp("Key Deliverables")}>
                 <table style={{ width:"100%", minWidth:460, borderCollapse:"collapse", fontSize:12.5 }}>
                   <thead>
                     <tr style={{ background:"#F1F5F9" }}>
@@ -413,37 +414,37 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </ReportSection>
             )}
             {report.governanceSummary && (
-              <ReportSection title="Governance">
+              <ReportSection title={rp("Governance")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.governanceSummary}</p>
               </ReportSection>
             )}
             {report.budgetStatus && (
-              <ReportSection title="Budget Status">
+              <ReportSection title={rp("Budget Status")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.budgetStatus}</p>
               </ReportSection>
             )}
             {report.scheduleStatus && (
-              <ReportSection title="Schedule Status">
+              <ReportSection title={rp("Schedule Status")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.scheduleStatus}</p>
               </ReportSection>
             )}
             {report.risksAndIssues && (
-              <ReportSection title="Risks & Issues">
+              <ReportSection title={rp("Risks & Issues")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.risksAndIssues}</p>
               </ReportSection>
             )}
             {report.stakeholderSummary && (
-              <ReportSection title="Stakeholders">
+              <ReportSection title={rp("Stakeholders")}>
                 <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.stakeholderSummary}</p>
               </ReportSection>
             )}
             {Array.isArray(report.openQuestions) && report.openQuestions.length > 0 && (
-              <ReportSection title="Open Questions">
+              <ReportSection title={rp("Open Questions")}>
                 {report.openQuestions.map((q:string,i:number) => <ReportBullet key={i} text={q} />)}
               </ReportSection>
             )}
             {Array.isArray(report.sourceDocuments) && report.sourceDocuments.length > 0 && (
-              <ReportSection title="Sources">
+              <ReportSection title={rp("Sources")}>
                 <p style={{ fontSize:12, lineHeight:1.7, color:"#64748B", margin:0 }}>
                   Built from: {report.sourceDocuments.join(" · ")}
                 </p>
@@ -459,7 +460,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>{report.executiveSummary}</p>
             </ReportSection>
             {report.keyMetrics && (
-              <ReportSection title="Key Metrics">
+              <ReportSection title={rp("Key Metrics")}>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                   <ReportMetric label="CPI" value={report.keyMetrics.cpi} color={Number(report.keyMetrics.cpi)<1?"#DC2626":"#059669"} />
                   <ReportMetric label="SPI" value={report.keyMetrics.spi} color={Number(report.keyMetrics.spi)<1?"#D97706":"#059669"} />
@@ -469,18 +470,18 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </ReportSection>
             )}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:20 }}>
-              <ReportSection title="Accomplishments This Period">
+              <ReportSection title={rp("Accomplishments This Period")}>
                 {(report.accomplishmentsThisWeek||[]).map((a:string,i:number)=><ReportBullet key={i} text={a}/>)}
               </ReportSection>
-              <ReportSection title="Planned Next Period">
+              <ReportSection title={rp("Planned Next Period")}>
                 {(report.plannedNextWeek||[]).map((a:string,i:number)=><ReportBullet key={i} text={a}/>)}
               </ReportSection>
             </div>
-            <ReportSection title="Budget Status"><p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>{report.budgetStatus}</p></ReportSection>
-            <ReportSection title="Schedule Status"><p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>{report.scheduleStatus}</p></ReportSection>
-            <ReportSection title="Risks & Issues"><p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>{report.risksAndIssues}</p></ReportSection>
+            <ReportSection title={rp("Budget Status")}><p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>{report.budgetStatus}</p></ReportSection>
+            <ReportSection title={rp("Schedule Status")}><p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>{report.scheduleStatus}</p></ReportSection>
+            <ReportSection title={rp("Risks & Issues")}><p style={{ fontSize:13, color:"#374151", lineHeight:1.6, margin:0 }}>{report.risksAndIssues}</p></ReportSection>
             {(report.decisionsNeeded||[]).length>0 && (
-              <ReportSection title="Decisions Required">
+              <ReportSection title={rp("Decisions Required")}>
                 <div style={{ background:"#FEF2F2", borderRadius:6, padding:"10px 14px" }}>
                   {report.decisionsNeeded.map((d:string,i:number)=><ReportBullet key={i} text={d}/>)}
                 </div>
@@ -496,10 +497,10 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               <p style={{ fontSize:14, lineHeight:1.8, color:"#1E293B", margin:0, fontWeight:500 }}>{report.executiveSummary}</p>
             </ReportSection>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:20 }}>
-              <ReportSection title="Strategic Highlights">
+              <ReportSection title={rp("Strategic Highlights")}>
                 {(report.strategicHighlights||[]).map((h:string,i:number)=><ReportBullet key={i} text={h}/>)}
               </ReportSection>
-              <ReportSection title="Critical Issues">
+              <ReportSection title={rp("Critical Issues")}>
                 {(report.criticalIssues||[]).length>0
                   ? report.criticalIssues.map((h:string,i:number)=>(
                       <div key={i} style={{ display:"flex",gap:8,marginBottom:5 }}>
@@ -507,14 +508,14 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
                         <span style={{ fontSize:13,color:"#374151",lineHeight:1.6 }}>{h}</span>
                       </div>
                     ))
-                  : <p style={{ fontSize:13,color:"#059669" }}>No critical issues.</p>
+                  : <p style={{ fontSize:13,color:"#059669" }}>{rp("No critical issues.")}</p>
                 }
               </ReportSection>
             </div>
-            <ReportSection title="Financial Snapshot"><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.financialSnapshot}</p></ReportSection>
-            {report.nextMilestone && <ReportSection title="Next Key Milestone"><p style={{ fontSize:13,color:accent2,lineHeight:1.6,margin:0,fontWeight:500 }}>◇ {report.nextMilestone}</p></ReportSection>}
+            <ReportSection title={rp("Financial Snapshot")}><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.financialSnapshot}</p></ReportSection>
+            {report.nextMilestone && <ReportSection title={rp("Next Key Milestone")}><p style={{ fontSize:13,color:accent2,lineHeight:1.6,margin:0,fontWeight:500 }}>◇ {report.nextMilestone}</p></ReportSection>}
             {(report.recommendedActions||[]).length>0 && (
-              <ReportSection title="Actions Requested">
+              <ReportSection title={rp("Actions Requested")}>
                 <div style={{ background:"#EFF6FF",borderRadius:6,padding:"10px 14px" }}>
                   {report.recommendedActions.map((a:string,i:number)=><ReportBullet key={i} text={a}/>)}
                 </div>
@@ -536,20 +537,20 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               <div style={{ fontSize:13,color:"#374151" }}>{report.gateRationale}</div>
             </div>
             <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12 }}>
-              <ReportSection title="Scope Variance"><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.scopeVariance}</p></ReportSection>
-              <ReportSection title="Schedule Variance"><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.scheduleVariance}</p></ReportSection>
-              <ReportSection title="Cost Variance"><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.costVariance}</p></ReportSection>
+              <ReportSection title={rp("Scope Variance")}><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.scopeVariance}</p></ReportSection>
+              <ReportSection title={rp("Schedule Variance")}><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.scheduleVariance}</p></ReportSection>
+              <ReportSection title={rp("Cost Variance")}><p style={{ fontSize:12,color:"#374151",margin:0,lineHeight:1.6 }}>{report.costVariance}</p></ReportSection>
             </div>
-            <ReportSection title="Risk Assessment"><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.riskAssessment}</p></ReportSection>
+            <ReportSection title={rp("Risk Assessment")}><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.riskAssessment}</p></ReportSection>
           </>
         )}
 
         {/* EVM */}
         {reportType==="EVM" && (
           <>
-            <ReportSection title="EVM Summary"><p style={{ fontSize:13,lineHeight:1.7,color:"#374151",margin:0 }}>{report.evmSummary}</p></ReportSection>
+            <ReportSection title={rp("EVM Summary")}><p style={{ fontSize:13,lineHeight:1.7,color:"#374151",margin:0 }}>{report.evmSummary}</p></ReportSection>
             {report.metrics && (
-              <ReportSection title="Key EVM Metrics">
+              <ReportSection title={rp("Key EVM Metrics")}>
                 <div style={{ display:"flex",gap:8,flexWrap:"wrap",marginBottom:12 }}>
                   <ReportMetric label="BAC" value={`$${Number(report.metrics.bac||0).toLocaleString("en-US")}`} />
                   <ReportMetric label="EV"  value={`$${Number(report.metrics.ev||0).toLocaleString("en-US")}`} />
@@ -561,12 +562,12 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </ReportSection>
             )}
             <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16 }}>
-              <ReportSection title="Cost Performance"><p style={{ fontSize:12,color:"#374151",lineHeight:1.6,margin:0 }}>{report.cpiAnalysis}</p></ReportSection>
-              <ReportSection title="Schedule Performance"><p style={{ fontSize:12,color:"#374151",lineHeight:1.6,margin:0 }}>{report.spiAnalysis}</p></ReportSection>
+              <ReportSection title={rp("Cost Performance")}><p style={{ fontSize:12,color:"#374151",lineHeight:1.6,margin:0 }}>{report.cpiAnalysis}</p></ReportSection>
+              <ReportSection title={rp("Schedule Performance")}><p style={{ fontSize:12,color:"#374151",lineHeight:1.6,margin:0 }}>{report.spiAnalysis}</p></ReportSection>
             </div>
-            <ReportSection title="Forecast"><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.forecast}</p></ReportSection>
+            <ReportSection title={rp("Forecast")}><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.forecast}</p></ReportSection>
             {(report.correctiveActions||[]).length>0 && (
-              <ReportSection title="Corrective Actions">
+              <ReportSection title={rp("Corrective Actions")}>
                 {report.correctiveActions.map((a:string,i:number)=><ReportBullet key={i} text={a}/>)}
               </ReportSection>
             )}
@@ -584,9 +585,9 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               </div>
               <p style={{ fontSize:13,color:"#374151",margin:0 }}>{report.riskRatingRationale}</p>
             </div>
-            <ReportSection title="Risk Overview"><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.riskOverview}</p></ReportSection>
+            <ReportSection title={rp("Risk Overview")}><p style={{ fontSize:13,color:"#374151",lineHeight:1.6,margin:0 }}>{report.riskOverview}</p></ReportSection>
             {(report.criticalRisks||[]).length>0 && (
-              <ReportSection title="Critical Risks">
+              <ReportSection title={rp("Critical Risks")}>
                 {report.criticalRisks.map((r:any,i:number)=>(
                   <div key={i} style={{ padding:"10px 12px",background:"#FEF2F2",borderRadius:6,
                     marginBottom:8,borderLeft:"3px solid #DC2626" }}>
@@ -598,7 +599,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
                 ))}
               </ReportSection>
             )}
-            <ReportSection title="Top Actions">
+            <ReportSection title={rp("Top Actions")}>
               {(report.topThreeActions||[]).map((a:string,i:number)=>(
                 <div key={i} style={{ display:"flex",gap:8,marginBottom:8 }}>
                   <span style={{ width:20,height:20,borderRadius:"50%",background:accent,
@@ -1023,7 +1024,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ reportData: toDocxShape(generatedReport) }),
       })
-      if (!res.ok) { alert("PDF download failed"); return }
+      if (!res.ok) { alert(tip("rpPdfFailed")); return }
       const blob = await res.blob()
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement("a")
@@ -1122,12 +1123,12 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                 <div style={{ marginBottom:18, padding:"12px 14px", background:"var(--surface)",
                   border:"1px solid var(--border)", borderRadius:"var(--radius)" }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700, color:"var(--text-3)",
-                    textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>Start from a template</label>
+                    textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>{tip("rpFromTemplate")}</label>
                   <select value={templateId} onChange={e=>applyTemplate(e.target.value)}
                     style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)", color:"var(--text)",
                       background:"#fff", cursor:"pointer" }}>
-                    <option value="">None — configure manually below</option>
+                    <option value="">{tip("rpNoTemplate")}</option>
                     {reportTemplates.map((t:any)=>(
                       <option key={t.id} value={t.id}>{t.name} · {t.audience}</option>
                     ))}
@@ -1163,7 +1164,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               {/* Audience */}
               <div style={{ marginBottom:18 }}>
                 <label style={{ display:"block", fontSize:10, fontWeight:700, color:"var(--text-3)",
-                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>Audience</label>
+                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>{tip("rpAudience")}</label>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                   {AUDIENCES.map(a => (
                     <div key={a.value} onClick={() => setAudience(a.value)}
@@ -1173,7 +1174,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                         fontSize:12, fontWeight:audience===a.value?600:400,
                         color:audience===a.value?"var(--steel)":"var(--text-2)",
                         display:"flex", alignItems:"center", gap:5 }}>
-                      <span>{a.icon}</span> {a.label}
+                      <span>{a.icon}</span> {tip(a.label as any)}
                     </div>
                   ))}
                 </div>
@@ -1182,7 +1183,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               {reportType === "STATUS" && (
                 <div style={{ marginBottom:18 }}>
                   <label style={{ display:"block", fontSize:10, fontWeight:700, color:"var(--text-3)",
-                    textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>Report week</label>
+                    textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>{tip("rpReportWeek")}</label>
                   <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
                     <select value={reportWeek} onChange={e => setReportWeek(e.target.value)}
                       style={{ padding:"8px 12px", border:"1px solid var(--border)",
@@ -1300,7 +1301,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                             <div style={{ fontSize:12, color:"#B45309", lineHeight:1.55 }}>{m365Err}</div>
                           )}
                           {!m365Err && m365Loading && !m365Items && (
-                            <div style={{ fontSize:12, color:"var(--text-3)" }}>Reading your inbox and calendar…</div>
+                            <div style={{ fontSize:12, color:"var(--text-3)" }}>{tip("rpReadingInbox")}</div>
                           )}
                           {!m365Err && m365Items && m365Items.length === 0 && (
                             <div style={{ fontSize:12, color:"var(--text-3)" }}>
@@ -1356,7 +1357,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                   Additional context (optional)
                 </label>
                 <textarea rows={3} value={notes} onChange={e=>setNotes(e.target.value)}
-                  placeholder="Add any specific points to include..."
+                  placeholder={tip("rpNotesPh")}
                   style={{...inp, resize:"vertical", lineHeight:1.6}} />
               </div>
 
@@ -1542,7 +1543,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                           )
                         })}
                         {!withEmail.length && (
-                          <div style={{ fontSize:11.5, color:"var(--text-3)", padding:"4px 0" }}>No team members with emails.</div>
+                          <div style={{ fontSize:11.5, color:"var(--text-3)", padding:"4px 0" }}>{tip("rpNoEmails")}</div>
                         )}
                       </div>
                     )
@@ -1551,11 +1552,11 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                     Other recipients <span style={{ fontWeight:400, color:"var(--text-3)" }}>(comma-separated)</span>
                   </div>
                   <input value={emailExtra} onChange={e => setEmailExtra(e.target.value)}
-                    placeholder="sponsor@client.com, pmo@client.com"
+                    placeholder={tip("rpExtPh")}
                     style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)",
                       borderRadius:8, fontSize:12.5, marginBottom:10, fontFamily:"var(--font)" }} />
                   <textarea value={emailNote} onChange={e => setEmailNote(e.target.value)}
-                    placeholder="Optional note shown at the top of the email…" rows={2}
+                    placeholder={tip("rpNotePh")} rows={2}
                     style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)",
                       borderRadius:8, fontSize:12.5, marginBottom:8, fontFamily:"var(--font)", resize:"vertical" }} />
                   <label style={{ display:"flex", gap:8, alignItems:"center", fontSize:12.5,
@@ -1568,7 +1569,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                   <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
                     <button onClick={() => setEmailOpen(false)} disabled={emailBusy}
                       style={{ padding:"8px 16px", background:"#fff", border:"1px solid var(--border)",
-                        borderRadius:8, fontSize:12.5, cursor:"pointer", fontFamily:"var(--font)" }}>Cancel</button>
+                        borderRadius:8, fontSize:12.5, cursor:"pointer", fontFamily:"var(--font)" }}>{tip("cancel")}</button>
                     <button onClick={sendReportEmail} disabled={emailBusy}
                       style={{ padding:"8px 18px", background: emailBusy ? "#94A3B8" : "var(--steel,#1B6CA8)",
                         color:"#fff", border:"none", borderRadius:8, fontSize:12.5, fontWeight:700,
@@ -1610,24 +1611,24 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
             {showStatusForm && (
               <div style={{ background:"#fff", border:"1px solid var(--border)",
                 borderRadius:"var(--radius)", padding:20, marginBottom:16 }}>
-                <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>New Status Update</div>
+                <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>{tip("rpNewStatus")}</div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:12, marginBottom:12 }}>
                   <div>
-                    <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>Period start</label>
+                    <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>{tip("rpPeriodStart")}</label>
                     <DateField  style={inp} value={statusForm.periodStart}
                       onChange={e=>setStatusForm(f=>({...f,periodStart:e.target.value}))} />
                   </div>
                   <div>
-                    <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>Period end</label>
+                    <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>{tip("rpPeriodEnd")}</label>
                     <DateField  style={inp} value={statusForm.periodEnd}
                       onChange={e=>setStatusForm(f=>({...f,periodEnd:e.target.value}))} />
                   </div>
                 </div>
                 <div style={{ marginBottom:12 }}>
-                  <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>Summary *</label>
+                  <label style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", display:"block", marginBottom:4 }}>{tip("rpSummaryReq")}</label>
                   <textarea rows={3} style={{...inp,resize:"vertical"}} value={statusForm.summary}
                     onChange={e=>setStatusForm(f=>({...f,summary:e.target.value}))}
-                    placeholder="Overall project status this period…" />
+                    placeholder={tip("rpSummaryPh")} />
                 </div>
                 <div style={{ display:"flex", gap:10 }}>
                   <button onClick={saveStatusUpdate} disabled={savingStatus||!statusForm.summary.trim()}
@@ -1639,7 +1640,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                   <button onClick={()=>setShowStatusForm(false)}
                     style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                      fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                      fontFamily:"var(--font)", color:"var(--text-2)" }}>{tip("cancel")}</button>
                 </div>
               </div>
             )}
@@ -1648,9 +1649,9 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
             {statusUpdates.length === 0 ? (
               <div style={{ textAlign:"center", padding:"60px 20px" }}>
                 <div style={{ fontSize:36, marginBottom:12 }}>📋</div>
-                <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>No reports yet</div>
+                <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("rpNoReports")}</div>
                 <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:400, margin:"0 auto 20px" }}>
-                  Use AI Generate Report to create a report from live project data.
+                  {tip("rpNoReportsBody")}
                 </div>
                 <button onClick={()=>setView("generate")}
                   style={{ padding:"10px 20px", background:"#059669", color:"#fff",
@@ -1691,7 +1692,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                           method:"POST", headers:{"Content-Type":"application/json"},
                           body: JSON.stringify({ reportData: toDocxShape(r) }),
                         })
-                        if (!res.ok) { alert("PDF download failed"); return }
+                        if (!res.ok) { alert(tip("rpPdfFailed")); return }
                         const blob = await res.blob()
                         const url = URL.createObjectURL(blob)
                         const a = document.createElement("a")

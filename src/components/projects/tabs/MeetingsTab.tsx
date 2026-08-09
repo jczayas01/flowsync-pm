@@ -6,6 +6,8 @@ import { DateField } from "@/components/shared/DatePicker"
 import { dateLocale } from "@/lib/date-locale"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { useState } from "react"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { useRouter } from "next/navigation"
 
 const MTG_TYPES = ["KICKOFF","STATUS","PHASE_GATE","RISK_REVIEW","STEERING",
@@ -59,6 +61,8 @@ const lbl: React.CSSProperties = {
 export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
   projectId:string; workspaceId:string; minutes:any[]; members:any[]
 }) {
+  const mt = useTranslations("meetingsTab")
+  const locale = useLocale()
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [expanded, setExpanded] = useState<string|null>(null)
@@ -110,20 +114,20 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
     if (res?.ok) { setEditId(null); router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not save these minutes.")
+      alert(d?.error || mt("saveFailed"))
     }
   }
 
   async function removeMinutes(m2: any) {
-    if (!confirm(`Delete "${m2.title}"?\n\nThis cannot be undone.`)) return
+    if (!confirm(mt("confirmDelete",{t:m2.title}))) return
     const res = await fetch(`/api/projects/${projectId}/meeting-minutes/${m2.id}`, { method: "DELETE" })
       .catch(() => null)
     if (res?.ok) router.refresh()
-    else alert("Could not delete these minutes.")
+    else alert(mt("deleteFailed"))
   }
 
   async function save() {
-    if (!form.title.trim()) { setError("Title required"); return }
+    if (!form.title.trim()) { setError(mt("Title required")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/projects/${projectId}/meeting-minutes`, {
@@ -133,7 +137,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
       })
       if (!res.ok) {
         const d = await res.json().catch(()=>({}))
-        setError(d.error||"Failed to save"); return
+        setError(d.error||mt("Failed to save")); return
       }
       setShowForm(false); resetForm(); router.refresh()
     } finally { setSaving(false) }
@@ -145,24 +149,24 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
       <div style={{ background:"var(--steel)", padding:"12px 20px", color:"#fff",
         display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div>
-          <div style={{ fontSize:16, fontWeight:700 }}>📝 Meeting Minutes</div>
+          <div style={{ fontSize:16, fontWeight:700 }}>📝 {mt("Meeting Minutes")}</div>
           <div style={{ fontSize:11, opacity:.6, marginTop:2 }}>
-            {minutes.length} meeting record{minutes.length!==1?"s":""}
+            {mt("recordCount",{n:minutes.length})}
           </div>
         </div>
         <AIScanPanel projectId={projectId} workspaceId={workspaceId} domain="meetings"
-          commitLabel="to the meeting record"
+          commitLabel={mt("to the meeting record")}
           renderCandidate={(c:any)=>(
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</div>
               <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
-                {c.meetingDate || "no date"}{c.facilitator ? ` · ${c.facilitator}` : ""}
-                {Array.isArray(c.attendees) && c.attendees.length ? ` · ${c.attendees.length} attendees` : ""}
+                {c.meetingDate || mt("no date")}{c.facilitator ? ` · ${c.facilitator}` : ""}
+                {Array.isArray(c.attendees) && c.attendees.length ? ` · ${mt("attendeeCount",{n:c.attendees.length})}` : ""}
               </div>
               {Array.isArray(c.decisions) && c.decisions.length > 0 && (
                 <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:3 }}>
-                  ⚡ {c.decisions.length} decision{c.decisions.length===1?"":"s"}
-                  {Array.isArray(c.actionItems) && c.actionItems.length ? ` · ✓ ${c.actionItems.length} action items` : ""}
+                  ⚡ {mt("decisionCount",{n:c.decisions.length})}
+                  {Array.isArray(c.actionItems) && c.actionItems.length ? ` · ✓ ${mt("actionItemCount",{n:c.actionItems.length})}` : ""}
                 </div>
               )}
               {c.evidence && (
@@ -192,7 +196,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
           style={{ padding:"7px 16px", background:"rgba(255,255,255,.15)", color:"#fff",
             border:"1px solid rgba(255,255,255,.3)", borderRadius:"var(--radius)",
             fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
-          {showForm?"Cancel":"+ New minutes"}
+          {showForm?mt("Cancel"):mt("+ New minutes")}
         </button>
       </div>
 
@@ -203,42 +207,42 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
           <div style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20, marginBottom:16 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"var(--text)", marginBottom:14 }}>
-              New Meeting Minutes
+              {mt("New Meeting Minutes")}
             </div>
             {error && (
               <div style={{ color:"var(--red)", fontSize:12, marginBottom:10 }}>✗ {error}</div>
             )}
             <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:12, marginBottom:12 }}>
               <div>
-                <label style={lbl}>Meeting title *</label>
+                <label style={lbl}>{mt("Meeting title *")}</label>
                 <input style={inp} value={form.title}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))}
-                  placeholder="e.g. Sprint 4 Planning Meeting" />
+                  placeholder={mt("phMeetingTitle")} />
               </div>
               <div>
-                <label style={lbl}>Date</label>
+                <label style={lbl}>{mt("Date")}</label>
                 <DateField  style={inp} value={form.meetingDate}
                   onChange={e=>setForm(f=>({...f,meetingDate:e.target.value}))} />
               </div>
               <div>
-                <label style={lbl}>Type</label>
+                <label style={lbl}>{mt("Type")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.meetingType}
                   onChange={e=>setForm(f=>({...f,meetingType:e.target.value}))}>
-                  {MTG_TYPES.map(t=><option key={t} value={t}>{t.replace(/_/g," ")}</option>)}
+                  {MTG_TYPES.map(t=><option key={t} value={t}>{enumLabel(t, locale)}</option>)}
                 </select>
               </div>
             </div>
             <div style={{ marginBottom:10 }}>
-              <label style={lbl}>Attendees</label>
+              <label style={lbl}>{mt("Attendees")}</label>
               <input style={inp} value={form.attendees}
                 onChange={e=>setForm(f=>({...f,attendees:e.target.value}))}
-                placeholder="Names and roles of attendees" />
+                placeholder={mt("phAttendees")} />
             </div>
             {[
-              { key:"agenda",      label:"Agenda" },
-              { key:"discussion",  label:"Discussion / Notes" },
-              { key:"decisions",   label:"Decisions Made" },
-              { key:"actionItems", label:"Action Items (who / what / by when)" },
+              { key:"agenda",      label:mt("Agenda") },
+              { key:"discussion",  label:mt("Discussion / Notes") },
+              { key:"decisions",   label:mt("Decisions Made") },
+              { key:"actionItems", label:mt("Action Items (who / what / by when)") },
             ].map(({key,label}) => (
               <div key={key} style={{ marginBottom:10 }}>
                 <label style={lbl}>{label}</label>
@@ -249,7 +253,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
               </div>
             ))}
             <div style={{ marginBottom:14 }}>
-              <label style={lbl}>Next meeting date</label>
+              <label style={lbl}>{mt("Next meeting date")}</label>
               <DateField  style={{...inp,width:"auto"}} value={form.nextMeeting}
                 onChange={e=>setForm(f=>({...f,nextMeeting:e.target.value}))} />
             </div>
@@ -259,13 +263,13 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                   border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
                   cursor:"pointer", fontFamily:"var(--font)",
                   opacity:!form.title.trim()?0.5:1 }}>
-                {saving?"Saving…":"Save minutes"}
+                {saving?mt("Saving…"):mt("Save minutes")}
               </button>
               <button onClick={()=>{setShowForm(false);resetForm();setError("")}}
                 style={{ padding:"9px 16px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                   fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                Cancel
+                {mt("Cancel")}
               </button>
             </div>
           </div>
@@ -276,16 +280,16 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📝</div>
             <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-              No meeting minutes yet
+              {mt("emptyTitle")}
             </div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:400, margin:"0 auto 20px", lineHeight:1.7 }}>
-              Record meeting decisions, action items, and discussion notes to maintain a formal project record.
+              {mt("emptyBody")}
             </div>
             <button onClick={()=>setShowForm(true)}
               style={{ padding:"10px 20px", background:"var(--steel)", color:"#fff",
                 border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                 cursor:"pointer", fontFamily:"var(--font)" }}>
-              + Record first meeting
+              {mt("+ Record first meeting")}
             </button>
           </div>
         ) : (
@@ -321,7 +325,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                     <button onClick={e=>{ e.stopPropagation(); openEdit(m) }}
                       style={{ padding:"3px 9px", fontSize:11, fontWeight:600, cursor:"pointer",
                         border:"1px solid var(--border)", borderRadius:6, background:"#fff",
-                        color:"var(--text-2)", fontFamily:"var(--font)" }}>Edit</button>
+                        color:"var(--text-2)", fontFamily:"var(--font)" }}>{mt("Edit")}</button>
                     <button onClick={e=>{ e.stopPropagation(); removeMinutes(m) }}
                       style={{ padding:"3px 8px", fontSize:11, fontWeight:600, cursor:"pointer",
                         border:"1px solid #FECACA", borderRadius:6, background:"#fff",
@@ -334,33 +338,33 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                   {editId === m.id && (
                     <div style={{ borderTop:"1px solid var(--border)", padding:"14px 16px",
                       background:"var(--surface)", display:"flex", flexDirection:"column", gap:9 }}>
-                      <label style={{ fontSize:11, color:"var(--text-3)" }}>Title
+                      <label style={{ fontSize:11, color:"var(--text-3)" }}>{mt("Title")}
                         <input value={editF.title} onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))}
                           style={inp} />
                       </label>
                       <div style={{ display:"flex", gap:9 }}>
-                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>Date
+                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>{mt("Date")}
                           <input type="date" value={editF.meetingDate}
                             onChange={e=>setEditF((f:any)=>({...f,meetingDate:e.target.value}))}
                             style={inp} />
                         </label>
-                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>Type
+                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>{mt("Type")}
                           <select value={editF.meetingType}
                             onChange={e=>setEditF((f:any)=>({...f,meetingType:e.target.value}))}
                             style={{...inp, cursor:"pointer"}}>
                             {["KICKOFF","STATUS","PHASE_GATE","RISK_REVIEW","STEERING",
                               "SPRINT_PLANNING","RETROSPECTIVE","AD_HOC","OTHER"]
-                              .map(t2=><option key={t2} value={t2}>{t2.replace(/_/g," ")}</option>)}
+                              .map(t2=><option key={t2} value={t2}>{enumLabel(t2, locale)}</option>)}
                           </select>
                         </label>
                       </div>
-                      {([["facilitator","Facilitator"],["attendees","Attendees"]] as const).map(([k,lb])=>(
+                      {([["facilitator",mt("Facilitator")],["attendees",mt("Attendees")]] as const).map(([k,lb])=>(
                         <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>{lb}
                           <input value={editF[k]} onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
                             style={inp} />
                         </label>
                       ))}
-                      {([["agenda","Agenda"],["discussion","Discussion"],["decisions","Decisions"]] as const).map(([k,lb])=>(
+                      {([["agenda",mt("Agenda")],["discussion",mt("Discussion")],["decisions",mt("Decisions")]] as const).map(([k,lb])=>(
                         <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>{lb}
                           <textarea rows={3} value={editF[k]}
                             onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
@@ -371,11 +375,11 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                         <button onClick={()=>saveEdit(m.id)}
                           style={{ flex:1, padding:"8px 0", background:"var(--steel)", color:"#fff",
                             border:"none", borderRadius:"var(--radius)", fontSize:12.5, fontWeight:700,
-                            cursor:"pointer", fontFamily:"var(--font)" }}>Save changes</button>
+                            cursor:"pointer", fontFamily:"var(--font)" }}>{mt("Save changes")}</button>
                         <button onClick={()=>setEditId(null)}
                           style={{ padding:"8px 14px", background:"none", border:"1px solid var(--border)",
                             borderRadius:"var(--radius)", fontSize:12.5, cursor:"pointer",
-                            color:"var(--text-3)", fontFamily:"var(--font)" }}>Cancel</button>
+                            color:"var(--text-3)", fontFamily:"var(--font)" }}>{mt("Cancel")}</button>
                       </div>
                     </div>
                   )}
@@ -385,10 +389,10 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                     <div style={{ borderTop:"1px solid var(--border)", padding:"14px 16px",
                       background:"var(--surface)" }}>
                       {[
-                        { label:"Agenda",       value:toText(m.agenda)      },
-                        { label:"Discussion",   value:toText(m.discussion)  },
-                        { label:"Decisions",    value:toText(m.decisions)   },
-                        { label:"Action Items", value:toText(m.actionItems) },
+                        { label:mt("Agenda"),       value:toText(m.agenda)      },
+                        { label:mt("Discussion"),   value:toText(m.discussion)  },
+                        { label:mt("Decisions"),    value:toText(m.decisions)   },
+                        { label:mt("Action Items"), value:toText(m.actionItems) },
                       ].filter(s=>s.value).map(s=>(
                         <div key={s.label} style={{ marginBottom:12 }}>
                           <div style={{ fontSize:10, fontWeight:700, color:"var(--text-4)",
@@ -401,7 +405,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                       ))}
                       {m.nextMeeting && (
                         <div style={{ fontSize:11, color:"var(--steel)", fontWeight:600, marginTop:8 }}>
-                          📅 Next meeting: {fmtDate(m.nextMeeting)}
+                          📅 {mt("Next meeting")}: {fmtDate(m.nextMeeting)}
                         </div>
                       )}
                       {m.createdBy && (

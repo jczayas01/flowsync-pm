@@ -28,7 +28,7 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
 
   async function create() {
     if (!form.stakeholderName.trim()||!form.information.trim()) {
-      setError("Stakeholder name and information are required"); return
+      setError(tip("commRequired")); return
     }
     setSaving(true); setError("")
     try {
@@ -36,12 +36,12 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
         method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ ...form, ownerId:form.ownerId||null }),
       })
-      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||"Failed"); return }
+      if (!res.ok) { const d=await res.json().catch(()=>({})); setError(d.error||tip("genFailed")); return }
       setAdding(false)
       setForm({ stakeholderName:"", role:"", information:"", format:"Status Report", frequency:"Weekly", method:"Email", ownerId:"", notes:"",
         engagementCurrent:"NEUTRAL", engagementTarget:"SUPPORTIVE", influence:"MEDIUM", interest:"MEDIUM" })
       router.refresh()
-    } catch { setError("Network error") } finally { setSaving(false) }
+    } catch { setError(tip("netError")) } finally { setSaving(false) }
   }
 
   const inp: React.CSSProperties = {
@@ -71,11 +71,11 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
             {error && <div style={{ color:"var(--red)", fontSize:12 }}>✗ {error}</div>}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
               <div><label style={lbl}>{tip("mStakeholder")}</label>
-                <input style={inp} value={form.stakeholderName} placeholder="Name or group"
+                <input style={inp} value={form.stakeholderName} placeholder={tip("commPhName")}
                   onChange={e=>setForm(f=>({...f,stakeholderName:e.target.value}))} />
               </div>
               <div><label style={lbl}>{tip("mRole")}</label>
-                <input style={inp} value={form.role} placeholder="e.g. Sponsor"
+                <input style={inp} value={form.role} placeholder={tip("commPhRole")}
                   onChange={e=>setForm(f=>({...f,role:e.target.value}))} />
               </div>
               <div><label style={lbl}>{tip("mFormat")}</label>
@@ -155,7 +155,7 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
           <table style={{ width:"100%", borderCollapse:"collapse", minWidth:700 }}>
             <thead>
               <tr style={{ background:"var(--surface)", borderBottom:"1px solid var(--border)", position:"sticky", top:0 }}>
-                {["Stakeholder","Role","Information","Format","Freq","Method","Current→Target","Influence","Responsible",""].map((h,i)=>(
+                {[tip("commColStakeholder"),tip("commColRole"),tip("commColInfo"),tip("commColFormat"),tip("commColFreq"),tip("commColMethod"),tip("commColCurTarget"),tip("commColInfluence"),tip("commColResponsible"),""].map((h,i)=>(
                   <th key={i} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:700,
                     color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".05em", whiteSpace:"nowrap" }}>{h}</th>
                 ))}

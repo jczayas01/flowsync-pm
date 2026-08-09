@@ -4,7 +4,8 @@
 // P×I heat map, risk register, opportunity tracking, response strategies
 
 import { DateField } from "@/components/shared/DatePicker"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -81,6 +82,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   projectId: string; risks: any[]; members: any[]; workspaceId: string
 }) {
   const tip = useTranslations("tips")
+  const locale = useLocale()
   const router = useRouter()
 
   // ── AI document scan → risk candidates ──
@@ -163,7 +165,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   })
 
   async function createRisk() {
-    if (!form.title.trim()) { setError("Title is required"); return }
+    if (!form.title.trim()) { setError(tip("titleRequired")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/risks`, {
@@ -180,13 +182,13 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
       })
       if (!res.ok) {
         const d = await res.json().catch(()=>({}))
-        setError(d.error || "Failed to create risk")
+        setError(d.error || tip("rCreateFailed"))
         return
       }
       setCreating(false)
       setForm(emptyForm)
       router.refresh()
-    } catch { setError("Network error") }
+    } catch { setError(tip("netError")) }
     finally { setSaving(false) }
   }
 
@@ -198,7 +200,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
     })
     if (!res.ok) {
       const d = await res.json().catch(()=>({}))
-      alert(d?.error || `Update failed (${res.status})`)
+      alert(d?.error || tip("rUpdateFailed",{s:res.status}))
       return
     }
     router.refresh()
@@ -211,12 +213,12 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
 
   // A register only stays trustworthy if wrong entries can leave it.
   async function removeRisk(r: any) {
-    if (!confirm(`Delete ${r.code || "this risk"} — "${r.title}"?\n\nThis cannot be undone.`)) return
+    if (!confirm(tip("rConfirmDelete",{c:r.code||"", t:r.title}))) return
     const res = await fetch(`/api/risks/${r.id}`, { method: "DELETE" }).catch(() => null)
     if (res?.ok) { setSelected(null); setEditRisk(null); router.refresh() }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not delete this risk.")
+      alert(d?.error || tip("rDeleteFailed"))
     }
   }
 
@@ -256,7 +258,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
       })
       if (!res.ok) {
         const d = await res.json().catch(()=>({}))
-        alert(d?.error || `Update failed (${res.status})`)
+        alert(d?.error || tip("rUpdateFailed",{s:res.status}))
         return
       }
       setEditRisk(null); setSelected(null)
@@ -285,7 +287,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
 
         {/* View toggle */}
         <div style={{ display:"flex", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
-          {[{id:"matrix",label:"🗺 Heat Map"},{id:"register",label:"📋 Register"}].map(v => (
+          {[{id:"matrix",label:"🗺 "+tip("rHeatMap")},{id:"register",label:"📋 "+tip("rRegister")}].map(v => (
             <button key={v.id} onClick={() => setView(v.id as any)}
               style={{ padding:"6px 12px", border:"none", fontSize:12, fontWeight:view===v.id?600:400,
                 cursor:"pointer", fontFamily:"var(--font)",
@@ -298,7 +300,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
 
         {/* Threat / Opportunity toggle */}
         <div style={{ display:"flex", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
-          {[{v:false,l:"⚠ Threats"},{v:true,l:"💡 Opportunities"}].map(t => (
+          {[{v:false,l:"⚠ "+tip("rThreats")},{v:true,l:"💡 "+tip("rOpportunities")}].map(t => (
             <button key={String(t.v)} onClick={() => setShowOpp(t.v)}
               style={{ padding:"6px 12px", border:"none", fontSize:12, fontWeight:showOpp===t.v?600:400,
                 cursor:"pointer", fontFamily:"var(--font)",
@@ -318,17 +320,17 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
         </select>
 
         <span style={{ fontSize:12, color:"var(--text-3)" }}>
-          {displayed.length} {showOpp ? "opportunit" : "risk"}{displayed.length!==1 ? (showOpp?"ies":"s") : (showOpp?"y":"")}
+          {showOpp ? tip("rOppCount",{n:displayed.length}) : tip("rRiskCount",{n:displayed.length})}
         </span>
 
         <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
           {can("risks:create") && (
           <button onClick={() => { setScanOpen(o => !o); setCandidates(null); setScanError("") }}
-            title="AI-scan project documents for risks and opportunities"
+            title={tip("rScanTip")}
             style={{ padding:"7px 14px", background:"#fff", color:"var(--text-2)",
               border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:12,
               fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
-            🤖 Scan documents
+            🤖 {tip("rScanBtn")}
           </button>
           )}
           {can("risks:create") && (
@@ -336,7 +338,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
             style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
               fontFamily:"var(--font)" }}>
-            + {showOpp ? "Add opportunity" : "Add risk"}
+            + {showOpp ? tip("rAddOpp") : tip("rAddRisk")}
           </button>
           )}
         </div>
@@ -427,7 +429,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
                 <div style={{ gridColumn:"1/-1" }}>
                   <label style={lbl}>{tip("titleReq")}</label>
-                  <input style={inp} value={form.title} placeholder={showOpp?"Describe the opportunity...":"Describe the risk..."}
+                  <input style={inp} value={form.title} placeholder={showOpp?tip("rPhOpp"):tip("rPhRisk")}
                     onChange={e => setForm(f=>({...f,title:e.target.value}))} />
                 </div>
                 <div>
@@ -473,10 +475,10 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                     onChange={e => setForm(f=>({...f,reviewDate:e.target.value}))} />
                 </div>
                 <div style={{ gridColumn:"1/-1" }}>
-                  <label style={lbl}>{showOpp ? "Enhancement plan" : "Mitigation plan"}</label>
+                  <label style={lbl}>{showOpp ? tip("rEnhancePlan") : tip("rMitigationPlan")}</label>
                   <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                     value={form.mitigationPlan}
-                    placeholder={showOpp?"How will you exploit or enhance this opportunity?":"How will you reduce probability or impact?"}
+                    placeholder={showOpp?tip("rPhEnhance"):tip("rPhMitigate")}
                     onChange={e => setForm(f=>({...f,mitigationPlan:e.target.value}))} />
                 </div>
                 <div style={{ gridColumn:"1/-1" }}>
@@ -493,7 +495,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                     borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                     cursor:saving?"wait":"pointer", fontFamily:"var(--font)",
                     opacity:!form.title.trim()?0.5:1 }}>
-                  {saving ? "Saving…" : `Save ${showOpp?"opportunity":"risk"}`}
+                  {saving ? tip("saving") : (showOpp?tip("rSaveOpp"):tip("rSaveRisk"))}
                 </button>
                 <button onClick={() => { setCreating(false); setError("") }}
                   style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
@@ -511,10 +513,10 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
           <div style={{ padding:20 }}>
             <div style={{ maxWidth:700, margin:"0 auto" }}>
               <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:4 }}>
-                {showOpp ? "Opportunity" : "Risk"} Probability × Impact Matrix
+                {showOpp ? tip("rOppMatrixTitle") : tip("rRiskMatrixTitle")}
               </div>
               <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:16 }}>
-                Click any cell to see risks in that zone · Showing {statusFilter || "all"} {showOpp?"opportunities":"risks"}
+                {tip("rMatrixHint",{s:statusFilter ? enumLabel(statusFilter, locale) : tip("rAll")})}
               </div>
 
               <div style={{ display:"grid", gridTemplateColumns:"auto repeat(5,1fr)", gap:3 }}>
@@ -641,18 +643,16 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
               <div style={{ textAlign:"center", padding:"60px 20px" }}>
                 <div style={{ fontSize:36, marginBottom:12 }}>{showOpp?"💡":"⚠"}</div>
                 <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-                  No {showOpp?"opportunities":"risks"} yet
+                  {showOpp?tip("rEmptyOppTitle"):tip("rEmptyRiskTitle")}
                 </div>
                 <div style={{ fontSize:13, color:"var(--text-3)", marginBottom:20, maxWidth:360, margin:"0 auto 20px" }}>
-                  {showOpp
-                    ? "PM best practices recognize positive risks as opportunities to be exploited, enhanced, or shared."
-                    : "Identify and track threats to proactively manage uncertainty on this project."}
+                  {showOpp ? tip("rEmptyOppBody") : tip("rEmptyRiskBody")}
                 </div>
                 <button onClick={() => { setCreating(true); setForm({...emptyForm,isOpportunity:showOpp}) }}
                   style={{ padding:"10px 20px", background:"var(--steel)", color:"#fff", border:"none",
                     borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
                     fontFamily:"var(--font)" }}>
-                  + Add {showOpp?"opportunity":"risk"}
+                  + {showOpp?tip("rAddOpp"):tip("rAddRisk")}
                 </button>
               </div>
             ) : (
@@ -660,7 +660,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                 border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
                 <thead>
                   <tr style={{ background:"var(--surface)", borderBottom:"1px solid var(--border)" }}>
-                    {["Code","Title","Category","P","I","Score","Response","Owner","Status",""].map((h,i) => (
+                    {[tip("colCode"),tip("title"),tip("colCategory"),"P","I",tip("rScore"),tip("rResponse"),tip("owner"),tip("status"),""].map((h,i) => (
                       <th key={i} style={{ padding:"9px 12px", textAlign:"left", fontSize:10,
                         fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
                         letterSpacing:".05em" }}>{h}</th>
@@ -779,7 +779,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                 borderRadius:8, padding:14, display:"flex", flexDirection:"column", gap:10 }}>
                 <div>
                   <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                    letterSpacing:".05em", marginBottom:4 }}>Title</div>
+                    letterSpacing:".05em", marginBottom:4 }}>{tip("title")}</div>
                   <input style={inp} value={editRisk.title}
                     onChange={e=>setEditRisk((f:any)=>({...f, title:e.target.value}))} />
                 </div>

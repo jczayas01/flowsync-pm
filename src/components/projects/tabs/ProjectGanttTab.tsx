@@ -6,7 +6,7 @@
 //           multi-column left panel, today line, zoom/pan
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
@@ -85,6 +85,7 @@ function isWeekend(d: Date) {
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; svgWidth:number }) {
   const locale = useLocale()
+  const tg = useTranslations("ganttTab")
   const pct = task.percentComplete || 0
   const tx = x + 230 > svgWidth ? x - 230 : x
   return (
@@ -93,8 +94,8 @@ function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; s
         fontSize:11, boxShadow:"0 8px 24px rgba(0,0,0,.35)", lineHeight:1.6, pointerEvents:"none" }}>
         <div style={{ fontWeight:700, fontSize:12, marginBottom:4, color:"#fff" }}>{task.title}</div>
         <div style={{ color:"#94A3B8", fontSize:10 }}>
-          {task.startDate ? fmtShort(new Date(task.startDate)) : "No start"} →{" "}
-          {task.dueDate   ? fmtShort(new Date(task.dueDate))   : "No end"}
+          {task.startDate ? fmtShort(new Date(task.startDate)) : tg("No start")} →{" "}
+          {task.dueDate   ? fmtShort(new Date(task.dueDate))   : tg("No end")}
         </div>
         <div style={{ marginTop:6, display:"flex", alignItems:"center", gap:6 }}>
           <div style={{ flex:1, height:4, background:"rgba(255,255,255,.15)", borderRadius:2 }}>
@@ -108,7 +109,7 @@ function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; s
             {enumLabel(task.status, locale)}
           </span>
           {task.priority && (
-            <span style={{ color:"#94A3B8" }}>{task.priority}</span>
+            <span style={{ color:"#94A3B8" }}>{enumLabel(task.priority, locale)}</span>
           )}
         </div>
       </div>
@@ -121,6 +122,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
   project?:any; projectId:string; tasks:any[]; phases:any[]; members:any[]; baselines?:any[]; milestones?:any[]
 }) {
   const locale = useLocale()
+  const tg = useTranslations("ganttTab")
   const router  = useRouter()
   const taskCtx = useTaskContextSafe()
   const svgRef  = useRef<SVGSVGElement>(null)
@@ -291,7 +293,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert("Could not export the schedule.")
+      alert(tg("exportFailed"))
     } finally { setExporting(false) }
   }
 
@@ -493,55 +495,55 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           {(["day","week","month"] as const).map(z => (
             <button key={z} style={ZB(zoom===z)}
               onClick={() => { setZoom(z); setZoomFactor(1) }}>
-              {z.charAt(0).toUpperCase()+z.slice(1)}
+              {tg(z)}
             </button>
           ))}
         </div>
 
-        <button style={TB} onClick={() => setZoomFactor(f => Math.max(0.2, f*0.7))}>+ Zoom</button>
-        <button style={TB} onClick={() => setZoomFactor(f => Math.min(5, f*1.4))}>− Zoom</button>
-        <button style={TB} onClick={() => { setZoomFactor(1); setViewStart(addDays(earliest,-7)) }}>Fit</button>
+        <button style={TB} onClick={() => setZoomFactor(f => Math.max(0.2, f*0.7))}>{tg("+ Zoom")}</button>
+        <button style={TB} onClick={() => setZoomFactor(f => Math.min(5, f*1.4))}>{tg("− Zoom")}</button>
+        <button style={TB} onClick={() => { setZoomFactor(1); setViewStart(addDays(earliest,-7)) }}>{tg("Fit")}</button>
 
         {SEP}
 
-        <button style={TB} onClick={() => setViewStart(v => addDays(v,-Math.round(windowDays*0.4)))}>‹ Prev</button>
+        <button style={TB} onClick={() => setViewStart(v => addDays(v,-Math.round(windowDays*0.4)))}>{tg("‹ Prev")}</button>
         <button style={{ ...TB, fontWeight:600, color:"#1B6CA8", borderColor:"#BFDBFE" }}
-          onClick={() => setViewStart(addDays(today,-7))}>Today</button>
-        <button style={TB} onClick={() => setViewStart(v => addDays(v,Math.round(windowDays*0.4)))}>Next ›</button>
+          onClick={() => setViewStart(addDays(today,-7))}>{tg("Today")}</button>
+        <button style={TB} onClick={() => setViewStart(v => addDays(v,Math.round(windowDays*0.4)))}>{tg("Next ›")}</button>
 
         {SEP}
 
         <button style={TB} onClick={exportExcel} disabled={exporting}>
-          {exporting ? "Building…" : "⬇ Excel"}
+          {exporting ? tg("Building…") : "⬇ Excel"}
         </button>
 
         {SEP}
 
-        <button style={TB} onClick={() => setCollapsedPhases(new Set())}>Expand all</button>
-        <button style={TB} onClick={() => setCollapsedPhases(new Set(phases.map(p=>p.id)))}>Collapse all</button>
+        <button style={TB} onClick={() => setCollapsedPhases(new Set())}>{tg("Expand all")}</button>
+        <button style={TB} onClick={() => setCollapsedPhases(new Set(phases.map(p=>p.id)))}>{tg("Collapse all")}</button>
 
         {SEP}
 
-        <button style={TBA(showDeps)}     onClick={() => setShowDeps(d=>!d)}>Dependencies</button>
+        <button style={TBA(showDeps)}     onClick={() => setShowDeps(d=>!d)}>{tg("Dependencies")}</button>
         <button style={TBA(showBaseline)} onClick={() => setShowBaseline(b=>!b)}
-          title="Draw the approved baseline under each bar. The gap between the two is schedule variance — how far the plan has moved since it was signed.">Baseline</button>
+          title={tg("baselineTip")}>{tg("Baseline")}</button>
         <button style={{ ...TBA(showCritical),
           background:showCritical?"#FEF2F2":"#fff",
           color:showCritical?"#DC2626":"#374151",
           borderColor:showCritical?"#FECACA":"#E2E8F0" }}
           onClick={() => setShowCritical(c=>!c)}
-          title="Highlight the chain of tasks with no slack. A day lost on any of them is a day lost on the project — everything else has room to slip first.">⚡ Critical path</button>
+          title={tg("criticalTip")}>⚡ {tg("Critical path")}</button>
         <div style={{ display:"inline-flex", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
           <button style={{ ...TBA(weekendMode==="highlight"), border:"none", borderRadius:0 }}
-            title="Shade Saturdays and Sundays"
-            onClick={() => setWeekendMode("highlight")}>Weekends</button>
+            title={tg("weekendsTip")}
+            onClick={() => setWeekendMode("highlight")}>{tg("Weekends")}</button>
           <button style={{ ...TBA(weekendMode==="hide"), border:"none", borderRadius:0, borderLeft:"1px solid var(--border)" }}
-            title="Working days only — weekend columns removed"
-            onClick={() => setWeekendMode("hide")}>Hide wknd</button>
+            title={tg("hideWkndTip")}
+            onClick={() => setWeekendMode("hide")}>{tg("Hide wknd")}</button>
         </div>
 
         {saving && (
-          <span style={{ fontSize:11, color:"#1B6CA8", marginLeft:8 }}>Saving…</span>
+          <span style={{ fontSize:11, color:"#1B6CA8", marginLeft:8 }}>{tg("Saving…")}</span>
         )}
       </div>
 
@@ -558,42 +560,42 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
         ].map(l => (
           <div key={l.label} style={{ display:"flex", alignItems:"center", gap:4 }}>
             <div style={{ width:12, height:8, borderRadius:3, background:l.color }} />
-            <span>{l.label}</span>
+            <span>{tg(l.label as any)}</span>
           </div>
         ))}
         {showBaseline && (
           <div style={{ display:"flex", alignItems:"center", gap:4 }}>
             <div style={{ width:12, height:8, borderRadius:3, background:"#7C3AED",
               opacity:.4, backgroundImage:"repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.4) 2px,rgba(255,255,255,.4) 4px)" }} />
-            <span>Baseline</span>
+            <span>{tg("Baseline")}</span>
           </div>
         )}
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <div style={{ width:12, height:8, borderRadius:3, background:"#EF4444",
             backgroundImage:"repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.55) 2px,rgba(255,255,255,.55) 4px)" }} />
-          <span title="Tasks with zero float. Delay one and the finish date moves.">Critical path</span>
+          <span title={tg("criticalLegendTip")}>{tg("Critical path")}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}
-          title="Sponsor milestone — a governance checkpoint tracked on the Dashboard and in reports">
+          title={tg("sponsorMsTip")}>
           <svg width={12} height={12}><polygon points="6,1 11,6 6,11 1,6" fill="#1B6CA8" /></svg>
-          <span>Sponsor milestone <span style={{ color:"var(--text-4)" }}>(drag to reschedule)</span></span>
+          <span>{tg("Sponsor milestone")} <span style={{ color:"var(--text-4)" }}>{tg("(drag to reschedule)")}</span></span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}
-          title="Project milestone — a zero-duration task in the schedule (counts toward progress and critical path)">
+          title={tg("projectMsTip")}>
           <svg width={12} height={12}><polygon points="6,1 11,6 6,11 1,6" fill="#7C3AED" /></svg>
-          <span>Project milestone</span>
+          <span>{tg("Project milestone")}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <svg width={17} height={10}><line x1={1} y1={5} x2={12} y2={5} stroke="#94A3B8" strokeWidth={1.5} /><polygon points="12,2 17,5 12,8" fill="#94A3B8" /></svg>
-          <span title="This task cannot start until the one the arrow comes from finishes.">Dependency</span>
+          <span title={tg("dependencyTip")}>{tg("Dependency")}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <div style={{ width:14, height:4, borderRadius:2, background:"#1B6CA8", opacity:.7 }} />
-          <span title="A summary bar spanning all the tasks in a phase, from the earliest start to the latest finish.">Phase rollup</span>
+          <span title={tg("phaseRollupTip")}>{tg("Phase rollup")}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <div style={{ width:2, height:10, background:"#EF4444" }} />
-          <span title="The current date. Bars ending to its left that are not complete are overdue.">Today</span>
+          <span title={tg("todayTip")}>{tg("Today")}</span>
         </div>
       </div>
 
@@ -709,7 +711,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                     const bw = Math.max(4, dayX(be) + dayW - bx)
                     return <rect x={bx} y={by + 8 + cap + 2} width={bw} height={3} rx={1.5}
                       fill="#C4B5FD" opacity={0.95}>
-                      <title>Baseline (approved plan)</title>
+                      <title>{tg("Baseline (approved plan)")}</title>
                     </rect>
                   })()}
                   {/* Completion % label */}
@@ -899,7 +901,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
               <>
                 <rect x={todayX-14} y={HDR_H+2} width={28} height={14} rx={3} fill="#EF4444" />
                 <text x={todayX} y={HDR_H+12} fontSize={8} fontWeight={700}
-                  fill="#fff" textAnchor="middle">TODAY</text>
+                  fill="#fff" textAnchor="middle">{tg("TODAY")}</text>
               </>
             )}
 
@@ -935,15 +937,15 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           {/* Left panel header */}
           <rect x={0} y={0} width={LEFT_W} height={HDR_H} fill="#1a3a5c" />
           {/* Column headers */}
-          <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">TASK NAME</text>
+          <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">{tg("TASK NAME")}</text>
           <line x1={COL_W.name+10} y1={0} x2={COL_W.name+10} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-          <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">OWNER</text>
+          <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("OWNER")}</text>
           <line x1={OWNER_X+COL_W.owner} y1={0} x2={OWNER_X+COL_W.owner} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-          <text x={OWNER_X+COL_W.owner+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
+          <text x={OWNER_X+COL_W.owner+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("START")}</text>
           <line x1={OWNER_X+COL_W.owner+COL_W.start} y1={0} x2={OWNER_X+COL_W.owner+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-          <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
+          <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("END")}</text>
           <line x1={LEFT_W-COL_W.dur-4} y1={0} x2={LEFT_W-COL_W.dur-4} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-          <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">DAYS</text>
+          <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("DAYS")}</text>
 
           {/* Left panel rows */}
           {rows.map((row, ri) => {
@@ -1137,15 +1139,15 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
           <g ref={cornerG}>
             <rect x={0} y={0} width={LEFT_W} height={HDR_H} fill="#1a3a5c" />
             <line x1={LEFT_W} y1={0} x2={LEFT_W} y2={HDR_H} stroke="#E2E8F0" strokeWidth={1.5} />
-            <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">TASK NAME</text>
+            <text x={10}  y={HDR_H/2+5} fontSize={10} fontWeight={700} fill="rgba(255,255,255,.7)">{tg("TASK NAME")}</text>
             <line x1={COL_W.name+10} y1={0} x2={COL_W.name+10} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-            <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">OWNER</text>
+            <text x={COL_W.name+18} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("OWNER")}</text>
             <line x1={OWNER_X+COL_W.owner} y1={0} x2={OWNER_X+COL_W.owner} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-            <text x={OWNER_X+COL_W.owner+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">START</text>
+            <text x={OWNER_X+COL_W.owner+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("START")}</text>
             <line x1={OWNER_X+COL_W.owner+COL_W.start} y1={0} x2={OWNER_X+COL_W.owner+COL_W.start} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-            <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">END</text>
+            <text x={OWNER_X+COL_W.owner+COL_W.start+8} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("END")}</text>
             <line x1={LEFT_W-COL_W.dur-4} y1={0} x2={LEFT_W-COL_W.dur-4} y2={HDR_H} stroke="rgba(255,255,255,.1)" />
-            <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">DAYS</text>
+            <text x={LEFT_W-COL_W.dur+4} y={HDR_H/2+5} fontSize={9} fill="rgba(255,255,255,.5)">{tg("DAYS")}</text>
           </g>
 
         </svg>

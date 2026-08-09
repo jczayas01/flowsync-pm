@@ -3,7 +3,8 @@
 // Change Request management — submit, review, approve/reject, implement
 
 import { useState, useEffect } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -35,11 +36,12 @@ function fmtDate(d: string | Date | null | undefined) {
 
 function StatusBadge({ status }: { status: string }) {
   const { can } = usePermissions()
+  const locale = useLocale()
   const cfg = STATUS_CONFIG[status] || { label:status, color:"#64748B", bg:"#F1F5F9" }
   return (
     <span style={{ padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:600,
       color:cfg.color, background:cfg.bg }}>
-      {cfg.label}
+      {enumLabel(status, locale)}
     </span>
   )
 }
@@ -49,6 +51,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
   members: any[]; currentUserId: string
 }) {
   const tip = useTranslations("tips")
+  const locale = useLocale()
   const router = useRouter()
   const { can } = usePermissions()
   const [view, setView] = useState<"list"|"create"|"detail">("list")
@@ -80,7 +83,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
   }
 
   async function submitCR() {
-    if (!form.title.trim()) { setError("Title is required"); return }
+    if (!form.title.trim()) { setError(tip("titleRequired")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch(`/api/projects/${projectId}/change-requests`, {
@@ -98,7 +101,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
-        setError(d.error || "Failed to submit change request")
+        setError(d.error || tip("crSubmitFailed"))
         return
       }
       router.refresh()
@@ -106,7 +109,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
       setForm({ title:"", description:"", category:"SCOPE", priority:"MEDIUM",
         scheduleImpact:"", budgetImpact:"", scopeImpact:"", qualityImpact:"",
         scheduleDays:"", budgetLineId:"" })
-    } catch { setError("Network error") }
+    } catch { setError(tip("netError")) }
     finally { setSaving(false) }
   }
 
@@ -114,7 +117,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
   // baseline moved, so the server refuses those. Drafts and rejected ones are
   // fair game — otherwise a mistyped CR is stuck in the register forever.
   async function deleteCr(cr: any) {
-    if (!confirm(`Delete change request ${cr.code} — "${cr.title}"?\n\nThis cannot be undone.`)) return
+    if (!confirm(tip("crConfirmDelete",{c:cr.code, t:cr.title}))) return
     setSaving(true)
     const res = await fetch(`/api/projects/${projectId}/change-requests/${cr.id}`, { method: "DELETE" })
       .catch(() => null)
@@ -203,7 +206,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:14 }}>
                 <div style={{ gridColumn:"1/-1" }}>
                   <label style={lbl}>{tip("titleReq")}</label>
-                  <input style={inp} value={form.title} placeholder="Brief description of the change"
+                  <input style={inp} value={form.title} placeholder={tip("crPhBrief")}
                     onChange={e => setForm(f => ({...f, title:e.target.value}))} />
                 </div>
                 <div>
@@ -220,7 +223,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                     value={form.priority}
                     onChange={e => setForm(f => ({...f, priority:e.target.value}))}>
                     {Object.entries(PRIORITY_CONFIG).map(([v,c]) =>
-                      <option key={v} value={v}>{c.label}</option>)}
+                      <option key={v} value={v}>{enumLabel(v, locale)}</option>)}
                   </select>
                 </div>
               </div>
@@ -239,18 +242,18 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                 <div style={card}>
                   <label style={lbl}>📅 Schedule impact</label>
                   <input style={inp} value={form.scheduleImpact}
-                    placeholder="e.g. +2 weeks, No impact"
+                    placeholder={tip("crPhSchedule")}
                     onChange={e => setForm(f => ({...f, scheduleImpact:e.target.value}))} />
                   {/* The prose says why; this says how much, so approval can act
                       on it instead of leaving someone a task to remember. */}
                   <input type="number" style={{...inp, marginTop:6}} value={form.scheduleDays}
-                    placeholder="Days to add or remove — e.g. 14 or -3"
+                    placeholder={tip("crPhDays")}
                     onChange={e => setForm(f => ({...f, scheduleDays:e.target.value}))} />
                 </div>
                 <div style={card}>
                   <label style={lbl}>💰 Budget impact ($)</label>
                   <input type="number" style={inp} value={form.budgetImpact}
-                    placeholder="e.g. 15000 or -5000"
+                    placeholder={tip("crPhBudget")}
                     onChange={e => setForm(f => ({...f, budgetImpact:e.target.value}))} />
                   <select style={{...inp, marginTop:6, cursor:"pointer"}} value={form.budgetLineId}
                     onChange={e => setForm(f => ({...f, budgetLineId:e.target.value}))}>
@@ -264,7 +267,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                   <label style={lbl}>📐 Scope impact</label>
                   <textarea rows={3} style={{...inp, resize:"vertical"}}
                     value={form.scopeImpact}
-                    placeholder="What is added, removed, or changed in scope?"
+                    placeholder={tip("crPhScope")}
                     onChange={e => setForm(f => ({...f, scopeImpact:e.target.value}))} />
                 </div>
                 <div style={card}>
@@ -344,7 +347,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             )}
             {cr.status !== "APPROVED" && cr.status !== "IMPLEMENTED" && (
               <button onClick={() => deleteCr(cr)} disabled={saving}
-                title="Delete this change request"
+                title={tip("crDeleteTip")}
                 style={{ padding:"7px 12px", background:"none", border:"1px solid #FECACA",
                   borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
                   fontFamily:"var(--font)", color:"var(--red)" }}>
@@ -365,7 +368,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:8 }}>{tip("cRejectReason")}</div>
             <textarea rows={2} value={rejectedReason}
               onChange={e => setRejectedReason(e.target.value)}
-              placeholder="Explain why this change request is being rejected..."
+              placeholder={tip("crPhReject")}
               style={{...inp, marginBottom:8}} />
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => {
@@ -403,10 +406,10 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                     <StatusBadge status={cr.status} />
                     <span style={{ fontSize:11, fontWeight:600,
                       color:PRIORITY_CONFIG[cr.priority]?.color }}>
-                      {PRIORITY_CONFIG[cr.priority]?.label} priority
+                      {enumLabel(cr.priority, locale)}
                     </span>
                     <span style={{ fontSize:11, color:"var(--text-3)" }}>
-                      {(cr.category||"General").charAt(0)+(cr.category||"General").slice(1).toLowerCase()} change
+                      {enumLabel(cr.category||"GENERAL", locale)}
                     </span>
                   </div>
                 </div>
@@ -441,10 +444,10 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:14, marginBottom:20 }}>
               {[
                 { icon:"📅", label:"Schedule impact", value:cr.scheduleImpact },
-                { icon:"💰", label:"Budget impact",   value:cr.budgetImpact != null
+                { icon:"💰", label:tip("crBudgetImpact"),   value:cr.budgetImpact != null
                   ? `${cr.budgetImpact >= 0 ? "+" : ""}$${Math.abs(cr.budgetImpact).toLocaleString("en-US")}` : null },
-                { icon:"📐", label:"Scope impact",    value:cr.scopeImpact },
-                { icon:"⭐", label:"Quality impact",  value:cr.qualityImpact },
+                { icon:"📐", label:tip("crScopeImpact"),    value:cr.scopeImpact },
+                { icon:"⭐", label:tip("crQualityImpact"),  value:cr.qualityImpact },
               ].map(item => item.value && (
                 <div key={item.label} style={{ background:"var(--surface)", borderRadius:"var(--radius)",
                   padding:"12px 14px" }}>
@@ -527,9 +530,9 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
         <div style={{ background:"var(--surface)", borderBottom:"1px solid var(--border)",
           padding:"10px 20px", display:"flex", gap:16 }}>
           {[
-            { label:"Awaiting review", count:counts.submitted,    color:"#1B6CA8" },
-            { label:"Under review",    count:counts.under_review, color:"#F59E0B" },
-            { label:"Approved",        count:counts.approved,     color:"#059669" },
+            { label:tip("crAwaiting"), count:counts.submitted,    color:"#1B6CA8" },
+            { label:tip("crUnderReview"),    count:counts.under_review, color:"#F59E0B" },
+            { label:tip("crApproved"),        count:counts.approved,     color:"#059669" },
           ].map(s => (
             <div key={s.label} style={{ display:"flex", alignItems:"center", gap:6 }}>
               <span style={{ fontSize:20, fontWeight:700, color:s.color }}>{s.count}</span>
@@ -543,7 +546,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                 color:"var(--text-2)", cursor:"pointer" }}>
               <option value="">{tip("cAllStatuses")}</option>
               {Object.entries(STATUS_CONFIG).map(([v,c]) =>
-                <option key={v} value={v}>{c.label}</option>)}
+                <option key={v} value={v}>{enumLabel(v, locale)}</option>)}
             </select>
           </div>
         </div>
@@ -585,10 +588,10 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                       <StatusBadge status={cr.status} />
                       <span style={{ fontSize:10, fontWeight:700, padding:"2px 7px",
                         borderRadius:4, color:pc?.color, background:`${pc?.color}14` }}>
-                        {pc?.label}
+                        {enumLabel(cr.priority, locale)}
                       </span>
                       <span style={{ fontSize:11, color:"var(--text-3)" }}>
-                        {(cr.category||'').charAt(0)+(cr.category||'').slice(1).toLowerCase()}
+                        {cr.category ? enumLabel(cr.category, locale) : ''}
                       </span>
                     </div>
                     <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",

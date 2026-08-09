@@ -194,7 +194,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
   }
 
   async function del(itemId:string) {
-    if (!confirm("Delete this procurement item?")) return
+    if (!confirm(tip("procConfirmDelete"))) return
     setDeleting(itemId)
     try {
       await fetch(`/api/projects/${projectId}/procurement/${itemId}`, {
@@ -326,7 +326,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <label style={lbl}>{tip("pVendorName")}</label>
                 <input style={inp} value={form.vendorName}
                   onChange={e=>setForm(f=>({...f,vendorName:e.target.value}))}
-                  placeholder="e.g. Acme Software Solutions" />
+                  placeholder={tip("procPhVendor")} />
               </div>
               <div>
                 <label style={lbl}>{tip("pType")}</label>
@@ -341,19 +341,19 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <label style={lbl}>{tip("pTitle")}</label>
                 <input style={inp} value={form.title}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))}
-                  placeholder="e.g. Software Development Services — Phase 1" />
+                  placeholder={tip("procPhTitle")} />
               </div>
               <div>
                 <label style={lbl}>{tip("pContact")}</label>
                 <input style={inp} value={form.vendorContact}
                   onChange={e=>setForm(f=>({...f,vendorContact:e.target.value}))}
-                  placeholder="Contact person name" />
+                  placeholder={tip("procPhContact")} />
               </div>
               <div>
                 <label style={lbl}>{tip("pEmail")}</label>
                 <input type="email" style={inp} value={form.vendorEmail}
                   onChange={e=>setForm(f=>({...f,vendorEmail:e.target.value}))}
-                  placeholder="contact@vendor.com" />
+                  placeholder={tip("procPhEmail")} />
               </div>
               <div>
                 <label style={lbl}>{tip("pPhone")}</label>
@@ -365,13 +365,13 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <label style={lbl}>{tip("pLocation")}</label>
                 <input style={inp} value={form.vendorLocation}
                   onChange={e=>setForm(f=>({...f,vendorLocation:e.target.value}))}
-                  placeholder="City / address — logistics" />
+                  placeholder={tip("procPhLocation")} />
               </div>
               <div>
                 <label style={lbl}>{tip("pPoNumber")}</label>
                 <input style={inp} value={form.poNumber}
                   onChange={e=>setForm(f=>({...f,poNumber:e.target.value}))}
-                  placeholder="PO-2026-001" />
+                  placeholder={tip("procPhPo")} />
               </div>
               <div>
                 <label style={lbl}>{tip("status")}</label>
@@ -493,20 +493,20 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                   value={form.deliverables}
                   onChange={e=>setForm(f=>({...f,deliverables:e.target.value}))}
-                  placeholder="List of key deliverables expected from this vendor…" />
+                  placeholder={tip("procPhDeliverables")} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={lbl}>{tip("notes")}</label>
                 <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                   value={form.notes}
                   onChange={e=>setForm(f=>({...f,notes:e.target.value}))}
-                  placeholder="Additional notes, terms, or context…" />
+                  placeholder={tip("procPhNotes")} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={lbl}>{tip("pQuoteUrl")}</label>
                 <input style={inp} value={(form as any).attachmentUrl||""}
                   onChange={e=>setForm(f=>({...f,attachmentUrl:e.target.value} as any))}
-                  placeholder="Paste a link to the vendor quote, proposal, or contract (Google Drive, SharePoint, etc.)" />
+                  placeholder={tip("procPhQuote")} />
               </div>
             </div>
             <div style={{ display:"flex", gap:10, marginTop:16 }}>
@@ -797,22 +797,22 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                           flexDirection:"column", gap:8 }}>
                           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
                             <div><div style={lblE}>{tip("titleReq")}</div>
-                            <input style={inp} placeholder="Title *" value={editF.title}
+                            <input style={inp} placeholder={tip("titleReq")} value={editF.title}
                               onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pVendorReq")}</div>
-                            <input style={inp} placeholder="Vendor *" value={editF.vendorName}
+                            <input style={inp} placeholder={tip("pVendorReq")} value={editF.vendorName}
                               onChange={e=>setEditF((f:any)=>({...f,vendorName:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pContactPerson")}</div>
-                            <input style={inp} placeholder="Contact person" value={editF.vendorContact}
+                            <input style={inp} placeholder={tip("pContactPerson")} value={editF.vendorContact}
                               onChange={e=>setEditF((f:any)=>({...f,vendorContact:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pEmail")}</div>
-                            <input style={inp} placeholder="Vendor email" value={editF.vendorEmail}
+                            <input style={inp} placeholder={tip("pEmail")} value={editF.vendorEmail}
                               onChange={e=>setEditF((f:any)=>({...f,vendorEmail:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pPhone")}</div>
-                            <input style={inp} placeholder="Vendor phone" value={editF.vendorPhone}
+                            <input style={inp} placeholder={tip("pPhone")} value={editF.vendorPhone}
                               onChange={e=>setEditF((f:any)=>({...f,vendorPhone:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pLocation")}</div>
-                            <input style={inp} placeholder="Vendor location (logistics)" value={editF.vendorLocation}
+                            <input style={inp} placeholder={tip("pLocation")} value={editF.vendorLocation}
                               onChange={e=>setEditF((f:any)=>({...f,vendorLocation:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pInternalOwner")}</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.ownerId}
@@ -898,16 +898,16 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 </div>
               </div>
                             <div><div style={lblE}>{tip("pPoNum")}</div>
-                            <input style={inp} placeholder="PO number" value={editF.poNumber}
+                            <input style={inp} placeholder={tip("pPoNum")} value={editF.poNumber}
                               onChange={e=>setEditF((f:any)=>({...f,poNumber:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pContractRef")}</div>
-                            <input style={inp} placeholder="Contract ref" value={editF.contractRef}
+                            <input style={inp} placeholder={tip("pContractRef")} value={editF.contractRef}
                               onChange={e=>setEditF((f:any)=>({...f,contractRef:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pValueLbl")}</div>
-                            <input style={inp} type="number" placeholder="Value" value={editF.value}
+                            <input style={inp} type="number" placeholder={tip("pValueLbl")} value={editF.value}
                               onChange={e=>setEditF((f:any)=>({...f,value:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pCurrency")}</div>
-                            <input style={inp} placeholder="Currency" value={editF.currency}
+                            <input style={inp} placeholder={tip("pCurrency")} value={editF.currency}
                               onChange={e=>setEditF((f:any)=>({...f,currency:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pStart")}</div>
                             <DateField style={inp} value={editF.startDate}
@@ -917,7 +917,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                               onChange={e=>setEditF((f:any)=>({...f,endDate:e.target.value}))} /></div>
                           </div>
                           <div><div style={lblE}>{tip("pDeliverables")}</div>
-                          <textarea style={{...inp,resize:"vertical",width:"100%"}} rows={2} placeholder="Key deliverables"
+                          <textarea style={{...inp,resize:"vertical",width:"100%"}} rows={2} placeholder={tip("pDeliverables")}
                             value={editF.deliverables}
                             onChange={e=>setEditF((f:any)=>({...f,deliverables:e.target.value}))} /></div>
                           <div style={{ display:"flex", gap:8 }}>
@@ -925,7 +925,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                               style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
                                 borderRadius:"var(--radius)", fontSize:12, fontWeight:600, fontFamily:"var(--font)",
                                 cursor: savingEdit?"wait":"pointer" }}>
-                              {savingEdit?"Saving…":"💾 Save changes"}
+                              {savingEdit?tip("saving"):"💾 "+tip("saveChanges")}
                             </button>
                             <button onClick={()=>setEditItem(null)}
                               style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
@@ -937,7 +937,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       <div style={{ display:"flex", justifyContent:"flex-end", gap:8 }}>
                         {can("projects:edit") && item.status === "DRAFT" && (
                           <button onClick={()=>patchItem(item.id, { status:"ACTIVE" })}
-                            title="Promote this draft to an active agreement"
+                            title={tip("procActivateTip")}
                             style={{ padding:"5px 12px", background:"#ECFDF5",
                               border:"1px solid #A7F3D0", borderRadius:"var(--radius)",
                               fontSize:11, color:"#059669", fontWeight:600, cursor:"pointer",
