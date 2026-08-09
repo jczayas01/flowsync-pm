@@ -13,20 +13,20 @@ const ReportSnapshot = nextDynamic(() => import("@/components/charts/ReportSnaps
   { ssr: false, loading: () => <div style={{ height: 120 }} /> })
 
 const REPORT_TYPES = [
-  { value:"STATUS",       label:"Weekly Status Report",  icon:"📋",
-    desc:"Accomplishments, plans, risks, EVM summary." },
-  { value:"PLAN",         label:"Project Management Plan", icon:"📘",
-    desc:"The integrated baseline: scope, schedule, cost, governance, risk and change control — the document a sponsor signs." },
-  { value:"BRIEF",        label:"Project Brief",         icon:"📄",
-    desc:"Onboarding document: background, scope, governance, risks — built from your documents." },
-  { value:"EXECUTIVE",    label:"Executive Brief",        icon:"👔",
-    desc:"1-page strategic summary for leadership." },
-  { value:"PHASE_GATE",   label:"Phase Gate Review",      icon:"🔁",
-    desc:"Go/No-Go decision with entry/exit criteria." },
-  { value:"EVM",          label:"EVM Performance Report", icon:"📊",
-    desc:"Full Earned Value analysis — CPI, SPI, EAC, TCPI." },
-  { value:"RISK_SUMMARY", label:"Risk Summary Report",    icon:"⚠",
-    desc:"Risk register summary and recommended responses." },
+  { value:"STATUS",       label:"rtSTATUS",  icon:"📋",
+    desc:"rdSTATUS" },
+  { value:"PLAN",         label:"rtPLAN", icon:"📘",
+    desc:"rdPLAN" },
+  { value:"BRIEF",        label:"rtBRIEF",         icon:"📄",
+    desc:"rdBRIEF" },
+  { value:"EXECUTIVE",    label:"rtEXECUTIVE",        icon:"👔",
+    desc:"rdEXECUTIVE" },
+  { value:"PHASE_GATE",   label:"rtPHASE_GATE",      icon:"🔁",
+    desc:"rdPHASE_GATE" },
+  { value:"EVM",          label:"rtEVM", icon:"📊",
+    desc:"rdEVM" },
+  { value:"RISK_SUMMARY", label:"rtRISK_SUMMARY",    icon:"⚠",
+    desc:"rdRISK_SUMMARY" },
 ]
 
 const AUDIENCES = [
@@ -661,6 +661,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   statusUpdates:any[]; members:any[]; reportTemplates?:any[]
 }) {
   const tr = useTranslations("reports")
+  const tip = useTranslations("tips")
   const locale = useLocale()
   const router = useRouter()
   const [view, setView]             = useState<"list"|"generate"|"result">("list")
@@ -1085,19 +1086,19 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
             fontFamily:"var(--font)", cursor:"pointer", border:"1px solid var(--border)",
             background:view==="list"?"var(--steel)":"#fff",
             color:view==="list"?"#fff":"var(--text-2)" }}>
-          📋 History
+          {tip("history")}
         </button>
         <button onClick={()=>setView("generate")}
           style={{ padding:"6px 14px", borderRadius:"var(--radius)", fontSize:12,
             fontFamily:"var(--font)", cursor:"pointer", border:"none",
             background:view!=="list"?"var(--steel)":"#059669", color:"#fff", fontWeight:500 }}>
-          ✨ AI Generate Report
+          {tip("aiGenerate")}
         </button>
         <button onClick={()=>setShowStatusForm(s=>!s)}
           style={{ padding:"6px 14px", borderRadius:"var(--radius)", fontSize:12,
             fontFamily:"var(--font)", cursor:"pointer",
             border:"1px solid var(--border)", background:"#fff", color:"var(--text-2)" }}>
-          + Manual status update
+          {tip("manualUpdate")}
         </button>
         <div style={{ marginLeft:"auto", fontSize:11, color:"var(--text-3)" }}>
           {statusUpdates.length} update{statusUpdates.length!==1?"s":""}
@@ -1111,9 +1112,9 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
           <div style={{ maxWidth:720, margin:"0 auto" }}>
             <div style={{ background:"#fff", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", padding:24 }}>
-              <div style={{ fontSize:16, fontWeight:700, marginBottom:4 }}>✨ AI Report Generator</div>
+              <div style={{ fontSize:16, fontWeight:700, marginBottom:4 }}>{tip("aiGenTitle")}</div>
               <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:20 }}>
-                Reads live project data and generates a report tailored to your selected audience.
+                {tip("aiGenSub")}
               </div>
 
               {/* Start from a workspace template */}
@@ -1142,17 +1143,17 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               {/* Report type */}
               <div style={{ marginBottom:18 }}>
                 <label style={{ display:"block", fontSize:10, fontWeight:700, color:"var(--text-3)",
-                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>Report type</label>
+                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>{tip("reportType")}</label>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:8 }}>
                   {REPORT_TYPES.map(rt => (
-                    <div key={rt.value} title={rt.desc}
+                    <div key={rt.value} title={tip(rt.desc)}
                       onClick={() => setReportType(rt.value)}
                       style={{ padding:"12px 14px", borderRadius:"var(--radius)", cursor:"pointer",
                         border:`2px solid ${reportType===rt.value?"var(--steel)":"var(--border)"}`,
                         background:reportType===rt.value?"#EFF6FF":"#fff" }}>
                       <div style={{ fontSize:14, marginBottom:4 }}>{rt.icon}</div>
                       <div style={{ fontSize:12, fontWeight:600,
-                        color:reportType===rt.value?"var(--steel)":"var(--text)" }}>{rt.label}</div>
+                        color:reportType===rt.value?"var(--steel)":"var(--text)" }}>{tip(rt.label)}</div>
                       <div style={{ fontSize:10, color:"var(--text-3)", marginTop:3 }}>{rt.desc}</div>
                     </div>
                   ))}

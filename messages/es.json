@@ -441,6 +441,27 @@
     "vUnpaidPo": "{amount} entregado sin pagar — probablemente un saldo pendiente",
     "vUnpaidNoPo": "{amount} entregado sin pagar — confirma que no falten facturas",
     "vOnPlan": "✓ entregado en plan · CPI {cpi}",
-    "staleBadge": "⚠ desfasado"
+    "staleBadge": "⚠ desfasado",
+    "rtSTATUS": "Reporte de estatus semanal",
+    "rdSTATUS": "Logros, planes, riesgos y resumen de valor ganado.",
+    "rtPLAN": "Plan de gestión del proyecto",
+    "rdPLAN": "La línea base integrada: alcance, cronograma, costo, gobernanza, riesgo y control de cambios — el documento que firma el patrocinador.",
+    "rtBRIEF": "Resumen del proyecto",
+    "rdBRIEF": "Documento de incorporación: antecedentes, alcance, gobernanza y riesgos — construido desde tus documentos.",
+    "rtEXECUTIVE": "Resumen ejecutivo",
+    "rdEXECUTIVE": "Síntesis estratégica de una página para la alta dirección.",
+    "rtPHASE_GATE": "Revisión de compuerta de fase",
+    "rdPHASE_GATE": "Decisión de continuar o detener, con criterios de entrada y salida.",
+    "rtEVM": "Reporte de desempeño EVM",
+    "rdEVM": "Análisis completo de valor ganado — CPI, SPI, EAC, TCPI.",
+    "rtRISK_SUMMARY": "Reporte resumen de riesgos",
+    "rdRISK_SUMMARY": "Resumen del registro de riesgos y respuestas recomendadas.",
+    "aiGenTitle": "✨ Generador de reportes con IA",
+    "aiGenSub": "Lee los datos vivos del proyecto y genera un reporte hecho a la medida de la audiencia que elijas.",
+    "reportType": "Tipo de reporte",
+    "history": "📋 Historial",
+    "aiGenerate": "✨ Generar reporte con IA",
+    "manualUpdate": "+ Actualización manual",
+    "updates": "{n} actualizacion{s}"
   }
 }

@@ -441,6 +441,27 @@
     "vUnpaidPo": "{amount} delivered but unpaid — likely an outstanding balance",
     "vUnpaidNoPo": "{amount} delivered but unpaid — confirm no invoices are outstanding",
     "vOnPlan": "✓ delivered on plan · CPI {cpi}",
-    "staleBadge": "⚠ stale"
+    "staleBadge": "⚠ stale",
+    "rtSTATUS": "Weekly Status Report",
+    "rdSTATUS": "Accomplishments, plans, risks, EVM summary.",
+    "rtPLAN": "Project Management Plan",
+    "rdPLAN": "The integrated baseline: scope, schedule, cost, governance, risk and change control — the document a sponsor signs.",
+    "rtBRIEF": "Project Brief",
+    "rdBRIEF": "Onboarding document: background, scope, governance, risks — built from your documents.",
+    "rtEXECUTIVE": "Executive Brief",
+    "rdEXECUTIVE": "1-page strategic summary for leadership.",
+    "rtPHASE_GATE": "Phase Gate Review",
+    "rdPHASE_GATE": "Go/No-Go decision with entry/exit criteria.",
+    "rtEVM": "EVM Performance Report",
+    "rdEVM": "Full Earned Value analysis — CPI, SPI, EAC, TCPI.",
+    "rtRISK_SUMMARY": "Risk Summary Report",
+    "rdRISK_SUMMARY": "Risk register summary and recommended responses.",
+    "aiGenTitle": "✨ AI Report Generator",
+    "aiGenSub": "Reads live project data and generates a report tailored to your selected audience.",
+    "reportType": "Report type",
+    "history": "📋 History",
+    "aiGenerate": "✨ AI Generate Report",
+    "manualUpdate": "+ Manual status update",
+    "updates": "{n} update{s}"
   }
 }
