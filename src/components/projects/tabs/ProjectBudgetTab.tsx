@@ -485,7 +485,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
 
   const ETC = EAC - AC                          // Estimate To Complete
   const VAC = BAC - EAC                         // Variance At Completion
-  const TCPI = (BAC - EV) > 0 ? (BAC - EV) / (BAC - AC) : 1  // To-Complete Performance Index
+  const budgetLeft = BAC - AC
+  const workLeft   = BAC - EV
+  // TCPI answers "how efficiently must the remaining work be done to finish
+  // within budget". Once the budget is spent there is no such efficiency — the
+  // denominator goes negative and the index becomes a number that reads fine
+  // while the project has no money left. Say that instead of printing it.
+  const tcpiValid = workLeft > 0 && budgetLeft > 0
+  const TCPI = tcpiValid ? workLeft / budgetLeft : 1
 
   const currency = project?.currency || "USD"
 
@@ -580,9 +587,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               sub:CV>=0?"Favorable":"Unfavorable",
               color:CV>=0?"var(--green)":"var(--red)",
               tip:"CV = EV - AC. Positive = under budget" },
-            { label:"To-Complete Performance Index (TCPI)", value:TCPI.toFixed(2),
-              sub:EV<=0?"No earned value yet":TCPI>1?t("Needs improvement"):t("On track"),
-              color:TCPI>1.1?"var(--red)":TCPI>1?"var(--amber)":"var(--green)",
+            { label:"To-Complete Performance Index (TCPI)",
+              value: !tcpiValid && budgetLeft <= 0 ? "—" : TCPI.toFixed(2),
+              sub: EV<=0 ? "No earned value yet"
+                 : budgetLeft <= 0 ? "Budget already spent"
+                 : workLeft <= 0 ? "All work earned"
+                 : TCPI>1 ? t("Needs improvement") : t("On track"),
+              color: budgetLeft <= 0 ? "var(--red)"
+                   : TCPI>1.1 ? "var(--red)" : TCPI>1 ? "var(--amber)" : "var(--green)",
               tip:"Efficiency needed to complete on budget" },
           ].map((k,i) => (
             <div key={k.label} style={{ padding:"14px 16px",
@@ -1073,6 +1085,23 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const taskEvidence  = lineTasks[item.id]?.count || 0
                 const workDelivered = taskEvidence > 0 && (lineTasks[item.id]?.pct ?? 0) >= 99
 
+                // Is the stored earned value still what the rule and the tasks
+                // would produce? A line reading "delivered on plan · CPI 1.00"
+                // while flagged stale is the component asserting a conclusion
+                // from figures it has already said not to trust. Silence is the
+                // honest output until someone recalculates.
+                const isStale = (() => {
+                  if (taskEvidence === 0 || planned <= 0) return false
+                  const rule = item.earnRule || "EFFORT"
+                  const tp = lineTasks[item.id]?.pct ?? 0
+                  const expected = rule === "ZERO_HUNDRED" || rule === "MILESTONE"
+                    ? (tp >= 99 ? 100 : 0)
+                    : rule === "FIFTY_FIFTY"
+                    ? (tp >= 99 ? 100 : tp > 0 ? 50 : 0)
+                    : tp
+                  return Math.abs(Math.round((earned / planned) * 100) - expected) > 2
+                })()
+
                 const lineCPI = actual > 0 ? earned / actual : null
                 const gap     = actual - earned          // + paid more, − paid less
                 const tol     = Math.max(500, Math.max(earned, actual) * 0.03)
@@ -1080,6 +1109,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 type Verdict = { tone: string; text: string; why: string } | null
                 const verdict: Verdict = (() => {
                   if (taskEvidence === 0) return null      // nothing measured, nothing to claim
+                  if (isStale) return null                 // figures we've already flagged as wrong
 
                   if (!workDelivered) {
                     // Money out ahead of anything delivered. Normal for a
@@ -1202,26 +1232,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                 fontWeight:600 }}>{lineTasks[item.id].pct}% complete</span>
                               {/* Stored earned value disagreeing with live task
                                   progress means the figure is stale, not wrong. */}
-                              {(() => {
-                                const planned = Number(item.plannedCost||item.plannedAmount||0)
-                                const ev = Number(item.earnedValue||0)
-                                const evPct = planned > 0 ? Math.round((ev/planned)*100) : 0
-                                // What the line *should* have earned depends on its rule.
-                                // A 0/100 line whose tasks are 25% done is meant to be at
-                                // zero — comparing raw percentages called that stale and
-                                // taught the PM to ignore the warning.
-                                const rule = item.earnRule || "EFFORT"
-                                const tp = lineTasks[item.id].pct
-                                const expected = rule === "ZERO_HUNDRED" || rule === "MILESTONE"
-                                  ? (tp >= 99 ? 100 : 0)
-                                  : rule === "FIFTY_FIFTY"
-                                  ? (tp >= 99 ? 100 : tp > 0 ? 50 : 0)
-                                  : tp
-                                return Math.abs(evPct - expected) > 2 ? (
-                                  <span title={`Earned value on this line is ${evPct}% of plan; under its ${rule === "EFFORT" ? "effort-based" : rule === "ZERO_HUNDRED" ? "0/100" : rule === "FIFTY_FIFTY" ? "50/50" : "milestone"} rule it should be ${expected}%. Recalculate to bring them in line.`}
-                                    style={{ color:"var(--amber)", fontWeight:700, marginLeft:6 }}>⚠ stale</span>
-                                ) : null
-                              })()}
+                              {isStale && (
+                                <span title="The stored earned value no longer matches what this line's earning rule and task progress would produce. Recalculate to bring them in line."
+                                  style={{ color:"var(--amber)", fontWeight:700, marginLeft:6, cursor:"help" }}>⚠ stale</span>
+                              )}
                             </div>
                           )}
                         </td>
