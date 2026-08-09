@@ -20,6 +20,8 @@ const updateSchema = z.object({
   scheduleImpact:  z.string().max(100).optional().nullable(),
   budgetImpact:    z.number().optional().nullable(),
   scopeImpact:     z.string().max(2000).optional().nullable(),
+  scheduleDays:    z.number().int().min(-3650).max(3650).optional().nullable(),
+  budgetLineId:    z.string().optional().nullable(),
   qualityImpact:   z.string().max(2000).optional().nullable(),
   rejectedReason:  z.string().max(2000).optional().nullable(),
 }).strict()
@@ -71,6 +73,131 @@ async function updateChangeRequest(ctx: ApiContext, params?: Record<string,strin
   if (data.status === "IMPLEMENTED") {
     data.implementedAt = new Date()
   }
+  // ── Approval applies the change ──────────────────────────────────────────
+  // A change control process whose output is a signature and a to-do list is a
+  // filing cabinet: somebody still has to remember to move the budget, extend
+  // the date and update the scope, and the day they forget is the day the
+  // register and the project stop describing the same thing. Approval does it.
+  let applied: string[] = []
+  const willApply = data.status === "APPROVED" && !(existing as any).appliedAt
+  if (willApply) {
+    const cr = existing as any
+    const money = cr.budgetImpact == null ? 0 : Number(cr.budgetImpact)
+    const days  = cr.scheduleDays == null ? 0 : Number(cr.scheduleDays)
+
+    try {
+      await db.$transaction(async tx => {
+        // Cost — onto the nominated line, or as a new line when none was chosen,
+        // so approved money is never left without a home.
+        if (money !== 0) {
+          if (cr.budgetLineId) {
+            const line = await tx.budgetItem.findFirst({
+              where: { id: cr.budgetLineId, projectId }, select: { id: true, name: true, plannedCost: true },
+            })
+            if (line) {
+              await tx.budgetItem.update({
+                where: { id: line.id },
+                data:  { plannedCost: { increment: money } },
+              })
+              applied.push(`${money > 0 ? "Added" : "Removed"} ${Math.abs(money).toLocaleString(undefined,{style:"currency",currency:"USD"})} ${money > 0 ? "to" : "from"} "${line.name}"`)
+            }
+          } else {
+            const created = await tx.budgetItem.create({
+              data: {
+                projectId, category: "OTHER" as any,
+                name: `${cr.code} — ${cr.title}`.slice(0, 200),
+                plannedCost: money, approvedCost: money, approvedAt: new Date(),
+              },
+            })
+            applied.push(`Created budget line "${created.name}" for ${money.toLocaleString(undefined,{style:"currency",currency:"USD"})}`)
+          }
+          const agg = await tx.budgetItem.aggregate({ where: { projectId }, _sum: { plannedCost: true } })
+          await tx.project.update({ where: { id: projectId }, data: { budgetTotal: agg._sum.plannedCost ?? 0 } })
+        }
+
+        // Schedule — the end date moves, and so do the milestones that sit after
+        // today, because a change that delays delivery delays what it delivers.
+        if (days !== 0) {
+          const proj = await tx.project.findUnique({ where: { id: projectId }, select: { endDate: true } })
+          if (proj?.endDate) {
+            const nd = new Date(proj.endDate)
+            nd.setDate(nd.getDate() + days)
+            await tx.project.update({ where: { id: projectId }, data: { endDate: nd } })
+            applied.push(`Moved the project finish date by ${days > 0 ? "+" : ""}${days} day${Math.abs(days) === 1 ? "" : "s"}`)
+          }
+          const ms = await tx.milestone.findMany({
+            where: { projectId, dueDate: { gte: new Date() }, status: { not: "ACHIEVED" as any } },
+            select: { id: true, dueDate: true },
+          })
+          for (const m2 of ms) {
+            if (!m2.dueDate) continue
+            const nd = new Date(m2.dueDate); nd.setDate(nd.getDate() + days)
+            await tx.milestone.update({ where: { id: m2.id }, data: { dueDate: nd } })
+          }
+          if (ms.length) applied.push(`Rescheduled ${ms.length} upcoming milestone${ms.length === 1 ? "" : "s"}`)
+        }
+
+        // Scope — appended with attribution, never overwritten. The original
+        // wording is evidence of what was agreed before the change.
+        if (cr.scopeImpact) {
+          const proj = await tx.project.findUnique({ where: { id: projectId }, select: { scope: true } })
+          const stamp = `\n\n[${cr.code}, approved ${new Date().toISOString().slice(0,10)}] ${cr.scopeImpact}`
+          await tx.project.update({
+            where: { id: projectId },
+            data:  { scope: `${proj?.scope || ""}${stamp}`.slice(0, 20000) },
+          })
+          applied.push("Appended the scope change to the project scope")
+        }
+      })
+
+      // A cost change without a new baseline leaves the approved figure and the
+      // working plan disagreeing — the exact drift the Budget tab now flags.
+      if (money !== 0) {
+        const lines = await db.budgetItem.findMany({
+          where: { projectId },
+          select: { id: true, name: true, category: true, plannedCost: true, approvedCost: true, earnRule: true },
+        })
+        const proj = await db.project.findUnique({
+          where: { id: projectId },
+          select: { budgetTotal: true, startDate: true, endDate: true, scope: true, outOfScope: true, objective: true },
+        })
+        if (proj?.startDate && proj?.endDate) {
+          await db.baseline.create({
+            data: {
+              projectId,
+              name: `Rebaseline — ${(existing as any).code}`,
+              description: `Cost baseline recaptured on approval of ${(existing as any).code}: ${(existing as any).title}`,
+              snapshotData: {
+                capturedAt: new Date().toISOString(),
+                budget: { total: Number(proj.budgetTotal), lines: lines.map(l => ({
+                  id: l.id, name: l.name, category: l.category,
+                  plannedCost: Number(l.plannedCost || 0),
+                  approvedCost: l.approvedCost == null ? null : Number(l.approvedCost),
+                  earnRule: (l as any).earnRule || "EFFORT",
+                })) },
+                schedule: { startDate: proj.startDate, endDate: proj.endDate },
+              },
+              budgetTotal: proj.budgetTotal,
+              startDate: proj.startDate, endDate: proj.endDate,
+              scopeSnapshot: proj.scope, outOfScopeSnapshot: proj.outOfScope, objectiveSnapshot: proj.objective,
+              createdById: ctx.userId,
+              approvedById: ctx.userId, approvedAt: new Date(), isApproved: true,
+              approvalNotes: `Approved with ${(existing as any).code}`,
+              linkedCrId: (existing as any).id,
+            },
+          }).catch(() => {})
+          applied.push("Captured a new approved cost baseline")
+        }
+      }
+
+      data.appliedAt = new Date()
+      data.appliedSummary = applied.length ? applied.join(" · ") : "No automatic changes were applicable"
+    } catch (e: any) {
+      console.error("[ChangeRequest] apply failed:", e)
+      return err(`The change was approved but could not be applied: ${e?.message || "unknown error"}. Nothing was changed.`, 500)
+    }
+  }
+
 
   const updated = await db.changeRequest.update({
     where: { id: crId },

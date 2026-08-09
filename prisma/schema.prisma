@@ -873,8 +873,18 @@ model ChangeRequest {
   title          String
   description    String?
   scheduleImpact String?
+  /// Days the approved change adds to (or removes from) the schedule. The prose
+  /// field above says why; this says how much, so approval can act on it.
+  scheduleDays   Int?
   budgetImpact   Decimal?     @db.Decimal(15, 2)
+  /// Which budget line the money lands on. Without it, an approved cost change
+  /// is a number in a form that somebody has to remember to go and apply.
+  budgetLineId   String?
   scopeImpact    String?
+  /// What approval actually did, recorded at the moment it did it. A change
+  /// control process that cannot show its own effects is a filing cabinet.
+  appliedAt      DateTime?
+  appliedSummary String?
   qualityImpact  String?
   status         ChangeStatus @default(DRAFT)
   priority       TaskPriority @default(MEDIUM)

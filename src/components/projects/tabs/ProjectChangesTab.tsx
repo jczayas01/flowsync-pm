@@ -2,7 +2,7 @@
 // src/components/projects/tabs/ProjectChangesTab.tsx
 // Change Request management — submit, review, approve/reject, implement
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { dateLocale } from "@/lib/date-locale"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -60,6 +60,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
   const [form, setForm] = useState({
     title:"", description:"", category:"SCOPE", priority:"MEDIUM",
     scheduleImpact:"", budgetImpact:"", scopeImpact:"", qualityImpact:"",
+    scheduleDays:"", budgetLineId:"",
   })
 
   const inp: React.CSSProperties = {
@@ -86,6 +87,8 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
         body: JSON.stringify({
           ...form,
           budgetImpact: form.budgetImpact ? Number(form.budgetImpact) : null,
+          scheduleDays: form.scheduleDays ? Number(form.scheduleDays) : null,
+          budgetLineId: form.budgetLineId || null,
           scheduleImpact: form.scheduleImpact || null,
           scopeImpact: form.scopeImpact || null,
           qualityImpact: form.qualityImpact || null,
@@ -99,7 +102,8 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
       router.refresh()
       setView("list")
       setForm({ title:"", description:"", category:"SCOPE", priority:"MEDIUM",
-        scheduleImpact:"", budgetImpact:"", scopeImpact:"", qualityImpact:"" })
+        scheduleImpact:"", budgetImpact:"", scopeImpact:"", qualityImpact:"",
+        scheduleDays:"", budgetLineId:"" })
     } catch { setError("Network error") }
     finally { setSaving(false) }
   }
@@ -118,6 +122,34 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
       const d = await res?.json().catch(() => null)
       alert(d?.error || "Could not delete this change request.")
     }
+  }
+
+  const [budgetLines, setBudgetLines] = useState<any[]>([])
+  useEffect(() => {
+    let dead = false
+    fetch(`/api/projects/${projectId}/budget`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!dead) setBudgetLines(d?.data?.items || []) })
+      .catch(() => {})
+    return () => { dead = true }
+  }, [projectId])
+
+  // What approval will actually do, said before it happens. A control process
+  // that surprises the person approving it isn't control.
+  function previewOf(cr: any): string[] {
+    const out: string[] = []
+    const money = cr.budgetImpact == null ? 0 : Number(cr.budgetImpact)
+    const days  = cr.scheduleDays == null ? 0 : Number(cr.scheduleDays)
+    if (money !== 0) {
+      const line = budgetLines.find((b: any) => b.id === cr.budgetLineId)
+      out.push(line
+        ? `${money > 0 ? "Add" : "Remove"} $${Math.abs(money).toLocaleString()} ${money > 0 ? "to" : "from"} "${line.name}"`
+        : `Create a new budget line for $${money.toLocaleString()}`)
+      out.push("Recapture the approved cost baseline")
+    }
+    if (days !== 0) out.push(`Move the project finish date by ${days > 0 ? "+" : ""}${days} days, and shift upcoming milestones with it`)
+    if (cr.scopeImpact) out.push("Append the scope change to the project scope")
+    return out
   }
 
   async function updateStatus(crId: string, status: string, extra?: any) {
@@ -209,12 +241,24 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                   <input style={inp} value={form.scheduleImpact}
                     placeholder="e.g. +2 weeks, No impact"
                     onChange={e => setForm(f => ({...f, scheduleImpact:e.target.value}))} />
+                  {/* The prose says why; this says how much, so approval can act
+                      on it instead of leaving someone a task to remember. */}
+                  <input type="number" style={{...inp, marginTop:6}} value={form.scheduleDays}
+                    placeholder="Days to add or remove — e.g. 14 or -3"
+                    onChange={e => setForm(f => ({...f, scheduleDays:e.target.value}))} />
                 </div>
                 <div style={card}>
                   <label style={lbl}>💰 Budget impact ($)</label>
                   <input type="number" style={inp} value={form.budgetImpact}
                     placeholder="e.g. 15000 or -5000"
                     onChange={e => setForm(f => ({...f, budgetImpact:e.target.value}))} />
+                  <select style={{...inp, marginTop:6, cursor:"pointer"}} value={form.budgetLineId}
+                    onChange={e => setForm(f => ({...f, budgetLineId:e.target.value}))}>
+                    <option value="">Create a new budget line for this change</option>
+                    {(budgetLines||[]).map((b:any) => (
+                      <option key={b.id} value={b.id}>Add to: {b.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={card}>
                   <label style={lbl}>📐 Scope impact</label>
@@ -290,7 +334,13 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                     fontFamily:"var(--font)", color:"var(--red)" }}>
                   Reject
                 </button>
-                <button onClick={() => updateStatus(cr.id, "APPROVED")} disabled={saving}
+                <button onClick={() => {
+                    const steps = previewOf(cr)
+                    const msg = steps.length
+                      ? `Approving ${cr.code} will:\n\n${steps.map(x => `  • ${x}`).join("\n")}\n\nProceed?`
+                      : `Approve ${cr.code}?\n\nNo budget, schedule or scope figures were entered, so nothing will change automatically.`
+                    if (confirm(msg)) updateStatus(cr.id, "APPROVED")
+                  }} disabled={saving}
                   style={{ padding:"7px 14px", background:"var(--green)", color:"#fff", border:"none",
                     borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
                     cursor:"pointer", fontFamily:"var(--font)" }}>
