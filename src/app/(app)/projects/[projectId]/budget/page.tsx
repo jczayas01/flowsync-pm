@@ -13,7 +13,13 @@ export default async function ProjectBudgetPage({ params }: { params: { projectI
   const [project, budgetItems, timeEntries] = await Promise.all([
     db.project.findUnique({
       where:  { id: params.projectId },
-      select: { budgetTotal:true, budgetSpent:true, currency:true, startDate:true, endDate:true, percentComplete:true },
+      // A narrow select is how a saved setting looks broken: the write succeeds,
+      // the page reloads, and the value it was never asked for comes back
+      // undefined — so the UI falls to its default and the change appears lost.
+      select: {
+        budgetTotal:true, budgetSpent:true, currency:true, startDate:true, endDate:true,
+        percentComplete:true, autoEv:true, eacMethod:true, eacManualEtc:true,
+      },
     }),
     db.budgetItem.findMany({
       where:   { projectId: params.projectId },
