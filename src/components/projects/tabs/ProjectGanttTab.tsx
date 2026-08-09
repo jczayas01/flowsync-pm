@@ -84,6 +84,7 @@ function isWeekend(d: Date) {
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; svgWidth:number }) {
+  const locale = useLocale()
   const pct = task.percentComplete || 0
   const tx = x + 230 > svgWidth ? x - 230 : x
   return (
