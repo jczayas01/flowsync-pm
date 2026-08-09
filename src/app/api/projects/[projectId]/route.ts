@@ -21,6 +21,9 @@ import {
 const updateSchema = z.object({
   autoEv:          z.boolean().optional(),
   name:            z.string().min(1).max(200).optional(),
+  // Codes prefix task and risk identifiers, so they have to stay unique inside a
+  // workspace — two projects called PRJ-001 make every reference ambiguous.
+  code:            z.string().min(1).max(20).regex(/^[A-Z0-9-]+$/, "Use letters, numbers and hyphens only").optional(),
   description:     z.string().max(2000).optional().nullable(),
   objective:       z.string().max(3000).optional().nullable(),
   scope:           z.string().max(3000).optional().nullable(),
@@ -93,6 +96,16 @@ async function updateProject(ctx: ApiContext, params?: Record<string,string>) {
     if (level < 68) {
       return err("Only PMO and above can change the project status", 403)
     }
+  }
+
+  // Uniqueness is checked before the write: a duplicate code surfaces as a
+  // readable message rather than a database constraint error.
+  if (parsed.data.code) {
+    const clash = await db.project.findFirst({
+      where: { workspaceId: ctx.workspaceId, code: parsed.data.code, NOT: { id } },
+      select: { name: true },
+    })
+    if (clash) return err(`The code ${parsed.data.code} is already used by "${clash.name}".`, 409)
   }
 
   const updated = await db.project.update({

@@ -29,6 +29,28 @@ export function ProjectSettingsModal({ projectId, onClose }: {
   const [aiSaved, setAiSaved]   = useState(false)
   const [busy, setBusy]         = useState<string | null>(null)
   const [newPhase, setNewPhase] = useState("")
+  // The API has accepted a new name and code since the beginning; nothing in the
+  // UI ever asked for one. A project named during a hurried import kept that name
+  // forever, and the only workaround was to delete it and start over.
+  const [pName, setPName]   = useState("")
+  const [pCode, setPCode]   = useState("")
+  const [idBusy, setIdBusy] = useState(false)
+  const [idSaved, setIdSaved] = useState(false)
+
+  async function saveIdentity() {
+    if (!pName.trim()) return
+    setIdBusy(true); setIdSaved(false)
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: pName.trim(), code: pCode.trim() || undefined }),
+    }).catch(() => null)
+    setIdBusy(false)
+    if (res?.ok) { setIdSaved(true); router.refresh(); setTimeout(() => setIdSaved(false), 2500) }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not rename the project.")
+    }
+  }
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameVal, setRenameVal] = useState("")
   const [deleting, setDeleting] = useState<any | null>(null)  // phase pending task-move choice
@@ -45,6 +67,8 @@ export function ProjectSettingsModal({ projectId, onClose }: {
         const pr = await fetch(`/api/projects/${projectId}`)
         const pd = await pr.json().catch(() => ({}))
         setProjStatus(pd?.data?.status || "")
+        setPName(d?.data?.name || d?.name || "")
+        setPCode(d?.data?.code || d?.code || "")
       } catch {}
       const st = d?.data?.settings || {}
       setAiStyle(st.aiStyle || "PROFESSIONAL")
@@ -146,6 +170,47 @@ export function ProjectSettingsModal({ projectId, onClose }: {
           <div style={{ padding: 32, fontSize: 13, color: "var(--text-3)" }}>Loading…</div>
         ) : (
           <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 24 }}>
+
+            {/* ── Project identity ── */}
+            <section>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--steel)", marginBottom: 4 }}>
+                ✏️ Project name and code
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-3)", margin: "0 0 10px", lineHeight: 1.6 }}>
+                The name appears on every report, export and deck. The code prefixes task and
+                risk identifiers — changing it does not renumber anything already created.
+              </p>
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+                <label style={{ flex: "1 1 220px", fontSize: 11, color: "var(--text-3)" }}>
+                  Name
+                  <input value={pName} disabled={!canManage}
+                    onChange={e => setPName(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") saveIdentity() }}
+                    style={{ width: "100%", marginTop: 4, padding: "8px 10px", fontSize: 13,
+                      borderRadius: "var(--radius)", border: "1px solid var(--border)",
+                      fontFamily: "var(--font)", color: "var(--text)",
+                      background: canManage ? "#fff" : "var(--surface)" }} />
+                </label>
+                <label style={{ flex: "0 0 110px", fontSize: 11, color: "var(--text-3)" }}>
+                  Code
+                  <input value={pCode} disabled={!canManage}
+                    onChange={e => setPCode(e.target.value.toUpperCase())}
+                    onKeyDown={e => { if (e.key === "Enter") saveIdentity() }}
+                    style={{ width: "100%", marginTop: 4, padding: "8px 10px", fontSize: 13,
+                      borderRadius: "var(--radius)", border: "1px solid var(--border)",
+                      fontFamily: "monospace", color: "var(--text)",
+                      background: canManage ? "#fff" : "var(--surface)" }} />
+                </label>
+                {canManage && (
+                  <button onClick={saveIdentity} disabled={idBusy || !pName.trim()}
+                    style={{ padding: "9px 16px", background: "var(--steel)", color: "#fff",
+                      border: "none", borderRadius: "var(--radius)", fontSize: 12, fontWeight: 600,
+                      fontFamily: "var(--font)", cursor: idBusy ? "wait" : "pointer" }}>
+                    {idBusy ? "Saving…" : idSaved ? "✓ Saved" : "Save"}
+                  </button>
+                )}
+              </div>
+            </section>
 
             {/* ── AI response style ── */}
             <section>
