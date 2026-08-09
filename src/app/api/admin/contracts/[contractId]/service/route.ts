@@ -24,7 +24,7 @@ const createSchema = z.object({
   notes:       z.string().max(3000).optional().nullable(),
 })
 
-export const serializeEntry = (e: any) => ({
+const serializeEntry = (e: any) => ({
   ...e,
   hours:  Number(e.hours),
   rate:   Number(e.rate),
