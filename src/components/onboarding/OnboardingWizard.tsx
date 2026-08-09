@@ -1,10 +1,11 @@
-﻿"use client"
 // src/components/onboarding/OnboardingWizard.tsx
+"use client"
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ───────────────────────────────────
 type Step = 'workspace' | 'methodology' | 'team'
 
 interface FormData {
@@ -25,9 +26,9 @@ interface FormData {
 const STEPS: Step[] = ['workspace', 'methodology', 'team']
 
 const STEP_META = {
-  workspace:   { num: 1, label: 'Workspace',   icon: 'ðŸ¢' },
-  methodology: { num: 2, label: 'Methodology', icon: 'âš™ï¸' },
-  team:        { num: 3, label: 'Invite team',   icon: 'ðŸ‘¥' },
+  workspace:   { num: 1, icon: '🏢' },
+  methodology: { num: 2, icon: '⚙️' },
+  team:        { num: 3, icon: '👥' },
 }
 
 const TIMEZONES = [
@@ -36,121 +37,24 @@ const TIMEZONES = [
   'Europe/London', 'Europe/Madrid', 'UTC',
 ]
 
-const CURRENCIES = [
-  { code: 'USD', label: 'USD â€” US Dollar' },
-  { code: 'EUR', label: 'EUR â€” Euro' },
-  { code: 'GBP', label: 'GBP â€” British Pound' },
-  { code: 'CAD', label: 'CAD â€” Canadian Dollar' },
-  { code: 'MXN', label: 'MXN â€” Mexican Peso' },
-]
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'MXN']
 
-const ROLES = [
-  { value: 'PROJECT_MANAGER', label: 'Project Manager' },
-  { value: 'TEAM_MEMBER',     label: 'Team Member'     },
-  { value: 'READ_ONLY',       label: 'Read-Only'       },
-  { value: 'CLIENT',          label: 'Client / External' },
-]
+const ROLES = ['PROJECT_MANAGER', 'TEAM_MEMBER', 'READ_ONLY', 'CLIENT']
 
 const METHODOLOGIES = [
-  {
-    id: 'WATERFALL',
-    icon: 'ðŸ“‹',
-    name: 'Waterfall',
-    tagline: 'Sequential phases with approval gates',
-    desc: 'Best for projects with defined scope, fixed budgets, and regulatory requirements. Common in construction, ERP deployments, and regulated programs.',
-    features: ['Phase-gate approvals', 'Baseline management', 'Full Gantt scheduling', 'EVM budget tracking'],
-    color: '#1B6CA8',
-    bg: '#EFF6FF',
-  },
-  {
-    id: 'AGILE',
-    icon: 'ðŸ”„',
-    name: 'Agile',
-    tagline: 'Iterative delivery with continuous feedback',
-    desc: 'Best for projects where requirements evolve. Work in sprints, deliver incrementally, and respond to change without losing control of scope.',
-    features: ['Sprint planning board', 'Backlog management', 'Velocity tracking', 'Burndown charts'],
-    color: '#059669',
-    bg: '#ECFDF5',
-  },
-  {
-    id: 'SCRUM',
-    icon: 'ðŸƒ',
-    name: 'Scrum',
-    tagline: 'Full Scrum framework with all ceremonies',
-    desc: 'Full Scrum implementation â€” daily standups, sprint reviews, retrospectives, definition of done, and story point estimation built in.',
-    features: ['Full ceremony support', 'Story point estimation', 'Sprint retrospectives', 'Velocity & capacity'],
-    color: '#7C3AED',
-    bg: '#F5F3FF',
-  },
-  {
-    id: 'HYBRID',
-    icon: 'ðŸ”€',
-    name: 'Hybrid',
-    tagline: 'Waterfall governance with agile delivery',
-    desc: 'Best when leadership needs phase gates and baselines but teams deliver in iterations. Combine formal planning with sprint-based execution.',
-    features: ['Phase gates + sprints', 'Baselines with agile boards', 'Blended reporting', 'Flexible per-project setup'],
-    color: '#D97706',
-    bg: '#FFFBEB',
-  },
+  { id: 'WATERFALL', icon: '📋', color: '#1B6CA8', bg: '#EFF6FF' },
+  { id: 'AGILE', icon: '🔄', color: '#059669', bg: '#ECFDF5' },
+  { id: 'SCRUM', icon: '🏃', color: '#7C3AED', bg: '#F5F3FF' },
+  { id: 'HYBRID', icon: '🔀', color: '#D97706', bg: '#FFFBEB' },
 ]
 
-const TEMPLATES = [
-  {
-    id: 'system-implementation',
-    icon: 'ðŸ§©',
-    name: 'System Implementation',
-    desc: '36-week Waterfall Â· 5 phases Â· compliance checkpoints',
-    methodology: 'WATERFALL',
-    color: '#059669',
-  },
-  {
-    id: 'software-dev-scrum',
-    icon: 'ðŸƒ',
-    name: 'Software Development (Scrum)',
-    desc: '12-week Scrum Â· Backlog Â· Sprint board Â· DoD',
-    methodology: 'SCRUM',
-    color: '#7C3AED',
-  },
-  {
-    id: 'cloud-migration',
-    icon: 'â˜ï¸',
-    name: 'Cloud Migration (AWS/Azure)',
-    desc: '24-week Waterfall Â· Discovery â†’ Cutover',
-    methodology: 'WATERFALL',
-    color: '#0891B2',
-  },
-  {
-    id: 'regulatory-compliance',
-    icon: 'ðŸ”’',
-    name: 'Compliance Program',
-    desc: '16-week Â· Risk analysis Â· Policy library',
-    methodology: 'WATERFALL',
-    color: '#DC2626',
-  },
-  {
-    id: 'saas-product-launch',
-    icon: 'ðŸš€',
-    name: 'SaaS Product Launch',
-    desc: '24-week Scrum Â· MVP â†’ Beta â†’ Launch',
-    methodology: 'SCRUM',
-    color: '#7C3AED',
-  },
-  {
-    id: 'web-platform',
-    icon: 'ðŸ“±',
-    name: 'Web Platform Launch',
-    desc: '20-week Agile Â· integrations Â· accessibility standards',
-    methodology: 'AGILE',
-    color: '#1B6CA8',
-  },
-]
-
-// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main component ───────────────────────────
 export function OnboardingWizard({ userId, userName, userEmail = '' }: {
   userId:    string
   userEmail: string
   userName: string
 }) {
+  const ob = useTranslations('onboarding')
   const router  = useRouter()
   const [step, setStep]       = useState<Step>('workspace')
   const [loading, setLoading] = useState(false)
@@ -168,7 +72,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
   })
 
   const stepIdx    = STEPS.indexOf(step)
-  const firstName  = userName.split(' ')[0] || 'there'
+  const firstName  = userName.split(' ')[0] || ob('there')
 
   // Validate current step before advancing
   function canAdvance(): boolean {
@@ -210,11 +114,6 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
     })
   }
 
-  // Filter templates to match selected methodology
-  const relevantTemplates = form.methodology
-    ? TEMPLATES.filter(t => t.methodology === form.methodology)
-    : TEMPLATES
-
   async function finish() {
     setLoading(true)
     setError('')
@@ -235,7 +134,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           const d = await wsRes.json()
           ws = d.data
         } else {
-          // Workspace already exists â€” update it
+          // Workspace already exists — update it
           await fetch('/api/workspace', {
             method:  'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -254,14 +153,14 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name:        form.projectName.trim() || 'My First Project',
+            name:        form.projectName.trim() || ob('My First Project'),
             methodology: form.methodology || 'WATERFALL',
             startDate:   form.startDate,
             templateId:  form.templateId || undefined,
           }),
         })
         if (!projRes.ok) {
-          console.warn('[Onboarding] Project creation failed â€” continuing')
+          console.warn('[Onboarding] Project creation failed — continuing')
         }
       }
 
@@ -279,12 +178,12 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
 
       router.push('/dashboard?onboarding=complete')
     } catch (e: any) {
-      setError(e.message || 'Setup failed. Please try again.')
+      setError(e.message || ob('setupFailed'))
       setLoading(false)
     }
   }
 
-  // â”€â”€â”€ Shared styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Shared styles ─────────────────────────
   const s = {
     input: {
       width: '100%', padding: '11px 14px',
@@ -331,7 +230,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
     }}>
       <div style={{ width: '100%', maxWidth: 560 }}>
 
-        {/* â”€â”€ Logo â”€â”€ */}
+        {/* ── Logo ── */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
           gap:9, marginBottom:36 }}>
           <div style={{ width:30,height:30,background:'var(--steel)',borderRadius:8,position:'relative' }}>
@@ -343,7 +242,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           </span>
         </div>
 
-        {/* â”€â”€ Step progress â”€â”€ */}
+        {/* ── Step progress ── */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display:'flex', gap:6, marginBottom:12 }}>
             {STEPS.map((s, i) => (
@@ -367,13 +266,13 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                 transition: 'color .3s',
                 flex:1, textAlign: i===0?'left':i===STEPS.length-1?'right':'center',
               }}>
-                {STEP_META[s].label}
+                {ob(('step.' + s) as any)}
               </div>
             ))}
           </div>
         </div>
 
-        {/* â”€â”€ Card â”€â”€ */}
+        {/* ── Card ── */}
         <div style={{
           background: 'rgba(255,255,255,.04)',
           border: '1px solid rgba(255,255,255,.09)',
@@ -393,25 +292,25 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
             </div>
           )}
 
-          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          {/* ════════════════════════
               STEP 1: WORKSPACE
-          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+          ════════════════════════ */}
           {step === 'workspace' && (
             <>
               <div style={{ marginBottom:24 }}>
                 <h2 style={{ fontSize:22,fontWeight:600,color:'#fff',marginBottom:6 }}>
-                  Welcome, {firstName}! ðŸ‘‹
+                  {ob('welcome', { name: firstName })}
                 </h2>
                 <p style={{ fontSize:14,color:'rgba(255,255,255,.45)',lineHeight:1.65 }}>
-                  Let's set up your workspace. This is where all your projects, team members, and data will live.
+                  {ob('workspaceIntro')}
                 </p>
               </div>
 
               <div style={{ marginBottom:16 }}>
-                <label style={s.label}>Organization name <span style={{ color:'var(--amber)' }}>*</span></label>
+                <label style={s.label}>{ob('Organization name')} <span style={{ color:'var(--amber)' }}>*</span></label>
                 <input
                   type="text"
-                  placeholder="e.g. Acme Corp, Global Retail Inc., Tech Startup Ltd."
+                  placeholder={ob('orgPlaceholder')}
                   value={form.workspaceName}
                   onChange={e => setForm(f => ({ ...f, workspaceName: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && advance()}
@@ -420,14 +319,14 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                 />
                 {form.workspaceName.trim().length > 0 && form.workspaceName.trim().length < 2 && (
                   <div style={{ fontSize:11,color:'rgba(220,38,38,.8)',marginTop:4 }}>
-                    At least 2 characters required
+                    {ob('minChars')}
                   </div>
                 )}
               </div>
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:24 }}>
                 <div>
-                  <label style={s.label}>Timezone</label>
+                  <label style={s.label}>{ob('Timezone')}</label>
                   <div style={{ position:'relative' }}>
                     <select
                       value={form.timezone}
@@ -439,11 +338,11 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       ))}
                     </select>
                     <span style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
-                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>â–¾</span>
+                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>▾</span>
                   </div>
                 </div>
                 <div>
-                  <label style={s.label}>Currency</label>
+                  <label style={s.label}>{ob('Currency')}</label>
                   <div style={{ position:'relative' }}>
                     <select
                       value={form.currency}
@@ -451,11 +350,11 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       style={s.select}
                     >
                       {CURRENCIES.map(c => (
-                        <option key={c.code} value={c.code} style={{ background:'#1a2d40' }}>{c.label}</option>
+                        <option key={c} value={c} style={{ background:'#1a2d40' }}>{ob(('cur.' + c) as any)}</option>
                       ))}
                     </select>
                     <span style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
-                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>â–¾</span>
+                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>▾</span>
                   </div>
                 </div>
               </div>
@@ -466,23 +365,23 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                   onClick={advance}
                   disabled={!canAdvance()}
                 >
-                  Continue â†’
+                  {ob('Continue →')}
                 </button>
               </div>
             </>
           )}
 
-          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          {/* ════════════════════════
               STEP 2: METHODOLOGY
-          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+          ════════════════════════ */}
           {step === 'methodology' && (
             <>
               <div style={{ marginBottom:24 }}>
                 <h2 style={{ fontSize:22,fontWeight:600,color:'#fff',marginBottom:6 }}>
-                  How does your team work?
+                  {ob('methodologyTitle')}
                 </h2>
                 <p style={{ fontSize:14,color:'rgba(255,255,255,.45)',lineHeight:1.65 }}>
-                  Choose your primary methodology. You can use all three in FlowSync PM â€” this just sets the default for new projects.
+                  {ob('methodologyIntro')}
                 </p>
               </div>
 
@@ -509,26 +408,26 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
                             <span style={{ fontSize:15,fontWeight:600,color:selected ? '#fff':'rgba(255,255,255,.85)' }}>
-                              {m.name}
+                              {ob(('m.' + m.id) as any)}
                             </span>
                             {selected && (
                               <span style={{ fontSize:10,fontWeight:700,padding:'1px 7px',borderRadius:4,
-                                background:m.color,color:'#fff' }}>Selected</span>
+                                background:m.color,color:'#fff' }}>{ob('Selected')}</span>
                             )}
                           </div>
                           <div style={{ fontSize:12,color:selected?`${m.color.replace('#','rgba(')},.9)`:
                             'rgba(255,255,255,.4)',fontWeight:500,marginBottom:6 }}>
-                            {m.tagline}
+                            {ob(('m.' + m.id + '.tagline') as any)}
                           </div>
                           <p style={{ fontSize:12,color:'rgba(255,255,255,.4)',lineHeight:1.6,marginBottom:8 }}>
-                            {m.desc}
+                            {ob(('m.' + m.id + '.desc') as any)}
                           </p>
                           {selected && (
                             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                              {m.features.map(f => (
+                              {['f1','f2','f3','f4'].map(f => (
                                 <span key={f} style={{ fontSize:10,fontWeight:600,padding:'2px 8px',
                                   borderRadius:4,background:`${m.color}25`,color:m.color }}>
-                                  âœ“ {f}
+                                  ✓ {ob(('m.' + m.id + '.' + f) as any)}
                                 </span>
                               ))}
                             </div>
@@ -541,31 +440,31 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
               </div>
 
               <div style={{ display:'flex', gap:8 }}>
-                <button style={s.btnBack} onClick={back}>â† Back</button>
+                <button style={s.btnBack} onClick={back}>{ob('← Back')}</button>
                 <button
                   style={s.btnPrimary}
                   onClick={advance}
                   disabled={!canAdvance()}
                 >
-                  Continue â†’
+                  {ob('Continue →')}
                 </button>
               </div>
             </>
           )}
 
-          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          {/* ════════════════════════
               STEP 3: FIRST PROJECT
-          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+          ════════════════════════ */}
           {step === 'team' && (
             <>
               <div style={{ marginBottom:20 }}>
                 <h2 style={{ fontSize:22,fontWeight:600,color:'#fff',marginBottom:6 }}>
-                  Invite your team
+                  {ob('Invite your team')}
                 </h2>
                 <p style={{ fontSize:14,color:'rgba(255,255,255,.45)',lineHeight:1.65 }}>
-                  They'll receive an email invitation to join{' '}
-                  <strong style={{ color:'rgba(255,255,255,.7)' }}>{form.workspaceName}</strong>.
-                  You can always invite more people later.
+                  {ob('teamIntroA')}{' '}
+                  <strong style={{ color:'rgba(255,255,255,.7)' }}>{form.workspaceName}</strong>.{' '}
+                  {ob('teamIntroB')}
                 </p>
               </div>
 
@@ -575,7 +474,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                     gap:8, alignItems:'center' }}>
                     <input
                       type="email"
-                      placeholder={`colleague@organization.com`}
+                      placeholder={ob('invitePlaceholder')}
                       value={invite.email}
                       onChange={e => updateInvite(i, 'email', e.target.value)}
                       style={{ ...s.input, marginBottom:0 }}
@@ -586,14 +485,14 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                         onChange={e => updateInvite(i, 'role', e.target.value)}
                         style={{ ...s.select, width:'auto', paddingRight:28, fontSize:12 }}
                       >
-                        {ROLES.map(r => (
-                          <option key={r.value} value={r.value} style={{ background:'#1a2d40' }}>
-                            {r.label}
+                        {ROLES.map(rv => (
+                          <option key={rv} value={rv} style={{ background:'#1a2d40' }}>
+                            {ob(('role.' + rv) as any)}
                           </option>
                         ))}
                       </select>
                       <span style={{ position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',
-                        pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:9 }}>â–¾</span>
+                        pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:9 }}>▾</span>
                     </div>
                     {form.invites.length > 1 && (
                       <button
@@ -604,7 +503,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                           display:'flex',alignItems:'center',justifyContent:'center',
                           fontFamily:'var(--font)',flexShrink:0 }}
                       >
-                        Ã—
+                        ×
                       </button>
                     )}
                   </div>
@@ -620,7 +519,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                   fontFamily:'var(--font)', marginBottom:24, width:'100%',
                   justifyContent:'center', transition:'all .15s' }}
               >
-                <span style={{ fontSize:16 }}>+</span> Add another person
+                <span style={{ fontSize:16 }}>+</span> {ob('Add another person')}
               </button>
 
               {/* Setup summary */}
@@ -628,14 +527,14 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                 borderRadius:10, padding:'14px 16px', marginBottom:24 }}>
                 <div style={{ fontSize:11, fontWeight:600, letterSpacing:'.06em',
                   textTransform:'uppercase', color:'rgba(27,108,168,.8)', marginBottom:10 }}>
-                  Your workspace summary
+                  {ob('Your workspace summary')}
                 </div>
                 {[
-                  ['ðŸ¢ Workspace',     form.workspaceName],
-                  ['âš™ï¸ Methodology',   form.methodology || 'â€”'],
-                  ['ðŸ“ First project', form.projectName || (form.templateId ? `From template` : 'None â€” add later')],
-                  ['ðŸŒ Timezone',      form.timezone],
-                  ['ðŸ’µ Currency',      form.currency],
+                  [ob('sum.workspace'),   form.workspaceName],
+                  [ob('sum.methodology'), form.methodology ? ob(('m.' + form.methodology) as any) : '—'],
+                  [ob('sum.project'),     form.projectName || (form.templateId ? ob('From template') : ob('noneAddLater'))],
+                  [ob('sum.timezone'),    form.timezone],
+                  [ob('sum.currency'),    form.currency],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display:'flex', justifyContent:'space-between',
                     fontSize:12, padding:'4px 0',
@@ -647,7 +546,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
               </div>
 
               <div style={{ display:'flex', gap:8 }}>
-                <button style={s.btnBack} onClick={back} disabled={loading}>â† Back</button>
+                <button style={s.btnBack} onClick={back} disabled={loading}>{ob('← Back')}</button>
                 <button
                   style={{ ...s.btnPrimary, background:'var(--amber)', color:'var(--navy)',
                     cursor: loading ? 'wait' : 'pointer',
@@ -660,10 +559,10 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       <span style={{ width:14,height:14,border:'2px solid rgba(0,0,0,.2)',
                         borderTopColor:'var(--navy)',borderRadius:'50%',
                         display:'inline-block',animation:'spin .7s linear infinite' }} />
-                      Setting upâ€¦
+                      {ob('Setting up…')}
                     </span>
                   ) : (
-                    form.invites.some(i => i.email.trim()) ? 'Get started â†’' : 'Skip & launch â†’'
+                    form.invites.some(i => i.email.trim()) ? ob('Get started →') : ob('Skip & launch →')
                   )}
                 </button>
               </div>
@@ -671,10 +570,10 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           )}
         </div>
 
-        {/* â”€â”€ Footer note â”€â”€ */}
+        {/* ── Footer note ── */}
         <p style={{ textAlign:'center', fontSize:11,
           color:'rgba(255,255,255,.2)', marginTop:20, lineHeight:1.6 }}>
-          Step {stepIdx + 1} of {STEPS.length} Â· Your data is encrypted and never shared.
+          {ob('footerNote', { n: stepIdx + 1, total: STEPS.length })}
         </p>
       </div>
 
