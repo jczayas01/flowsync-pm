@@ -6,6 +6,8 @@
 //           multi-column left panel, today line, zoom/pan
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import { useTaskContextSafe } from "@/lib/context/TaskContext"
@@ -102,7 +104,7 @@ function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; s
         <div style={{ marginTop:5, fontSize:10, display:"flex", gap:8 }}>
           <span style={{ padding:"1px 6px", borderRadius:4,
             background:STATUS_COLOR[task.status]||"#64748B", color:"#fff" }}>
-            {task.status?.replace(/_/g," ")}
+            {enumLabel(task.status, locale)}
           </span>
           {task.priority && (
             <span style={{ color:"#94A3B8" }}>{task.priority}</span>
@@ -117,6 +119,7 @@ function TaskTooltip({ task, x, y, svgWidth }: { task:any; x:number; y:number; s
 export function ProjectGanttTab({ project, projectId, tasks, phases, members, baselines, milestones=[] }: {
   project?:any; projectId:string; tasks:any[]; phases:any[]; members:any[]; baselines?:any[]; milestones?:any[]
 }) {
+  const locale = useLocale()
   const router  = useRouter()
   const taskCtx = useTaskContextSafe()
   const svgRef  = useRef<SVGSVGElement>(null)

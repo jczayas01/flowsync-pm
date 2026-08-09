@@ -3,7 +3,8 @@
 // Requirements Documentation + Traceability Matrix
 
 import { useState } from "react"
-import { useTranslations } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
+import { useTranslations, useLocale } from "next-intl"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
@@ -37,6 +38,7 @@ const lbl: React.CSSProperties = {
 export function RequirementsTab({ projectId, workspaceId, requirements, tasks }: {
   projectId:string; workspaceId:string; requirements:any[]; tasks:any[]
 }) {
+  const locale = useLocale()
   const tip = useTranslations("tips")
   const { can } = usePermissions()
   const router = useRouter()
@@ -482,7 +484,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                             maxWidth:200, overflow:"hidden", textOverflow:"ellipsis",
                             whiteSpace:"nowrap" }}>{r.title}</td>
                           <td style={{ padding:"9px 12px", fontSize:10, color:"var(--text-3)" }}>
-                            {r.type?.replace(/_/g," ")}
+                            {enumLabel(r.type, locale)}
                           </td>
                           <td style={{ padding:"9px 12px", fontSize:10, fontWeight:700,
                             color:(PRIORITY_CFG[r.priority]||PRIORITY_CFG.MEDIUM).color }}>
@@ -501,7 +503,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                             {linkedTask ? (
                               <span style={{ fontSize:9, fontWeight:700,
                                 color:linkedTask.status==="DONE"?"#059669":"#D97706" }}>
-                                {linkedTask.status?.replace(/_/g," ")}
+                                {enumLabel(linkedTask.status, locale)}
                               </span>
                             ) : "—"}
                           </td>

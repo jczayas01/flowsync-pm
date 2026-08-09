@@ -1,6 +1,8 @@
 "use client"
 // src/components/resources/SkillsView.tsx
 import { useState } from "react"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { Avatar, Badge, EmptyState } from "@/components/ui"
 
 const SKILL_CATEGORIES = [
@@ -11,6 +13,7 @@ const SKILL_CATEGORIES = [
 export function SkillsView({ members: initialMembers, workspaceId }:{
   members:any[]; workspaceId:string
 }) {
+  const locale = useLocale()
   const members = initialMembers
   const isDemo  = false
 
@@ -151,7 +154,7 @@ export function SkillsView({ members: initialMembers, workspaceId }:{
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{m.name}</div>
                     <div style={{fontSize:11,color:"var(--text-3)"}}>
-                      {m.role?.replace(/_/g," ")}
+                      {enumLabel(m.role, locale)}
                     </div>
                   </div>
                   <button onClick={()=>setEditMember(isEditing?null:m.id)}

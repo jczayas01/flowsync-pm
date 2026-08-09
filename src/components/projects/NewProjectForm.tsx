@@ -1,6 +1,8 @@
 "use client"
 // src/components/projects/NewProjectForm.tsx
 import { DateField } from "@/components/shared/DatePicker"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -19,6 +21,7 @@ const TIMEZONES  = ["America/Puerto_Rico","America/New_York","America/Chicago","
 export function NewProjectForm({ workspaceId, members }:{
   workspaceId:string; members:any[]
 }) {
+  const locale = useLocale()
   const router = useRouter()
   const [form, setForm] = useState({
     name:           "",
@@ -339,21 +342,21 @@ export function NewProjectForm({ workspaceId, members }:{
                             [m.userId]: { ...s[m.userId], projectRole:e.target.value } }))}
                           title="PM Standard project role"
                           style={{ ...sel, width:160, padding:"4px 22px 4px 8px", fontSize:11 }}>
-                          <option value="EXECUTIVE_SPONSOR">Executive Sponsor</option>
+                          <option value="EXECUTIVE_SPONSOR">{enumLabel("EXECUTIVE_SPONSOR", locale)}</option>
                           <option value="SPONSOR">Project Sponsor</option>
-                          <option value="STEERING_COMMITTEE">Steering Committee</option>
-                          <option value="PMO_DIRECTOR">PMO Director</option>
+                          <option value="STEERING_COMMITTEE">{enumLabel("STEERING_COMMITTEE", locale)}</option>
+                          <option value="PMO_DIRECTOR">{enumLabel("PMO_DIRECTOR", locale)}</option>
                           <option value="PMO">PMO Analyst</option>
                           <option value="PM">Project Manager</option>
-                          <option value="PRODUCT_OWNER">Product Owner</option>
-                          <option value="BUSINESS_ANALYST">Business Analyst</option>
+                          <option value="PRODUCT_OWNER">{enumLabel("PRODUCT_OWNER", locale)}</option>
+                          <option value="BUSINESS_ANALYST">{enumLabel("BUSINESS_ANALYST", locale)}</option>
                           <option value="TECH_LEAD">Technical Lead</option>
-                          <option value="SCRUM_MASTER">Scrum Master</option>
-                          <option value="TEAM_MEMBER">Team Member</option>
-                          <option value="STAKEHOLDER">Stakeholder</option>
-                          <option value="EXTERNAL_RESOURCE">External Resource</option>
-                          <option value="CLIENT">Client</option>
-                          <option value="AUDITOR">Auditor</option>
+                          <option value="SCRUM_MASTER">{enumLabel("SCRUM_MASTER", locale)}</option>
+                          <option value="TEAM_MEMBER">{enumLabel("TEAM_MEMBER", locale)}</option>
+                          <option value="STAKEHOLDER">{enumLabel("STAKEHOLDER", locale)}</option>
+                          <option value="EXTERNAL_RESOURCE">{enumLabel("EXTERNAL_RESOURCE", locale)}</option>
+                          <option value="CLIENT">{enumLabel("CLIENT", locale)}</option>
+                          <option value="AUDITOR">{enumLabel("AUDITOR", locale)}</option>
                         </select>
                         <select value={selectedMembers[m.userId].role}
                           onClick={e => e.stopPropagation()}
@@ -362,9 +365,9 @@ export function NewProjectForm({ workspaceId, members }:{
                           title="Access level"
                           style={{ ...sel, width:100, padding:"4px 22px 4px 8px", fontSize:11 }}>
                           <option value="PM">PM access</option>
-                          <option value="MEMBER">Member</option>
-                          <option value="VIEWER">Viewer</option>
-                          <option value="CLIENT">Client</option>
+                          <option value="MEMBER">{enumLabel("MEMBER", locale)}</option>
+                          <option value="VIEWER">{enumLabel("VIEWER", locale)}</option>
+                          <option value="CLIENT">{enumLabel("CLIENT", locale)}</option>
                         </select>
                       </div>
                     )}

@@ -305,10 +305,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
 
       {/* PM Standard strip */}
       <div style={{ background:"#EFF6FF", borderBottom:"1px solid #BFDBFE",
-        padding:"7px 16px", fontSize:11, color:"#1E40AF", flexShrink:0 }}>
-        PM Standard — Procurement — External Resources & Procurement Management ·
-        Track contracts, purchase orders, SOWs, and vendor relationships
-      </div>
+        padding:"7px 16px", fontSize:11, color:"#1E40AF", flexShrink:0 }}>{tip("pStandard")}</div>
 
       <div style={{ flex:1, overflowY:"auto", padding:14 }}>
 
@@ -387,7 +384,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <label style={lbl}>{tip("pBillAgainst")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.budgetItemId}
                   onChange={e=>setForm(f=>({...f,budgetItemId:e.target.value}))}>
-                  <option value="">— not linked —</option>
+                  <option value="">{tip("pNotLinked")}</option>
                   {budgetLines.map(b=>(
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -411,9 +408,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       onClick={()=>setForm(f=>({...f, allocations:[...(f.allocations||[]), { budgetItemId:"", amount:0 }]}))}
                       style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
                         background:"#fff", border:"1px solid var(--border)", borderRadius:6,
-                        padding:"3px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>
-                      + Add line
-                    </button>
+                        padding:"3px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>{tip("pAddLine")}</button>
                   </div>
 
                   {(form.allocations||[]).length===0 && (
@@ -427,7 +422,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                     <div key={i} style={{ display:"flex", gap:6, marginBottom:6 }}>
                       <select style={{...inp,cursor:"pointer",flex:1}} value={a.budgetItemId}
                         onChange={e=>setForm(f=>{ const n=[...f.allocations]; n[i]={...n[i],budgetItemId:e.target.value}; return {...f,allocations:n} })}>
-                        <option value="">— choose line —</option>
+                        <option value="">{tip("pChooseLine")}</option>
                         {budgetLines.map(b=>(<option key={b.id} value={b.id}>{b.name}</option>))}
                       </select>
                       <input type="number" min={0} step="0.01" value={a.amount||""} placeholder="0.00"
@@ -799,13 +794,13 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                           borderRadius:8, padding:12, marginBottom:12, display:"flex",
                           flexDirection:"column", gap:8 }}>
                           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                            <div><div style={lblE}>Title *</div>
+                            <div><div style={lblE}>{tip("titleReq")}</div>
                             <input style={inp} placeholder="Title *" value={editF.title}
                               onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))} /></div>
-                            <div><div style={lblE}>Vendor *</div>
+                            <div><div style={lblE}>{tip("pVendorReq")}</div>
                             <input style={inp} placeholder="Vendor *" value={editF.vendorName}
                               onChange={e=>setEditF((f:any)=>({...f,vendorName:e.target.value}))} /></div>
-                            <div><div style={lblE}>Contact person</div>
+                            <div><div style={lblE}>{tip("pContactPerson")}</div>
                             <input style={inp} placeholder="Contact person" value={editF.vendorContact}
                               onChange={e=>setEditF((f:any)=>({...f,vendorContact:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pEmail")}</div>
@@ -820,10 +815,10 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                             <div><div style={lblE}>{tip("pInternalOwner")}</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.ownerId}
                               onChange={e=>setEditF((f:any)=>({...f,ownerId:e.target.value}))}>
-                              <option value="">Internal owner — unassigned</option>
+                              <option value="">{tip("pOwnerUnassigned")}</option>
                               {members.map((m:any)=><option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
                             </select></div>
-                            <div><div style={lblE}>Type</div>
+                            <div><div style={lblE}>{tip("qType")}</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.type}
                               onChange={e=>setEditF((f:any)=>({...f,type:e.target.value}))}>
                               {Object.entries(TYPE_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
@@ -838,7 +833,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <select style={{...inp,cursor:"pointer"}} value={editF.budgetItemId}
                   onChange={e=>setEditF(f=>({...f,budgetItemId:e.target.value}))}
                   disabled={(editF.allocations||[]).length>0}>
-                  <option value="">— not linked —</option>
+                  <option value="">{tip("pNotLinked")}</option>
                   {budgetLines.map(b=>(
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -856,9 +851,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       onClick={()=>setEditF(f=>({...f, allocations:[...(f.allocations||[]), { budgetItemId:"", amount:0 }]}))}
                       style={{ marginLeft:"auto", fontSize:11.5, fontWeight:600, color:"var(--steel)",
                         background:"#fff", border:"1px solid var(--border)", borderRadius:6,
-                        padding:"3px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>
-                      + Add line
-                    </button>
+                        padding:"3px 10px", cursor:"pointer", fontFamily:"var(--font)" }}>{tip("pAddLine")}</button>
                   </div>
 
                   {(editF.allocations||[]).length===0 && (
@@ -872,7 +865,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                     <div key={i} style={{ display:"flex", gap:6, marginBottom:6 }}>
                       <select style={{...inp,cursor:"pointer",flex:1}} value={a.budgetItemId}
                         onChange={e=>setEditF(f=>{ const n=[...f.allocations]; n[i]={...n[i],budgetItemId:e.target.value}; return {...f,allocations:n} })}>
-                        <option value="">— choose line —</option>
+                        <option value="">{tip("pChooseLine")}</option>
                         {budgetLines.map(b=>(<option key={b.id} value={b.id}>{b.name}</option>))}
                       </select>
                       <input type="number" min={0} step="0.01" value={a.amount||""} placeholder="0.00"
@@ -902,22 +895,22 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                   })()}
                 </div>
               </div>
-                            <div><div style={lblE}>PO number</div>
+                            <div><div style={lblE}>{tip("pPoNum")}</div>
                             <input style={inp} placeholder="PO number" value={editF.poNumber}
                               onChange={e=>setEditF((f:any)=>({...f,poNumber:e.target.value}))} /></div>
-                            <div><div style={lblE}>Contract ref</div>
+                            <div><div style={lblE}>{tip("pContractRef")}</div>
                             <input style={inp} placeholder="Contract ref" value={editF.contractRef}
                               onChange={e=>setEditF((f:any)=>({...f,contractRef:e.target.value}))} /></div>
-                            <div><div style={lblE}>Value</div>
+                            <div><div style={lblE}>{tip("pValueLbl")}</div>
                             <input style={inp} type="number" placeholder="Value" value={editF.value}
                               onChange={e=>setEditF((f:any)=>({...f,value:e.target.value}))} /></div>
-                            <div><div style={lblE}>Currency</div>
+                            <div><div style={lblE}>{tip("pCurrency")}</div>
                             <input style={inp} placeholder="Currency" value={editF.currency}
                               onChange={e=>setEditF((f:any)=>({...f,currency:e.target.value}))} /></div>
                             <div><div style={lblE}>{tip("pStart")}</div>
                             <DateField style={inp} value={editF.startDate}
                               onChange={e=>setEditF((f:any)=>({...f,startDate:e.target.value}))} /></div>
-                            <div><div style={lblE}>End date</div>
+                            <div><div style={lblE}>{tip("pEndDate")}</div>
                             <DateField style={inp} value={editF.endDate}
                               onChange={e=>setEditF((f:any)=>({...f,endDate:e.target.value}))} /></div>
                           </div>
@@ -946,14 +939,14 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                             style={{ padding:"5px 12px", background:"#ECFDF5",
                               border:"1px solid #A7F3D0", borderRadius:"var(--radius)",
                               fontSize:11, color:"#059669", fontWeight:600, cursor:"pointer",
-                              fontFamily:"var(--font)" }}>▶ Activate</button>
+                              fontFamily:"var(--font)" }}>{tip("pActivate")}</button>
                         )}
                         {can("projects:edit") && (
                           <button onClick={()=>openEditItem(item)}
                             style={{ padding:"5px 12px", background:"#fff",
                               border:"1px solid var(--border)", borderRadius:"var(--radius)",
                               fontSize:11, color:"var(--text-2)", cursor:"pointer",
-                              fontFamily:"var(--font)" }}>✏️ Edit</button>
+                              fontFamily:"var(--font)" }}>{tip("edit2")}</button>
                         )}
                         <button onClick={()=>del(item.id)} disabled={deleting===item.id}
                           style={{ padding:"5px 12px", background:"#FEF2F2",

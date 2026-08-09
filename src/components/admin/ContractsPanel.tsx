@@ -6,6 +6,8 @@
 // SLA commitments, invoice records, attached signed documents.
 
 import { useEffect, useState } from "react"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 
 const S: Record<string, { label: string; color: string; bg: string }> = {
@@ -55,6 +57,7 @@ const EMPTY_FORM = {
 export function ContractsPanel({ workspaces }: {
   workspaces: { id: string; name: string; plan?: string }[]
 }) {
+  const locale = useLocale()
   const [contracts, setContracts] = useState<any[] | null>(null)
   const [error, setError] = useState("")
   const [open, setOpen] = useState<Record<string, boolean>>({})
@@ -378,8 +381,8 @@ export function ContractsPanel({ workspaces }: {
               <div><label style={lbl}>Billing</label>
                 <select style={{ ...inp, cursor: "pointer" }} value={form.billingCycle}
                   onChange={e => setForm((f: any) => ({ ...f, billingCycle: e.target.value }))}>
-                  <option value="ANNUAL">Annual</option>
-                  <option value="MONTHLY">Monthly</option>
+                  <option value="ANNUAL">{enumLabel("ANNUAL", locale)}</option>
+                  <option value="MONTHLY">{enumLabel("MONTHLY", locale)}</option>
                 </select></div>
               <div><label style={lbl}>Amount</label>
                 <input style={inp} type="number" value={form.amount}

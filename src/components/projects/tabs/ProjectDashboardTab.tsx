@@ -1,6 +1,7 @@
 "use client"
 // src/components/projects/tabs/ProjectDashboardTab.tsx
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import Link from "next/link"
@@ -314,6 +315,7 @@ export function ProjectDashboardTab({
   milestones:any[]; budgetItems:any[]; members:any[]; statusUpdates:any[]; phases?:any[];
   portfolios?:any[]; programs?:any[]; linkedGoals?:any[]
 }) {
+  const locale = useLocale()
   // Milestones are a governance artifact — they must be creatable, editable and
   // closeable where they're seen, not only through AI import.
   const [msBusy, setMsBusy]   = useState<string|null>(null)
@@ -771,7 +773,7 @@ export function ProjectDashboardTab({
                 <div key={g.id} style={{ display:"flex", alignItems:"center", gap:10 }}>
                   <span style={{ flex:1, fontSize:13, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{g.title}</span>
                   <span style={{ fontSize:9, fontWeight:600, color:"var(--text-4)", textTransform:"uppercase" }}>{g.type}</span>
-                  <span style={{ fontSize:10, fontWeight:700, color:sc, textTransform:"capitalize" }}>{String(g.status||"").replace(/_/g," ").toLowerCase()}</span>
+                  <span style={{ fontSize:10, fontWeight:700, color:sc, textTransform:"capitalize" }}>{enumLabel(g.status, locale)}</span>
                   <div style={{ width:90, height:6, background:"var(--border)", borderRadius:3, overflow:"hidden" }}>
                     <div style={{ height:"100%", width:`${g.progress||0}%`, background:pc, borderRadius:3 }}/>
                   </div>

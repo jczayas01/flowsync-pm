@@ -4,6 +4,8 @@
 // Opens as a fixed panel on the right side of the screen, does not float or cover the full page
 
 import { DateField } from "@/components/shared/DatePicker"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -137,6 +139,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   onClose: () => void
   onCommentsRead?: (taskId: string) => void
 }) {
+  const locale = useLocale()
   // Control account: which budget line this work consumes. Lines with linked
   // tasks earn value from their own progress instead of the project average.
   const [budgetLines, setBudgetLines] = useState<any[]>([])
@@ -747,7 +750,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                               color:"var(--text-3)", flexShrink:0 }}>{t.code}</span>
                             <span style={{ flex:1, fontSize:12, color:"var(--text)" }}>{t.title}</span>
                             <span style={{ fontSize:10, color:"var(--text-4)" }}>
-                              {t.status?.replace(/_/g," ")}
+                              {enumLabel(t.status, locale)}
                             </span>
                           </div>
                         ))}

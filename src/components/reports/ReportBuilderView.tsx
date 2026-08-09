@@ -1,6 +1,8 @@
 "use client"
 // src/components/reports/ReportBuilderView.tsx
 import { useState, useEffect } from "react"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 
 // ── Block types ────────────────────────────────
@@ -33,6 +35,7 @@ const INITIAL_BLOCKS: ReportBlock[] = [
 export function ReportBuilderView({ projectId, workspaceId, templates=[], userRole="" }:{
   projectId?:string; workspaceId:string; templates?:any[]; userRole?:string
 }) {
+  const locale = useLocale()
   const canManage = ["SUPER_ADMIN","OWNER","ADMIN","PMO_DIRECTOR"].includes(userRole)
   const [blocks, setBlocks]       = useState<ReportBlock[]>(INITIAL_BLOCKS)
   const [preview, setPreview]     = useState(false)
@@ -316,10 +319,10 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
         <select value={audience} onChange={e=>setAudience(e.target.value)} disabled={!canManage}
           style={{padding:"7px 10px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
             fontSize:12,fontFamily:"var(--font)",color:"var(--text-2)",background:"#fff",cursor:"pointer"}}>
-          <option value="TEAM">Team</option>
-          <option value="EXECUTIVE">Executive</option>
-          <option value="SPONSOR">Sponsor</option>
-          <option value="CLIENT">Client</option>
+          <option value="TEAM">{enumLabel("TEAM", locale)}</option>
+          <option value="EXECUTIVE">{enumLabel("EXECUTIVE", locale)}</option>
+          <option value="SPONSOR">{enumLabel("SPONSOR", locale)}</option>
+          <option value="CLIENT">{enumLabel("CLIENT", locale)}</option>
         </select>
         <input value={description} onChange={e=>setDescription(e.target.value)} disabled={!canManage}
           placeholder="Short description (optional)"

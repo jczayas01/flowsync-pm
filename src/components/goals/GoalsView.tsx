@@ -1,6 +1,8 @@
 "use client"
 // src/components/goals/GoalsView.tsx
 import { useState } from "react"
+import { useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { Badge, Avatar, EmptyState } from "@/components/ui"
 
 const STATUS_COLORS: Record<string,any> = {
@@ -15,6 +17,7 @@ const STATUS_LABELS: Record<string,string> = {
 export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole }:{
   goals:any[]; projects:any[]; workspaceId:string; userRole:string
 }) {
+  const locale = useLocale()
   const goals = initialGoals
   const isDemo = false
 
@@ -198,9 +201,9 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                 <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>Type</label>
                 <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))}
                   style={{...input,appearance:"none" as const,cursor:"pointer"}}>
-                  <option value="ANNUAL">Annual</option>
-                  <option value="QUARTERLY">Quarterly</option>
-                  <option value="MONTHLY">Monthly</option>
+                  <option value="ANNUAL">{enumLabel("ANNUAL", locale)}</option>
+                  <option value="QUARTERLY">{enumLabel("QUARTERLY", locale)}</option>
+                  <option value="MONTHLY">{enumLabel("MONTHLY", locale)}</option>
                 </select>
               </div>
               <div>
@@ -212,9 +215,9 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                 <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>Status</label>
                 <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}
                   style={{...input,appearance:"none" as const,cursor:"pointer"}}>
-                  <option value="DRAFT">Draft</option>
-                  <option value="ON_TRACK">On track</option>
-                  <option value="AT_RISK">At risk</option>
+                  <option value="DRAFT">{enumLabel("DRAFT", locale)}</option>
+                  <option value="ON_TRACK">{enumLabel("ON_TRACK", locale)}</option>
+                  <option value="AT_RISK">{enumLabel("AT_RISK", locale)}</option>
                 </select>
               </div>
             </div>

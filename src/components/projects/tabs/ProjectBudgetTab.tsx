@@ -1,9 +1,10 @@
 "use client"
 import React from "react"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { plannedValueAt } from "@/lib/evm-phasing"
 // src/components/projects/tabs/ProjectBudgetTab.tsx
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { useEffect, useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -19,6 +20,7 @@ function fmt(n: number, currency = "USD") {
 export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries, workspaceId }: {
   projectId:string; project:any; budgetItems:any[]; timeEntries:any[]; workspaceId?:string
 }) {
+  const locale = useLocale()
   // Budget automation #1: Auto earned value toggle (Project.autoEv)
   const [autoEv, setAutoEv] = useState<boolean>(project?.autoEv !== false)
   const [recalcing, setRecalcing] = useState(false)
@@ -509,12 +511,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)",
           background:"var(--steel)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:13, fontWeight:700, color:"#fff" }}>
-              Earned Value Management (EVM)
-            </div>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,.6)", marginTop:1 }}>
-              PM Best Practices — Measurement Performance Domain
-            </div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#fff" }}>{tip("evmTitle")}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.6)", marginTop:1 }}>{tip("evmSub")}</div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:14 }}>
             <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
@@ -1040,7 +1038,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                     <button onClick={() => setSplit(null)}
                       style={{ padding:"10px 14px", background:"none", border:"none",
                         fontSize:13, cursor:"pointer", color:"var(--text-3)",
-                        fontFamily:"var(--font)" }}>Cancel</button>
+                        fontFamily:"var(--font)" }}>{tip("cancel")}</button>
                   </div>
                 </>
               )
@@ -1205,9 +1203,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             <button onClick={()=>setEditId(null)}
                               style={{ padding:"4px 8px", background:"none", border:"1px solid var(--border)",
                                 borderRadius:4, fontSize:11, cursor:"pointer", fontFamily:"var(--font)",
-                                color:"var(--text-3)" }}>
-                              Cancel
-                            </button>
+                                color:"var(--text-3)" }}>{tip("cancel")}</button>
                           </div>
                         </td>
                       </>
@@ -1218,9 +1214,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           {overCommitted && (
                             <span style={{ fontSize:10, fontWeight:800, color:"var(--red)",
                               background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:6,
-                              padding:"1px 6px", marginLeft:8, verticalAlign:"middle" }}>
-                              OVER PLAN
-                            </span>
+                              padding:"1px 6px", marginLeft:8, verticalAlign:"middle" }}>{tip("overPlan")}</span>
                           )}
                           {lineTasks[item.id] && (
                             <div style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
@@ -1241,7 +1235,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           )}
                         </td>
                         <td style={{ padding:"10px 14px" }}>
-                          <Badge variant="gray">{item.category || "—"}</Badge>
+                          <Badge variant="gray">{enumLabel(item.category, locale)}</Badge>
                           {/* How this line earns value. Shown only when it isn't
                               the default, so the table stays quiet until the rule
                               is doing something a reader needs to know about. */}
@@ -1358,9 +1352,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               })
                             }} style={{ fontSize:11, color:"var(--steel)", background:"none",
                               border:"1px solid var(--border)", borderRadius:4,
-                              cursor:"pointer", fontFamily:"var(--font)", padding:"3px 10px" }}>
-                              Edit
-                            </button>
+                              cursor:"pointer", fontFamily:"var(--font)", padding:"3px 10px" }}>{tip("edit")}</button>
                             <label title={t("Scan a receipt or invoice (PDF or photo) — AI posts the expense on this line")}
                               style={{ fontSize:11, color:"var(--text-2)", background:"none",
                                 border:"1px solid var(--border)", borderRadius:4,
@@ -1420,10 +1412,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                     style={{ fontSize:10.5, fontWeight:700, cursor:"pointer",
                                       border:`1px solid ${st?.color}`, borderRadius:5, padding:"1px 5px",
                                       background:"#fff", color:st?.color, fontFamily:"var(--font)" }}>
-                                    <option value="RECEIVED">received</option>
-                                    <option value="APPROVED">approved, unpaid</option>
-                                    <option value="PAID">paid</option>
-                                    <option value="DISPUTED">disputed</option>
+                                    <option value="RECEIVED">{enumLabel("RECEIVED", locale)}</option>
+                                    <option value="APPROVED">{tip("lblApproved")}</option>
+                                    <option value="PAID">{enumLabel("PAID", locale)}</option>
+                                    <option value="DISPUTED">{enumLabel("DISPUTED", locale)}</option>
                                   </select>
                                 ) : (
                                   <span title={st?.why}
@@ -1492,9 +1484,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       <button onClick={()=>setAddingItem(false)}
                         style={{ padding:"4px 8px", background:"none", border:"1px solid var(--border)",
                           borderRadius:4, fontSize:11, cursor:"pointer", fontFamily:"var(--font)",
-                          color:"var(--text-3)" }}>
-                        Cancel
-                      </button>
+                          color:"var(--text-3)" }}>{tip("cancel")}</button>
                     </div>
                   </td>
                 </tr>

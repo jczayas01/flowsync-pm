@@ -1,6 +1,7 @@
 "use client"
 // src/components/projects/ProjectsView.tsx
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { ImportProjectModal } from "@/components/projects/ImportProjectModal"
 import { useState } from "react"
 import Link from "next/link"
@@ -17,6 +18,7 @@ const METHOD_COLORS: Record<string,string> = {
 export function ProjectsView({ projects, workspaceId, userRole, filters }: {
   projects:any[]; workspaceId:string; userRole:string; filters:any
 }) {
+  const locale = useLocale()
   const t = useTranslations("projects")
   const [importOpen, setImportOpen] = useState(false)
   const router  = useRouter()
@@ -86,9 +88,9 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
         <select style={sel} defaultValue={filters.method || ""}
           onChange={e => applyFilter("method", e.target.value)}>
           <option value="">{t("All methodologies")}</option>
-          <option value="WATERFALL">Waterfall</option>
-          <option value="AGILE">Agile</option>
-          <option value="SCRUM">Scrum</option>
+          <option value="WATERFALL">{enumLabel("WATERFALL", locale)}</option>
+          <option value="AGILE">{enumLabel("AGILE", locale)}</option>
+          <option value="SCRUM">{enumLabel("SCRUM", locale)}</option>
         </select>
         <input placeholder={t("Search projects…")} defaultValue={filters.q || ""}
           onChange={e => applyFilter("q", e.target.value)}
