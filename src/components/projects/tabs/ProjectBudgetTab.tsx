@@ -804,6 +804,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // vocabulary on the landing page. A line that reads "delivered,
                 // on plan" on the marketing site and shows nothing in the product
                 // teaches the PM that the product is the lesser thing.
+                // "Delivered" is a claim about work, and the only evidence of work
+                // is a task. Without linked tasks the earned value is a manual
+                // entry or the proportional fallback — asserting anything about
+                // delivery on that basis states something nobody measured.
+                const taskEvidence  = lineTasks[item.id]?.count || 0
+                const workDelivered = taskEvidence > 0 && (lineTasks[item.id]?.pct ?? 0) >= 99
+
                 const lineCPI = actual > 0 ? earned / actual : null
                 const gap     = actual - earned          // + paid more, − paid less
                 const tol     = Math.max(500, Math.max(earned, actual) * 0.03)
