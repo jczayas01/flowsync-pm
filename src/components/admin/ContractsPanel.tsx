@@ -6,23 +6,23 @@
 // SLA commitments, invoice records, attached signed documents.
 
 import { useEffect, useState } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 
-const S: Record<string, { label: string; color: string; bg: string }> = {
-  DRAFT:      { label: "Draft",      color: "#64748B", bg: "#F8FAFC" },
-  ACTIVE:     { label: "Active",     color: "#059669", bg: "#ECFDF5" },
-  EXPIRED:    { label: "Expired",    color: "#DC2626", bg: "#FEF2F2" },
-  TERMINATED: { label: "Terminated", color: "#7C3AED", bg: "#F5F3FF" },
-  RENEWED:    { label: "Renewed",    color: "#1B6CA8", bg: "#EFF6FF" },
+const S: Record<string, { color: string; bg: string }> = {
+  DRAFT:      { color: "#64748B", bg: "#F8FAFC" },
+  ACTIVE:     { color: "#059669", bg: "#ECFDF5" },
+  EXPIRED:    { color: "#DC2626", bg: "#FEF2F2" },
+  TERMINATED: { color: "#7C3AED", bg: "#F5F3FF" },
+  RENEWED:    { color: "#1B6CA8", bg: "#EFF6FF" },
 }
-const INV: Record<string, { label: string; color: string; bg: string }> = {
-  DRAFT:   { label: "Draft",   color: "#64748B", bg: "#F8FAFC" },
-  SENT:    { label: "Sent",    color: "#1B6CA8", bg: "#EFF6FF" },
-  PAID:    { label: "Paid",    color: "#059669", bg: "#ECFDF5" },
-  OVERDUE: { label: "Overdue", color: "#DC2626", bg: "#FEF2F2" },
-  VOID:    { label: "Void",    color: "#94A3B8", bg: "#F8FAFC" },
+const INV: Record<string, { color: string; bg: string }> = {
+  DRAFT:   { color: "#64748B", bg: "#F8FAFC" },
+  SENT:    { color: "#1B6CA8", bg: "#EFF6FF" },
+  PAID:    { color: "#059669", bg: "#ECFDF5" },
+  OVERDUE: { color: "#DC2626", bg: "#FEF2F2" },
+  VOID:    { color: "#94A3B8", bg: "#F8FAFC" },
 }
 
 const inp: React.CSSProperties = {
@@ -38,9 +38,9 @@ const btn = (primary = false): React.CSSProperties => ({
   background: primary ? "var(--steel,#1B6CA8)" : "#fff",
   color: primary ? "#fff" : "var(--text-1,#0F172A)", fontFamily: "var(--font)",
 })
-const chip = (c: { label: string; color: string; bg: string }) => (
+const chip = (c: { color: string; bg: string }, label: string) => (
   <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
-    color: c.color, background: c.bg, border: `1px solid ${c.color}30` }}>{c.label}</span>
+    color: c.color, background: c.bg, border: `1px solid ${c.color}30` }}>{label}</span>
 )
 const money = (n?: number | null, cur = "USD") =>
   n == null ? "—" : `$${Number(n).toLocaleString()} ${cur !== "USD" ? cur : ""}`.trim()
@@ -58,6 +58,7 @@ export function ContractsPanel({ workspaces }: {
   workspaces: { id: string; name: string; plan?: string }[]
 }) {
   const locale = useLocale()
+  const ct = useTranslations("contracts")
   const [contracts, setContracts] = useState<any[] | null>(null)
   const [error, setError] = useState("")
   const [open, setOpen] = useState<Record<string, boolean>>({})
@@ -68,7 +69,7 @@ export function ContractsPanel({ workspaces }: {
   async function load() {
     setError("")
     const res = await fetch("/api/admin/contracts").catch(() => null)
-    if (!res || !res.ok) { setError("Failed to load contracts"); setContracts([]); return }
+    if (!res || !res.ok) { setError(ct("errLoad")); setContracts([]); return }
     const d = await res.json().catch(() => ({}))
     setContracts(d.data || [])
   }
@@ -95,7 +96,7 @@ export function ContractsPanel({ workspaces }: {
 
   async function save() {
     if (!form.workspaceId || !form.name.trim() || !form.startDate || !form.endDate) {
-      setError("Customer, name, start and end dates are required"); return
+      setError(ct("errRequired")); return
     }
     setSaving(true); setError("")
     const payload: any = {
@@ -121,13 +122,13 @@ export function ContractsPanel({ workspaces }: {
     setSaving(false)
     if (!res || !res.ok) {
       const d = await res?.json().catch(() => ({}))
-      setError(d?.error || "Save failed"); return
+      setError(d?.error || ct("Save failed")); return
     }
     setEditing(null); load()
   }
 
   async function removeContract(c: any) {
-    if (!window.confirm(`Delete contract "${c.name}" and all its invoices/documents?`)) return
+    if (!window.confirm(ct("deleteConfirm", { name: c.name }))) return
     await fetch(`/api/admin/contracts/${c.id}`, { method: "DELETE" }).catch(() => {})
     load()
   }
@@ -155,12 +156,11 @@ export function ContractsPanel({ workspaces }: {
   async function uploadDoc(c: any, file: File) {
     const fd = new FormData(); fd.append("file", file)
     const res = await fetch(`/api/admin/contracts/${c.id}/documents`, { method: "POST", body: fd }).catch(() => null)
-    if (!res?.ok) { const d = await res?.json().catch(() => ({})); setError(d?.error || "Upload failed") }
+    if (!res?.ok) { const d = await res?.json().catch(() => ({})); setError(d?.error || ct("Upload failed")) }
     load()
   }
 
   const daysLeft = (c: any) => {
-  const locale = useLocale()
     const anchor = Math.min(new Date(c.endDate).getTime(),
       c.renewalDate ? new Date(c.renewalDate).getTime() : Infinity)
     return Math.ceil((anchor - Date.now()) / 864e5)
@@ -170,10 +170,10 @@ export function ContractsPanel({ workspaces }: {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 13, color: "var(--text-3)" }}>
-          {contracts ? `${contracts.length} contract${contracts.length === 1 ? "" : "s"}` : "Loading…"}
-          {" · "}expiry alerts email platform admins at each contract's T-window
+          {contracts ? ct("contractCount", { n: contracts.length }) : ct("Loading…")}
+          {" · "}{ct("alertHint")}
         </div>
-        <button style={btn(true)} onClick={startNew}>+ New contract</button>
+        <button style={btn(true)} onClick={startNew}>{ct("+ New contract")}</button>
       </div>
 
       {error && <div style={{ marginBottom: 12, padding: "8px 12px", background: "#FEF2F2",
@@ -195,20 +195,20 @@ export function ContractsPanel({ workspaces }: {
                 <div style={{ fontSize: 11.5, color: "var(--text-3)", overflow: "hidden",
                   textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
               </div>
-              {chip(S[c.status] || S.DRAFT)}
+              {chip(S[c.status] || S.DRAFT, ct(("st." + (S[c.status] ? c.status : "DRAFT")) as any))}
               <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>
-                {c.paidSeats} seats · {c.contributorBundles}×10 contrib
-                {c.ocrPageCap ? ` · OCR ${c.ocrPageCap}p/mo` : ""}
+                {ct("seatsSummary", { seats: c.paidSeats, bundles: c.contributorBundles })}
+                {c.ocrPageCap ? ct("ocrSummary", { pages: c.ocrPageCap }) : ""}
               </div>
               <div style={{ fontSize: 11.5, fontWeight: 700 }}>{money(c.amount, c.currency)}
-                <span style={{ color: "var(--text-3)", fontWeight: 500 }}> /{c.billingCycle === "MONTHLY" ? "mo" : "yr"}</span>
+                <span style={{ color: "var(--text-3)", fontWeight: 500 }}> /{c.billingCycle === "MONTHLY" ? ct("perMo") : ct("perYr")}</span>
               </div>
               <div style={{ fontSize: 11.5, fontWeight: 700, color: dlColor }}>
-                {fmtD(c.endDate)} · {dl < 0 ? `${-dl}d overdue` : `${dl}d left`}
+                {fmtD(c.endDate)} · {dl < 0 ? ct("daysOverdue", { n: -dl }) : ct("daysLeft", { n: dl })}
               </div>
               <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
-                <button style={btn()} onClick={() => startEdit(c)}>Edit</button>
-                <button style={{ ...btn(), color: "#DC2626" }} onClick={() => removeContract(c)}>Delete</button>
+                <button style={btn()} onClick={() => startEdit(c)}>{ct("Edit")}</button>
+                <button style={{ ...btn(), color: "#DC2626" }} onClick={() => removeContract(c)}>{ct("Delete")}</button>
               </div>
             </div>
 
@@ -217,39 +217,39 @@ export function ContractsPanel({ workspaces }: {
                 background: "var(--bg-2,#F8FAFC)", display: "grid", gap: 16 }}>
                 {/* SLA */}
                 <div style={{ fontSize: 12, color: "var(--text-2,#334155)" }}>
-                  <b>SLA:</b> {c.supportTier || "—"} tier
-                  {c.responseHours != null ? ` · first response ≤ ${c.responseHours}h` : ""}
-                  {c.uptimePct != null ? ` · ${c.uptimePct}% uptime` : ""}
+                  <b>{ct("SLA:")}</b> {ct("slaTier", { tier: c.supportTier || "—" })}
+                  {c.responseHours != null ? ct("slaResponse", { h: c.responseHours }) : ""}
+                  {c.uptimePct != null ? ct("slaUptime", { pct: c.uptimePct }) : ""}
                   {c.slaNotes ? ` · ${c.slaNotes}` : ""}
-                  {c.autoRenew ? " · auto-renews" : ""}
-                  {c.renewalDate ? ` · renewal decision ${fmtD(c.renewalDate)}` : ""}
+                  {c.autoRenew ? ct("slaAutoRenew") : ""}
+                  {c.renewalDate ? ct("slaRenewal", { date: fmtD(c.renewalDate) }) : ""}
                 </div>
 
                 {/* Invoices */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em",
-                      textTransform: "uppercase", color: "var(--text-3)" }}>Invoices ({c.invoices?.length || 0})</div>
+                      textTransform: "uppercase", color: "var(--text-3)" }}>{ct("invoicesCount", { n: c.invoices?.length || 0 })}</div>
                     <button style={btn()} onClick={() => setInvFor(invFor?.id === c.id ? null : c)}>
-                      {invFor?.id === c.id ? "Cancel" : "+ Invoice"}
+                      {invFor?.id === c.id ? ct("Cancel") : ct("+ Invoice")}
                     </button>
                   </div>
                   {invFor?.id === c.id && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 8,
                       marginBottom: 10, alignItems: "end" }}>
-                      <div><label style={lbl}>Number</label>
+                      <div><label style={lbl}>{ct("Number")}</label>
                         <input style={inp} value={invForm.number} placeholder="INV-2026-001"
                           onChange={e => setInvForm(f => ({ ...f, number: e.target.value }))} /></div>
-                      <div><label style={lbl}>Amount</label>
+                      <div><label style={lbl}>{ct("Amount")}</label>
                         <input style={inp} type="number" value={invForm.amount}
                           onChange={e => setInvForm(f => ({ ...f, amount: e.target.value }))} /></div>
-                      <div><label style={lbl}>Issued</label>
+                      <div><label style={lbl}>{ct("Issued")}</label>
                         <input style={inp} type="date" value={invForm.issueDate}
                           onChange={e => setInvForm(f => ({ ...f, issueDate: e.target.value }))} /></div>
-                      <div><label style={lbl}>Due</label>
+                      <div><label style={lbl}>{ct("Due")}</label>
                         <input style={inp} type="date" value={invForm.dueDate}
                           onChange={e => setInvForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
-                      <button style={btn(true)} onClick={saveInvoice}>Add</button>
+                      <button style={btn(true)} onClick={saveInvoice}>{ct("Add")}</button>
                     </div>
                   )}
                   {(c.invoices || []).map((inv: any) => (
@@ -258,20 +258,20 @@ export function ContractsPanel({ workspaces }: {
                       borderRadius: 7, marginBottom: 6, fontSize: 12, flexWrap: "wrap" }}>
                       <b>{inv.number}</b>
                       <span>{money(inv.amount, inv.currency)}</span>
-                      <span style={{ color: "var(--text-3)" }}>issued {fmtD(inv.issueDate)} · due {fmtD(inv.dueDate)}</span>
-                      {inv.paidDate && <span style={{ color: "#059669" }}>paid {fmtD(inv.paidDate)}</span>}
-                      {chip(INV[inv.status] || INV.DRAFT)}
+                      <span style={{ color: "var(--text-3)" }}>{ct("invIssuedDue", { issued: fmtD(inv.issueDate), due: fmtD(inv.dueDate) })}</span>
+                      {inv.paidDate && <span style={{ color: "#059669" }}>{ct("invPaid", { date: fmtD(inv.paidDate) })}</span>}
+                      {chip(INV[inv.status] || INV.DRAFT, ct(("inv." + (INV[inv.status] ? inv.status : "DRAFT")) as any))}
                       <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
                         {inv.status !== "PAID" && (
-                          <button style={btn()} onClick={() => setInvoiceStatus(c, inv, "PAID")}>Mark paid</button>
+                          <button style={btn()} onClick={() => setInvoiceStatus(c, inv, "PAID")}>{ct("Mark paid")}</button>
                         )}
                         {inv.status === "DRAFT" && (
-                          <button style={btn()} onClick={() => setInvoiceStatus(c, inv, "SENT")}>Mark sent</button>
+                          <button style={btn()} onClick={() => setInvoiceStatus(c, inv, "SENT")}>{ct("Mark sent")}</button>
                         )}
                       </span>
                     </div>
                   ))}
-                  {!c.invoices?.length && <div style={{ fontSize: 12, color: "var(--text-3)" }}>No invoices yet.</div>}
+                  {!c.invoices?.length && <div style={{ fontSize: 12, color: "var(--text-3)" }}>{ct("No invoices yet.")}</div>}
                 </div>
 
                 {/* Documents */}
@@ -279,9 +279,9 @@ export function ContractsPanel({ workspaces }: {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em",
                       textTransform: "uppercase", color: "var(--text-3)" }}>
-                      Documents ({c.documents?.length || 0})</div>
+                      {ct("documentsCount", { n: c.documents?.length || 0 })}</div>
                     <label style={{ ...btn(), display: "inline-block" }}>
-                      Upload signed doc
+                      {ct("Upload signed doc")}
                       <input type="file" accept=".pdf,.docx,.png,.jpg,.jpeg" style={{ display: "none" }}
                         onChange={e => { const f = e.target.files?.[0]; if (f) uploadDoc(c, f); e.target.value = "" }} />
                     </label>
@@ -296,12 +296,12 @@ export function ContractsPanel({ workspaces }: {
                         {doc.title}
                       </a>
                       <span style={{ color: "var(--text-3)" }}>
-                        {(doc.sizeBytes / 1024).toFixed(0)} KB · {fmtD(doc.createdAt)}
+                        {ct("docMeta", { kb: (doc.sizeBytes / 1024).toFixed(0), date: fmtD(doc.createdAt) })}
                       </span>
                     </div>
                   ))}
                   {!c.documents?.length && <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-                    No documents attached — upload the signed MSA and invoices here.</div>}
+                    {ct("noDocuments")}</div>}
                 </div>
               </div>
             )}
@@ -311,7 +311,7 @@ export function ContractsPanel({ workspaces }: {
       {contracts && !contracts.length && (
         <div style={{ padding: 30, textAlign: "center", color: "var(--text-3)", fontSize: 13,
           border: "1px dashed var(--border,#E2E8F0)", borderRadius: 10 }}>
-          No customer contracts yet. Create the first one when an Enterprise deal signs.
+          {ct("emptyState")}
         </div>
       )}
 
@@ -324,98 +324,98 @@ export function ContractsPanel({ workspaces }: {
             style={{ background: "#fff", borderRadius: 12, width: "min(760px, 100%)",
               maxHeight: "90vh", overflowY: "auto", padding: 22 }}>
             <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>
-              {editing === "new" ? "New customer contract" : "Edit contract"}
+              {editing === "new" ? ct("New customer contract") : ct("Edit contract")}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={lbl}>Customer workspace *</label>
+                <label style={lbl}>{ct("Customer workspace *")}</label>
                 <select style={{ ...inp, cursor: "pointer" }} value={form.workspaceId}
                   disabled={editing !== "new"}
                   onChange={e => setForm((f: any) => ({ ...f, workspaceId: e.target.value }))}>
-                  <option value="">Select…</option>
+                  <option value="">{ct("Select…")}</option>
                   {workspaces.map(w => (
                     <option key={w.id} value={w.id}>{w.name}{w.plan ? ` (${w.plan})` : ""}</option>
                   ))}
                 </select>
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={lbl}>Contract name *</label>
-                <input style={inp} value={form.name} placeholder="Enterprise Agreement 2026–2027"
+                <label style={lbl}>{ct("Contract name *")}</label>
+                <input style={inp} value={form.name} placeholder={ct("contractNamePlaceholder")}
                   onChange={e => setForm((f: any) => ({ ...f, name: e.target.value }))} />
               </div>
-              <div><label style={lbl}>Status</label>
+              <div><label style={lbl}>{ct("Status")}</label>
                 <select style={{ ...inp, cursor: "pointer" }} value={form.status}
                   onChange={e => setForm((f: any) => ({ ...f, status: e.target.value }))}>
-                  {Object.entries(S).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
+                  {Object.keys(S).map(v => <option key={v} value={v}>{ct(("st." + v) as any)}</option>)}
                 </select></div>
-              <div><label style={lbl}>Alert window (days before end/renewal)</label>
+              <div><label style={lbl}>{ct("Alert window (days before end/renewal)")}</label>
                 <input style={inp} type="number" value={form.alertDays}
                   onChange={e => setForm((f: any) => ({ ...f, alertDays: e.target.value }))} /></div>
-              <div><label style={lbl}>Start *</label>
+              <div><label style={lbl}>{ct("Start *")}</label>
                 <input style={inp} type="date" value={form.startDate}
                   onChange={e => setForm((f: any) => ({ ...f, startDate: e.target.value }))} /></div>
-              <div><label style={lbl}>End *</label>
+              <div><label style={lbl}>{ct("End *")}</label>
                 <input style={inp} type="date" value={form.endDate}
                   onChange={e => setForm((f: any) => ({ ...f, endDate: e.target.value }))} /></div>
-              <div><label style={lbl}>Renewal decision date</label>
+              <div><label style={lbl}>{ct("Renewal decision date")}</label>
                 <input style={inp} type="date" value={form.renewalDate}
                   onChange={e => setForm((f: any) => ({ ...f, renewalDate: e.target.value }))} /></div>
               <div style={{ display: "flex", alignItems: "end", paddingBottom: 8 }}>
                 <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 12.5, cursor: "pointer" }}>
                   <input type="checkbox" checked={form.autoRenew}
                     onChange={e => setForm((f: any) => ({ ...f, autoRenew: e.target.checked }))} />
-                  Auto-renews
+                  {ct("Auto-renews")}
                 </label>
               </div>
 
               <div style={{ gridColumn: "1 / -1", fontSize: 11, fontWeight: 700, letterSpacing: ".06em",
-                textTransform: "uppercase", color: "var(--text-3)", marginTop: 4 }}>Bundle package</div>
-              <div><label style={lbl}>Paid seats</label>
+                textTransform: "uppercase", color: "var(--text-3)", marginTop: 4 }}>{ct("Bundle package")}</div>
+              <div><label style={lbl}>{ct("Paid seats")}</label>
                 <input style={inp} type="number" value={form.paidSeats}
                   onChange={e => setForm((f: any) => ({ ...f, paidSeats: e.target.value }))} /></div>
-              <div><label style={lbl}>Contributor bundles (×10)</label>
+              <div><label style={lbl}>{ct("Contributor bundles (×10)")}</label>
                 <input style={inp} type="number" value={form.contributorBundles}
                   onChange={e => setForm((f: any) => ({ ...f, contributorBundles: e.target.value }))} /></div>
-              <div><label style={lbl}>OCR page cap /mo (Enterprise custom)</label>
-                <input style={inp} type="number" value={form.ocrPageCap} placeholder="default"
+              <div><label style={lbl}>{ct("OCR page cap /mo (Enterprise custom)")}</label>
+                <input style={inp} type="number" value={form.ocrPageCap} placeholder={ct("default")}
                   onChange={e => setForm((f: any) => ({ ...f, ocrPageCap: e.target.value }))} /></div>
-              <div><label style={lbl}>Billing</label>
+              <div><label style={lbl}>{ct("Billing")}</label>
                 <select style={{ ...inp, cursor: "pointer" }} value={form.billingCycle}
                   onChange={e => setForm((f: any) => ({ ...f, billingCycle: e.target.value }))}>
                   <option value="ANNUAL">{enumLabel("ANNUAL", locale)}</option>
                   <option value="MONTHLY">{enumLabel("MONTHLY", locale)}</option>
                 </select></div>
-              <div><label style={lbl}>Amount</label>
+              <div><label style={lbl}>{ct("Amount")}</label>
                 <input style={inp} type="number" value={form.amount}
                   onChange={e => setForm((f: any) => ({ ...f, amount: e.target.value }))} /></div>
-              <div><label style={lbl}>Currency</label>
+              <div><label style={lbl}>{ct("Currency")}</label>
                 <input style={inp} value={form.currency}
                   onChange={e => setForm((f: any) => ({ ...f, currency: e.target.value }))} /></div>
 
               <div style={{ gridColumn: "1 / -1", fontSize: 11, fontWeight: 700, letterSpacing: ".06em",
-                textTransform: "uppercase", color: "var(--text-3)", marginTop: 4 }}>Service level agreement</div>
-              <div><label style={lbl}>Support tier</label>
-                <input style={inp} value={form.supportTier} placeholder="Priority"
+                textTransform: "uppercase", color: "var(--text-3)", marginTop: 4 }}>{ct("Service level agreement")}</div>
+              <div><label style={lbl}>{ct("Support tier")}</label>
+                <input style={inp} value={form.supportTier} placeholder={ct("supportTierPlaceholder")}
                   onChange={e => setForm((f: any) => ({ ...f, supportTier: e.target.value }))} /></div>
-              <div><label style={lbl}>First response (hours)</label>
+              <div><label style={lbl}>{ct("First response (hours)")}</label>
                 <input style={inp} type="number" value={form.responseHours}
                   onChange={e => setForm((f: any) => ({ ...f, responseHours: e.target.value }))} /></div>
-              <div><label style={lbl}>Uptime commitment (%)</label>
+              <div><label style={lbl}>{ct("Uptime commitment (%)")}</label>
                 <input style={inp} type="number" step="0.01" value={form.uptimePct} placeholder="99.9"
                   onChange={e => setForm((f: any) => ({ ...f, uptimePct: e.target.value }))} /></div>
-              <div><label style={lbl}>SLA notes</label>
+              <div><label style={lbl}>{ct("SLA notes")}</label>
                 <input style={inp} value={form.slaNotes}
                   onChange={e => setForm((f: any) => ({ ...f, slaNotes: e.target.value }))} /></div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={lbl}>Notes</label>
+                <label style={lbl}>{ct("Notes")}</label>
                 <textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={form.notes}
                   onChange={e => setForm((f: any) => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
-              <button style={btn()} disabled={saving} onClick={() => setEditing(null)}>Cancel</button>
+              <button style={btn()} disabled={saving} onClick={() => setEditing(null)}>{ct("Cancel")}</button>
               <button style={btn(true)} disabled={saving} onClick={save}>
-                {saving ? "Saving…" : editing === "new" ? "Create contract" : "Save changes"}
+                {saving ? ct("Saving…") : editing === "new" ? ct("Create contract") : ct("Save changes")}
               </button>
             </div>
           </div>

@@ -1,11 +1,13 @@
 "use client"
 // src/components/settings/WorkspaceSettingsForm.tsx
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { isWorkspaceAdmin } from "@/lib/rbac/roles"
 import { LogoUploader } from "./LogoUploader"
 
 export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; role: string }) {
+  const ws_ = useTranslations("workspaceSettings")
   const canEdit = isWorkspaceAdmin(role)
   const [form, setForm] = useState({
     name:         workspace.name         || "",
@@ -34,7 +36,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
           logoUrl:      form.logoUrl || null,
         }),
       })
-      if (!res.ok) throw new Error((await res.json()).error || "Save failed")
+      if (!res.ok) throw new Error((await res.json()).error || ws_("Save failed"))
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (e: any) { setError(e.message) }
@@ -53,15 +55,14 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
 
   const TIMEZONES = ["America/Puerto_Rico","America/New_York","America/Chicago","America/Denver",
     "America/Los_Angeles","Europe/London","Europe/Madrid","UTC"]
-  const CURRENCIES = [{ code:"USD", label:"USD — US Dollar" },{ code:"EUR", label:"EUR — Euro" },
-    { code:"GBP", label:"GBP — British Pound" },{ code:"MXN", label:"MXN — Mexican Peso" }]
+  const CURRENCIES = ["USD","EUR","GBP","MXN"]
 
   return (
     <div style={{ maxWidth:680 }}>
       <div style={{ marginBottom:24 }}>
-        <h2 style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:4 }}>Workspace settings</h2>
+        <h2 style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:4 }}>{ws_("Workspace settings")}</h2>
         <p style={{ fontSize:13, color:"var(--text-3)" }}>
-          Manage your organization name, branding, and regional defaults.
+          {ws_("headerDesc")}
         </p>
       </div>
 
@@ -76,16 +77,16 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
       <div style={s.section}>
         <div style={{ fontSize:12, fontWeight:600, color:"var(--text-3)", letterSpacing:".06em",
           textTransform:"uppercase", marginBottom:16, paddingBottom:10, borderBottom:"1px solid var(--border)" }}>
-          General
+          {ws_("General")}
         </div>
         <div style={s.field}>
-          <label style={s.label}>Organization name</label>
+          <label style={s.label}>{ws_("Organization name")}</label>
           <input style={s.input} value={form.name} disabled={!canEdit}
             onChange={e => setForm(f => ({ ...f, name:e.target.value }))} />
         </div>
         <div style={s.grid}>
           <div>
-            <label style={s.label}>Timezone</label>
+            <label style={s.label}>{ws_("Timezone")}</label>
             <select style={{ ...s.input, appearance:"none" as const, cursor:"pointer" }}
               value={form.timezone} disabled={!canEdit}
               onChange={e => setForm(f => ({ ...f, timezone:e.target.value }))}>
@@ -93,11 +94,11 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
             </select>
           </div>
           <div>
-            <label style={s.label}>Currency</label>
+            <label style={s.label}>{ws_("Currency")}</label>
             <select style={{ ...s.input, appearance:"none" as const, cursor:"pointer" }}
               value={form.currency} disabled={!canEdit}
               onChange={e => setForm(f => ({ ...f, currency:e.target.value }))}>
-              {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              {CURRENCIES.map(c => <option key={c} value={c}>{ws_(("cur."+c) as any)}</option>)}
             </select>
           </div>
         </div>
@@ -107,22 +108,21 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
       <div style={s.section}>
         <div style={{ fontSize:12, fontWeight:600, color:"var(--text-3)", letterSpacing:".06em",
           textTransform:"uppercase", marginBottom:16, paddingBottom:10, borderBottom:"1px solid var(--border)" }}>
-          Branding
+          {ws_("Branding")}
         </div>
         <div style={s.field}>
-          <label style={s.label}>Logo URL</label>
+          <label style={s.label}>{ws_("Logo URL")}</label>
           <input style={s.input} placeholder="https://your-org.com/logo.png"
             value={form.logoUrl} disabled={!canEdit}
             onChange={e => setForm(f => ({ ...f, logoUrl:e.target.value }))} />
           <LogoUploader disabled={!canEdit}
             onUploaded={url => setForm(f => ({ ...f, logoUrl: url }))} />
           <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>
-            Used in reports and client-facing exports. Recommended: 200×50px PNG.
-            Uploading stores the image and fills the URL for you — remember to Save.
+            {ws_("logoHint")}
           </div>
         </div>
         <div>
-          <label style={s.label}>Brand color</label>
+          <label style={s.label}>{ws_("Brand color")}</label>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <input type="color" value={form.primaryColor} disabled={!canEdit}
               onChange={e => setForm(f => ({ ...f, primaryColor:e.target.value }))}
@@ -136,9 +136,9 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
               border:"1px solid var(--border)", flexShrink:0 }} />
           </div>
           <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>
-            Primary — headers and accents on generated reports and Present mode.
+            {ws_("primaryHint")}
           </div>
-          <label style={{ ...s.label, marginTop:12, display:"block" }}>Secondary color</label>
+          <label style={{ ...s.label, marginTop:12, display:"block" }}>{ws_("Secondary color")}</label>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <input type="color" value={form.secondaryColor} disabled={!canEdit}
               onChange={e => setForm(f => ({ ...f, secondaryColor:e.target.value }))}
@@ -152,7 +152,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
               border:"1px solid var(--border)", flexShrink:0 }} />
           </div>
           <div style={{ fontSize:11, color:"var(--text-3)", marginTop:4 }}>
-            Secondary — highlights (milestones, callouts) on the same outputs.
+            {ws_("secondaryHint")}
           </div>
         </div>
       </div>
@@ -161,7 +161,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
       <div style={s.section}>
         <div style={{ fontSize:12, fontWeight:600, color:"var(--text-3)", letterSpacing:".06em",
           textTransform:"uppercase", marginBottom:16, paddingBottom:10, borderBottom:"1px solid var(--border)" }}>
-          Workspace info
+          {ws_("Workspace info")}
         </div>
         <div style={s.grid}>
           {[
@@ -171,7 +171,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
             ["Slug",           workspace.slug],
           ].map(([k, v]) => (
             <div key={k}>
-              <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:3 }}>{k}</div>
+              <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:3 }}>{ws_(k as any)}</div>
               <div style={{ fontSize:13, fontFamily:k==="Workspace ID"||k==="Slug"?"monospace":"inherit",
                 color:"var(--text-2)", background:"var(--surface)", padding:"8px 10px",
                 borderRadius:6, border:"1px solid var(--border)" }}>
@@ -188,11 +188,11 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
             style={{ padding:"10px 22px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:14, fontWeight:500, cursor:saving?"wait":"pointer",
               fontFamily:"var(--font)", opacity:saving?0.7:1 }}>
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? ws_("Saving…") : ws_("Save changes")}
           </button>
           {saved && (
             <span style={{ fontSize:13, color:"var(--green)", display:"flex", alignItems:"center", gap:5 }}>
-              ✓ Saved
+              {ws_("✓ Saved")}
             </span>
           )}
         </div>
@@ -200,7 +200,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
       {!canEdit && (
         <div style={{ fontSize:13, color:"var(--text-3)", padding:"10px 14px",
           background:"var(--surface)", borderRadius:"var(--radius)", border:"1px solid var(--border)" }}>
-          You need Admin role to edit workspace settings.
+          {ws_("noPermission")}
         </div>
       )}
     </div>
