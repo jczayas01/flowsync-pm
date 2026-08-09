@@ -799,34 +799,56 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // is exposure: if the vendor fails now, the gap is money out with
                 // nothing received for it. The project-level CPI hides this inside
                 // an average, so a single bad line never surfaces.
-                const lineCPI  = actual > 0 ? earned / actual : null
-                const aheadBy  = actual - earned
-                const gapWorthShowing = actual > 100 && aheadBy > Math.max(500, actual * 0.05)
-                // The same gap means two different things depending on whether the
-                // work is finished. Mid-delivery it's an advance — timing that will
-                // close. Once the line has earned its full plan, nothing is coming
-                // to close it: that is an overrun, and calling it "ahead of value"
-                // would tell a PM to wait for something that will never arrive.
-                // "Delivered" is a claim about work, and the only evidence of work
-                // is a task. Without linked tasks the earned value is either a
-                // manual entry or the project-wide proportional fallback — telling
-                // a PM a line is "delivered under plan" on that basis is the system
-                // asserting something nobody measured.
-                const taskEvidence  = lineTasks[item.id]?.count || 0
-                const tasksComplete = taskEvidence > 0 && (lineTasks[item.id]?.pct ?? 0) >= 99
-                const workDelivered = tasksComplete
-                // Payment-vs-value warnings need task evidence too: a line with no
-                // tasks has no measured value to be ahead of.
-                const paidAhead  = gapWorthShowing && taskEvidence > 0 && !workDelivered
-                const overspent  = gapWorthShowing && workDelivered
-                // The mirror case: delivered, but paid less than the value earned.
-                // That is either a genuine saving or an invoice that hasn't arrived
-                // — and the difference matters, because one is money you keep and
-                // the other is a liability sitting outside the budget. An open
-                // commitment on the line is the tell; without one, the PM is the
-                // only person who can confirm the invoices are all in.
-                const underBy    = earned - actual
-                const underspent = workDelivered && underBy > Math.max(500, earned * 0.03)
+                // ── The verdict ────────────────────────────────────────────
+                // One computation, four outcomes, matching the colours and the
+                // vocabulary on the landing page. A line that reads "delivered,
+                // on plan" on the marketing site and shows nothing in the product
+                // teaches the PM that the product is the lesser thing.
+                const lineCPI = actual > 0 ? earned / actual : null
+                const gap     = actual - earned          // + paid more, − paid less
+                const tol     = Math.max(500, Math.max(earned, actual) * 0.03)
+
+                type Verdict = { tone: string; text: string; why: string } | null
+                const verdict: Verdict = (() => {
+                  if (taskEvidence === 0) return null      // nothing measured, nothing to claim
+
+                  if (!workDelivered) {
+                    // Money out ahead of anything delivered. Normal for a
+                    // contractual advance; exposure all the same.
+                    if (gap > tol && actual > 100) return {
+                      tone: "amber",
+                      text: `⚠ paid ${fmt(gap,currency)} ahead of value${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
+                      why: `Paid ${fmt(gap,currency)} more than the value delivered so far. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.`,
+                    }
+                    return null                            // in progress, nothing worth saying
+                  }
+
+                  // Delivered. Three ways that can land.
+                  if (gap > tol) return {
+                    tone: "red",
+                    text: `⚠ overspent by ${fmt(gap,currency)} on delivered work${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
+                    why: `This line is fully delivered and cost ${fmt(gap,currency)} more than planned. Unlike an advance, this gap will not close — it is an overrun on completed work.`,
+                  }
+                  if (-gap > tol) return {
+                    tone: "steel",
+                    text: committed > 0
+                      ? `${fmt(-gap,currency)} delivered but unpaid — likely an outstanding balance`
+                      : `${fmt(-gap,currency)} delivered but unpaid — confirm no invoices are outstanding`,
+                    why: committed > 0
+                      ? `Fully delivered, with ${fmt(-gap,currency)} of its value unpaid and ${fmt(committed,currency)} still committed on an open purchase order. That points to a final payment or retainage, not a saving.`
+                      : `Fully delivered and paid ${fmt(-gap,currency)} less than the value earned. That is a saving only if every invoice has been received — a missing one is a liability living outside the budget.`,
+                  }
+                  return {
+                    tone: "green",
+                    text: `✓ delivered on plan${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
+                    why: `Delivered, and the cost came in on plan. This is what a healthy line looks like at close.`,
+                  }
+                })()
+
+                const VTONE: Record<string,string> = {
+                  amber: "var(--amber)", red: "var(--red)",
+                  green: "var(--green)", steel: "var(--steel)",
+                }
                 // Over-commitment is a governance signal, not a footnote: a line
                 // with $3K planned and $42K in signed POs must read as a problem.
                 const exposure = actual + committed
@@ -987,33 +1009,17 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               textUnderlineOffset:3 }}>
                             {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
                           </button>
-                          {paidAhead && (
-                            <div title={`Paid ${fmt(aheadBy,currency)} more than the value delivered so far on this line. CPI ${lineCPI!.toFixed(2)}. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.`}
-                              style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--amber)" }}>
-                              ⚠ paid {fmt(aheadBy,currency)} ahead of value · CPI {lineCPI!.toFixed(2)}
-                            </div>
-                          )}
-                          {taskEvidence === 0 && earned > 0 && (
+                                                    {taskEvidence === 0 && earned > 0 && (
                             <div title="No task is linked to this line, so its earned value comes from the project-wide proportional split or from a manual entry — not from measured progress. Link the tasks that consume this line to make the figure mean something."
                               style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
                               earned value not measured — no linked tasks
                             </div>
                           )}
-                          {underspent && (
-                            <div title={committed > 0
-                              ? `This line is fully delivered but ${fmt(underBy,currency)} of its value is unpaid, and ${fmt(committed,currency)} is still committed on an open purchase order. That points to an unpaid balance — a final payment or retainage — rather than a saving.`
-                              : `This line is fully delivered and cost ${fmt(underBy,currency)} less than the value earned. That is a saving only if every invoice has been received. Confirm nothing is outstanding before counting it.`}
+                                                                              {verdict && (
+                            <div title={verdict.why}
                               style={{ fontSize:10.5, fontWeight:700, marginTop:2,
-                                color: committed > 0 ? "var(--amber)" : "var(--green)" }}>
-                              {committed > 0
-                                ? `⚠ ${fmt(underBy,currency)} delivered but unpaid — likely an outstanding balance`
-                                : `✓ delivered ${fmt(underBy,currency)} under plan — confirm no invoices are outstanding`}
-                            </div>
-                          )}
-                          {overspent && (
-                            <div title={`This line is fully delivered — it has earned its whole planned value — and cost ${fmt(aheadBy,currency)} more than planned. CPI ${lineCPI!.toFixed(2)}. Unlike an advance, this gap will not close: it is a cost overrun on completed work.`}
-                              style={{ fontSize:10.5, fontWeight:700, marginTop:2, color:"var(--red)" }}>
-                              ⚠ overspent by {fmt(aheadBy,currency)} on delivered work · CPI {lineCPI!.toFixed(2)}
+                                color:VTONE[verdict.tone], cursor:"help" }}>
+                              {verdict.text}
                             </div>
                           )}
                           {committed > 0 && (
