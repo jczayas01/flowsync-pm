@@ -58,18 +58,6 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     else alert("Could not change the forecast method.")
   }
 
-  const invStatusMeta = (k: string) => ({
-    RECEIVED: { label: t("received"),          color: "var(--amber)" },
-    APPROVED: { label: t("approved, unpaid"),  color: "var(--steel)" },
-    PAID:     { label: t("paid"),              color: "var(--green)" },
-    DISPUTED: { label: t("disputed"),          color: "var(--red)" },
-  } as any)[k]
-  const INV_STATUS: Record<string,{label:string;color:string;why:string}> = {
-    RECEIVED: { label:"received",          color:"var(--amber)", why: tip("invRECEIVED") },
-    APPROVED: { label:"approved, unpaid",  color:"var(--steel)", why: tip("invAPPROVED") },
-    PAID:     { label:"paid",              color:"var(--green)", why: tip("invPAID") },
-    DISPUTED: { label:"disputed",          color:"var(--red)",   why: tip("invDISPUTED") },
-  }
 
   async function setInvoiceStatus(itemId: string, expenseId: string, status: string) {
     setExpBusy(true)
@@ -292,6 +280,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   // product that promises "bilingual end to end" undoes the promise exactly
   // where the reader most needs to understand.
   const tip = useTranslations("tips")
+
+  const INV_STATUS: Record<string,{label:string;color:string;why:string}> = {
+    RECEIVED: { label:tip("lblReceived"), color:"var(--amber)", why:tip("invRECEIVED") },
+    APPROVED: { label:tip("lblApproved"), color:"var(--steel)", why:tip("invAPPROVED") },
+    PAID:     { label:tip("lblPaid"),     color:"var(--green)", why:tip("invPAID") },
+    DISPUTED: { label:tip("lblDisputed"), color:"var(--red)",   why:tip("invDISPUTED") },
+  }
   const { can } = usePermissions()
   const router = useRouter()
 
@@ -479,13 +474,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   })()
 
   const EAC_METHODS: Record<string, { label: string; formula: string; when: string }> = {
-    CPI:     { label: "Current performance continues", formula: "EAC = BAC ÷ CPI",
+    CPI:     { label: tip("mCPI"), formula: "EAC = BAC ÷ CPI",
                when: "The default, and right most of the time: whatever is driving the cost variance is expected to keep driving it." },
-    PLANNED: { label: "The variance was a one-off", formula: "EAC = AC + (BAC − EV)",
+    PLANNED: { label: tip("mPLANNED"), formula: "EAC = AC + (BAC − EV)",
                when: "Use when you can name the cause and it cannot recur — a customs charge, a single rework, a one-time penalty. The remaining work is expected to run at plan." },
-    CPI_SPI: { label: "Schedule pressure keeps costing", formula: "EAC = AC + (BAC − EV) ÷ (CPI × SPI)",
+    CPI_SPI: { label: tip("mCPI_SPI"), formula: "EAC = AC + (BAC − EV) ÷ (CPI × SPI)",
                when: "Use when being late is itself making the project more expensive — overtime, expedited shipping, extended overheads." },
-    MANUAL:  { label: "Bottom-up re-estimate", formula: "EAC = AC + your estimate to complete",
+    MANUAL:  { label: tip("mMANUAL"), formula: "EAC = AC + your estimate to complete",
                when: "Use when the original plan no longer describes the remaining work well enough for any formula to be meaningful. The most accurate method and the most work." },
   }
 
@@ -528,7 +523,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               <input type="checkbox" checked={autoEv}
                 onChange={e => toggleAutoEv(e.target.checked)}
                 style={{ accentColor:"#F59E0B", width:14, height:14, cursor:"pointer" }} />
-              Auto EV
+              {tip("autoEv")}
             </label>
             <button onClick={recomputeEv} disabled={recalcing}
               title="Recalculate earned value on every line from current task progress"
@@ -536,11 +531,11 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 fontSize:11, fontWeight:600, fontFamily:"var(--font)",
                 background:"rgba(255,255,255,.12)", border:"1px solid rgba(255,255,255,.25)",
                 color:"#fff" }}>
-              {recalcing ? "Recalculating…" : "↻ Recalculate EV"}
+              {recalcing ? tip("recalcing") : tip("recalcEv")}
             </button>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.7)" }}>
             <span title={tip("pctTasks")}>
-              {project?.percentComplete || 0}% of tasks
+              {tip("ofTasks", { pct: project?.percentComplete || 0 })}
             </span>
           </div>
           </div>
@@ -552,7 +547,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           {[
             { label:t("Budget at Completion (BAC)"), value:fmt(BAC,currency), sub:t("Total project budget"),
               color:"var(--text)", tip:"The total authorized budget for the project" },
-            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:`${evPct}% of budget earned`,
+            { label:t("Earned Value (EV)"), value:fmt(EV,currency), sub:tip("ofBudgetEarned", { pct: evPct }),
               color:"var(--steel)", tip:"Value of work actually performed" },
             { label:t("Actual Cost (AC)"), value:fmt(AC,currency), sub:t("Spent to date"),
               color:AC>EV?"var(--red)":"var(--text)", tip:"Total costs incurred for work performed" },
@@ -582,23 +577,23 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           borderBottom:"1px solid var(--border)" }}>
           {[
             { label:t("Cost Performance Index (CPI)"), value:EV<=0?"—":CPI.toFixed(2),
-              sub:EV<=0?"No earned value yet":CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
+              sub:EV<=0?tip("noEvYet"):CPI>1?"Under budget":CPI<1?t("Over budget"):t("On budget"),
               color:EV<=0?"var(--text-3)":CPI>=1?"var(--green)":"var(--red)",
               tip:"CPI = EV/AC. >1 = under budget, <1 = over budget" },
             { label:t("Schedule Performance Index (SPI)"), value:EV<=0?"—":SPI.toFixed(2),
               sub:EV<=0?"No earned value yet":SPI>1?t("Ahead of schedule"):SPI<1?t("Behind schedule"):t("On schedule"),
               color:EV<=0?"var(--text-3)":SPI>=1?"var(--green)":"var(--amber)",
               tip:"SPI = EV/PV. >1 = ahead, <1 = behind" },
-            { label:"Cost Variance (CV)", value:(CV>=0?"+":"")+fmt(Math.abs(CV),currency),
+            { label:tip("cv"), value:(CV>=0?"+":"")+fmt(Math.abs(CV),currency),
               sub:CV>=0?"Favorable":"Unfavorable",
               color:CV>=0?"var(--green)":"var(--red)",
               tip:"CV = EV - AC. Positive = under budget" },
-            { label:"To-Complete Performance Index (TCPI)",
+            { label:tip("tcpi"),
               value: !tcpiValid && budgetLeft <= 0 ? "—" : TCPI.toFixed(2),
               sub: EV<=0 ? "No earned value yet"
-                 : budgetLeft <= 0 ? "Budget already spent"
-                 : workLeft <= 0 ? "All work earned"
-                 : TCPI>1 ? t("Needs improvement") : t("On track"),
+                 : budgetLeft <= 0 ? tip("budgetSpent")
+                 : workLeft <= 0 ? tip("allEarned")
+                 : TCPI>1 ? tip("needsImprovement") : tip("onTrack"),
               color: budgetLeft <= 0 ? "var(--red)"
                    : TCPI>1.1 ? "var(--red)" : TCPI>1 ? "var(--amber)" : "var(--green)",
               tip:"Efficiency needed to complete on budget" },
@@ -621,10 +616,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)" }}>
           {[
             { label:t("Estimate at Completion (EAC)"), value:fmt(EAC,currency),
-              sub:`${EAC>BAC?"⚠ Over":"✓ Within"} budget forecast`,
+              sub:EAC>BAC?tip("overForecast"):tip("withinForecast"),
               color:EAC>BAC?"var(--red)":"var(--green)",
               tip:`${EAC_METHODS[eacMethod]?.formula} — ${EAC_METHODS[eacMethod]?.label}. ${EAC_METHODS[eacMethod]?.when}` },
-            { label:"Estimate to Complete (ETC)", value:fmt(ETC,currency),
+            { label:tip("etc"), value:fmt(ETC,currency),
               sub:t("Remaining cost needed"),
               color:"var(--text)",
               tip:"ETC = EAC - AC. Expected cost to finish" },
@@ -651,7 +646,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       {/* Spend bar */}
       <div style={{ ...card, marginBottom:16 }}>
         <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:8 }}>
-          <span style={{ fontWeight:500, color:"var(--text)" }}>Budget utilization</span>
+          <span style={{ fontWeight:500, color:"var(--text)" }}>{tip("utilization")}</span>
           <span style={{ color:pct>90?"var(--red)":pct>75?"var(--amber)":"var(--text-3)" }}>
             {fmt(AC,currency)} of {fmt(BAC,currency)} ({pct}%)
           </span>
@@ -670,16 +665,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         </div>
         {committedTotal > 0 && (
           <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:6 }}>
-            Still committed (open POs, net of payments made):{" "}
+            {tip("stillCommitted")}{" "}
             <strong style={{ color:"var(--amber)" }}>{fmt(committedTotal,currency)}</strong>
-            {" · "}True exposure (spent + still committed):{" "}
+            {" · "}{tip("trueExposure")}{" "}
             <strong style={{ color:"var(--text)" }}>{fmt(AC+committedTotal,currency)}</strong> of {fmt(BAC,currency)}
             {" "}({BAC>0 ? Math.round(((AC+committedTotal)/BAC)*100) : 0}%)
           </div>
         )}
         {pct > 100 && (
           <div style={{ fontSize:11, color:"var(--red)", marginTop:6, fontWeight:500 }}>
-            ⚠ Budget exceeded by {fmt(AC-BAC,currency)}
+            {tip("budgetExceeded", { amount: fmt(AC-BAC,currency) })}
           </div>
         )}
       </div>
@@ -700,7 +695,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           <div style={{ ...card, marginBottom:16 }}>
             <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
               <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text)" }}>
-                Cost baseline
+                {tip("costBaseline")}
               </span>
               <span style={{ fontSize:11.5, color:"var(--text-3)" }}>
                 {sorted.length} approved {sorted.length === 1 ? "version" : "versions"}
@@ -708,24 +703,24 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               <button onClick={() => setBlOpenHist(o => !o)}
                 style={{ marginLeft:"auto", background:"none", border:"none", cursor:"pointer",
                   fontSize:11.5, fontWeight:600, color:"var(--steel)", fontFamily:"var(--font)" }}>
-                {blOpenHist ? "Hide history" : "Show history"}
+                {blOpenHist ? tip("hideHistory") : tip("showHistory")}
               </button>
             </div>
 
             <div style={{ display:"flex", gap:22, flexWrap:"wrap", marginTop:8 }}>
               <span title={tip("baselineOriginal")}
                 style={{ fontSize:12.5, color:"var(--text-3)", cursor:"help" }}>
-                Original <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(original,currency)}</strong>
+                {tip("original")} <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(original,currency)}</strong>
               </span>
               <span title={tip("baselineCurrent")}
                 style={{ fontSize:12.5, color:"var(--text-3)", cursor:"help" }}>
-                Current baseline <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(latest,currency)}</strong>
+                {tip("currentBaseline")} <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(latest,currency)}</strong>
               </span>
               {Math.abs(growth) >= 0.5 && (
                 <span title={tip("baselineGrowth")}
                   style={{ fontSize:12.5, color: growth > 0 ? "var(--amber)" : "var(--green)",
                     fontWeight:700, cursor:"help" }}>
-                  {growth > 0 ? "▲" : "▼"} {Math.abs(growth).toFixed(1)}% since original
+                  {growth > 0 ? "▲" : "▼"} {Math.abs(growth).toFixed(1)}% {tip("sinceOriginal")}
                 </span>
               )}
               {Math.abs(drift) > 0.5 && (
@@ -789,7 +784,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       <div style={{ ...card, marginBottom:16 }}>
         <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap", marginBottom:4 }}>
           <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text)" }}>
-            Forecast assumption
+            {tip("forecastAssumption")}
           </span>
           <span style={{ fontSize:11.5, color:"var(--text-3)", fontFamily:"monospace" }}>
             {EAC_METHODS[eacMethod]?.formula}
@@ -800,7 +795,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           </span>
         </div>
         <p style={{ fontSize:11.5, color:"var(--text-3)", lineHeight:1.6, margin:"0 0 10px" }}>
-          Every forecast assumes something about the work that hasn't happened yet. Say which.
+          {tip("forecastIntro")}
         </p>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))", gap:8 }}>
           {Object.entries(EAC_METHODS).map(([key, m2]) => {
@@ -826,7 +821,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         {eacMethod === "MANUAL" && (
           <div style={{ display:"flex", gap:8, alignItems:"flex-end", marginTop:10 }}>
             <label style={{ flex:"0 0 200px", fontSize:11, color:"var(--text-3)" }}>
-              Your estimate to complete
+              {tip("yourEtc")}
               <input type="number" min={0} step="0.01" value={etcDraft}
                 onChange={e => setEtcDraft(e.target.value)}
                 placeholder="0.00"
@@ -838,10 +833,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
                 borderRadius:6, fontSize:12, fontWeight:700, cursor:"pointer",
                 fontFamily:"var(--font)" }}>
-              {eacBusy ? "Saving…" : "Apply"}
+              {eacBusy ? tip("saving") : tip("apply")}
             </button>
             <span style={{ fontSize:11.5, color:"var(--text-4)", paddingBottom:8 }}>
-              What the remaining work will cost, estimated from the bottom up.
+              {tip("etcHelp")}
             </span>
           </div>
         )}
@@ -864,14 +859,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:11,
               fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}
             onClick={() => { setScanOpen(o => !o); setCandidates(null); setScanError("") }}>
-            🤖 Scan documents
+            {tip("scanDocs")}
           </button>
           <button
             style={{ padding:"6px 12px", background:"var(--steel)", color:"#fff", border:"none",
               borderRadius:"var(--radius)", fontSize:11, fontWeight:500, cursor:"pointer",
               fontFamily:"var(--font)" }}
             onClick={() => setAddingItem(true)}>
-            + Add item
+            {tip("addItem")}
           </button>
           </div>
           )}
@@ -1122,7 +1117,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                     // contractual advance; exposure all the same.
                     if (gap > tol && actual > 100) return {
                       tone: "amber",
-                      text: `⚠ paid ${fmt(gap,currency)} ahead of value${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
+                      text: tip("vAdvance", { amount: fmt(gap,currency), cpi: lineCPI!=null?lineCPI.toFixed(2):"—" }),
                       why: tip("advance", { amount: fmt(gap,currency) }),
                     }
                     return null                            // in progress, nothing worth saying
@@ -1131,21 +1126,21 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                   // Delivered. Three ways that can land.
                   if (gap > tol) return {
                     tone: "red",
-                    text: `⚠ overspent by ${fmt(gap,currency)} on delivered work${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
+                    text: tip("vOverrun", { amount: fmt(gap,currency), cpi: lineCPI!=null?lineCPI.toFixed(2):"—" }),
                     why: tip("overrun", { amount: fmt(gap,currency) }),
                   }
                   if (-gap > tol) return {
                     tone: "steel",
                     text: committed > 0
-                      ? `${fmt(-gap,currency)} delivered but unpaid — likely an outstanding balance`
-                      : `${fmt(-gap,currency)} delivered but unpaid — confirm no invoices are outstanding`,
+                      ? tip("vUnpaidPo", { amount: fmt(-gap,currency) })
+                      : tip("vUnpaidNoPo", { amount: fmt(-gap,currency) }),
                     why: committed > 0
                       ? tip("unpaidPo",   { amount: fmt(-gap,currency), committed: fmt(committed,currency) })
                       : tip("unpaidNoPo", { amount: fmt(-gap,currency) }),
                   }
                   return {
                     tone: "green",
-                    text: `✓ delivered on plan${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
+                    text: tip("vOnPlan", { cpi: lineCPI!=null?lineCPI.toFixed(2):"—" }),
                     why: tip("onPlan"),
                   }
                 })()
@@ -1240,7 +1235,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                   progress means the figure is stale, not wrong. */}
                               {isStale && (
                                 <span title={tip("stale")}
-                                  style={{ color:"var(--amber)", fontWeight:700, marginLeft:6, cursor:"help" }}>⚠ stale</span>
+                                  style={{ color:"var(--amber)", fontWeight:700, marginLeft:6, cursor:"help" }}>{tip("staleBadge")}</span>
                               )}
                             </div>
                           )}
@@ -1299,7 +1294,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                                     {taskEvidence === 0 && earned > 0 && (
                             <div title={tip("noEvidence")}
                               style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
-                              earned value not measured — no linked tasks
+                              {tip("notMeasured")}
                             </div>
                           )}
                                                                               {(() => {
@@ -1315,7 +1310,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               <div title={tip("payable", { amount: fmt(payable,currency) })}
                                 style={{ fontSize:10.5, fontWeight:700, marginTop:2,
                                   color:"var(--steel)", cursor:"help" }}>
-                                ⏳ {fmt(payable,currency)} invoiced, unpaid
+                                {tip("invoicedUnpaid", { amount: fmt(payable,currency) })}
                               </div>
                             ) : null
                           })()}
@@ -1396,12 +1391,12 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           background:"#fff" }}>
                           <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)",
                             textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
-                            Expenses on this line
+                            {tip("expensesOn")}
                           </div>
                           {expBusy && !expList && <div style={{ fontSize:12, color:"var(--text-3)" }}>Loading…</div>}
                           {expList && expList.length === 0 && (
                             <div style={{ fontSize:12, color:"var(--text-3)" }}>
-                              No expense records — this Actual was entered manually.
+                              {tip("noExpenses")}
                             </div>
                           )}
                           {(expList || []).map(ex => (
