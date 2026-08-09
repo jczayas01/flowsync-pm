@@ -1,21 +1,21 @@
 "use client"
 // src/components/reports/ReportBuilderView.tsx
 import { useState, useEffect } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 
 // ── Block types ────────────────────────────────
 const BLOCK_TYPES = [
-  { id:"text",       icon:"📝", label:"Text / narrative",   desc:"Free-form rich text block" },
-  { id:"kpi",        icon:"📊", label:"KPI metrics row",    desc:"Up to 4 metric tiles in a row" },
-  { id:"tasks",      icon:"✅", label:"Task table",         desc:"Filtered list of project tasks" },
-  { id:"risks",      icon:"⚠",  label:"Risk register",      desc:"Open risks by score" },
-  { id:"gantt",      icon:"📅", label:"Gantt snapshot",     desc:"Mini Gantt for the selected date range" },
-  { id:"budget",     icon:"💰", label:"Budget summary",     desc:"Budget vs actuals with EVM metrics" },
-  { id:"milestones", icon:"🎯", label:"Milestones",         desc:"Upcoming and completed milestones" },
-  { id:"health",     icon:"🟢", label:"Health summary",     desc:"Portfolio or project health overview" },
-  { id:"chart",      icon:"📈", label:"Chart",              desc:"Bar, line, or pie chart" },
+  { id:"text", icon:"📝" },
+  { id:"kpi", icon:"📊" },
+  { id:"tasks", icon:"✅" },
+  { id:"risks", icon:"⚠" },
+  { id:"gantt", icon:"📅" },
+  { id:"budget", icon:"💰" },
+  { id:"milestones", icon:"🎯" },
+  { id:"health", icon:"🟢" },
+  { id:"chart", icon:"📈" },
 ]
 
 interface ReportBlock {
@@ -25,23 +25,26 @@ interface ReportBlock {
   config: Record<string,any>
 }
 
-const INITIAL_BLOCKS: ReportBlock[] = [
-  { id:"b1", type:"text",  title:"Executive summary",   config:{ content:"This report covers project status for the period..." } },
-  { id:"b2", type:"kpi",   title:"Key metrics",         config:{ metrics:["completion","budget","risks","milestones"] } },
-  { id:"b3", type:"gantt", title:"Schedule overview",   config:{ range:"30d" } },
-  { id:"b4", type:"risks", title:"Open risks (score ≥9)", config:{ minScore:9, status:"OPEN" } },
+const INITIAL_SECTIONS = [
+  { id:"b1", type:"text",  key:"Executive summary", config:{ content:"" } },
+  { id:"b2", type:"kpi",   key:"Key metrics",       config:{ metrics:["completion","budget","risks","milestones"] } },
+  { id:"b3", type:"gantt", key:"Schedule overview", config:{ range:"30d" } },
+  { id:"b4", type:"risks", key:"Open risks",        config:{ minScore:9, status:"OPEN" } },
 ]
 
 export function ReportBuilderView({ projectId, workspaceId, templates=[], userRole="" }:{
   projectId?:string; workspaceId:string; templates?:any[]; userRole?:string
 }) {
   const locale = useLocale()
+  const rb = useTranslations("reports")
   const canManage = ["SUPER_ADMIN","OWNER","ADMIN","PMO_DIRECTOR"].includes(userRole)
-  const [blocks, setBlocks]       = useState<ReportBlock[]>(INITIAL_BLOCKS)
+  const [blocks, setBlocks]       = useState<ReportBlock[]>(
+    () => INITIAL_SECTIONS.map(b => ({ id:b.id, type:b.type, title:rb(("sec."+b.key) as any), config:b.config }))
+  )
   const [preview, setPreview]     = useState(false)
   const [generating, setGenerating]= useState(false)
   const [saving, setSaving]       = useState(false)
-  const [reportName, setReportName]= useState("Weekly Status Report")
+  const [reportName, setReportName]= useState(() => rb("Weekly Status Report"))
   const [description, setDescription]= useState("")
   const [audience, setAudience]   = useState("TEAM")
   const [dragging, setDragging]   = useState<string|null>(null)
@@ -55,12 +58,12 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
   function showToast(msg:string){ setToast(msg); setTimeout(()=>setToast(""),3000) }
 
   function addBlock(type:string) {
-    if(!canManage){ showToast("Only admins can edit templates"); return }
+    if(!canManage){ showToast(rb("onlyAdminsEdit")); return }
     const bt = BLOCK_TYPES.find(b=>b.id===type)
     const newBlock: ReportBlock = {
       id:     `b${Date.now()}`,
       type,
-      title:  bt?.label || type,
+      title:  rb(("bt."+type) as any),
       config: {},
     }
     setBlocks(b=>[...b,newBlock])
@@ -102,7 +105,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
 
   // Client-side layout suggestion, curated per audience (no external call).
   function suggestLayout() {
-    if(!canManage){ showToast("Only admins can edit templates"); return }
+    if(!canManage){ showToast(rb("onlyAdminsEdit")); return }
     setGenerating(true)
     const byAudience:Record<string,{type:string,title:string}[]> = {
       EXECUTIVE: [
@@ -123,16 +126,16 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
       ],
     }
     const picked = byAudience[audience] || byAudience.TEAM
-    setBlocks(picked.map((b,i)=>({ id:`b${Date.now()}_${i}`, type:b.type, title:b.title, config:{} })))
+    setBlocks(picked.map((b,i)=>({ id:`b${Date.now()}_${i}`, type:b.type, title:rb(("sec."+b.title) as any), config:{} })))
     setSelected(null); setGenerating(false)
-    showToast("✓ Suggested a layout for this audience")
+    showToast(rb("suggested"))
   }
 
   // Save = create (POST) or update (PATCH) a workspace report template.
   async function saveReport() {
-    if(!canManage){ showToast("Only admins can save report templates"); return }
-    if(!reportName.trim()){ showToast("Give the template a name"); return }
-    if(blocks.length===0){ showToast("Add at least one section"); return }
+    if(!canManage){ showToast(rb("onlyAdminsSave")); return }
+    if(!reportName.trim()){ showToast(rb("giveName")); return }
+    if(blocks.length===0){ showToast(rb("addSection")); return }
     setSaving(true)
     try {
       const sections = blocks.map(b=>b.type)
@@ -142,7 +145,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
         method:meth, headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ name:reportName, description, audience, sections }),
       })
-      if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error||"Save failed") }
+      if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error||rb("Save failed")) }
       const { data } = await res.json()
       setTemplateList(list => editingId ? list.map(t=>t.id===editingId?data:t) : [data,...list])
       setEditingId(data.id)
@@ -152,28 +155,27 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
   }
 
   function newTemplate() {
-    setEditingId(null); setReportName("New report template"); setDescription(""); setAudience("TEAM")
+    setEditingId(null); setReportName(rb("New report template")); setDescription(""); setAudience("TEAM")
     setBlocks([]); setSelected(null); setPreview(false)
   }
   function loadTemplate(t:any) {
     setEditingId(t.id); setReportName(t.name); setDescription(t.description||""); setAudience(t.audience||"TEAM")
     const secs:string[] = Array.isArray(t.sections) ? t.sections : []
-    setBlocks(secs.map((type,i)=>({ id:`b${Date.now()}_${i}`, type, title:BLOCK_TYPES.find(b=>b.id===type)?.label||type, config:{} })))
+    setBlocks(secs.map((type,i)=>({ id:`b${Date.now()}_${i}`, type, title:rb(("bt."+type) as any), config:{} })))
     setSelected(null); setPreview(false)
   }
   async function deleteTemplate(id:string) {
     if(!canManage) return
-    if(!confirm("Delete this report template?")) return
+    if(!confirm(rb("confirmDelete"))) return
     const res = await fetch(`/api/reports/${id}`, { method:"DELETE" })
-    if(res.ok){ setTemplateList(list=>list.filter(t=>t.id!==id)); if(editingId===id) newTemplate(); showToast("Template deleted") }
-    else showToast("✗ Delete failed")
+    if(res.ok){ setTemplateList(list=>list.filter(t=>t.id!==id)); if(editingId===id) newTemplate(); showToast(rb("Template deleted")) }
+    else showToast(rb("✗ Delete failed"))
   }
 
   const selBlock = blocks.find(b=>b.id===selected)
 
   // ── Preview renderer ──────────────────────────
   function renderBlock(block: ReportBlock) {
-  const locale = useLocale()
     const card: React.CSSProperties = {
       background:"#fff", border:"1px solid var(--border)",
       borderRadius:"var(--radius)", padding:20, marginBottom:14
@@ -184,7 +186,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
           <div style={card}>
             <h3 style={{fontSize:15,fontWeight:600,color:"var(--text)",marginBottom:10}}>{block.title}</h3>
             <p style={{fontSize:13,color:"var(--text-2)",lineHeight:1.7,margin:0}}>
-              {block.config.content || "Text content goes here..."}
+              {block.config.content || rb("textPlaceholder")}
             </p>
           </div>
         )
@@ -326,7 +328,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
           <option value="CLIENT">{enumLabel("CLIENT", locale)}</option>
         </select>
         <input value={description} onChange={e=>setDescription(e.target.value)} disabled={!canManage}
-          placeholder="Short description (optional)"
+          placeholder={rb("descPlaceholder")}
           style={{padding:"7px 10px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
             fontSize:12,fontFamily:"var(--font)",color:"var(--text)",outline:"none",flex:"0 1 210px"}} />
         <div style={{marginLeft:"auto",display:"flex",gap:8}}>
@@ -335,20 +337,20 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
               style={{padding:"7px 14px",background:generating?"var(--surface)":"var(--purple-pale,#F5F3FF)",
                 color:generating?"var(--text-3)":"#7C3AED",border:"1px solid #7C3AED30",
                 borderRadius:"var(--radius)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-              {generating?"Working…":"✨ Suggest layout"}
+              {generating?rb("Working…"):rb("✨ Suggest layout")}
             </button>
           )}
           <button onClick={()=>setPreview(p=>!p)}
             style={{padding:"7px 14px",background:preview?"var(--navy,#0D1B2A)":"var(--surface)",
               color:preview?"#fff":"var(--text-2)",border:"1px solid var(--border)",
               borderRadius:"var(--radius)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-            {preview?"← Edit":"👁 Preview"}
+            {preview?rb("← Edit"):rb("👁 Preview")}
           </button>
           {canManage&&(
             <button onClick={saveReport} disabled={saving}
               style={{padding:"7px 14px",background:"var(--steel)",color:"#fff",border:"none",
                 borderRadius:"var(--radius)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-              {saving?"Saving…":(editingId?"Update template":"Save template")}
+              {saving?rb("Saving…"):(editingId?rb("Update template"):rb("Save template"))}
             </button>
           )}
           <button onClick={()=>{ setPreview(true); setTimeout(()=>window.print(),120) }}
@@ -364,7 +366,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"8px 20px",
         display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",flexShrink:0}}>
         <span style={{fontSize:10,fontWeight:600,color:"var(--text-3)",textTransform:"uppercase",
-          letterSpacing:".07em"}}>Templates</span>
+          letterSpacing:".07em"}}>{rb("Templates")}</span>
         {templateList.length===0&&<span style={{fontSize:12,color:"var(--text-4)"}}>None yet{canManage?" — build one and Save":""}</span>}
         {templateList.map(t=>(
           <span key={t.id} onClick={()=>loadTemplate(t)}
@@ -388,7 +390,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
           </button>
         )}
         {!canManage&&(
-          <span style={{marginLeft:"auto",fontSize:11,color:"var(--text-4)"}}>View-only — template editing is admin-level</span>
+          <span style={{marginLeft:"auto",fontSize:11,color:"var(--text-4)"}}>{rb("viewOnly")}</span>
         )}
       </div>
 
@@ -424,8 +426,8 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
                 onMouseOut={e=>(e.currentTarget.style.background="transparent")}>
                 <span style={{fontSize:16,flexShrink:0}}>{bt.icon}</span>
                 <div>
-                  <div style={{fontSize:12,fontWeight:500,color:"var(--text)"}}>{bt.label}</div>
-                  <div style={{fontSize:10,color:"var(--text-3)"}}>{bt.desc}</div>
+                  <div style={{fontSize:12,fontWeight:500,color:"var(--text)"}}>{rb(("bt."+bt.id) as any)}</div>
+                  <div style={{fontSize:10,color:"var(--text-3)"}}>{rb(("bt."+bt.id+".desc") as any)}</div>
                 </div>
               </button>
             ))}
@@ -437,9 +439,9 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
               <div style={{textAlign:"center",padding:"48px 24px",color:"var(--text-3)"}}>
                 <div style={{fontSize:40,marginBottom:12}}>📄</div>
                 <div style={{fontSize:14,fontWeight:500,color:"var(--text)",marginBottom:6}}>
-                  Your report canvas is empty
+                  {rb("canvasEmpty")}
                 </div>
-                <div style={{fontSize:13}}>Click blocks in the left panel to add them.</div>
+                <div style={{fontSize:13}}>{rb("clickBlocks")}</div>
               </div>
             ):(
               blocks.map((block,idx)=>(
@@ -493,7 +495,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
               Block properties
             </div>
             {!selBlock?(
-              <div style={{fontSize:12,color:"var(--text-3)"}}>Select a block to edit its properties.</div>
+              <div style={{fontSize:12,color:"var(--text-3)"}}>{rb("selectBlock")}</div>
             ):(
               <div>
                 <div style={{marginBottom:12}}>
@@ -542,17 +544,17 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
                       style={{width:"100%",padding:"7px 9px",border:"1px solid var(--border)",
                         borderRadius:"var(--radius)",fontSize:12,fontFamily:"var(--font)",
                         color:"var(--text)",outline:"none",appearance:"none" as const}}>
-                      <option value="7d">Next 7 days</option>
-                      <option value="30d">Next 30 days</option>
-                      <option value="90d">Next 90 days</option>
-                      <option value="all">Full project</option>
+                      <option value="7d">{rb("range.7d")}</option>
+                      <option value="30d">{rb("range.30d")}</option>
+                      <option value="90d">{rb("range.90d")}</option>
+                      <option value="all">{rb("range.all")}</option>
                     </select>
                   </div>
                 )}
                 <div style={{padding:"10px 12px",background:"var(--surface)",borderRadius:"var(--radius)",
                   fontSize:12,color:"var(--text-3)"}}>
-                  <strong style={{display:"block",marginBottom:4,color:"var(--text-2)"}}>Block type</strong>
-                  {BLOCK_TYPES.find(bt=>bt.id===selBlock.type)?.desc}
+                  <strong style={{display:"block",marginBottom:4,color:"var(--text-2)"}}>{rb("Block type")}</strong>
+                  {rb(("bt."+selBlock.type+".desc") as any)}
                 </div>
               </div>
             )}

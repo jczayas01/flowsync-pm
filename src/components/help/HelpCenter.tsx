@@ -3,6 +3,7 @@
 // In-app Help Center — Q&A, Glossary, Feature walkthroughs, Keyboard shortcuts
 
 import { useState, useRef } from "react"
+import { useTranslations } from "next-intl"
 
 const GLOSSARY = [
   { term:"BAC",      full:"Budget at Completion",        def:"The total planned cost of the project. BAC is the baseline against which all EVM calculations are made." },
@@ -155,6 +156,7 @@ const WALKTHROUGHS = [
 ]
 
 export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string }) {
+  const hc = useTranslations("help")
   // Opened from a Guide button on a specific screen → land on that walkthrough,
   // not on a generic FAQ list the person then has to search.
   const [tab, setTab]         = useState<"faq"|"glossary"|"walkthrough"|"shortcuts">(topic ? "walkthrough" : "faq")
@@ -205,8 +207,8 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
           display:"flex", alignItems:"center", gap:10, flexShrink:0, borderRadius:"12px 0 0 0" }}>
           <span style={{ fontSize:20 }}>❓</span>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700 }}>Help Center</div>
-            <div style={{ fontSize:11, opacity:.6 }}>PM Best Practices · FlowSync PM Guide</div>
+            <div style={{ fontSize:15, fontWeight:700 }}>{hc("Help Center")}</div>
+            <div style={{ fontSize:11, opacity:.6 }}>{hc("subtitle")}</div>
           </div>
           <button onClick={onClose}
             style={{ background:"rgba(255,255,255,.15)", border:"none", color:"#fff",
@@ -217,7 +219,7 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
         {/* Search */}
         <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
           <input value={search} onChange={e=>setSearch(e.target.value)}
-            placeholder="Search help, glossary, FAQs..."
+            placeholder={hc("searchPlaceholder")}
             style={{ width:"100%", padding:"8px 12px", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
               color:"var(--text)", outline:"none" }} />
@@ -243,10 +245,10 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
         {/* Tabs */}
         <div style={{ display:"flex", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
           {[
-            { id:"faq",        label:"FAQ" },
-            { id:"glossary",   label:"Glossary" },
-            { id:"walkthrough",label:"Guides" },
-            { id:"shortcuts",  label:"Shortcuts" },
+            { id:"faq",        label:hc("tab.faq") },
+            { id:"glossary",   label:hc("tab.glossary") },
+            { id:"walkthrough",label:hc("tab.walkthrough") },
+            { id:"shortcuts",  label:hc("tab.shortcuts") },
           ].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id as any)}
               style={{ flex:1, padding:"8px", fontSize:11, fontWeight:500, cursor:"pointer",
@@ -269,12 +271,12 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
               <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
                 borderRadius:"var(--radius)", padding:14, marginBottom:16 }}>
                 <div style={{ fontSize:12, fontWeight:600, color:"var(--steel)", marginBottom:8 }}>
-                  ✨ Ask AI a PM question
+                  {hc("askAI")}
                 </div>
                 <div style={{ display:"flex", gap:8 }}>
                   <input value={aiQ} onChange={e=>setAiQ(e.target.value)}
                     onKeyDown={e=>e.key==="Enter"&&askAI()}
-                    placeholder="e.g. When should I escalate a risk?"
+                    placeholder={hc("aiPlaceholder")}
                     style={{ flex:1, padding:"7px 10px", border:"1px solid #BFDBFE",
                       borderRadius:"var(--radius)", fontSize:12, fontFamily:"var(--font)",
                       color:"var(--text)", outline:"none" }} />
@@ -283,7 +285,7 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
                       border:"none", borderRadius:"var(--radius)", fontSize:12,
                       cursor:"pointer", fontFamily:"var(--font)",
                       opacity:(!aiQ.trim()||aiLoading)?0.5:1 }}>
-                    {aiLoading?"…":"Ask"}
+                    {aiLoading?"…":hc("Ask")}
                   </button>
                 </div>
                 {aiA && (
