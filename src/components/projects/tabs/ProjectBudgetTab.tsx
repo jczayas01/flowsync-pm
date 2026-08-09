@@ -1090,7 +1090,6 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 // from figures it has already said not to trust. Silence is the
                 // honest output until someone recalculates.
                 const isStale = (() => {
-  const locale = useLocale()
                   if (taskEvidence === 0 || planned <= 0) return false
                   const rule = item.earnRule || "EFFORT"
                   const tp = lineTasks[item.id]?.pct ?? 0
@@ -1199,7 +1198,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               style={{ padding:"4px 10px", background:"var(--steel)", color:"#fff",
                                 border:"none", borderRadius:4, fontSize:11, cursor:"pointer",
                                 fontFamily:"var(--font)" }}>
-                              {saving?"…":"Save"}
+                              {saving?"…":tip("save")}
                             </button>
                             <button onClick={()=>setEditId(null)}
                               style={{ padding:"4px 8px", background:"none", border:"1px solid var(--border)",

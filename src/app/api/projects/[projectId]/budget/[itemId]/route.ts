@@ -7,6 +7,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, parseBody, verifyProjectAccess, ApiContext } from "@/lib/api"
 import { requirePermission } from "@/lib/rbac/guards"
+import { recomputeProjectEV } from "@/lib/evm-auto"
 
 // Keep the project's top-line budget in sync with its line items
 async function syncProjectBudget(projectId: string) {
@@ -59,9 +60,19 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
         ...(parsed.data.actualAmount  !== undefined && { actualCost:parsed.data.actualAmount }),
         ...(parsed.data.notes         !== undefined && { notes:parsed.data.notes }),
         ...(parsed.data.recurrence    !== undefined && { recurrence:parsed.data.recurrence }),
+        // Validated by the schema above but never written: the request was
+        // accepted, the rule silently dropped, and the select reverted on reload.
+        ...(parsed.data.earnRule      !== undefined && { earnRule:parsed.data.earnRule as any }),
       },
     })
     await syncProjectBudget(params!.projectId)
+    // The rule only matters through the earned value it produces. Recomputing
+    // after the write (never before — the recompute must read the new rule)
+    // means the number moves when the PM saves, not on the next task edit.
+    // recomputeProjectEV respects Project.autoEv, so hand-curated figures stay.
+    if (parsed.data.earnRule !== undefined) {
+      await recomputeProjectEV(db, projectId, undefined).catch(() => {})
+    }
     return ok({ ...item, plannedAmount:Number(item.plannedCost), actualAmount:Number(item.actualCost) })
   } catch(e:any) {
     return err(e?.message||"Failed to update budget item", 500)
