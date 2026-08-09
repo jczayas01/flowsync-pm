@@ -1,5 +1,5 @@
+﻿"use client"
 // src/components/admin/AdminView.tsx
-"use client"
 import { useState, useMemo } from "react"
 import { dateLocale } from "@/lib/date-locale"
 import { ContractsPanel } from "./ContractsPanel"
@@ -26,9 +26,9 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
         method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body),
       })
       const d = await res.json().catch(()=>({}))
-      setMsg(res.ok ? `✓ ${d?.data?.message || "Done"}` : `✗ ${d?.error || "Action failed"}`)
+      setMsg(res.ok ? `âœ“ ${d?.data?.message || "Done"}` : `âœ— ${d?.error || "Action failed"}`)
       if (res.ok) setTimeout(() => window.location.reload(), 900)
-    } catch { setMsg("✗ Action failed") }
+    } catch { setMsg("âœ— Action failed") }
     finally { setBusy(false) }
   }
 
@@ -43,20 +43,20 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
   const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length, contracts: -1 }
 
   return (
-    // AppShell's <main> is overflow:hidden — every page provides its own scroll
+    // AppShell's <main> is overflow:hidden â€” every page provides its own scroll
     // container. This one didn't, so rows past the viewport were simply clipped.
     <div style={{ flex:1, minHeight:0, overflowY:"auto", width:"100%" }}>
     <div style={{ padding:"20px 16px", maxWidth:1280, margin:"0 auto", fontFamily:"var(--font)" }}>
       <div style={{ marginBottom:4, display:"flex", alignItems:"center", gap:10 }}>
-        <h1 style={{ fontSize:19, fontWeight:700, color:NAVY }}>⚡ Platform Admin</h1>
+        <h1 style={{ fontSize:19, fontWeight:700, color:NAVY }}>âš¡ Platform Admin</h1>
         <span style={{ fontSize:10, fontWeight:700, color:"#fff", background:RED,
           padding:"2px 7px", borderRadius:4, letterSpacing:".04em" }}>ALL TENANTS</span>
       </div>
       <p style={{ fontSize:12, color:"#64748B", marginBottom:16 }}>
-        Every workspace on FlowSync PM. This view crosses tenant boundaries — treat it as read-only operator context.
+        Every workspace on FlowSync PM. This view crosses tenant boundaries â€” treat it as read-only operator context.
       </p>
 
-      {/* ── Metrics ── */}
+      {/* â”€â”€ Metrics â”€â”€ */}
       <div className="fs-cols-6" style={{ marginBottom:18 }}>
         <Metric label="Workspaces"    value={metrics.wsTotal} />
         <Metric label="Users"         value={metrics.userTotal} />
@@ -66,7 +66,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
         <Metric label="New leads"     value={metrics.newLeads} color={metrics.newLeads > 0 ? RED : undefined} />
       </div>
 
-      {/* ── Tabs + search ── */}
+      {/* â”€â”€ Tabs + search â”€â”€ */}
       <div className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
         {(["workspaces","users","leads","contracts"] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
@@ -74,21 +74,21 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
               border: tab===t ? "none" : "1px solid #E2E8F0",
               background: tab===t ? NAVY : "#fff", color: tab===t ? "#fff" : "#475569",
               fontFamily:"inherit" }}>
-            {t === "workspaces" ? "🏢 Workspaces" : t === "users" ? "👤 Users"
-              : t === "leads" ? "📩 Demo requests" : "📜 Contracts"}
+            {t === "workspaces" ? "ðŸ¢ Workspaces" : t === "users" ? "ðŸ‘¤ Users"
+              : t === "leads" ? "ðŸ“© Demo requests" : "ðŸ“œ Contracts"}
             {counts[t] >= 0 && <span style={{ opacity:.6, marginLeft:6 }}>{counts[t]}</span>}
           </button>
         ))}
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search…"
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Searchâ€¦"
           style={{ marginLeft:"auto", padding:"7px 11px", border:"1px solid #E2E8F0",
             borderRadius:8, fontSize:12.5, minWidth:180, outline:"none", fontFamily:"inherit" }} />
       </div>
 
       {msg && (
         <div style={{ marginBottom:10, padding:"8px 12px", borderRadius:8, fontSize:12.5,
-          background: msg.startsWith("✓") ? "#ECFDF5" : "#FEF2F2",
-          color: msg.startsWith("✓") ? GREEN : "#B91C1C",
-          border:`1px solid ${msg.startsWith("✓") ? "#BBF7D0" : "#FECACA"}` }}>{msg}</div>
+          background: msg.startsWith("âœ“") ? "#ECFDF5" : "#FEF2F2",
+          color: msg.startsWith("âœ“") ? GREEN : "#B91C1C",
+          border:`1px solid ${msg.startsWith("âœ“") ? "#BBF7D0" : "#FECACA"}` }}>{msg}</div>
       )}
 
       {manage && <ManageDrawer w={manage} onClose={()=>setManage(null)} onAction={run} busy={busy} />}
@@ -109,18 +109,18 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
   )
 }
 
-// ── Sales Kit ──
-// Static collateral shipped in /public/sales-kit — customer-facing documents,
+// â”€â”€ Sales Kit â”€â”€
+// Static collateral shipped in /public/sales-kit â€” customer-facing documents,
 // nothing secret, so plain static links are fine. Update a doc by replacing
 // the file in the repo; Vercel serves the new version on next deploy.
 const KIT: { label:string; note:string; en?:string; es?:string }[] = [
-  { label:"Demo deck",                 note:"11 slides · speaker notes",
+  { label:"Demo deck",                 note:"11 slides Â· speaker notes",
     en:"FlowSync_Demo_Deck_EN.pptx",   es:"FlowSync_Demo_Deck_ES.pptx" },
   { label:"User Guide",                note:"role-based user guide",
     en:"FlowSync_User_Guide_EN.docx",  es:"FlowSync_Guia_de_Usuario_ES.docx" },
   { label:"Business Info & Security",  note:"for IT / compliance review",
     en:"FlowSync_Business_Information_Security.docx", es:"FlowSync_Informacion_Comercial_Seguridad_ES.docx" },
-  { label:"Service Policies",          note:"SLA · uptime · retention",
+  { label:"Service Policies",          note:"SLA Â· uptime Â· retention",
     en:"FlowSync_Service_Policies.docx", es:"FlowSync_Politicas_de_Servicio_ES.docx" },
   { label:"Enterprise vs Business",    note:"plan justification",
     en:"FlowSync_Enterprise_vs_Business.docx", es:"FlowSync_Enterprise_vs_Business_ES.docx" },
@@ -128,7 +128,7 @@ const KIT: { label:string; note:string; en?:string; es?:string }[] = [
     en:"FlowSync_Sample_Enterprise_Invoice.docx", es:"FlowSync_Factura_Enterprise_Muestra_ES.docx" },
   { label:"Entra ID / AD One-Pager",   note:"SSO for customer IT",
     en:"FlowSync_EntraID_SSO_OnePager.docx", es:"FlowSync_EntraID_SSO_ES.docx" },
-  { label:"Master Subscription Agreement", note:"DRAFT — attorney review",
+  { label:"Master Subscription Agreement", note:"DRAFT â€” attorney review",
     en:"FlowSync_Master_Subscription_Agreement_DRAFT.docx", es:"FlowSync_Acuerdo_Maestro_Suscripcion_BORRADOR_ES.docx" },
   { label:"Competitive Benchmark",     note:"vs. MS Project, Monday, Asana, Smartsheet, Wrike, ClickUp",
     en:"FlowSync_Competitive_Benchmark_EN.docx", es:"FlowSync_Benchmark_Competitivo_ES.docx" },
@@ -138,8 +138,8 @@ function SalesKit() {
   return (
     <div style={{ marginTop:18, background:"#fff", border:"1px solid #E2E8F0", borderRadius:10, padding:"14px 16px" }}>
       <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:10 }}>
-        <h2 style={{ fontSize:14, fontWeight:700, color:NAVY }}>📦 Sales &amp; Enterprise Kit</h2>
-        <span style={{ fontSize:11, color:"#94A3B8" }}>customer-facing collateral · Jul 2026</span>
+        <h2 style={{ fontSize:14, fontWeight:700, color:NAVY }}>ðŸ“¦ Sales &amp; Enterprise Kit</h2>
+        <span style={{ fontSize:11, color:"#94A3B8" }}>customer-facing collateral Â· Jul 2026</span>
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(240px, 1fr))", gap:8 }}>
         {KIT.map(d => (
@@ -186,7 +186,7 @@ const th: React.CSSProperties = { textAlign:"left", padding:"9px 12px", fontSize
 const td: React.CSSProperties = { padding:"9px 12px", fontSize:12.5, color:"#334155",
   borderBottom:"1px solid #F1F5F9", whiteSpace:"nowrap" }
 
-const fmt = (d: any) => d ? new Date(d).toLocaleDateString(dateLocale(),{ month:"short", day:"numeric", year:"numeric" }) : "—"
+const fmt = (d: any) => d ? new Date(d).toLocaleDateString(dateLocale(),{ month:"short", day:"numeric", year:"numeric" }) : "â€”"
 const ago = (d: any) => {
   if (!d) return "never"
   const days = Math.floor((Date.now() - new Date(d).getTime()) / 864e5)
@@ -224,12 +224,12 @@ function WorkspaceTable({ rows, onManage }: { rows:any[]; onManage:(w:any)=>void
               <td style={td}>
                 {onTrial
                   ? <Pill text={`${daysLeft}d left`} color={daysLeft <= 7 ? RED : AMBER} />
-                  : <span style={{ color:"#CBD5E1" }}>—</span>}
+                  : <span style={{ color:"#CBD5E1" }}>â€”</span>}
               </td>
               <td style={td}>
                 {w.stripeCustomerId
                   ? <Pill text="STRIPE" color={GREEN} />
-                  : <span style={{ color:"#CBD5E1" }}>—</span>}
+                  : <span style={{ color:"#CBD5E1" }}>â€”</span>}
                 {w.ssoEnabled && <span style={{ marginLeft:5 }}><Pill text="SSO" color="#7C3AED" /></span>}
               </td>
               <td style={{ ...td, color:"#64748B" }}>{fmt(w.createdAt)}</td>
@@ -267,8 +267,8 @@ function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>voi
                 {u.name}
                 <div style={{ fontSize:10.5, color:"#94A3B8", fontWeight:400 }}>{u.email}</div>
               </td>
-              <td style={td}>{m?.workspace?.name || <span style={{ color:"#CBD5E1" }}>—</span>}</td>
-              <td style={td}>{m?.role ? <Pill text={m.role} color={STEEL} /> : "—"}</td>
+              <td style={td}>{m?.workspace?.name || <span style={{ color:"#CBD5E1" }}>â€”</span>}</td>
+              <td style={td}>{m?.role ? <Pill text={m.role} color={STEEL} /> : "â€”"}</td>
               <td style={td}>
                 {providers.length
                   ? providers.map((p:any) => (
@@ -276,7 +276,7 @@ function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>voi
                         <Pill text={p === "EMAIL" ? "password" : p.replace("microsoft-entra-id","microsoft")} color="#64748B" />
                       </span>
                     ))
-                  : <span style={{ color:"#CBD5E1" }}>—</span>}
+                  : <span style={{ color:"#CBD5E1" }}>â€”</span>}
               </td>
               <td style={td}>
                 <Pill text={u.isActive ? "ACTIVE" : "DISABLED"} color={u.isActive ? GREEN : RED} />
@@ -286,8 +286,8 @@ function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>voi
               <td style={{ ...td, whiteSpace:"nowrap" }}>
                 <button disabled={busy}
                   onClick={() => onAction({ action:"sendReset", userId:u.id })}
-                  style={miniBtn} title="Emails a single-use reset link — you never see the password">
-                  🔑 Reset
+                  style={miniBtn} title="Emails a single-use reset link â€” you never see the password">
+                  ðŸ”‘ Reset
                 </button>
                 <button disabled={busy}
                   onClick={() => onAction({ action:"toggleUser", userId:u.id, isActive: !u.isActive })}
@@ -295,7 +295,7 @@ function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>voi
                   {u.isActive ? "Disable" : "Enable"}
                 </button>
                 <button disabled={busy}
-                  title="Permanent. Refused while the user still owns content — delete their workspace first."
+                  title="Permanent. Refused while the user still owns content â€” delete their workspace first."
                   onClick={() => {
                     const typed = prompt(`Type the user's email exactly to delete them permanently:\n\n${u.email}`)
                     if (typed === null) return
@@ -336,9 +336,9 @@ function LeadTable({ rows, onAction, busy }: { rows:any[]; onAction:(a:any)=>voi
               {d.phone && <div style={{ fontSize:10.5, color:"#94A3B8", fontWeight:400 }}>{d.phone}</div>}
             </td>
             <td style={td}>{d.company}</td>
-            <td style={td}>{d.teamSize || "—"}</td>
+            <td style={td}>{d.teamSize || "â€”"}</td>
             <td style={{ ...td, whiteSpace:"normal", maxWidth:280, color:"#475569", fontSize:11.5 }}>
-              {d.message || <span style={{ color:"#CBD5E1" }}>—</span>}
+              {d.message || <span style={{ color:"#CBD5E1" }}>â€”</span>}
             </td>
             <td style={td}><Pill text={d.source} color="#64748B" /></td>
             <td style={{ ...td, color:"#64748B" }}>{ago(d.createdAt)}</td>
@@ -367,7 +367,7 @@ const miniBtn: React.CSSProperties = {
 
 // Only the plans we actually sell (Trial=FREE, Starter, Business, Enterprise).
 // PRO / PROFESSIONAL / CONSULTANT remain valid DB enum values for legacy rows
-// but are no longer assignable — offering them here caused plan-picker
+// but are no longer assignable â€” offering them here caused plan-picker
 // inconsistency with the Billing page.
 const PLAN_OPTIONS = ["FREE","STARTER","BUSINESS","ENTERPRISE"]
 const PLAN_LABELS: Record<string,string> = { FREE: "FREE (Trial tier)" }
@@ -389,10 +389,10 @@ function ManageDrawer({ w, onClose, onAction, busy }: {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
           <div style={{ fontSize:16, fontWeight:700, color:NAVY }}>{w.name}</div>
           <button onClick={onClose} style={{ background:"none", border:"none", fontSize:20,
-            color:"#94A3B8", cursor:"pointer", lineHeight:1 }}>×</button>
+            color:"#94A3B8", cursor:"pointer", lineHeight:1 }}>Ã—</button>
         </div>
         <div style={{ fontSize:11.5, color:"#64748B", marginBottom:16 }}>
-          /{w.slug} · {w._count.members} members · {w._count.projects} projects
+          /{w.slug} Â· {w._count.members} members Â· {w._count.projects} projects
         </div>
 
         <Row label="Plan">
@@ -434,7 +434,7 @@ function ManageDrawer({ w, onClose, onAction, busy }: {
           <div style={{ fontSize:10.5, fontWeight:700, color:"#B91C1C", textTransform:"uppercase",
             letterSpacing:".05em", marginBottom:4 }}>Danger zone</div>
           <div style={{ fontSize:10.5, color:"#7F1D1D", lineHeight:1.5, marginBottom:8 }}>
-            Deletes the workspace and everything in it — projects, tasks, budget, documents,
+            Deletes the workspace and everything in it â€” projects, tasks, budget, documents,
             memberships. Users themselves survive and can be deleted separately afterwards.
           </div>
           <button disabled={busy}
@@ -449,7 +449,7 @@ function ManageDrawer({ w, onClose, onAction, busy }: {
         </div>
 
         <div style={{ marginTop:14, fontSize:10.5, color:"#94A3B8", lineHeight:1.5 }}>
-          Billing is managed in Stripe. Changing the plan here sets entitlement only — it does not
+          Billing is managed in Stripe. Changing the plan here sets entitlement only â€” it does not
           charge or refund anyone.
         </div>
       </div>

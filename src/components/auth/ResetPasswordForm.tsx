@@ -1,5 +1,5 @@
+﻿"use client"
 // src/components/auth/ResetPasswordForm.tsx
-"use client"
 import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -43,7 +43,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
       <div>
         <div style={errBox}>{t("resetLinkInvalid")}</div>
         <Link href="/auth/forgot-password" style={{ color:"var(--steel)", fontSize:13, fontWeight:600, textDecoration:"none" }}>
-          {t("requestNewLink")} →
+          {t("requestNewLink")} â†’
         </Link>
       </div>
     )
@@ -54,7 +54,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
       <div style={{ background:"rgba(5,150,105,.12)", border:"1px solid rgba(5,150,105,.4)",
         borderRadius:"var(--radius)", padding:"14px 16px" }}>
         <div style={{ fontSize:14, fontWeight:600, color:"#34D399", marginBottom:4 }}>
-          ✓ {t("passwordUpdated")}
+          âœ“ {t("passwordUpdated")}
         </div>
         <div style={{ fontSize:13, color:"rgba(255,255,255,.7)" }}>{t("redirectingToSignIn")}</div>
       </div>
@@ -81,7 +81,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
       </form>
       <div style={{ marginTop:18, textAlign:"center" }}>
         <Link href="/auth/signin" style={{ color:"rgba(255,255,255,.55)", fontSize:13, textDecoration:"none" }}>
-          ← {t("backToSignIn")}
+          â† {t("backToSignIn")}
         </Link>
       </div>
     </div>

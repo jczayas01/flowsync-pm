@@ -1,5 +1,5 @@
+﻿"use client"
 // src/components/dashboard/WelcomeBanner.tsx
-"use client"
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
@@ -30,7 +30,7 @@ export function WelcomeBanner({ workspaceName }: { workspaceName: string }) {
       animation: 'slideDown .3s ease',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ fontSize: 36 }}>🎉</div>
+        <div style={{ fontSize: 36 }}>ðŸŽ‰</div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 3 }}>
             Welcome to {workspaceName}!
@@ -65,7 +65,7 @@ export function WelcomeBanner({ workspaceName }: { workspaceName: string }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: 'var(--font)' }}
         >
-          ×
+          Ã—
         </button>
       </div>
       <style>{`@keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:none; } }`}</style>

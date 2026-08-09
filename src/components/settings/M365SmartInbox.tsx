@@ -1,8 +1,8 @@
+﻿"use client"
 // src/components/settings/M365SmartInbox.tsx
-"use client"
 // The missing last mile of the M365 integration: a "Sync now" button that
-// calls /api/m365/sync and a review panel for what was detected — emails,
-// meetings, and Teams mentions matched to projects — with one-click apply
+// calls /api/m365/sync and a review panel for what was detected â€” emails,
+// meetings, and Teams mentions matched to projects â€” with one-click apply
 // through the existing acceptSuggestion actions.
 import { useState } from "react"
 import { useTranslations } from "next-intl"
@@ -29,7 +29,7 @@ function mapPayload(d: any): Item[] {
     const task  = e.detectedType === "TASK_UPDATE"
     items.push({
       kind: "email", id: e.emailId, title: e.subject || "(no subject)",
-      meta: `✉️ ${e.from} · ${new Date(e.receivedAt).toLocaleString()}`,
+      meta: `âœ‰ï¸ ${e.from} Â· ${new Date(e.receivedAt).toLocaleString()}`,
       snippet: e.snippet,
       projectId: e.projectId, projectLabel: e.projectCode || e.projectName,
       action: risky ? "log_risk" : task ? "create_task" : "log_minutes",
@@ -44,7 +44,7 @@ function mapPayload(d: any): Item[] {
   for (const m of d?.meetings ?? []) {
     items.push({
       kind: "meeting", id: m.meetingId, title: m.subject || "(meeting)",
-      meta: `📅 ${m.organizer} · ${new Date(m.startTime).toLocaleString()} · ${m.durationMinutes} min`,
+      meta: `ðŸ“… ${m.organizer} Â· ${new Date(m.startTime).toLocaleString()} Â· ${m.durationMinutes} min`,
       snippet: m.suggestedMinutes || (m.actionItems?.length ? `Action items: ${m.actionItems.join("; ")}` : undefined),
       projectId: m.projectId, projectLabel: m.projectCode,
       action: "log_minutes", actionLabel: "logMinutes",
@@ -59,7 +59,7 @@ function mapPayload(d: any): Item[] {
   for (const c of d?.chats ?? []) {
     items.push({
       kind: "chat", id: c.messageId, title: `${c.teamName} / ${c.channelName}`,
-      meta: `💬 ${c.sender} · ${new Date(c.sentAt).toLocaleString()}`,
+      meta: `ðŸ’¬ ${c.sender} Â· ${new Date(c.sentAt).toLocaleString()}`,
       snippet: c.content,
       projectId: c.projectId, projectLabel: null,
       action: c.hasTaskMention ? "create_task" : "log_minutes",
@@ -91,26 +91,26 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
       if (!res.ok) {
         setError(d?.error || (res.status === 503
           ? "The integration flag is not enabled on the server."
-          : "Sync failed — check your Microsoft connection."))
+          : "Sync failed â€” check your Microsoft connection."))
         setItems(null); return
       }
       setItems(mapPayload(d.data))
       setConnLost(!!d.data?.connectionError)
       setSyncedAt(new Date().toLocaleTimeString())
     } catch {
-      setError("Sync failed — network error.")
+      setError("Sync failed â€” network error.")
     } finally { setSyncing(false) }
   }
 
   async function apply(it: Item) {
     if (!it.projectId) return
-    setApplied(a => ({ ...a, [it.id]: "…" }))
+    setApplied(a => ({ ...a, [it.id]: "â€¦" }))
     const res = await fetch(`/api/m365/sync?days=${days}&unread=${unreadOnly ? 1 : 0}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: it.kind, entityId: it.id, projectId: it.projectId, action: it.action, data: it.data }),
     })
     const d = await res.json().catch(() => ({}))
-    setApplied(a => ({ ...a, [it.id]: res.ok ? (d?.data?.message || "Applied ✓") : (d?.error || "Failed") }))
+    setApplied(a => ({ ...a, [it.id]: res.ok ? (d?.data?.message || "Applied âœ“") : (d?.error || "Failed") }))
   }
 
   if (!connected) return null
@@ -123,7 +123,7 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
           <div style={{ fontSize:13.5, fontWeight:700, color:NAVY }}>{mi("Smart inbox")}</div>
           <div style={{ fontSize:11.5, color:SLATE }}>
             {mi("detectionHint")}
-            {syncedAt && ` · ${mi("lastSync",{t:syncedAt})}`}
+            {syncedAt && ` Â· ${mi("lastSync",{t:syncedAt})}`}
           </div>
         </div>
         <select value={days} onChange={e => setDays(Number(e.target.value))}
@@ -146,7 +146,7 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
           style={{ padding:"9px 18px", background: syncing ? "#94A3B8" : STEEL, color:"#fff",
             border:"none", borderRadius:8, fontSize:12.5, fontWeight:700,
             cursor: syncing ? "default" : "pointer", fontFamily:"var(--font)" }}>
-          {syncing ? mi("Syncing…") : mi("Sync now")}
+          {syncing ? mi("Syncingâ€¦") : mi("Sync now")}
         </button>
       </div>
 

@@ -1,14 +1,14 @@
+﻿"use client"
 // src/lib/track.ts
 //
 // One place for the marketing funnel events, so every call site sends the same
 // parameter names and GA4 can actually group them.
 //
 // Why this exists: the analytics showed 11 form_start and zero sign_up. That
-// tells you people are dropping, but not where — the automatic events don't
+// tells you people are dropping, but not where â€” the automatic events don't
 // know the difference between the nav CTA and the pricing CTA, or between a
 // visitor who read the Spanish page and one who read the English one.
 
-"use client"
 
 import { sendGAEvent } from "@next/third-parties/google"
 
@@ -27,7 +27,7 @@ function send(name: string, params: Params = {}) {
   } catch { /* analytics must never break a click */ }
 }
 
-/** A call-to-action was clicked. `location` says which one — nav, hero, pricing, footer. */
+/** A call-to-action was clicked. `location` says which one â€” nav, hero, pricing, footer. */
 export const trackCta = (location: string, label?: string) =>
   send("cta_click", { location, label })
 
@@ -39,7 +39,7 @@ export const trackLanguage = (to: "en" | "es", from: string) =>
 export const trackSignIn = (location: string) =>
   send("signin_click", { location })
 
-/** The sign-up form was actually engaged with — the step before sign_up. */
+/** The sign-up form was actually engaged with â€” the step before sign_up. */
 export const trackSignUpStarted = (method = "password") =>
   send("sign_up_started", { method })
 

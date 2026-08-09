@@ -1,5 +1,5 @@
+﻿"use client"
 // src/components/settings/DeleteRolesPanel.tsx
-"use client"
 // Admin panel: which workspace roles may delete Projects / Programs /
 // Portfolios. SUPER_ADMIN and OWNER are always on and shown locked.
 import { useEffect, useState } from "react"
@@ -46,7 +46,7 @@ export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string })
       body: JSON.stringify({ [entity]: next[entity] }),
     })
     setSaving(false)
-    if (!res.ok) { setError("Save failed — change reverted."); setRoles(roles) }
+    if (!res.ok) { setError("Save failed â€” change reverted."); setRoles(roles) }
   }
 
   if (error && !roles) return null
@@ -56,7 +56,7 @@ export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string })
     <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:10, marginTop:18 }}>
       <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
         <div style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>
-          🗑 {dr("Deletion permissions")} {saving && <span style={{ fontSize:11, color:"var(--text-3)", fontWeight:400 }}>· {dr("saving…")}</span>}
+          ðŸ—‘ {dr("Deletion permissions")} {saving && <span style={{ fontSize:11, color:"var(--text-3)", fontWeight:400 }}>Â· {dr("savingâ€¦")}</span>}
         </div>
         <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:2 }}>
           {dr("hint")}

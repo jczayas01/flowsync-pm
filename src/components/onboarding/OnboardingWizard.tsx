@@ -1,10 +1,10 @@
+﻿"use client"
 // src/components/onboarding/OnboardingWizard.tsx
-"use client"
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
-// ─── Types ───────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type Step = 'workspace' | 'methodology' | 'team'
 
 interface FormData {
@@ -25,9 +25,9 @@ interface FormData {
 const STEPS: Step[] = ['workspace', 'methodology', 'team']
 
 const STEP_META = {
-  workspace:   { num: 1, label: 'Workspace',   icon: '🏢' },
-  methodology: { num: 2, label: 'Methodology', icon: '⚙️' },
-  team:        { num: 3, label: 'Invite team',   icon: '👥' },
+  workspace:   { num: 1, label: 'Workspace',   icon: 'ðŸ¢' },
+  methodology: { num: 2, label: 'Methodology', icon: 'âš™ï¸' },
+  team:        { num: 3, label: 'Invite team',   icon: 'ðŸ‘¥' },
 }
 
 const TIMEZONES = [
@@ -37,11 +37,11 @@ const TIMEZONES = [
 ]
 
 const CURRENCIES = [
-  { code: 'USD', label: 'USD — US Dollar' },
-  { code: 'EUR', label: 'EUR — Euro' },
-  { code: 'GBP', label: 'GBP — British Pound' },
-  { code: 'CAD', label: 'CAD — Canadian Dollar' },
-  { code: 'MXN', label: 'MXN — Mexican Peso' },
+  { code: 'USD', label: 'USD â€” US Dollar' },
+  { code: 'EUR', label: 'EUR â€” Euro' },
+  { code: 'GBP', label: 'GBP â€” British Pound' },
+  { code: 'CAD', label: 'CAD â€” Canadian Dollar' },
+  { code: 'MXN', label: 'MXN â€” Mexican Peso' },
 ]
 
 const ROLES = [
@@ -54,7 +54,7 @@ const ROLES = [
 const METHODOLOGIES = [
   {
     id: 'WATERFALL',
-    icon: '📋',
+    icon: 'ðŸ“‹',
     name: 'Waterfall',
     tagline: 'Sequential phases with approval gates',
     desc: 'Best for projects with defined scope, fixed budgets, and regulatory requirements. Common in construction, ERP deployments, and regulated programs.',
@@ -64,7 +64,7 @@ const METHODOLOGIES = [
   },
   {
     id: 'AGILE',
-    icon: '🔄',
+    icon: 'ðŸ”„',
     name: 'Agile',
     tagline: 'Iterative delivery with continuous feedback',
     desc: 'Best for projects where requirements evolve. Work in sprints, deliver incrementally, and respond to change without losing control of scope.',
@@ -74,17 +74,17 @@ const METHODOLOGIES = [
   },
   {
     id: 'SCRUM',
-    icon: '🏃',
+    icon: 'ðŸƒ',
     name: 'Scrum',
     tagline: 'Full Scrum framework with all ceremonies',
-    desc: 'Full Scrum implementation — daily standups, sprint reviews, retrospectives, definition of done, and story point estimation built in.',
+    desc: 'Full Scrum implementation â€” daily standups, sprint reviews, retrospectives, definition of done, and story point estimation built in.',
     features: ['Full ceremony support', 'Story point estimation', 'Sprint retrospectives', 'Velocity & capacity'],
     color: '#7C3AED',
     bg: '#F5F3FF',
   },
   {
     id: 'HYBRID',
-    icon: '🔀',
+    icon: 'ðŸ”€',
     name: 'Hybrid',
     tagline: 'Waterfall governance with agile delivery',
     desc: 'Best when leadership needs phase gates and baselines but teams deliver in iterations. Combine formal planning with sprint-based execution.',
@@ -97,55 +97,55 @@ const METHODOLOGIES = [
 const TEMPLATES = [
   {
     id: 'system-implementation',
-    icon: '🧩',
+    icon: 'ðŸ§©',
     name: 'System Implementation',
-    desc: '36-week Waterfall · 5 phases · compliance checkpoints',
+    desc: '36-week Waterfall Â· 5 phases Â· compliance checkpoints',
     methodology: 'WATERFALL',
     color: '#059669',
   },
   {
     id: 'software-dev-scrum',
-    icon: '🏃',
+    icon: 'ðŸƒ',
     name: 'Software Development (Scrum)',
-    desc: '12-week Scrum · Backlog · Sprint board · DoD',
+    desc: '12-week Scrum Â· Backlog Â· Sprint board Â· DoD',
     methodology: 'SCRUM',
     color: '#7C3AED',
   },
   {
     id: 'cloud-migration',
-    icon: '☁️',
+    icon: 'â˜ï¸',
     name: 'Cloud Migration (AWS/Azure)',
-    desc: '24-week Waterfall · Discovery → Cutover',
+    desc: '24-week Waterfall Â· Discovery â†’ Cutover',
     methodology: 'WATERFALL',
     color: '#0891B2',
   },
   {
     id: 'regulatory-compliance',
-    icon: '🔒',
+    icon: 'ðŸ”’',
     name: 'Compliance Program',
-    desc: '16-week · Risk analysis · Policy library',
+    desc: '16-week Â· Risk analysis Â· Policy library',
     methodology: 'WATERFALL',
     color: '#DC2626',
   },
   {
     id: 'saas-product-launch',
-    icon: '🚀',
+    icon: 'ðŸš€',
     name: 'SaaS Product Launch',
-    desc: '24-week Scrum · MVP → Beta → Launch',
+    desc: '24-week Scrum Â· MVP â†’ Beta â†’ Launch',
     methodology: 'SCRUM',
     color: '#7C3AED',
   },
   {
     id: 'web-platform',
-    icon: '📱',
+    icon: 'ðŸ“±',
     name: 'Web Platform Launch',
-    desc: '20-week Agile · integrations · accessibility standards',
+    desc: '20-week Agile Â· integrations Â· accessibility standards',
     methodology: 'AGILE',
     color: '#1B6CA8',
   },
 ]
 
-// ─── Main component ───────────────────────────
+// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function OnboardingWizard({ userId, userName, userEmail = '' }: {
   userId:    string
   userEmail: string
@@ -235,7 +235,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           const d = await wsRes.json()
           ws = d.data
         } else {
-          // Workspace already exists — update it
+          // Workspace already exists â€” update it
           await fetch('/api/workspace', {
             method:  'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -261,7 +261,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           }),
         })
         if (!projRes.ok) {
-          console.warn('[Onboarding] Project creation failed — continuing')
+          console.warn('[Onboarding] Project creation failed â€” continuing')
         }
       }
 
@@ -284,7 +284,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
     }
   }
 
-  // ─── Shared styles ─────────────────────────
+  // â”€â”€â”€ Shared styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const s = {
     input: {
       width: '100%', padding: '11px 14px',
@@ -331,7 +331,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
     }}>
       <div style={{ width: '100%', maxWidth: 560 }}>
 
-        {/* ── Logo ── */}
+        {/* â”€â”€ Logo â”€â”€ */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
           gap:9, marginBottom:36 }}>
           <div style={{ width:30,height:30,background:'var(--steel)',borderRadius:8,position:'relative' }}>
@@ -343,7 +343,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           </span>
         </div>
 
-        {/* ── Step progress ── */}
+        {/* â”€â”€ Step progress â”€â”€ */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display:'flex', gap:6, marginBottom:12 }}>
             {STEPS.map((s, i) => (
@@ -373,7 +373,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           </div>
         </div>
 
-        {/* ── Card ── */}
+        {/* â”€â”€ Card â”€â”€ */}
         <div style={{
           background: 'rgba(255,255,255,.04)',
           border: '1px solid rgba(255,255,255,.09)',
@@ -393,14 +393,14 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
             </div>
           )}
 
-          {/* ════════════════════════
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
               STEP 1: WORKSPACE
-          ════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {step === 'workspace' && (
             <>
               <div style={{ marginBottom:24 }}>
                 <h2 style={{ fontSize:22,fontWeight:600,color:'#fff',marginBottom:6 }}>
-                  Welcome, {firstName}! 👋
+                  Welcome, {firstName}! ðŸ‘‹
                 </h2>
                 <p style={{ fontSize:14,color:'rgba(255,255,255,.45)',lineHeight:1.65 }}>
                   Let's set up your workspace. This is where all your projects, team members, and data will live.
@@ -439,7 +439,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       ))}
                     </select>
                     <span style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
-                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>▾</span>
+                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>â–¾</span>
                   </div>
                 </div>
                 <div>
@@ -455,7 +455,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       ))}
                     </select>
                     <span style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
-                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>▾</span>
+                      pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:10 }}>â–¾</span>
                   </div>
                 </div>
               </div>
@@ -466,15 +466,15 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                   onClick={advance}
                   disabled={!canAdvance()}
                 >
-                  Continue →
+                  Continue â†’
                 </button>
               </div>
             </>
           )}
 
-          {/* ════════════════════════
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
               STEP 2: METHODOLOGY
-          ════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {step === 'methodology' && (
             <>
               <div style={{ marginBottom:24 }}>
@@ -482,7 +482,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                   How does your team work?
                 </h2>
                 <p style={{ fontSize:14,color:'rgba(255,255,255,.45)',lineHeight:1.65 }}>
-                  Choose your primary methodology. You can use all three in FlowSync PM — this just sets the default for new projects.
+                  Choose your primary methodology. You can use all three in FlowSync PM â€” this just sets the default for new projects.
                 </p>
               </div>
 
@@ -528,7 +528,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                               {m.features.map(f => (
                                 <span key={f} style={{ fontSize:10,fontWeight:600,padding:'2px 8px',
                                   borderRadius:4,background:`${m.color}25`,color:m.color }}>
-                                  ✓ {f}
+                                  âœ“ {f}
                                 </span>
                               ))}
                             </div>
@@ -541,21 +541,21 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
               </div>
 
               <div style={{ display:'flex', gap:8 }}>
-                <button style={s.btnBack} onClick={back}>← Back</button>
+                <button style={s.btnBack} onClick={back}>â† Back</button>
                 <button
                   style={s.btnPrimary}
                   onClick={advance}
                   disabled={!canAdvance()}
                 >
-                  Continue →
+                  Continue â†’
                 </button>
               </div>
             </>
           )}
 
-          {/* ════════════════════════
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
               STEP 3: FIRST PROJECT
-          ════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           {step === 'team' && (
             <>
               <div style={{ marginBottom:20 }}>
@@ -593,7 +593,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                         ))}
                       </select>
                       <span style={{ position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',
-                        pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:9 }}>▾</span>
+                        pointerEvents:'none',color:'rgba(255,255,255,.35)',fontSize:9 }}>â–¾</span>
                     </div>
                     {form.invites.length > 1 && (
                       <button
@@ -604,7 +604,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                           display:'flex',alignItems:'center',justifyContent:'center',
                           fontFamily:'var(--font)',flexShrink:0 }}
                       >
-                        ×
+                        Ã—
                       </button>
                     )}
                   </div>
@@ -631,11 +631,11 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                   Your workspace summary
                 </div>
                 {[
-                  ['🏢 Workspace',     form.workspaceName],
-                  ['⚙️ Methodology',   form.methodology || '—'],
-                  ['📁 First project', form.projectName || (form.templateId ? `From template` : 'None — add later')],
-                  ['🌍 Timezone',      form.timezone],
-                  ['💵 Currency',      form.currency],
+                  ['ðŸ¢ Workspace',     form.workspaceName],
+                  ['âš™ï¸ Methodology',   form.methodology || 'â€”'],
+                  ['ðŸ“ First project', form.projectName || (form.templateId ? `From template` : 'None â€” add later')],
+                  ['ðŸŒ Timezone',      form.timezone],
+                  ['ðŸ’µ Currency',      form.currency],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display:'flex', justifyContent:'space-between',
                     fontSize:12, padding:'4px 0',
@@ -647,7 +647,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
               </div>
 
               <div style={{ display:'flex', gap:8 }}>
-                <button style={s.btnBack} onClick={back} disabled={loading}>← Back</button>
+                <button style={s.btnBack} onClick={back} disabled={loading}>â† Back</button>
                 <button
                   style={{ ...s.btnPrimary, background:'var(--amber)', color:'var(--navy)',
                     cursor: loading ? 'wait' : 'pointer',
@@ -660,10 +660,10 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       <span style={{ width:14,height:14,border:'2px solid rgba(0,0,0,.2)',
                         borderTopColor:'var(--navy)',borderRadius:'50%',
                         display:'inline-block',animation:'spin .7s linear infinite' }} />
-                      Setting up…
+                      Setting upâ€¦
                     </span>
                   ) : (
-                    form.invites.some(i => i.email.trim()) ? 'Get started →' : 'Skip & launch →'
+                    form.invites.some(i => i.email.trim()) ? 'Get started â†’' : 'Skip & launch â†’'
                   )}
                 </button>
               </div>
@@ -671,10 +671,10 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
           )}
         </div>
 
-        {/* ── Footer note ── */}
+        {/* â”€â”€ Footer note â”€â”€ */}
         <p style={{ textAlign:'center', fontSize:11,
           color:'rgba(255,255,255,.2)', marginTop:20, lineHeight:1.6 }}>
-          Step {stepIdx + 1} of {STEPS.length} · Your data is encrypted and never shared.
+          Step {stepIdx + 1} of {STEPS.length} Â· Your data is encrypted and never shared.
         </p>
       </div>
 

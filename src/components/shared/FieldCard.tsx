@@ -1,8 +1,8 @@
+﻿"use client"
 // src/components/shared/FieldCard.tsx
 // Read view for free-text document fields, styled to match the WBS Dictionary
-// entry card — accent rail, monospace label chip, formatted content. Used by
+// entry card â€” accent rail, monospace label chip, formatted content. Used by
 // Governance and the Quality tab so every document section reads the same way.
-"use client"
 
 export function FieldCard({ label, value, icon }: { label: string; value: string; icon?: string }) {
   const empty = !value?.trim()
@@ -30,7 +30,7 @@ export function FieldCard({ label, value, icon }: { label: string; value: string
   )
 }
 
-/** Right-aligned Edit / Cancel toggle — same placement as WBS's "+ Add WBS entry". */
+/** Right-aligned Edit / Cancel toggle â€” same placement as WBS's "+ Add WBS entry". */
 export function EditToggle({ editing, onClick }: { editing: boolean; onClick: () => void }) {
   return (
     <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
@@ -39,7 +39,7 @@ export function EditToggle({ editing, onClick }: { editing: boolean; onClick: ()
           color: editing ? "var(--text-2)" : "#fff",
           border: editing ? "1px solid var(--border)" : "none",
           borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)" }}>
-        {editing ? "Cancel" : "✏️ Edit"}
+        {editing ? "Cancel" : "âœï¸ Edit"}
       </button>
     </div>
   )

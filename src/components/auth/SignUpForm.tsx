@@ -1,5 +1,5 @@
+﻿"use client"
 // src/components/auth/SignUpForm.tsx
-"use client"
 import { sendGAEvent } from "@next/third-parties/google"
 import { trackSignUpStarted, trackSignUpFailed } from "@/lib/track"
 import { pixelTrack } from '@/components/marketing/MetaPixel'
@@ -11,7 +11,7 @@ import Link from 'next/link'
 export function SignUpForm() {
   // Arriving from "no account found" on the sign-in page carries ?email= so the
   // person doesn't type it a third time. ?callbackUrl= carries where they were
-  // headed — an invite link, most importantly: registering must accept the
+  // headed â€” an invite link, most importantly: registering must accept the
   // invitation, not dump them into onboarding to build a second workspace.
   const params = useSearchParams()
   const callbackUrl = params.get('callbackUrl') || ''
@@ -47,7 +47,7 @@ export function SignUpForm() {
       }
       sendGAEvent('event', 'sign_up', { method: 'password' })
       pixelTrack('CompleteRegistration')
-      // Account exists but can't sign in until the email is confirmed —
+      // Account exists but can't sign in until the email is confirmed â€”
       // show the check-your-inbox panel instead of signing in.
       setSent(true)
       setLoading(false)
@@ -66,15 +66,15 @@ export function SignUpForm() {
   if (sent) {
     return (
       <div style={{ textAlign:'center', padding:'8px 0' }}>
-        <div style={{ fontSize:40, marginBottom:12 }}>📬</div>
+        <div style={{ fontSize:40, marginBottom:12 }}>ðŸ“¬</div>
         <div style={{ fontSize:16, fontWeight:700, color:'#fff', marginBottom:8 }}>
-          Check your email · Revise su correo
+          Check your email Â· Revise su correo
         </div>
         <p style={{ fontSize:13, color:'rgba(255,255,255,.75)', lineHeight:1.6, marginBottom:16 }}>
           We sent a confirmation link to <strong>{form.email}</strong>. Click it to
           activate your workspace, then sign in.<br/>
-          <em>Le enviamos un enlace de confirmación. Haga clic para activar su
-          workspace y luego inicie sesión.</em>
+          <em>Le enviamos un enlace de confirmaciÃ³n. Haga clic para activar su
+          workspace y luego inicie sesiÃ³n.</em>
         </p>
         <p style={{ fontSize:12, color:'rgba(255,255,255,.5)' }}>
           Didn&apos;t get it? Check spam, or resend from the sign-in page.
@@ -127,7 +127,7 @@ export function SignUpForm() {
           borderRadius:'var(--radius)', fontSize:14, fontWeight:700, cursor:'pointer',
           fontFamily:'var(--font)', marginTop:4,
         }}>
-          {loading ? 'Creating account…' : 'Create free account →'}
+          {loading ? 'Creating accountâ€¦' : 'Create free account â†’'}
         </button>
       </form>
       <p style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,.3)', marginTop:16, lineHeight:1.6 }}>

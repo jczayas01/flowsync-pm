@@ -1,5 +1,5 @@
+﻿"use client"
 // src/components/auth/SignInForm.tsx
-"use client"
 import { useTranslations } from "next-intl"
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
@@ -23,11 +23,11 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
   // that have no password. Wrong-password stays deliberately generic.
   const [guide, setGuide]       = useState<null | { status:"none" } | { status:"oauth"; provider:string } | { status:"unverified" }>(null)
   const [resent, setResent]     = useState(false)
-  // ?verified=1 — just clicked the email confirmation link
+  // ?verified=1 â€” just clicked the email confirmation link
   const justVerified = typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('verified') === '1' 
   const dest = callbackUrl || '/dashboard'
-  // An invitee is joining someone else's workspace — telling them to "start a free
+  // An invitee is joining someone else's workspace â€” telling them to "start a free
   // trial" describes the wrong thing entirely.
   const isInvite = (callbackUrl || '').startsWith('/invite/')
 
@@ -84,14 +84,14 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
         <div style={{ background:'rgba(5,150,105,.15)', border:'1px solid rgba(5,150,105,.4)',
           color:'#6EE7B7', padding:'10px 14px', borderRadius:'var(--radius)',
           fontSize:13, marginBottom:16 }}>
-          ✓ Email confirmed — sign in to open your workspace. · Correo confirmado — inicie sesión.
+          âœ“ Email confirmed â€” sign in to open your workspace. Â· Correo confirmado â€” inicie sesiÃ³n.
         </div>
       )}
       {guide?.status === 'unverified' && (
         <div style={{ background:'rgba(245,158,11,.12)', border:'1px solid rgba(245,158,11,.35)',
           padding:'12px 14px', borderRadius:'var(--radius)', marginBottom:16 }}>
           <div style={{ fontSize:13, color:'#FDE68A', fontWeight:600, marginBottom:4 }}>
-            Confirm your email first · Confirme su correo primero
+            Confirm your email first Â· Confirme su correo primero
           </div>
           <div style={{ fontSize:12.5, color:'rgba(255,255,255,.65)', lineHeight:1.55, marginBottom:10 }}>
             We sent a confirmation link to {email}. Click it, then sign in.
@@ -110,7 +110,7 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
               color: resent ? 'rgba(255,255,255,.6)' : '#0D1B2A', border:'none',
               borderRadius:8, fontSize:12.5, fontWeight:700, cursor: resent ? 'default' : 'pointer',
               fontFamily:'var(--font)' }}>
-            {resent ? 'Sent ✓ · Enviado ✓' : 'Resend link · Reenviar enlace'}
+            {resent ? 'Sent âœ“ Â· Enviado âœ“' : 'Resend link Â· Reenviar enlace'}
           </button>
         </div>
       )}
@@ -163,7 +163,7 @@ export function SignInForm({ callbackUrl, error }: { callbackUrl?: string; error
       </div>
       <p style={{ fontSize:11.5, color:'rgba(255,255,255,.38)', lineHeight:1.6,
         textAlign:'center', marginTop:12 }}>
-        {/* First-time OAuth users are created here without a checkbox — this notice
+        {/* First-time OAuth users are created here without a checkbox â€” this notice
             is the consent, and auth's createUser event records the timestamp. */}
         By continuing with Google or Microsoft, you agree to the{' '}
         <a href="/legal/terms" target="_blank" rel="noopener" style={{ color:'rgba(255,255,255,.55)' }}>Terms</a>
