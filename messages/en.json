@@ -348,5 +348,28 @@
     "In review": "In review",
     "To do": "To do",
     "TASKS": "TASKS"
+  },
+  "tips": {
+    "advance": "Paid {amount} more than the value delivered so far. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.",
+    "overrun": "This line is fully delivered and cost {amount} more than planned. Unlike an advance, this gap will not close — it is an overrun on completed work.",
+    "unpaidPo": "Fully delivered, with {amount} of its value unpaid and {committed} still committed on an open purchase order. That points to a final payment or retainage, not a saving.",
+    "unpaidNoPo": "Fully delivered and paid {amount} less than the value earned. That is a saving only if every invoice has been received — a missing one is a liability living outside the budget.",
+    "onPlan": "Delivered, and the cost came in on plan. This is what a healthy line looks like at close.",
+    "noEvidence": "No task is linked to this line, so its earned value comes from the project-wide proportional split or a manual entry — not from measured progress. Link the tasks that consume this line to make the figure mean something.",
+    "stale": "The stored earned value no longer matches what this line's earning rule and task progress would produce. Recalculate to bring them in line.",
+    "payable": "{amount} of invoices are received or approved but not yet paid. They are owed, so they are not in Actual — but they will be.",
+    "committed": "Still committed — the part of signed purchase orders you haven't paid yet.",
+    "rule0100": "Earns nothing until the work is complete, then all of it. Right for equipment and materials — a half-installed machine has delivered nothing, and crediting it half its value is how an advance payment hides.",
+    "rule5050": "Earns half when the work starts and the rest on completion. Used for long work packages.",
+    "ruleMilestone": "Earns its full value when the work is complete, credited at the milestone.",
+    "baselineOriginal": "The first approved cost baseline — what the sponsor originally signed.",
+    "baselineCurrent": "The most recent approved baseline. Every step between it and the original was an approved change.",
+    "baselineGrowth": "How far the approved budget has moved from the original. This is baseline growth, and it is the number a PMO is asked about.",
+    "baselineDrift": "The working plan no longer matches the approved baseline. Either the change was never approved, or the baseline was never recaptured — both are worth resolving before the next report.",
+    "invRECEIVED": "The invoice has arrived and nobody has approved it yet. It is a liability, not a cost against cash — it does not count toward this line's actual.",
+    "invAPPROVED": "Approved for payment and still unpaid. Owed money that has not left the account, so it stays out of actual cost until it does.",
+    "invPAID": "Money has left the account. This is what a line's actual cost counts.",
+    "invDISPUTED": "Held pending a dispute with the vendor. Excluded from actual cost while it is contested.",
+    "pctTasks": "Share of tasks complete, weighted by estimated hours. The earned value card shows the share of budget earned — the two differ when expensive work and time-consuming work aren't the same work."
   }
 }

@@ -58,15 +58,17 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     else alert("Could not change the forecast method.")
   }
 
+  const invStatusMeta = (k: string) => ({
+    RECEIVED: { label: t("received"),          color: "var(--amber)" },
+    APPROVED: { label: t("approved, unpaid"),  color: "var(--steel)" },
+    PAID:     { label: t("paid"),              color: "var(--green)" },
+    DISPUTED: { label: t("disputed"),          color: "var(--red)" },
+  } as any)[k]
   const INV_STATUS: Record<string,{label:string;color:string;why:string}> = {
-    RECEIVED: { label:"received", color:"var(--amber)",
-      why:"The invoice has arrived and nobody has approved it yet. It is a liability, not a cost against cash — it does not count toward this line's actual." },
-    APPROVED: { label:"approved, unpaid", color:"var(--steel)",
-      why:"Approved for payment and still unpaid. Owed money that has not left the account, so it stays out of actual cost until it does." },
-    PAID:     { label:"paid", color:"var(--green)",
-      why:"Money has left the account. This is what a line's actual cost counts." },
-    DISPUTED: { label:"disputed", color:"var(--red)",
-      why:"Held pending a dispute with the vendor. Excluded from actual cost while it is contested." },
+    RECEIVED: { label:"received",          color:"var(--amber)", why: tip("invRECEIVED") },
+    APPROVED: { label:"approved, unpaid",  color:"var(--steel)", why: tip("invAPPROVED") },
+    PAID:     { label:"paid",              color:"var(--green)", why: tip("invPAID") },
+    DISPUTED: { label:"disputed",          color:"var(--red)",   why: tip("invDISPUTED") },
   }
 
   async function setInvoiceStatus(itemId: string, expenseId: string, status: string) {
@@ -286,6 +288,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     if (!res || !res.ok) setAutoEv(!next)
   }
   const t = useTranslations("budget")
+  // Tooltips carry the explanations a PM acts on. Leaving them English-only in a
+  // product that promises "bilingual end to end" undoes the promise exactly
+  // where the reader most needs to understand.
+  const tip = useTranslations("tips")
   const { can } = usePermissions()
   const router = useRouter()
 
@@ -533,7 +539,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               {recalcing ? "Recalculating…" : "↻ Recalculate EV"}
             </button>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.7)" }}>
-            <span title="Share of tasks complete, weighted by estimated hours. The earned value card shows the share of budget earned — the two differ when expensive work and time-consuming work aren't the same work.">
+            <span title={tip("pctTasks")}>
               {project?.percentComplete || 0}% of tasks
             </span>
           </div>
@@ -656,7 +662,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             background:pct>90?"var(--red)":pct>75?"var(--amber)":"var(--steel)",
             transition:"width .5s" }} />
           {committedTotal > 0 && BAC > 0 && (
-            <div title="Still committed — the part of signed POs you haven't paid yet"
+            <div title={tip("committed")}
               style={{ height:"100%", width:`${Math.min((committedTotal/BAC)*100, 100-Math.min(pct,100))}%`,
                 background:"repeating-linear-gradient(45deg, var(--amber), var(--amber) 4px, transparent 4px, transparent 8px)",
                 opacity:.75, transition:"width .5s" }} />
@@ -707,23 +713,23 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             </div>
 
             <div style={{ display:"flex", gap:22, flexWrap:"wrap", marginTop:8 }}>
-              <span title="The first approved cost baseline — what the sponsor originally signed."
+              <span title={tip("baselineOriginal")}
                 style={{ fontSize:12.5, color:"var(--text-3)", cursor:"help" }}>
                 Original <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(original,currency)}</strong>
               </span>
-              <span title="The most recent approved baseline. Every step between it and the original was an approved change."
+              <span title={tip("baselineCurrent")}
                 style={{ fontSize:12.5, color:"var(--text-3)", cursor:"help" }}>
                 Current baseline <strong style={{ color:"var(--text)", fontSize:14 }}>{fmt(latest,currency)}</strong>
               </span>
               {Math.abs(growth) >= 0.5 && (
-                <span title="How far the approved budget has moved from the original. This is baseline growth, and it is the number a PMO is asked about."
+                <span title={tip("baselineGrowth")}
                   style={{ fontSize:12.5, color: growth > 0 ? "var(--amber)" : "var(--green)",
                     fontWeight:700, cursor:"help" }}>
                   {growth > 0 ? "▲" : "▼"} {Math.abs(growth).toFixed(1)}% since original
                 </span>
               )}
               {Math.abs(drift) > 0.5 && (
-                <span title="The working plan no longer matches the approved baseline. Either the change was never approved, or the baseline was never recaptured — both are worth resolving before the next report."
+                <span title={tip("baselineDrift")}
                   style={{ fontSize:12.5, color:"var(--red)", fontWeight:700, cursor:"help" }}>
                   ⚠ plan is {fmt(Math.abs(drift),currency)} {drift > 0 ? "above" : "below"} the approved baseline
                 </span>
@@ -1117,7 +1123,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                     if (gap > tol && actual > 100) return {
                       tone: "amber",
                       text: `⚠ paid ${fmt(gap,currency)} ahead of value${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
-                      why: `Paid ${fmt(gap,currency)} more than the value delivered so far. Normal for a contractual advance — the gap closes as the work is delivered. Worth watching if delivery slips.`,
+                      why: tip("advance", { amount: fmt(gap,currency) }),
                     }
                     return null                            // in progress, nothing worth saying
                   }
@@ -1126,7 +1132,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                   if (gap > tol) return {
                     tone: "red",
                     text: `⚠ overspent by ${fmt(gap,currency)} on delivered work${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
-                    why: `This line is fully delivered and cost ${fmt(gap,currency)} more than planned. Unlike an advance, this gap will not close — it is an overrun on completed work.`,
+                    why: tip("overrun", { amount: fmt(gap,currency) }),
                   }
                   if (-gap > tol) return {
                     tone: "steel",
@@ -1134,13 +1140,13 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                       ? `${fmt(-gap,currency)} delivered but unpaid — likely an outstanding balance`
                       : `${fmt(-gap,currency)} delivered but unpaid — confirm no invoices are outstanding`,
                     why: committed > 0
-                      ? `Fully delivered, with ${fmt(-gap,currency)} of its value unpaid and ${fmt(committed,currency)} still committed on an open purchase order. That points to a final payment or retainage, not a saving.`
-                      : `Fully delivered and paid ${fmt(-gap,currency)} less than the value earned. That is a saving only if every invoice has been received — a missing one is a liability living outside the budget.`,
+                      ? tip("unpaidPo",   { amount: fmt(-gap,currency), committed: fmt(committed,currency) })
+                      : tip("unpaidNoPo", { amount: fmt(-gap,currency) }),
                   }
                   return {
                     tone: "green",
                     text: `✓ delivered on plan${lineCPI!=null?` · CPI ${lineCPI.toFixed(2)}`:""}`,
-                    why: `Delivered, and the cost came in on plan. This is what a healthy line looks like at close.`,
+                    why: tip("onPlan"),
                   }
                 })()
 
@@ -1233,7 +1239,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               {/* Stored earned value disagreeing with live task
                                   progress means the figure is stale, not wrong. */}
                               {isStale && (
-                                <span title="The stored earned value no longer matches what this line's earning rule and task progress would produce. Recalculate to bring them in line."
+                                <span title={tip("stale")}
                                   style={{ color:"var(--amber)", fontWeight:700, marginLeft:6, cursor:"help" }}>⚠ stale</span>
                               )}
                             </div>
@@ -1249,11 +1255,9 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             if (rule === "EFFORT") return null
                             const label = rule === "ZERO_HUNDRED" ? "earns 0/100"
                                         : rule === "FIFTY_FIFTY"  ? "earns 50/50" : "earns on milestone"
-                            const why = rule === "ZERO_HUNDRED"
-                              ? "Earns nothing until the work is complete, then all of it. Right for equipment and materials — a half-installed robot has delivered nothing, and crediting it half its value is how an advance payment hides."
-                              : rule === "FIFTY_FIFTY"
-                              ? "Earns half when the work starts and the rest on completion. Used for long work packages."
-                              : "Earns its full value when the work is complete, credited at the milestone."
+                            const why = rule === "ZERO_HUNDRED" ? tip("rule0100")
+                              : rule === "FIFTY_FIFTY" ? tip("rule5050")
+                              : tip("ruleMilestone")
                             return (
                               <div title={why} style={{ fontSize:10, fontWeight:700, marginTop:3,
                                 color:"var(--steel)", cursor:"help" }}>
@@ -1293,7 +1297,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             {fmt(actual,currency)} {expOpenId === item.id ? "▴" : "▾"}
                           </button>
                                                     {taskEvidence === 0 && earned > 0 && (
-                            <div title="No task is linked to this line, so its earned value comes from the project-wide proportional split or from a manual entry — not from measured progress. Link the tasks that consume this line to make the figure mean something."
+                            <div title={tip("noEvidence")}
                               style={{ fontSize:10.5, color:"var(--text-4)", marginTop:2 }}>
                               earned value not measured — no linked tasks
                             </div>
@@ -1308,7 +1312,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                        .reduce((a: number, e: any) => a + Number(e.amount || 0), 0)
                               : 0
                             return payable > 0 ? (
-                              <div title={`${fmt(payable,currency)} of invoices are received or approved but not yet paid. They are owed, so they are not in Actual — but they will be.`}
+                              <div title={tip("payable", { amount: fmt(payable,currency) })}
                                 style={{ fontSize:10.5, fontWeight:700, marginTop:2,
                                   color:"var(--steel)", cursor:"help" }}>
                                 ⏳ {fmt(payable,currency)} invoiced, unpaid

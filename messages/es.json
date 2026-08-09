@@ -348,5 +348,28 @@
     "In review": "En revisión",
     "To do": "Por hacer",
     "TASKS": "TAREAS"
+  },
+  "tips": {
+    "advance": "Se pagó {amount} más que el valor entregado hasta ahora. Normal en un adelanto contractual — la brecha se cierra conforme se entrega el trabajo. A vigilar si la entrega se atrasa.",
+    "overrun": "Esta línea está entregada por completo y costó {amount} más de lo planificado. A diferencia de un adelanto, esta brecha no se va a cerrar: es un sobrecosto sobre trabajo terminado.",
+    "unpaidPo": "Entregada por completo, con {amount} de su valor sin pagar y {committed} aún comprometidos en una orden de compra abierta. Eso apunta a un pago final o una retención, no a un ahorro.",
+    "unpaidNoPo": "Entregada por completo y pagada {amount} menos que el valor ganado. Eso es ahorro solo si llegaron todas las facturas — una que falte es un pasivo que vive fuera del presupuesto.",
+    "onPlan": "Entregada, y el costo salió en plan. Así se ve una línea sana al cierre.",
+    "noEvidence": "No hay ninguna tarea enlazada a esta línea, así que su valor ganado viene del reparto proporcional del proyecto o de una captura manual — no de avance medido. Enlaza las tareas que consumen esta línea para que la cifra signifique algo.",
+    "stale": "El valor ganado guardado ya no coincide con lo que producirían la regla de devengo de esta línea y el avance de sus tareas. Recalcula para alinearlos.",
+    "payable": "{amount} en facturas recibidas o aprobadas que todavía no se han pagado. Se deben, así que no están en Real — pero van a estarlo.",
+    "committed": "Aún comprometido — la parte de las órdenes de compra firmadas que todavía no has pagado.",
+    "rule0100": "No acredita nada hasta que el trabajo esté completo, y entonces acredita todo. Correcto para equipo y materiales — una máquina a medio instalar no ha entregado nada, y acreditarle la mitad de su valor es como se esconde un pago adelantado.",
+    "rule5050": "Acredita la mitad al iniciar el trabajo y el resto al completarlo. Se usa en paquetes de trabajo largos.",
+    "ruleMilestone": "Acredita todo su valor cuando el trabajo se completa, al lograrse el hito.",
+    "baselineOriginal": "La primera línea base de costo aprobada — lo que el patrocinador firmó originalmente.",
+    "baselineCurrent": "La línea base aprobada más reciente. Cada paso entre ella y la original fue un cambio aprobado.",
+    "baselineGrowth": "Cuánto se ha movido el presupuesto aprobado respecto al original. Esto es crecimiento de línea base, y es el número por el que le preguntan a una PMO.",
+    "baselineDrift": "El plan de trabajo ya no coincide con la línea base aprobada. O el cambio nunca se aprobó, o la línea base nunca se recapturó — ambas cosas conviene resolverlas antes del próximo reporte.",
+    "invRECEIVED": "La factura llegó y nadie la ha aprobado todavía. Es un pasivo, no un costo contra caja — no cuenta para el costo real de esta línea.",
+    "invAPPROVED": "Aprobada para pago y todavía sin pagar. Dinero debido que no ha salido de la cuenta, así que se mantiene fuera del costo real hasta que salga.",
+    "invPAID": "El dinero salió de la cuenta. Esto es lo que cuenta como costo real de la línea.",
+    "invDISPUTED": "Retenida por una disputa con el proveedor. Excluida del costo real mientras se disputa.",
+    "pctTasks": "Porcentaje de tareas completadas, ponderado por horas estimadas. La tarjeta de valor ganado muestra el porcentaje del presupuesto acreditado — las dos difieren cuando el trabajo caro y el trabajo largo no son el mismo trabajo."
   }
 }
