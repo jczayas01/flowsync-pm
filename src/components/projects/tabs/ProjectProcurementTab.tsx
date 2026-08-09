@@ -4,6 +4,7 @@
 // Tracks contracts, POs, SOWs, MSAs, NDAs per project
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { useEffect, useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -28,7 +29,7 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n:number|null|undefined, currency="USD") {
   if (!n) return "—"

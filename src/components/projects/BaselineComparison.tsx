@@ -5,10 +5,11 @@
 // Variance (days): positive = later than baseline (slip), negative = ahead.
 
 import { useMemo, useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 
 function toDate(d: any): Date | null { return d ? new Date(d) : null }
 function fmtD(d: any): string {
-  return d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone:"UTC" }) : "—"
+  return d ? new Date(d).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone:"UTC" }) : "—"
 }
 function dayVar(orig: any, cur: any): number | null {
   const a = toDate(orig), b = toDate(cur)

@@ -5,6 +5,7 @@
 // Every section is inline-editable. Prints cleanly as a single page.
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -18,7 +19,7 @@ import { getRoleDef } from "@/lib/roles"
 
 function fmtDate(d: string | Date | null | undefined) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), { month:"long", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n: number, currency = "USD") {
   if (n >= 1_000_000) return `${currency} ${(n/1_000_000).toFixed(2)}M`
@@ -417,7 +418,7 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
             display:"flex", justifyContent:"space-between",
             fontSize:10, color:"var(--text-4)" }}>
             <span>{workspaceName || "FlowSync PM"}</span>
-            <span>Generated {new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric", timeZone:"UTC" })}</span>
+            <span>Generated {new Date().toLocaleDateString(dateLocale(), { month:"long", day:"numeric", year:"numeric", timeZone:"UTC" })}</span>
           </div>
         </div>
 

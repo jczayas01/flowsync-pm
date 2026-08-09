@@ -1,6 +1,7 @@
 "use client"
 // src/components/settings/TeamSettingsView.tsx
 import { useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { isWorkspaceManager, ROLE_DESCRIPTIONS, mapDbRoleToRbac } from "@/lib/rbac/roles"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
@@ -189,7 +190,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:500, color:"var(--text)" }}>{inv.email}</div>
                 <div style={{ fontSize:11, color:"var(--text-3)" }}>
-                  Invited · Expires {new Date(inv.expiresAt).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
+                  Invited · Expires {new Date(inv.expiresAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}
                 </div>
               </div>
               <Badge variant="amber">{ROLE_LABELS[inv.role] || inv.role}</Badge>

@@ -1,6 +1,7 @@
 "use client"
 // src/components/resources/ResourcesView.tsx
 import { computeWorkload } from "@/lib/workload"
+import { dateLocale } from "@/lib/date-locale"
 import { useTranslations } from "next-intl"
 import { useState, useMemo } from "react"
 import { Avatar } from "@/components/ui"
@@ -154,7 +155,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, tasks 
                       fontWeight:600,color:i===todayIdx?"var(--steel)":"var(--text-3)",
                       borderLeft:"1px solid var(--border)",
                       background:i===todayIdx?"var(--steel-pale,#EFF6FF)":"transparent"}}>
-                      {d.toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
+                      {d.toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}
                     </div>
                   ))}
                   <div style={{padding:"6px 4px",textAlign:"center",fontSize:10,
@@ -194,7 +195,7 @@ export function ResourcesView({ members, projectAssignments, timeEntries, tasks 
                         const pct  = Math.round(hrs/CAPACITY_HRS*100)
                         const heat = heatClass(pct)
                         return (
-                          <div key={wi} title={`${hrs}h (${pct}%) — ${weekDates[wi].toLocaleDateString("en-US", { timeZone:"UTC" })}`}
+                          <div key={wi} title={`${hrs}h (${pct}%) — ${weekDates[wi].toLocaleDateString(dateLocale(), { timeZone:"UTC" })}`}
                             style={{borderLeft:"1px solid rgba(0,0,0,.05)",
                               display:"flex",alignItems:"center",justifyContent:"center",cursor:"default",
                               background:wi===todayIdx?heat.bg+"cc":heat.bg}}>

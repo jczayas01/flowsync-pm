@@ -1,6 +1,7 @@
 "use client"
 // src/components/projects/tabs/ProjectDashboardTab.tsx
 import { useTranslations } from "next-intl"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
@@ -40,7 +41,7 @@ function fmt(n: number) {
 }
 function fmtDate(d: string | Date | null | undefined) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 function startOfWeek(d: Date) {
   const c = new Date(d)
@@ -366,7 +367,7 @@ export function ProjectDashboardTab({
   const weekStart = new Date(baseWeek)
   weekStart.setDate(weekStart.getDate() + weekOffset * 7)
   const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6)
-  const weekLabel = `${weekStart.toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })} – ${weekEnd.toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}`
+  const weekLabel = `${weekStart.toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })} – ${weekEnd.toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}`
 
   const weekStatus = statusUpdates.find(s => {
     const ps = new Date(s.periodStart), pe = new Date(s.periodEnd)
@@ -628,7 +629,7 @@ export function ProjectDashboardTab({
                       <span style={{ fontSize:11, fontWeight:700, color:tone }}>{when}</span>
                       <span style={{ fontSize:11, color:"var(--text-4)", marginLeft:"auto",
                         fontFamily:"monospace" }}>
-                        {new Date(m.dueDate).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })}
+                        {new Date(m.dueDate).toLocaleDateString(dateLocale(),{ month:"short", day:"numeric", timeZone:"UTC" })}
                       </span>
                     </div>
                     <div style={{ fontSize:12.5, color:"var(--text)", lineHeight:1.45, marginBottom:8 }}>

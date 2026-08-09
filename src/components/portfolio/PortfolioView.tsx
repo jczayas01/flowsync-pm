@@ -1,6 +1,7 @@
 "use client"
 // src/components/portfolio/PortfolioView.tsx
 import { useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Badge, Avatar, StatCard } from "@/components/ui"
@@ -428,7 +429,7 @@ function ProjectRow({project:p}:{project:any}) {
         </Badge>
       </div>
       <div style={{fontSize:10,color:"var(--text-3)",textAlign:"right"}}>
-        {p.endDate?new Date(p.endDate).toLocaleDateString("en-US", {month:"short",year:"2-digit", timeZone:"UTC" }):"—"}
+        {p.endDate?new Date(p.endDate).toLocaleDateString(dateLocale(), {month:"short",year:"2-digit", timeZone:"UTC" }):"—"}
       </div>
     </Link>
   )

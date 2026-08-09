@@ -2,7 +2,8 @@
 // src/components/projects/tabs/ClosureTab.tsx
 // PM Best Practices — Project Closure Checklist
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 
 const CHECKLIST = [
@@ -47,6 +48,39 @@ export function ClosureTab({ projectId, workspaceId, closure, project }: {
   const router = useRouter()
   const [local, setLocal] = useState<Record<string,boolean>>(closure || {})
   const [saving, setSaving] = useState(false)
+  // A closure checklist that only records opinions is a formality. The system
+  // already knows what is still open — unfinished tasks, live risks, purchase
+  // orders with money outstanding — and a PM signing a project closed deserves
+  // to see that before ticking the box, not after the audit.
+  const [evidence, setEvidence] = useState<any>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const j = (r: Response) => r.ok ? r.json().catch(() => null) : null
+      const [tasks, risks, issues, proc, lessons] = await Promise.all([
+        fetch(`/api/projects/${projectId}/tasks?perPage=500`).then(j).catch(() => null),
+        fetch(`/api/projects/${projectId}/risks`).then(j).catch(() => null),
+        fetch(`/api/projects/${projectId}/issues`).then(j).catch(() => null),
+        fetch(`/api/projects/${projectId}/procurement`).then(j).catch(() => null),
+        fetch(`/api/projects/${projectId}/lessons`).then(j).catch(() => null),
+      ])
+      if (cancelled) return
+      const arr = (x: any) =>
+        Array.isArray(x?.data) ? x.data
+        : Array.isArray(x?.data?.items) ? x.data.items
+        : Array.isArray(x?.data?.tasks) ? x.data.tasks : []
+      const t = arr(tasks), r2 = arr(risks), i2 = arr(issues), pr = arr(proc), le = arr(lessons)
+      setEvidence({
+        openTasks:  t.filter((x: any) => !["DONE","CANCELLED"].includes(x.status)).length,
+        openRisks:  r2.filter((x: any) => !["CLOSED","OCCURRED"].includes(x.status)).length,
+        openIssues: i2.filter((x: any) => !["RESOLVED","CLOSED"].includes(x.status)).length,
+        openPOs:    pr.filter((x: any) => ["ACTIVE","DRAFT","ON_HOLD"].includes(x.status)).length,
+        lessons:    le.length,
+      })
+    })()
+    return () => { cancelled = true }
+  }, [projectId])
   const [closureNotes, setClosureNotes] = useState(closure?.closureNotes||"")
   const progress = calcProgress(local)
   const allDone = progress === 100
@@ -110,6 +144,44 @@ export function ClosureTab({ projectId, workspaceId, closure, project }: {
       </div>
 
       <div style={{ flex:1, padding:20, display:"flex", flexDirection:"column", gap:16 }}>
+        {evidence && (() => {
+          const rows = [
+            { n: evidence.openTasks,  label: "tasks still open",           hint: "Every task not Done or Cancelled." },
+            { n: evidence.openRisks,  label: "risks still open",           hint: "Risks not yet closed. A project can close with open risks — but somebody has to own them afterwards." },
+            { n: evidence.openIssues, label: "issues unresolved",          hint: "Issues not marked resolved or closed." },
+            { n: evidence.openPOs,    label: "purchase orders not closed", hint: "Agreements still draft, active or on hold. Each may carry money you still owe." },
+          ]
+          const blockers = rows.filter(r => r.n > 0)
+          return (
+            <div style={{ background: blockers.length ? "#FFFBEB" : "#ECFDF5",
+              border: `1px solid ${blockers.length ? "#FDE68A" : "#A7F3D0"}`,
+              borderRadius: "var(--radius)", padding: "14px 16px", marginBottom: 16 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700,
+                color: blockers.length ? "#92400E" : "#065F46",
+                marginBottom: blockers.length ? 8 : 0 }}>
+                {blockers.length
+                  ? `${blockers.length} thing${blockers.length === 1 ? "" : "s"} this project still has open`
+                  : "✓ Nothing left open — tasks, risks, issues and purchase orders are all closed"}
+              </div>
+              {blockers.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+                  {blockers.map(r => (
+                    <span key={r.label} title={r.hint}
+                      style={{ fontSize: 12.5, color: "#78350F", cursor: "help" }}>
+                      <strong style={{ fontSize: 15 }}>{r.n}</strong> {r.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {evidence.lessons === 0 && (
+                <div style={{ fontSize: 12, color: blockers.length ? "#92400E" : "#065F46", marginTop: 8 }}>
+                  No lessons learned recorded — the one artefact the next project actually uses.
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {CHECKLIST.map(section => (
           <div key={section.section} style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", overflow:"hidden" }}>
@@ -182,7 +254,7 @@ export function ClosureTab({ projectId, workspaceId, closure, project }: {
           <div style={{ background:"#ECFDF5", border:"1px solid var(--green)",
             borderRadius:"var(--radius)", padding:14, textAlign:"center",
             fontSize:13, color:"#065F46", fontWeight:600 }}>
-            ✓ Project formally closed on {new Date(closure.closureDate).toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric", timeZone:"UTC" })}
+            ✓ Project formally closed on {new Date(closure.closureDate).toLocaleDateString(dateLocale(), {month:"long",day:"numeric",year:"numeric", timeZone:"UTC" })}
           </div>
         )}
       </div>

@@ -3,6 +3,7 @@
 // PM Best Practices — Issue Log (current problems, distinct from risks which are potential)
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -24,7 +25,7 @@ const CATS = ["Scope","Schedule","Budget","Technical","Resource","Stakeholder","
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // A Date object stringifies to "Sat Aug 30 2026 …", and slicing that to 10

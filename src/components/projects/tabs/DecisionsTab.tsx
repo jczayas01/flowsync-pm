@@ -3,6 +3,7 @@
 // PM Best Practices — Decision Log (formal record of key project decisions)
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -11,7 +12,7 @@ import { Avatar } from "@/components/ui"
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 export function DecisionsTab({ projectId, workspaceId, decisions }: {

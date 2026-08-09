@@ -5,6 +5,7 @@
 // milestone pipeline, benefits realization, pending decisions
 
 import { useTranslations } from "next-intl"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import nextDynamic from "next/dynamic"
@@ -20,7 +21,7 @@ import { Avatar } from "@/components/ui"
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n: number) {
   if (n>=1_000_000) return `$${(n/1_000_000).toFixed(1)}M`
@@ -159,7 +160,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
     }
   }
 
-  const now = new Date().toLocaleDateString("en-US", {
+  const now = new Date().toLocaleDateString(dateLocale(), {
     weekday:"long", year:"numeric", month:"long", day:"numeric" })
   const tx = useTranslations("exec")
   const router = useRouter()
@@ -305,7 +306,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                     </span>
                     <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
                       Submitted{p.approvalRequestedBy?.name ? ` by ${p.approvalRequestedBy.name}` : ""}
-                      {p.approvalRequestedAt ? ` · ${new Date(p.approvalRequestedAt).toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })}` : ""} — requesting authorization to start execution
+                      {p.approvalRequestedAt ? ` · ${new Date(p.approvalRequestedAt).toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })}` : ""} — requesting authorization to start execution
                     </div>
                   </a>
                   <button onClick={() => approvalAct(p.id, "approve")}
@@ -346,8 +347,8 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                 </span>
                 <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
                   {tx("Created")}{b.createdBy?.name ? ` ${tx("by")} ${b.createdBy.name}` : ""}
-                  {" · "}{new Date(b.startDate).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
-                  {" → "}{new Date(b.endDate).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
+                  {" · "}{new Date(b.startDate).toLocaleDateString(dateLocale(),{month:"short",day:"numeric",timeZone:"UTC"})}
+                  {" → "}{new Date(b.endDate).toLocaleDateString(dateLocale(),{month:"short",day:"numeric",timeZone:"UTC"})}
                   <span style={{ color:"#7C3AED", fontWeight:600, marginLeft:6 }}>· Review baseline →</span>
                 </div>
               </a>

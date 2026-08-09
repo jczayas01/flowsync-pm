@@ -3,6 +3,7 @@
 // Week-grouped multi-select of project documents, used by AI scan features
 // (Risks "Scan documents", Budget "Scan documents", and future M365 sources).
 import { useEffect, useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 
 export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
   projectId: string
@@ -32,7 +33,7 @@ export function DocScanPicker({ projectId, workspaceId, scanning, onScan }: {
   const weekLabel = (s: Date) => {
     if (s.getTime() === thisWeekTs) return "This week"
     const end = new Date(s); end.setDate(s.getDate() + 6)
-    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
+    const f = (d: Date) => d.toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })
     return `Week of ${f(s)} – ${f(end)}, ${end.getFullYear()}`
   }
   const groups = (() => {

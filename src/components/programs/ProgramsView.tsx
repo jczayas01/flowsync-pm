@@ -3,6 +3,7 @@
 // PM Standard — Portfolio Hierarchy — Portfolio → Program → Project hierarchy
 
 import { useState, useEffect } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
@@ -19,7 +20,7 @@ const METHOD: Record<string,{color:string;bg:string}> = {
 }
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n:number) {
   if (n>=1_000_000) return `$${(n/1_000_000).toFixed(1)}M`

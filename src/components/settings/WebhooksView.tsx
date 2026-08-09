@@ -1,6 +1,7 @@
 "use client"
 // src/components/settings/WebhooksView.tsx
 import { useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { Badge, EmptyState } from "@/components/ui"
 
 const WEBHOOK_EVENTS = [
@@ -241,7 +242,7 @@ export function WebhooksView({ webhooks:initialWebhooks, workspaceId, role }:{
                     <span style={{color:"var(--green)"}}>✓ {wh.successCount} sent</span>
                     {wh.errorCount>0&&<span style={{color:"var(--red)"}}>✗ {wh.errorCount} errors</span>}
                     {wh.lastTriggeredAt&&(
-                      <span>Last triggered {new Date(wh.lastTriggeredAt).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}</span>
+                      <span>Last triggered {new Date(wh.lastTriggeredAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}</span>
                     )}
                   </div>
                   {showSecret===wh.id&&(

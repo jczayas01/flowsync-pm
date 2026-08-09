@@ -1,6 +1,7 @@
 "use client"
 // src/components/settings/WorkspaceSettingsForm.tsx
 import { useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { isWorkspaceAdmin } from "@/lib/rbac/roles"
 import { LogoUploader } from "./LogoUploader"
 
@@ -166,7 +167,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
           {[
             ["Workspace ID",   workspace.id],
             ["Plan",           workspace.plan],
-            ["Created",        new Date(workspace.createdAt).toLocaleDateString("en-US", {dateStyle:"long", timeZone:"UTC" })],
+            ["Created",        new Date(workspace.createdAt).toLocaleDateString(dateLocale(), {dateStyle:"long", timeZone:"UTC" })],
             ["Slug",           workspace.slug],
           ].map(([k, v]) => (
             <div key={k}>

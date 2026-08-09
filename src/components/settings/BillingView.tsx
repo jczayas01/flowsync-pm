@@ -1,6 +1,7 @@
 // src/components/settings/BillingView.tsx
 "use client"
 import { sendGAEvent } from "@next/third-parties/google"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { RequestDemoModal } from "@/components/marketing/RequestDemoModal"
 import { STARTER_LIMITS, BUSINESS_LIMITS, ENTERPRISE_LIMITS } from "@/lib/stripe/plan-limits"
@@ -128,7 +129,7 @@ export function BillingView({
   }
 
   const fmt = (iso:string) =>
-    new Date(iso).toLocaleDateString("en-US",{ month:"long", day:"numeric", year:"numeric" })
+    new Date(iso).toLocaleDateString(dateLocale(),{ month:"long", day:"numeric", year:"numeric" })
 
   return (
     <div style={{ padding:"20px 16px", maxWidth:840, margin:"0 auto", fontFamily:"var(--font)" }}>

@@ -6,6 +6,7 @@
 // SLA commitments, invoice records, attached signed documents.
 
 import { useEffect, useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 
 const S: Record<string, { label: string; color: string; bg: string }> = {
   DRAFT:      { label: "Draft",      color: "#64748B", bg: "#F8FAFC" },
@@ -41,7 +42,7 @@ const chip = (c: { label: string; color: string; bg: string }) => (
 )
 const money = (n?: number | null, cur = "USD") =>
   n == null ? "—" : `$${Number(n).toLocaleString()} ${cur !== "USD" ? cur : ""}`.trim()
-const fmtD = (d?: string | null) => d ? new Date(d).toLocaleDateString("en-US",
+const fmtD = (d?: string | null) => d ? new Date(d).toLocaleDateString(dateLocale(),
   { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—"
 
 const EMPTY_FORM = {

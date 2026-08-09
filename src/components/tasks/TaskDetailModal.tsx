@@ -4,6 +4,7 @@
 // Opens as a fixed panel on the right side of the screen, does not float or cover the full page
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
@@ -805,7 +806,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
             flexShrink:0, background:"#fff" }}>
             <div style={{ fontSize:11, color:"var(--text-4)" }}>
               {task?.code} · Last updated {task?.updatedAt
-                ? new Date(task.updatedAt).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })
+                ? new Date(task.updatedAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })
                 : "—"}
             </div>
             <div style={{ display:"flex", gap:8 }}>

@@ -1,5 +1,6 @@
 "use client"
 import React from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { plannedValueAt } from "@/lib/evm-phasing"
 // src/components/projects/tabs/ProjectBudgetTab.tsx
 import { useTranslations } from "next-intl"
@@ -1111,7 +1112,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             <div key={ex.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
                               padding:"6px 0", borderTop:"1px solid var(--surface-1,#F1F5F9)", fontSize:12.5 }}>
                               <span style={{ color:"var(--text-3)", width:78, flexShrink:0 }}>
-                                {ex.date ? new Date(ex.date).toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" }) : "—"}
+                                {ex.date ? new Date(ex.date).toLocaleDateString(dateLocale(),{ month:"short", day:"numeric", timeZone:"UTC" }) : "—"}
                               </span>
                               <span style={{ flex:1, minWidth:0, whiteSpace:"normal",
                                 overflowWrap:"anywhere", lineHeight:1.45 }}>{ex.description}</span>
@@ -1214,7 +1215,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               {timeEntries.slice(0,10).map(te => (
                 <tr key={te.id} style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)" }}>
                   <td style={{ padding:"8px 14px", fontSize:12, color:"var(--text-3)" }}>
-                    {new Date(te.date).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })}
+                    {new Date(te.date).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}
                   </td>
                   <td style={{ padding:"8px 14px", fontSize:12, color:"var(--text-2)" }}>
                     {te.user?.name || "—"}

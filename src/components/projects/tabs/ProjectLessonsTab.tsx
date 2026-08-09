@@ -3,6 +3,7 @@
 // PM Best Practices — Continuous improvement through lessons learned
 
 import { useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
@@ -29,7 +30,7 @@ const CAT_BG: Record<string,string> = {
 }
 
 function fmtDate(d: string | Date) {
-  return new Date(d).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })
 }
 
 export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {

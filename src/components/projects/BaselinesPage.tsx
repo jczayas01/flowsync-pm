@@ -6,13 +6,14 @@
 // Re-baseline prompt after Change Request implementation
 
 import { useState } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
 import { BaselineComparison } from "@/components/projects/BaselineComparison"
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 function fmtCurrency(n: number, currency="USD") {
   if (n>=1_000_000) return `${currency} ${(n/1_000_000).toFixed(2)}M`
@@ -238,7 +239,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
                 <span style={{ color:"#78350F", marginLeft:6 }}>{cr.title}</span>
                 <button onClick={() => {
                   setLinkedCr(cr.id)
-                  setNewName(`Re-baseline after ${cr.code} — ${new Date().toLocaleDateString("en-US", { timeZone:"UTC" })}`)
+                  setNewName(`Re-baseline after ${cr.code} — ${new Date().toLocaleDateString(dateLocale(), { timeZone:"UTC" })}`)
                   setShowSaveForm(true)
                 }} style={{ marginLeft:10, fontSize:11, color:"var(--steel)",
                   background:"none", border:"none", cursor:"pointer",
@@ -516,11 +517,11 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
 
           {/* Three baselines summary */}
           <div style={{ display:"flex", gap:16, fontSize:11, color:"var(--text-3)", flexWrap:"wrap" }}>
-            <span>📅 {new Date(b.startDate).toLocaleDateString("en-US", {month:"short",day:"numeric", timeZone:"UTC" })} → {new Date(b.endDate).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
+            <span>📅 {new Date(b.startDate).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })} → {new Date(b.endDate).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
             <span>💰 {b.budgetTotal ? `$${Number(b.budgetTotal).toLocaleString("en-US")}` : "—"}</span>
             <span>📋 {taskCount} tasks</span>
             <span>📐 Scope {b.scopeSnapshot ? "✓" : "—"}</span>
-            <span>Saved {new Date(b.createdAt).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
+            <span>Saved {new Date(b.createdAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
           </div>
 
           {b.description && (
@@ -534,7 +535,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
             <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8,
               fontSize:11, color:"var(--green)" }}>
               <Avatar name={b.approvedBy.name} size={16} />
-              Approved by {b.approvedBy.name} · {new Date(b.approvedAt).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}
+              Approved by {b.approvedBy.name} · {new Date(b.approvedAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}
               {b.approvalNotes && <span style={{ color:"var(--text-3)" }}> · {b.approvalNotes}</span>}
             </div>
           )}

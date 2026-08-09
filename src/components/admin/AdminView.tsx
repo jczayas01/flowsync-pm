@@ -1,6 +1,7 @@
 // src/components/admin/AdminView.tsx
 "use client"
 import { useState, useMemo } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { ContractsPanel } from "./ContractsPanel"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", RED = "#DC2626"
@@ -185,7 +186,7 @@ const th: React.CSSProperties = { textAlign:"left", padding:"9px 12px", fontSize
 const td: React.CSSProperties = { padding:"9px 12px", fontSize:12.5, color:"#334155",
   borderBottom:"1px solid #F1F5F9", whiteSpace:"nowrap" }
 
-const fmt = (d: any) => d ? new Date(d).toLocaleDateString("en-US",{ month:"short", day:"numeric", year:"numeric" }) : "—"
+const fmt = (d: any) => d ? new Date(d).toLocaleDateString(dateLocale(),{ month:"short", day:"numeric", year:"numeric" }) : "—"
 const ago = (d: any) => {
   if (!d) return "never"
   const days = Math.floor((Date.now() - new Date(d).getTime()) / 864e5)

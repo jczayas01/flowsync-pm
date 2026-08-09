@@ -3,6 +3,7 @@
 // Meeting Minutes — standalone tab view
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -18,7 +19,7 @@ const TYPE_COLORS: Record<string,string> = {
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {weekday:"short",month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // Meeting-minutes fields (attendees/decisions/actionItems) may be a plain string
@@ -73,6 +74,52 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
     setForm({ title:"", meetingDate:new Date().toISOString().split("T")[0],
       meetingType:"STATUS", attendees:"", agenda:"", discussion:"",
       decisions:"", actionItems:"", nextMeeting:"" })
+  }
+
+  const [editId, setEditId] = useState<string|null>(null)
+  const [editF, setEditF]   = useState<any>({})
+
+  function openEdit(m2: any) {
+    setEditF({
+      title: m2.title || "",
+      meetingDate: m2.meetingDate ? new Date(m2.meetingDate).toISOString().slice(0,10) : "",
+      meetingType: m2.meetingType || "STATUS",
+      facilitator: m2.facilitator || "",
+      attendees:   toText(m2.attendees) || "",
+      agenda:      toText(m2.agenda) || "",
+      discussion:  toText(m2.discussion) || "",
+      decisions:   toText(m2.decisions) || "",
+    })
+    setEditId(m2.id)
+  }
+
+  async function saveEdit(id: string) {
+    const res = await fetch(`/api/projects/${projectId}/meeting-minutes/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: editF.title,
+        meetingDate: editF.meetingDate ? new Date(`${editF.meetingDate}T12:00:00Z`).toISOString() : undefined,
+        meetingType: editF.meetingType,
+        facilitator: editF.facilitator || null,
+        attendees:   editF.attendees || [],
+        agenda:      editF.agenda || null,
+        discussion:  editF.discussion || null,
+        decisions:   editF.decisions || [],
+      }),
+    }).catch(() => null)
+    if (res?.ok) { setEditId(null); router.refresh() }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not save these minutes.")
+    }
+  }
+
+  async function removeMinutes(m2: any) {
+    if (!confirm(`Delete "${m2.title}"?\n\nThis cannot be undone.`)) return
+    const res = await fetch(`/api/projects/${projectId}/meeting-minutes/${m2.id}`, { method: "DELETE" })
+      .catch(() => null)
+    if (res?.ok) router.refresh()
+    else alert("Could not delete these minutes.")
   }
 
   async function save() {
@@ -271,10 +318,67 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                           : null })()}
                       </div>
                     </div>
+                    <button onClick={e=>{ e.stopPropagation(); openEdit(m) }}
+                      style={{ padding:"3px 9px", fontSize:11, fontWeight:600, cursor:"pointer",
+                        border:"1px solid var(--border)", borderRadius:6, background:"#fff",
+                        color:"var(--text-2)", fontFamily:"var(--font)" }}>Edit</button>
+                    <button onClick={e=>{ e.stopPropagation(); removeMinutes(m) }}
+                      style={{ padding:"3px 8px", fontSize:11, fontWeight:600, cursor:"pointer",
+                        border:"1px solid #FECACA", borderRadius:6, background:"#fff",
+                        color:"var(--red)", fontFamily:"var(--font)" }}>✕</button>
                     <span style={{ color:"var(--text-4)", fontSize:12,
                       transform:isOpen?"rotate(0)":"rotate(-90deg)",
                       display:"inline-block", transition:"transform .15s" }}>▼</span>
                   </div>
+
+                  {editId === m.id && (
+                    <div style={{ borderTop:"1px solid var(--border)", padding:"14px 16px",
+                      background:"var(--surface)", display:"flex", flexDirection:"column", gap:9 }}>
+                      <label style={{ fontSize:11, color:"var(--text-3)" }}>Title
+                        <input value={editF.title} onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))}
+                          style={inp} />
+                      </label>
+                      <div style={{ display:"flex", gap:9 }}>
+                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>Date
+                          <input type="date" value={editF.meetingDate}
+                            onChange={e=>setEditF((f:any)=>({...f,meetingDate:e.target.value}))}
+                            style={inp} />
+                        </label>
+                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>Type
+                          <select value={editF.meetingType}
+                            onChange={e=>setEditF((f:any)=>({...f,meetingType:e.target.value}))}
+                            style={{...inp, cursor:"pointer"}}>
+                            {["KICKOFF","STATUS","PHASE_GATE","RISK_REVIEW","STEERING",
+                              "SPRINT_PLANNING","RETROSPECTIVE","AD_HOC","OTHER"]
+                              .map(t2=><option key={t2} value={t2}>{t2.replace(/_/g," ")}</option>)}
+                          </select>
+                        </label>
+                      </div>
+                      {([["facilitator","Facilitator"],["attendees","Attendees"]] as const).map(([k,lb])=>(
+                        <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>{lb}
+                          <input value={editF[k]} onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
+                            style={inp} />
+                        </label>
+                      ))}
+                      {([["agenda","Agenda"],["discussion","Discussion"],["decisions","Decisions"]] as const).map(([k,lb])=>(
+                        <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>{lb}
+                          <textarea rows={3} value={editF[k]}
+                            onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
+                            style={{...inp, resize:"vertical"}} />
+                        </label>
+                      ))}
+                      <div style={{ display:"flex", gap:8 }}>
+                        <button onClick={()=>saveEdit(m.id)}
+                          style={{ flex:1, padding:"8px 0", background:"var(--steel)", color:"#fff",
+                            border:"none", borderRadius:"var(--radius)", fontSize:12.5, fontWeight:700,
+                            cursor:"pointer", fontFamily:"var(--font)" }}>Save changes</button>
+                        <button onClick={()=>setEditId(null)}
+                          style={{ padding:"8px 14px", background:"none", border:"1px solid var(--border)",
+                            borderRadius:"var(--radius)", fontSize:12.5, cursor:"pointer",
+                            color:"var(--text-3)", fontFamily:"var(--font)" }}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Expanded content */}
                   {isOpen && (

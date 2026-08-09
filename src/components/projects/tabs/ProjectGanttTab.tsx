@@ -6,6 +6,7 @@
 //           multi-column left panel, today line, zoom/pan
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react"
+import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import { useTaskContextSafe } from "@/lib/context/TaskContext"
 import { computeCriticalPath } from "@/lib/projects/critical-path"
@@ -70,10 +71,10 @@ function daysBetween(a: Date, b: Date) {
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
 function fmtShort(d: Date) {
-  return d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
+  return d.toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })
 }
 function fmtMon(d: Date) {
-  return d.toLocaleDateString("en-US", { month:"short", year:"2-digit", timeZone:"UTC" })
+  return d.toLocaleDateString(dateLocale(), { month:"short", year:"2-digit", timeZone:"UTC" })
 }
 function isWeekend(d: Date) {
   return d.getDay() === 0 || d.getDay() === 6
@@ -676,7 +677,7 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
               // with downward end caps (reads as "summarizes the rows below").
               const by = py + ROW_H/2 - 4   // bracket top (8px tall, centered)
               const cap = 7                  // end-cap drop below the bracket
-              const fmtD = (d: Date) => d.toLocaleDateString("en-US",{ month:"short", day:"numeric", timeZone:"UTC" })
+              const fmtD = (d: Date) => d.toLocaleDateString(dateLocale(),{ month:"short", day:"numeric", timeZone:"UTC" })
               return (
                 <g key={`ps-${phase.id}`}>
                   <title>{`${phase.name} — ${fmtD(phaseStart)} → ${fmtD(phaseEnd)} · ${phasePct}% complete`}</title>
@@ -1113,13 +1114,13 @@ export function ProjectGanttTab({ project, projectId, tasks, phases, members, ba
                       fill={col} stroke="#fff" strokeWidth={1}
                       opacity={isDragging ? 0.9 : 1}
                       style={{ pointerEvents:"none" }}>
-                      <title>{`◆ ${m.name}${m.dueDate ? " — due " + new Date(m.dueDate).toLocaleDateString("en-US", { timeZone:"UTC" }) : ""}${m.status ? " · " + String(m.status).replace(/_/g," ").toLowerCase() : ""} — drag to reschedule`}</title>
+                      <title>{`◆ ${m.name}${m.dueDate ? " — due " + new Date(m.dueDate).toLocaleDateString(dateLocale(), { timeZone:"UTC" }) : ""}${m.status ? " · " + String(m.status).replace(/_/g," ").toLowerCase() : ""} — drag to reschedule`}</title>
                     </polygon>
                     {isDragging && msDragDays !== 0 && (
                       <text x={px} y={my - 14} fontSize={10} fontWeight={700} fill={col}
                         textAnchor="middle" style={{ pointerEvents:"none" }}>
                         {(hideWeekends ? addWorkdays : addDays)(msDrag!.orig, msDragDays)
-                          .toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })}
+                          .toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })}
                       </text>
                     )}
                   </g>

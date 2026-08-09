@@ -3,6 +3,7 @@
 // PM Best Practices — Benefits Realization (value delivery tracking)
 
 import { DateField } from "@/components/shared/DatePicker"
+import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -19,7 +20,7 @@ const CATS = ["Financial","Operational","Strategic","Customer","Employee","Compl
 
 function fmtDate(d: any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 export function BenefitsTab({ projectId, workspaceId, benefits, members }: {

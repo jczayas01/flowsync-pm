@@ -1,6 +1,7 @@
 "use client"
 // src/components/reports/ReportBuilderView.tsx
 import { useState, useEffect } from "react"
+import { dateLocale } from "@/lib/date-locale"
 
 // ── Block types ────────────────────────────────
 const BLOCK_TYPES = [
@@ -393,7 +394,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
           <div style={{maxWidth:760,margin:"0 auto"}}>
             <h1 style={{fontSize:22,fontWeight:600,color:"var(--text)",marginBottom:4}}>{reportName}</h1>
             <p style={{fontSize:13,color:"var(--text-3)",marginBottom:28}}>
-              Generated {new Date().toLocaleDateString("en-US", {dateStyle:"long", timeZone:"UTC" })}
+              Generated {new Date().toLocaleDateString(dateLocale(), {dateStyle:"long", timeZone:"UTC" })}
             </p>
             {blocks.map(block=>renderBlock(block))}
           </div>

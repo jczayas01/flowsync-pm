@@ -2,6 +2,7 @@
 // src/components/projects/tabs/ProjectReportsTab.tsx
 
 import { useLocale, useTranslations } from "next-intl"
+import { dateLocale } from "@/lib/date-locale"
 import { M365ImportModal } from "@/components/projects/M365ImportModal"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
@@ -62,7 +63,7 @@ const HEALTH_LABEL: Record<string,string> = {
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // ── Report section helpers (top-level, not nested) ──────────────────────────
@@ -830,7 +831,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
   const rWeekLabel = (st: Date) => {
     const isThis = st.getTime() === rWeekStartOf(new Date()).getTime()
     const end = new Date(st); end.setDate(st.getDate() + 6)
-    const f = (d: Date) => d.toLocaleDateString("en-US", { month:"short", day:"numeric", timeZone:"UTC" })
+    const f = (d: Date) => d.toLocaleDateString(dateLocale(), { month:"short", day:"numeric", timeZone:"UTC" })
     return `${isThis ? tr("This week — ") : ""}${f(st)} – ${f(end)}, ${end.getFullYear()}`
   }
   const [reportWeek, setReportWeek]       = useState(() => rWeekStartOf(new Date()).toISOString())
@@ -934,7 +935,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
               ? (m365Items || []).filter((i:any) => pickedM365.has(i.key)).slice(0, 12).map((i:any) => ({
                   kind: i.kind, subject: String(i.subject || "").slice(0, 300),
                   from: i.from ? String(i.from).slice(0, 200) : undefined,
-                  date: i.date ? new Date(i.date).toLocaleDateString("en-US") : undefined,
+                  date: i.date ? new Date(i.date).toLocaleDateString(dateLocale()) : undefined,
                   snippet: i.snippet ? String(i.snippet).slice(0, 1200) : undefined,
                 }))
               : undefined,
@@ -1250,7 +1251,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                                 <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis",
                                   whiteSpace:"nowrap" }}>📄 {d.name}</span>
                                 <span style={{ fontSize:10.5, color:"var(--text-4)", fontFamily:"monospace" }}>
-                                  {new Date(d.weekOf || d.createdAt).toLocaleDateString("en-US",
+                                  {new Date(d.weekOf || d.createdAt).toLocaleDateString(dateLocale(),
                                     { month:"short", day:"numeric", timeZone:"UTC" })}
                                 </span>
                               </label>
@@ -1321,7 +1322,7 @@ export function ProjectReportsTab({ project, projectId, workspaceName, workspace
                                       textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{i.subject}</span>
                                     <span style={{ marginLeft:"auto", fontSize:10.5, color:"var(--text-4)",
                                       fontFamily:"monospace", flexShrink:0 }}>
-                                      {i.date ? new Date(i.date).toLocaleDateString("en-US",{ month:"short", day:"numeric" }) : ""}
+                                      {i.date ? new Date(i.date).toLocaleDateString(dateLocale(),{ month:"short", day:"numeric" }) : ""}
                                     </span>
                                   </span>
                                   {(i.from || i.snippet) && (

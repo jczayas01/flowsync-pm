@@ -1,5 +1,6 @@
 "use client"
 import type { ReactNode } from "react"
+import { dateLocale } from "@/lib/date-locale"
 // src/components/charts/ExecutiveCharts.tsx
 // Portfolio-level charts for the Executive dashboard.
 // Loaded via next/dynamic (ssr:false).
@@ -175,10 +176,10 @@ function MilestoneTimeline({ milestones, windowDays, t }: {
     x: m.tt, y: 1,
     name: m.name, code: m.project?.code || m.projectCode || "",
     fill: MS_COLOR[m.status] || SLATE,
-    date: new Date(m.tt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
+    date: new Date(m.tt).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" }),
   }))
   const fmtTick = (v: number) =>
-    new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+    new Date(v).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" })
   return (
     <div style={{ ...card, paddingBottom: 2 }}>
       <Title accent="#1B6CA8">{t("Milestones ahead")} · {windowDays}d</Title>

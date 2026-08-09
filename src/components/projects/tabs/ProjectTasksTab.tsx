@@ -4,6 +4,7 @@
 // critical path, dependencies, phase filter, searchable assignee
 
 import { useTranslations } from "next-intl"
+import { dateLocale } from "@/lib/date-locale"
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { DatePickerPopover } from "@/components/shared/DatePicker"
 import { useRouter } from "next/navigation"
@@ -39,7 +40,7 @@ const DEP_LABEL: Record<string,string> = {
 
 function fmtDate(d?: string|null) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})
+  return new Date(d).toLocaleDateString(dateLocale(),{month:"short",day:"numeric",timeZone:"UTC"})
 }
 function isOverdue(t: any) {
   return t.dueDate && new Date(t.dueDate) < new Date() && !["DONE","CANCELLED"].includes(t.status)

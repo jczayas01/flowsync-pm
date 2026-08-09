@@ -4,6 +4,7 @@
 // Team Charter · WBS Dictionary · Quality Plan · Requirements · Meeting Minutes · Handover Plan
 
 import { GuideButton } from "@/components/shared/GuideButton"
+import { dateLocale } from "@/lib/date-locale"
 import { FieldCard, EditToggle } from "@/components/shared/FieldCard"
 import { DateField } from "@/components/shared/DatePicker"
 import { useState, useEffect } from "react"
@@ -13,7 +14,7 @@ import { useRouter } from "next/navigation"
 
 function fmtDate(d:any) {
   if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
+  return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
 
 // Meeting-minutes fields may be a string OR a JSON array of objects — normalize to text.
@@ -882,7 +883,7 @@ export function GovernanceHub({ projectId, workspaceId, project, charter, qmp,
                   <FieldCard label="Support" icon="🛟" value={handoverForm.supportArrangements} />
                   <FieldCard label="Handover Date" icon="📅"
                     value={handoverForm.handoverDate ? new Date(handoverForm.handoverDate + "T00:00:00")
-                      .toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : ""} />
+                      .toLocaleDateString(dateLocale(),{month:"long",day:"numeric",year:"numeric"}) : ""} />
                 </div>
               ) : (
                 <>
