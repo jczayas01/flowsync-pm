@@ -58,6 +58,37 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
     else alert("Could not change the forecast method.")
   }
 
+  const INV_STATUS: Record<string,{label:string;color:string;why:string}> = {
+    RECEIVED: { label:"received", color:"var(--amber)",
+      why:"The invoice has arrived and nobody has approved it yet. It is a liability, not a cost against cash — it does not count toward this line's actual." },
+    APPROVED: { label:"approved, unpaid", color:"var(--steel)",
+      why:"Approved for payment and still unpaid. Owed money that has not left the account, so it stays out of actual cost until it does." },
+    PAID:     { label:"paid", color:"var(--green)",
+      why:"Money has left the account. This is what a line's actual cost counts." },
+    DISPUTED: { label:"disputed", color:"var(--red)",
+      why:"Held pending a dispute with the vendor. Excluded from actual cost while it is contested." },
+  }
+
+  async function setInvoiceStatus(itemId: string, expenseId: string, status: string) {
+    setExpBusy(true)
+    const res = await fetch(`/api/projects/${projectId}/budget/${itemId}/expenses`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expenseId, status }),
+    }).catch(() => null)
+    setExpBusy(false)
+    if (res?.ok) {
+      const r2 = await fetch(`/api/projects/${projectId}/budget/${itemId}/expenses`,
+        { headers: workspaceId ? { "x-workspace-id": workspaceId } : {} }).catch(() => null)
+      const d2 = await r2?.json().catch(() => null)
+      setExpList(d2?.data?.expenses || [])
+      router.refresh()
+    }
+    else {
+      const d = await res?.json().catch(() => null)
+      alert(d?.error || "Could not change the invoice status.")
+    }
+  }
+
   async function recomputeEv() {
     setRecalcing(true)
     try {
@@ -1253,7 +1284,24 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                               earned value not measured — no linked tasks
                             </div>
                           )}
-                                                                              {verdict && (
+                                                                              {(() => {
+                            // Invoices received or approved but not paid are owed
+                            // money that the Actual column deliberately excludes.
+                            // Leaving them invisible is how a project reports
+                            // budget remaining with invoices sitting in an inbox.
+                            const payable = expOpenId === item.id && Array.isArray(expList)
+                              ? expList.filter((e: any) => e.status && e.status !== "PAID" && e.status !== "DISPUTED")
+                                       .reduce((a: number, e: any) => a + Number(e.amount || 0), 0)
+                              : 0
+                            return payable > 0 ? (
+                              <div title={`${fmt(payable,currency)} of invoices are received or approved but not yet paid. They are owed, so they are not in Actual — but they will be.`}
+                                style={{ fontSize:10.5, fontWeight:700, marginTop:2,
+                                  color:"var(--steel)", cursor:"help" }}>
+                                ⏳ {fmt(payable,currency)} invoiced, unpaid
+                              </div>
+                            ) : null
+                          })()}
+                          {verdict && (
                             <div title={verdict.why}
                               style={{ fontSize:10.5, fontWeight:700, marginTop:2,
                                 color:VTONE[verdict.tone], cursor:"help" }}>
@@ -1350,7 +1398,29 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                                 <a href={ex.receiptUrl} target="_blank" rel="noreferrer"
                                   style={{ fontSize:11.5, color:"var(--steel)" }}>receipt</a>
                               )}
-                              <span style={{ fontFamily:"monospace", fontWeight:600 }}>
+                              {(() => {
+                                const st = INV_STATUS[ex.status || "PAID"]
+                                return can("budget:edit") ? (
+                                  <select value={ex.status || "PAID"} disabled={expBusy}
+                                    onChange={e => setInvoiceStatus(item.id, ex.id, e.target.value)}
+                                    title={st?.why}
+                                    style={{ fontSize:10.5, fontWeight:700, cursor:"pointer",
+                                      border:`1px solid ${st?.color}`, borderRadius:5, padding:"1px 5px",
+                                      background:"#fff", color:st?.color, fontFamily:"var(--font)" }}>
+                                    <option value="RECEIVED">received</option>
+                                    <option value="APPROVED">approved, unpaid</option>
+                                    <option value="PAID">paid</option>
+                                    <option value="DISPUTED">disputed</option>
+                                  </select>
+                                ) : (
+                                  <span title={st?.why}
+                                    style={{ fontSize:10.5, fontWeight:700, color:st?.color, cursor:"help" }}>
+                                    {st?.label}
+                                  </span>
+                                )
+                              })()}
+                              <span style={{ fontFamily:"monospace", fontWeight:600,
+                                color: (ex.status && ex.status !== "PAID") ? "var(--text-3)" : "var(--text-2)" }}>
                                 {fmt(ex.amount, currency)}
                               </span>
                               {can("budget:edit") && (

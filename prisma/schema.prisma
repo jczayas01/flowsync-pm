@@ -969,14 +969,29 @@ model BudgetItem {
   @@map("budget_items")
 }
 
+/// An expense is an invoice in this domain, so the invoicing cycle lives here
+/// rather than in a parallel model — which also means the receipt scanner
+/// already feeds it.
+///
+/// The distinction that matters: an invoice received is a liability, not a cost
+/// incurred against cash. Collapsing the two is why a project can report money
+/// left in the budget while invoices sit unpaid in someone's inbox. Only PAID
+/// rows count toward a line's actual cost; the rest are shown as payable.
 model Expense {
-  id           String     @id @default(cuid())
+  id           String        @id @default(cuid())
   budgetItemId String
   description  String
-  amount       Decimal    @db.Decimal(15, 2)
-  currency     String     @default("USD")
+  amount       Decimal       @db.Decimal(15, 2)
+  currency     String        @default("USD")
   date         DateTime
   receiptUrl   String?
+  status       ExpenseStatus @default(PAID)
+  invoiceNumber String?
+  dueDate      DateTime?
+  paidDate     DateTime?
+  /// Money withheld until final acceptance. Owed, but not yet payable.
+  retainage    Decimal?      @db.Decimal(15, 2)
+  procurementItemId String?
   approvedById String?
   createdById  String
   createdAt    DateTime   @default(now())
@@ -1613,6 +1628,17 @@ enum EarnRule {
   ZERO_HUNDRED
   FIFTY_FIFTY
   MILESTONE
+}
+
+/// RECEIVED  — the invoice arrived; nobody has approved it yet
+/// APPROVED  — approved for payment, still unpaid: a payable
+/// PAID      — money has left the account; this is what actual cost counts
+/// DISPUTED  — held pending a dispute with the vendor
+enum ExpenseStatus {
+  RECEIVED
+  APPROVED
+  PAID
+  DISPUTED
 }
 
 enum BudgetCategory {
