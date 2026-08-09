@@ -258,6 +258,14 @@ model Project {
   /// English plan can document in Spanish without touching a global setting,
   /// and reports default to the sponsor's language whoever generates them.
   docLocale         String?
+  /// Which forecasting assumption the EAC uses. BAC/CPI assumes today's cost
+  /// performance continues; the others assume the overrun was a one-off, or that
+  /// schedule pressure will keep costing money. A PMO defends the assumption,
+  /// not the number — so the assumption has to be a choice, not a default nobody
+  /// knew was being made.
+  eacMethod         String?   @default("CPI")
+  /// Bottom-up estimate to complete, when the PM re-estimates rather than trusting a formula.
+  eacManualEtc      Decimal?  @db.Decimal(15, 2)
   status            ProjectStatus          @default(DRAFT)
   approvalRequestedAt   DateTime?
   approvalRequestedById String?

@@ -26,6 +26,20 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   // Stored earned value only updates when a task changes. Linking a task to a
   // line without touching its progress leaves the figure behind, so there has to
   // be a way to bring it current without editing something at random.
+  const [eacBusy, setEacBusy] = useState(false)
+  const [etcDraft, setEtcDraft] = useState<string>(String(project?.eacManualEtc || ""))
+
+  async function saveEacMethod(method: string, etc?: number) {
+    setEacBusy(true)
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eacMethod: method, eacManualEtc: etc ?? null }),
+    }).catch(() => null)
+    setEacBusy(false)
+    if (res?.ok) router.refresh()
+    else alert("Could not change the forecast method.")
+  }
+
   async function recomputeEv() {
     setRecalcing(true)
     try {
@@ -384,7 +398,42 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   const SV  = EV - PV                           // Schedule Variance (simplified)
   const CPI = AC > 0 ? EV / AC : 1             // Cost Performance Index
   const SPI = PV > 0 ? EV / PV : 1             // Schedule Performance Index
-  const EAC = CPI > 0 ? BAC / CPI : BAC        // Estimate At Completion
+  // ── Forecast ───────────────────────────────────────────────────────────────
+  // BAC/CPI was the only method available, and it carries an assumption nobody
+  // was asked about: that today's cost performance continues to the end. That is
+  // often right and sometimes badly wrong — an overrun caused by a one-time
+  // customs charge shouldn't be projected across the remaining work. A PMO
+  // defends the assumption, not the number, so the assumption is now a choice.
+  const eacMethod = project?.eacMethod || "CPI"
+  const manualEtc = Number(project?.eacManualEtc || 0)
+
+  const EAC = (() => {
+    const remaining = Math.max(0, BAC - EV)
+    switch (eacMethod) {
+      case "PLANNED":                       // the variance was a one-off
+        return AC + remaining
+      case "CPI_SPI": {                     // cost and schedule pressure both persist
+        const f = (CPI || 1) * (SPI || 1)
+        return f > 0 ? AC + remaining / f : BAC
+      }
+      case "MANUAL":                        // the PM re-estimated the rest
+        return manualEtc > 0 ? AC + manualEtc : (CPI > 0 ? BAC / CPI : BAC)
+      default:                              // today's performance continues
+        return CPI > 0 ? BAC / CPI : BAC
+    }
+  })()
+
+  const EAC_METHODS: Record<string, { label: string; formula: string; when: string }> = {
+    CPI:     { label: "Current performance continues", formula: "EAC = BAC ÷ CPI",
+               when: "The default, and right most of the time: whatever is driving the cost variance is expected to keep driving it." },
+    PLANNED: { label: "The variance was a one-off", formula: "EAC = AC + (BAC − EV)",
+               when: "Use when you can name the cause and it cannot recur — a customs charge, a single rework, a one-time penalty. The remaining work is expected to run at plan." },
+    CPI_SPI: { label: "Schedule pressure keeps costing", formula: "EAC = AC + (BAC − EV) ÷ (CPI × SPI)",
+               when: "Use when being late is itself making the project more expensive — overtime, expedited shipping, extended overheads." },
+    MANUAL:  { label: "Bottom-up re-estimate", formula: "EAC = AC + your estimate to complete",
+               when: "Use when the original plan no longer describes the remaining work well enough for any formula to be meaningful. The most accurate method and the most work." },
+  }
+
   const ETC = EAC - AC                          // Estimate To Complete
   const VAC = BAC - EAC                         // Variance At Completion
   const TCPI = (BAC - EV) > 0 ? (BAC - EV) / (BAC - AC) : 1  // To-Complete Performance Index
@@ -507,7 +556,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
             { label:t("Estimate at Completion (EAC)"), value:fmt(EAC,currency),
               sub:`${EAC>BAC?"⚠ Over":"✓ Within"} budget forecast`,
               color:EAC>BAC?"var(--red)":"var(--green)",
-              tip:"EAC = BAC/CPI. Forecast of total project cost" },
+              tip:`${EAC_METHODS[eacMethod]?.formula} — ${EAC_METHODS[eacMethod]?.label}. ${EAC_METHODS[eacMethod]?.when}` },
             { label:"Estimate to Complete (ETC)", value:fmt(ETC,currency),
               sub:t("Remaining cost needed"),
               color:"var(--text)",
@@ -564,6 +613,71 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         {pct > 100 && (
           <div style={{ fontSize:11, color:"var(--red)", marginTop:6, fontWeight:500 }}>
             ⚠ Budget exceeded by {fmt(AC-BAC,currency)}
+          </div>
+        )}
+      </div>
+
+      {/* ── Forecast assumption ────────────────────────────────────────────
+          The EAC has always carried an assumption; it just wasn't visible. Making
+          it a stated choice is the difference between a number a sponsor can
+          challenge and one nobody can defend. */}
+      <div style={{ ...card, marginBottom:16 }}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap", marginBottom:4 }}>
+          <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text)" }}>
+            Forecast assumption
+          </span>
+          <span style={{ fontSize:11.5, color:"var(--text-3)", fontFamily:"monospace" }}>
+            {EAC_METHODS[eacMethod]?.formula}
+          </span>
+          <span style={{ marginLeft:"auto", fontSize:12.5, fontWeight:700,
+            color: EAC > BAC ? "var(--red)" : "var(--green)" }}>
+            EAC {fmt(EAC,currency)} · VAC {VAC >= 0 ? "+" : "−"}{fmt(Math.abs(VAC),currency)}
+          </span>
+        </div>
+        <p style={{ fontSize:11.5, color:"var(--text-3)", lineHeight:1.6, margin:"0 0 10px" }}>
+          Every forecast assumes something about the work that hasn't happened yet. Say which.
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))", gap:8 }}>
+          {Object.entries(EAC_METHODS).map(([key, m2]) => {
+            const on = key === eacMethod
+            return (
+              <button key={key} disabled={eacBusy}
+                onClick={() => saveEacMethod(key, key === "MANUAL" ? Number(etcDraft) || undefined : undefined)}
+                title={m2.when}
+                style={{ textAlign:"left", padding:"9px 11px", borderRadius:8, cursor:"pointer",
+                  fontFamily:"var(--font)", background: on ? "#EFF6FF" : "#fff",
+                  border:`1px solid ${on ? "var(--steel)" : "var(--border)"}` }}>
+                <div style={{ fontSize:12, fontWeight:700,
+                  color: on ? "var(--steel)" : "var(--text-2)", marginBottom:2 }}>
+                  {on ? "✓ " : ""}{m2.label}
+                </div>
+                <div style={{ fontSize:10.5, color:"var(--text-4)", fontFamily:"monospace" }}>
+                  {m2.formula}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        {eacMethod === "MANUAL" && (
+          <div style={{ display:"flex", gap:8, alignItems:"flex-end", marginTop:10 }}>
+            <label style={{ flex:"0 0 200px", fontSize:11, color:"var(--text-3)" }}>
+              Your estimate to complete
+              <input type="number" min={0} step="0.01" value={etcDraft}
+                onChange={e => setEtcDraft(e.target.value)}
+                placeholder="0.00"
+                style={{ width:"100%", marginTop:3, padding:"7px 9px", fontSize:12.5,
+                  borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
+            </label>
+            <button onClick={() => saveEacMethod("MANUAL", Number(etcDraft) || undefined)}
+              disabled={eacBusy}
+              style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                borderRadius:6, fontSize:12, fontWeight:700, cursor:"pointer",
+                fontFamily:"var(--font)" }}>
+              {eacBusy ? "Saving…" : "Apply"}
+            </button>
+            <span style={{ fontSize:11.5, color:"var(--text-4)", paddingBottom:8 }}>
+              What the remaining work will cost, estimated from the bottom up.
+            </span>
           </div>
         )}
       </div>

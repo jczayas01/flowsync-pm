@@ -21,6 +21,8 @@ import {
 const updateSchema = z.object({
   autoEv:          z.boolean().optional(),
   name:            z.string().min(1).max(200).optional(),
+  eacMethod:       z.enum(["CPI","PLANNED","CPI_SPI","MANUAL"]).optional(),
+  eacManualEtc:    z.number().min(0).optional().nullable(),
   // Codes prefix task and risk identifiers, so they have to stay unique inside a
   // workspace — two projects called PRJ-001 make every reference ambiguous.
   code:            z.string().min(1).max(20).regex(/^[A-Z0-9-]+$/, "Use letters, numbers and hyphens only").optional(),
