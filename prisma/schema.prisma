@@ -1785,13 +1785,19 @@ model CustomerContract {
   uptimePct      Decimal?        @db.Decimal(5, 2)
   slaNotes       String?
   notes          String?
+  // Billable service delivery (outside SLA/error support)
+  serviceHourlyRate Decimal?     @db.Decimal(12, 2)
+  onboardingFee     Decimal?     @db.Decimal(15, 2)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   invoices       ContractInvoice[]
   documents      ContractDocument[]
+  serviceEntries ContractServiceEntry[]
+  onboardingMilestones ContractOnboardingMilestone[]
 
   @@index([workspaceId])
+  @@index([status, endDate])
   @@map("customer_contracts")
 }
 
@@ -1808,6 +1814,8 @@ model ContractInvoice {
   notes      String?
   createdAt  DateTime              @default(now())
   contract   CustomerContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  serviceEntries ContractServiceEntry[]
+  onboardingMilestones ContractOnboardingMilestone[]
 
   @@index([contractId])
   @@map("contract_invoices")
@@ -1827,4 +1835,75 @@ model ContractDocument {
 
   @@index([contractId])
   @@map("contract_documents")
+}
+
+enum ServiceCategory {
+  ONBOARDING
+  TRAINING
+  SERVICE_REQUEST
+  CHANGE_CONFIG
+}
+
+enum ServiceEntryStatus {
+  DRAFT
+  APPROVED
+  INVOICED
+  WRITTEN_OFF
+}
+
+enum OnboardingMilestoneStatus {
+  PENDING
+  COMPLETED
+  INVOICED
+}
+
+/// Billable service delivery that is NOT SLA/error support — onboarding work,
+/// training, non-error service requests and change/config work. Rate is snapshot
+/// from the contract at entry time so re-rating a contract never rewrites history.
+model ContractServiceEntry {
+  id          String             @id @default(cuid())
+  contractId  String
+  entryDate   DateTime
+  category    ServiceCategory    @default(SERVICE_REQUEST)
+  description String
+  hours       Decimal            @db.Decimal(8, 2)
+  rate        Decimal            @db.Decimal(12, 2)
+  amount      Decimal            @db.Decimal(15, 2)
+  billable    Boolean            @default(true)
+  status      ServiceEntryStatus @default(DRAFT)
+  performedBy String?
+  notes       String?
+  invoiceId   String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  contract    CustomerContract   @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  invoice     ContractInvoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([contractId, entryDate])
+  @@index([contractId, status])
+  @@index([invoiceId])
+  @@map("contract_service_entries")
+}
+
+/// Fixed-fee, milestone-based onboarding billing. Each milestone bills a set
+/// amount when completed; invoicing links it to the ContractInvoice that billed it.
+model ContractOnboardingMilestone {
+  id            String                    @id @default(cuid())
+  contractId    String
+  name          String
+  description   String?
+  amount        Decimal                   @db.Decimal(15, 2)
+  targetDate    DateTime?
+  completedDate DateTime?
+  status        OnboardingMilestoneStatus @default(PENDING)
+  sortOrder     Int                       @default(0)
+  invoiceId     String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  contract      CustomerContract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  invoice       ContractInvoice?          @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([contractId, sortOrder])
+  @@index([invoiceId])
+  @@map("contract_onboarding_milestones")
 }

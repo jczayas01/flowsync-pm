@@ -25,6 +25,8 @@ const patchSchema = z.object({
   uptimePct:   z.number().min(0).max(100).optional().nullable(),
   slaNotes:    z.string().max(3000).optional().nullable(),
   notes:       z.string().max(5000).optional().nullable(),
+  serviceHourlyRate: z.number().min(0).optional().nullable(),
+  onboardingFee:     z.number().min(0).optional().nullable(),
 })
 
 export async function PATCH(req: NextRequest, { params }: { params: { contractId: string } }) {
