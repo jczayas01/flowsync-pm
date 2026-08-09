@@ -3,6 +3,7 @@
 // Change Request management — submit, review, approve/reject, implement
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -47,6 +48,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
   projectId: string; workspaceId: string; changeRequests: any[];
   members: any[]; currentUserId: string
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
   const { can } = usePermissions()
   const [view, setView] = useState<"list"|"create"|"detail">("list")
@@ -188,7 +190,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             style={{ fontSize:12, color:"var(--text-3)", background:"none", border:"none",
               cursor:"pointer", fontFamily:"var(--font)" }}>← Change Requests</button>
           <span style={{ color:"var(--border)" }}>›</span>
-          <span style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>New Change Request</span>
+          <span style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>{tip("cNew")}</span>
         </div>
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           <div style={{ maxWidth:720, margin:"0 auto" }}>
@@ -200,19 +202,19 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             <div style={card}>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:14 }}>
                 <div style={{ gridColumn:"1/-1" }}>
-                  <label style={lbl}>Title *</label>
+                  <label style={lbl}>{tip("titleReq")}</label>
                   <input style={inp} value={form.title} placeholder="Brief description of the change"
                     onChange={e => setForm(f => ({...f, title:e.target.value}))} />
                 </div>
                 <div>
-                  <label style={lbl}>Category</label>
+                  <label style={lbl}>{tip("category")}</label>
                   <select style={{...inp, cursor:"pointer"}} value={form.category}
                     onChange={e => setForm(f => ({...f, category:e.target.value}))}>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0)+c.slice(1).toLowerCase()}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Priority</label>
+                  <label style={lbl}>{tip("priority")}</label>
                   <select style={{...inp, cursor:"pointer",
                     color:PRIORITY_CONFIG[form.priority]?.color, fontWeight:600}}
                     value={form.priority}
@@ -223,7 +225,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                 </div>
               </div>
               <div style={{ marginBottom:14 }}>
-                <label style={lbl}>Description</label>
+                <label style={lbl}>{tip("description")}</label>
                 <textarea rows={4} style={{...inp, resize:"vertical", lineHeight:1.65}}
                   value={form.description}
                   placeholder="Describe what change is being requested and why it is needed..."
@@ -232,9 +234,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             </div>
 
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:"var(--text)", marginBottom:12 }}>
-                Impact Assessment
-              </div>
+              <div style={{ fontSize:13, fontWeight:700, color:"var(--text)", marginBottom:12 }}>{tip("cImpactAssessment")}</div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
                 <div style={card}>
                   <label style={lbl}>📅 Schedule impact</label>
@@ -254,7 +254,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                     onChange={e => setForm(f => ({...f, budgetImpact:e.target.value}))} />
                   <select style={{...inp, marginTop:6, cursor:"pointer"}} value={form.budgetLineId}
                     onChange={e => setForm(f => ({...f, budgetLineId:e.target.value}))}>
-                    <option value="">Create a new budget line for this change</option>
+                    <option value="">{tip("cNewLine")}</option>
                     {(budgetLines||[]).map((b:any) => (
                       <option key={b.id} value={b.id}>Add to: {b.name}</option>
                     ))}
@@ -281,9 +281,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               <button onClick={() => setView("list")}
                 style={{ padding:"10px 20px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                Cancel
-              </button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{tip("cancel")}</button>
               <button onClick={submitCR} disabled={saving || !form.title.trim()}
                 style={{ padding:"10px 24px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
@@ -322,18 +320,14 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               <button onClick={() => updateStatus(cr.id, "UNDER_REVIEW")} disabled={saving}
                 style={{ padding:"7px 14px", background:"#FFFBEB", border:"1px solid #FDE68A",
                   borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"#92400E" }}>
-                Mark Under Review
-              </button>
+                  fontFamily:"var(--font)", color:"#92400E" }}>{tip("cUnderReview")}</button>
             )}
             {canApprove && !rejecting && (
               <>
                 <button onClick={() => setRejecting(true)} disabled={saving}
                   style={{ padding:"7px 14px", background:"#FEF2F2", border:"1px solid #FECACA",
                     borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer",
-                    fontFamily:"var(--font)", color:"var(--red)" }}>
-                  Reject
-                </button>
+                    fontFamily:"var(--font)", color:"var(--red)" }}>{tip("cReject")}</button>
                 <button onClick={() => {
                     const steps = previewOf(cr)
                     const msg = steps.length
@@ -361,18 +355,14 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               <button onClick={() => updateStatus(cr.id, "IMPLEMENTED")} disabled={saving}
                 style={{ padding:"7px 14px", background:"#7C3AED", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
-                  cursor:"pointer", fontFamily:"var(--font)" }}>
-                Mark Implemented
-              </button>
+                  cursor:"pointer", fontFamily:"var(--font)" }}>{tip("cImplemented")}</button>
             )}
           </div>
         </div>
 
         {rejecting && (
           <div style={{ background:"#FEF2F2", borderBottom:"1px solid #FECACA", padding:"12px 20px" }}>
-            <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:8 }}>
-              Rejection reason (required)
-            </div>
+            <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:8 }}>{tip("cRejectReason")}</div>
             <textarea rows={2} value={rejectedReason}
               onChange={e => setRejectedReason(e.target.value)}
               placeholder="Explain why this change request is being rejected..."
@@ -385,15 +375,11 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               }} disabled={!rejectedReason.trim() || saving}
                 style={{ padding:"7px 14px", background:"var(--red)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                  fontFamily:"var(--font)", opacity:!rejectedReason.trim()?0.5:1 }}>
-                Confirm Rejection
-              </button>
+                  fontFamily:"var(--font)", opacity:!rejectedReason.trim()?0.5:1 }}>{tip("cConfirmReject")}</button>
               <button onClick={() => setRejecting(false)}
                 style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                Cancel
-              </button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{tip("cancel")}</button>
             </div>
           </div>
         )}
@@ -443,9 +429,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             {cr.description && (
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)",
-                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>
-                  Description
-                </div>
+                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>{tip("description")}</div>
                 <p style={{ fontSize:13, lineHeight:1.75, color:"var(--text-2)", margin:0,
                   whiteSpace:"pre-line" }}>
                   {cr.description}
@@ -480,9 +464,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               <div style={{ background:"#FEF2F2", border:"1px solid #FECACA",
                 borderRadius:"var(--radius)", padding:"12px 14px" }}>
                 <div style={{ fontSize:11, fontWeight:700, color:"var(--red)",
-                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
-                  Rejection Reason
-                </div>
+                  textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>{tip("cRejectionReason")}</div>
                 <p style={{ fontSize:13, color:"#991B1B", margin:0, lineHeight:1.7 }}>
                   {cr.rejectedReason}
                 </p>
@@ -501,7 +483,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
         padding:"12px 20px", display:"flex", alignItems:"center", justifyContent:"space-between",
         flexShrink:0 }}>
         <div>
-          <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>Change Requests</div>
+          <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>{tip("cTitle")}</div>
           <div style={{ fontSize:12, color:"var(--text-3)" }}>{changeRequests.length} total</div>
         </div>
         {can("changes:create") && (
@@ -559,7 +541,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
               style={{ padding:"5px 10px", border:"1px solid var(--border)",
                 borderRadius:"var(--radius)", fontSize:12, fontFamily:"var(--font)",
                 color:"var(--text-2)", cursor:"pointer" }}>
-              <option value="">All statuses</option>
+              <option value="">{tip("cAllStatuses")}</option>
               {Object.entries(STATUS_CONFIG).map(([v,c]) =>
                 <option key={v} value={v}>{c.label}</option>)}
             </select>
@@ -571,9 +553,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
         {changeRequests.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>🔄</div>
-            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-              No change requests yet
-            </div>
+            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("cEmpty")}</div>
             <div style={{ fontSize:13, color:"var(--text-3)", marginBottom:20, maxWidth:380, margin:"0 auto 20px" }}>
               All project changes should go through a formal change request process.
               Nothing changes without approval.
@@ -581,9 +561,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
             <button onClick={() => setView("create")}
               style={{ padding:"10px 20px", background:"var(--steel)", color:"#fff", border:"none",
                 borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
-                fontFamily:"var(--font)" }}>
-              Submit first change request
-            </button>
+                fontFamily:"var(--font)" }}>{tip("cFirst")}</button>
           </div>
         ) : (
           <div style={{ maxWidth:800, margin:"0 auto", display:"flex", flexDirection:"column", gap:8 }}>
@@ -627,7 +605,7 @@ export function ProjectChangesTab({ projectId, workspaceId, changeRequests, memb
                       </div>
                     )}
                     <span>{fmtDate(cr.createdAt)}</span>
-                    <span style={{ color:"var(--steel)" }}>View →</span>
+                    <span style={{ color:"var(--steel)" }}>{tip("view")}</span>
                   </div>
                 </div>
               )

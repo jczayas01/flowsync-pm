@@ -3,6 +3,7 @@
 // PM Best Practices — Issue Log (current problems, distinct from risks which are potential)
 
 import { DateField } from "@/components/shared/DatePicker"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
@@ -40,6 +41,7 @@ const toDateInput = (v: any): string => {
 export function IssuesTab({ projectId, workspaceId, issues, members }: {
   projectId:string; workspaceId:string; issues:any[]; members:any[]
 }) {
+  const tip = useTranslations("tips")
   const { can } = usePermissions()
   const router = useRouter()
   const [creating, setCreating] = useState(false)
@@ -199,32 +201,32 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
             {error && <div style={{ color:"var(--red)", fontSize:12 }}>✗ {error}</div>}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={lbl}>Issue title *</label>
-                <input style={inp} value={form.title} placeholder="Describe the current issue..."
+                <label style={lbl}>{tip("iTitleReq")}</label>
+                <input style={inp} value={form.title} placeholder={tip("iDescPh")}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Category</label>
+              <div><label style={lbl}>{tip("category")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
                   {CATS.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div><label style={lbl}>Priority</label>
+              <div><label style={lbl}>{tip("priority")}</label>
                 <select style={{...inp,cursor:"pointer",color:PRI_CFG[form.priority]?.color,fontWeight:600}} value={form.priority} onChange={e=>setForm(f=>({...f,priority:e.target.value}))}>
                   {Object.keys(PRI_CFG).map(p=><option key={p} value={p}>{p.charAt(0)+p.slice(1).toLowerCase()}</option>)}
                 </select>
               </div>
-              <div><label style={lbl}>Owner</label>
+              <div><label style={lbl}>{tip("owner")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.ownerId} onChange={e=>setForm(f=>({...f,ownerId:e.target.value}))}>
-                  <option value="">Unassigned</option>
+                  <option value="">{tip("unassigned")}</option>
                   {members.map(m=><option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
                 </select>
               </div>
-              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>Description</label>
+              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>{tip("description")}</label>
                 <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.description}
                   onChange={e=>setForm(f=>({...f,description:e.target.value}))} />
               </div>
-              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>Impact</label>
-                <input style={inp} value={form.impact} placeholder="What is affected by this issue?"
+              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>{tip("impact")}</label>
+                <input style={inp} value={form.impact} placeholder={tip("iImpactPh")}
                   onChange={e=>setForm(f=>({...f,impact:e.target.value}))} />
               </div>
             </div>
@@ -289,7 +291,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                       <span style={{ padding:"3px 9px", borderRadius:12, fontSize:10, fontWeight:700,
                         color:sc.color, background:sc.bg }}>{sc.label}</span>
                     </td>
-                    <td style={{ padding:"9px 12px", fontSize:11, color:"var(--steel)" }}>View →</td>
+                    <td style={{ padding:"9px 12px", fontSize:11, color:"var(--steel)" }}>{tip("view")}</td>
                   </tr>
                 )
               })}
@@ -351,7 +353,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Priority</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("priority")}</div>
                     <select style={{...inp, cursor:"pointer"}} value={editIssue.priority}
                       onChange={e=>setEditIssue((f:any)=>({...f, priority:e.target.value}))}>
                       {["CRITICAL","HIGH","MEDIUM","LOW"].map(v=><option key={v} value={v}>{v}</option>)}
@@ -359,29 +361,29 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Owner</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("owner")}</div>
                     <select style={{...inp, cursor:"pointer"}} value={editIssue.ownerId}
                       onChange={e=>setEditIssue((f:any)=>({...f, ownerId:e.target.value}))}>
-                      <option value="">Unassigned</option>
+                      <option value="">{tip("unassigned")}</option>
                       {members.map((m:any) => <option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Category</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("category")}</div>
                     <input style={inp} value={editIssue.category}
                       onChange={e=>setEditIssue((f:any)=>({...f, category:e.target.value}))} />
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Due date</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("dueDate")}</div>
                     <DateField  style={inp} value={editIssue.dueDate}
                       onChange={e=>setEditIssue((f:any)=>({...f, dueDate:e.target.value}))} />
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                    letterSpacing:".05em", marginBottom:4 }}>Description</div>
+                    letterSpacing:".05em", marginBottom:4 }}>{tip("description")}</div>
                   <textarea style={{...inp, resize:"vertical"}} rows={2} value={editIssue.description}
                     onChange={e=>setEditIssue((f:any)=>({...f, description:e.target.value}))} />
                 </div>
@@ -396,7 +398,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
                     style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                    Cancel
+                    {tip("cancel")}
                   </button>
                 </div>
               </div>
@@ -404,13 +406,13 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
             {selected.description && <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.7, marginBottom:12 }}>{selected.description}</p>}
             {selected.impact && (
               <div style={{ background:"#FEF2F2", borderRadius:"var(--radius)", padding:12, marginBottom:12 }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"var(--red)", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>Impact</div>
+                <div style={{ fontSize:10, fontWeight:700, color:"var(--red)", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>{tip("impact")}</div>
                 <p style={{ fontSize:12, color:"#991B1B", margin:0, lineHeight:1.6 }}>{selected.impact}</p>
               </div>
             )}
             {selected.resolution && (
               <div style={{ background:"#ECFDF5", borderRadius:"var(--radius)", padding:12 }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"var(--green)", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>Resolution</div>
+                <div style={{ fontSize:10, fontWeight:700, color:"var(--green)", textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>{tip("iResolution")}</div>
                 <p style={{ fontSize:12, color:"#065F46", margin:0, lineHeight:1.6 }}>{selected.resolution}</p>
               </div>
             )}

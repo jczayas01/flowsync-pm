@@ -3,6 +3,7 @@
 // PM Best Practices — Decision Log (formal record of key project decisions)
 
 import { DateField } from "@/components/shared/DatePicker"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
@@ -18,6 +19,7 @@ function fmtDate(d: any) {
 export function DecisionsTab({ projectId, workspaceId, decisions }: {
   projectId:string; workspaceId:string; decisions:any[]
 }) {
+  const tip = useTranslations("tips")
   const { can } = usePermissions()
   const router = useRouter()
   const [creating, setCreating] = useState(false)
@@ -128,34 +130,34 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
             {error && <div style={{ color:"var(--red)", fontSize:12 }}>✗ {error}</div>}
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:12 }}>
               <div>
-                <label style={lbl}>Decision title *</label>
+                <label style={lbl}>{tip("dDecisionTitle")}</label>
                 <input style={inp} value={form.title} placeholder="What was decided?"
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))} />
               </div>
               <div>
-                <label style={lbl}>Date made</label>
+                <label style={lbl}>{tip("dDateMade")}</label>
                 <DateField  style={inp} value={form.madeAt}
                   onChange={e=>setForm(f=>({...f,madeAt:e.target.value}))} />
               </div>
             </div>
-            <div><label style={lbl}>Description</label>
+            <div><label style={lbl}>{tip("description")}</label>
               <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.description}
                 placeholder="Describe the decision in detail..."
                 onChange={e=>setForm(f=>({...f,description:e.target.value}))} />
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <div><label style={lbl}>Rationale</label>
+              <div><label style={lbl}>{tip("dRationale")}</label>
                 <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.rationale}
                   placeholder="Why was this decision made?"
                   onChange={e=>setForm(f=>({...f,rationale:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Alternatives considered</label>
+              <div><label style={lbl}>{tip("dAlternatives")}</label>
                 <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} value={form.alternatives}
                   placeholder="What other options were evaluated?"
                   onChange={e=>setForm(f=>({...f,alternatives:e.target.value}))} />
               </div>
             </div>
-            <div><label style={lbl}>Impact</label>
+            <div><label style={lbl}>{tip("impact")}</label>
               <input style={inp} value={form.impact} placeholder="How does this decision affect the project?"
                 onChange={e=>setForm(f=>({...f,impact:e.target.value}))} />
             </div>
@@ -173,7 +175,7 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
         {decisions.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>⚡</div>
-            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>No decisions recorded</div>
+            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("dEmpty")}</div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:380, margin:"0 auto 20px" }}>
               PM Standard recommends formally recording key decisions — what was decided, why, and what alternatives were considered. This creates an audit trail and institutional knowledge.
             </div>
@@ -210,7 +212,7 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                     title="Edit"
                     style={{ background:"none", border:"1px solid var(--border)", color:"var(--text-2)",
                       borderRadius:6, fontSize:11, cursor:"pointer", padding:"3px 9px",
-                      flexShrink:0, fontFamily:"var(--font)", marginRight:6 }}>Edit</button>
+                      flexShrink:0, fontFamily:"var(--font)", marginRight:6 }}>{tip("edit")}</button>
 <button onClick={e => { e.stopPropagation(); removeItem(d.id, `${d.code} — ${d.title}`) }}
                     title="Delete"
                     style={{ background:"none", border:"1px solid #FECACA", color:"var(--red)",
@@ -229,21 +231,21 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                     {d.rationale && (
                       <div style={{ background:"var(--surface)", borderRadius:"var(--radius)", padding:12 }}>
                         <div style={{ fontSize:10, fontWeight:700, color:"var(--steel)", textTransform:"uppercase",
-                          letterSpacing:".05em", marginBottom:5 }}>Rationale</div>
+                          letterSpacing:".05em", marginBottom:5 }}>{tip("dRationale")}</div>
                         <p style={{ fontSize:13, color:"var(--text-2)", margin:0, lineHeight:1.7, whiteSpace:"pre-line" }}>{d.rationale}</p>
                       </div>
                     )}
                     {d.alternatives && (
                       <div style={{ background:"var(--surface)", borderRadius:"var(--radius)", padding:12 }}>
                         <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                          letterSpacing:".05em", marginBottom:5 }}>Alternatives considered</div>
+                          letterSpacing:".05em", marginBottom:5 }}>{tip("dAlternatives")}</div>
                         <p style={{ fontSize:13, color:"var(--text-2)", margin:0, lineHeight:1.7, whiteSpace:"pre-line" }}>{d.alternatives}</p>
                       </div>
                     )}
                     {d.impact && (
                       <div style={{ background:"#FFFBEB", borderRadius:"var(--radius)", padding:12 }}>
                         <div style={{ fontSize:10, fontWeight:700, color:"#92400E", textTransform:"uppercase",
-                          letterSpacing:".05em", marginBottom:5 }}>Impact</div>
+                          letterSpacing:".05em", marginBottom:5 }}>{tip("impact")}</div>
                         <p style={{ fontSize:12, color:"#78350F", margin:0, lineHeight:1.7 }}>{d.impact}</p>
                       </div>
                     )}
@@ -263,9 +265,7 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                             borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                       </label>
                     ))}
-                    <label style={{ fontSize:11, color:"var(--text-3)" }}>
-                      Decided on
-                      <input type="date" value={editF.madeAt || ""}
+                    <label style={{ fontSize:11, color:"var(--text-3)" }}>{tip("dDecidedOn")}<input type="date" value={editF.madeAt || ""}
                         onChange={e => setEditF((f:any) => ({ ...f, madeAt: e.target.value }))}
                         style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                           borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
@@ -274,11 +274,11 @@ export function DecisionsTab({ projectId, workspaceId, decisions }: {
                       <button onClick={() => saveDecision(d.id)}
                         style={{ flex:1, padding:"6px 0", background:"var(--steel)", color:"#fff",
                           border:"none", borderRadius:6, fontSize:12, fontWeight:700,
-                          cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                          cursor:"pointer", fontFamily:"var(--font)" }}>{tip("save")}</button>
                       <button onClick={() => setEditId(null)}
                         style={{ padding:"6px 12px", background:"none", border:"1px solid var(--border)",
                           borderRadius:6, fontSize:12, cursor:"pointer", color:"var(--text-3)",
-                          fontFamily:"var(--font)" }}>Cancel</button>
+                          fontFamily:"var(--font)" }}>{tip("cancel")}</button>
                     </div>
                   </div>
                 )}

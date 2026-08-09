@@ -3,6 +3,7 @@
 // PM Best Practices — Continuous improvement through lessons learned
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -36,6 +37,7 @@ function fmtDate(d: string | Date) {
 export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
   projectId:string; workspaceId:string; lessons:any[]; phases:any[]
 }) {
+  const tip = useTranslations("tips")
   const { can } = usePermissions()
   const router = useRouter()
   const [view, setView] = useState<"list"|"create"|"detail">("list")
@@ -147,7 +149,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             ← Lessons Learned
           </button>
           <span style={{ color:"var(--border)" }}>›</span>
-          <span style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>New Lesson</span>
+          <span style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>{tip("lNew")}</span>
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
@@ -172,19 +174,19 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             <div style={card}>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:14 }}>
                 <div style={{ gridColumn:"1/-1" }}>
-                  <label style={lbl}>Title *</label>
+                  <label style={lbl}>{tip("titleReq")}</label>
                   <input style={inp} value={form.title} placeholder="Brief summary of the lesson..."
                     onChange={e => setForm(f=>({...f,title:e.target.value}))} />
                 </div>
                 <div>
-                  <label style={lbl}>Category</label>
+                  <label style={lbl}>{tip("category")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.category}
                     onChange={e => setForm(f=>({...f,category:e.target.value}))}>
                     {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABEL[c]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Phase</label>
+                  <label style={lbl}>{tip("lPhase")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.phase}
                     onChange={e => setForm(f=>({...f,phase:e.target.value}))}>
                     <option value="">— Project-wide —</option>
@@ -192,7 +194,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Impact type</label>
+                  <label style={lbl}>{tip("lImpactType")}</label>
                   <div style={{ display:"flex", gap:8 }}>
                     {[
                       {v:"NEGATIVE",l:"⚠ Issue / Threat",  bg:"#FEF2F2", border:"#FECACA", active:"#DC2626"},
@@ -243,9 +245,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
               <button onClick={() => setView("list")}
                 style={{ padding:"10px 20px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                Cancel
-              </button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{tip("cancel")}</button>
               <button onClick={createLesson} disabled={saving||!form.title.trim()}
                 style={{ padding:"10px 24px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
@@ -298,32 +298,28 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
         {editing && (
           <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)",
             padding:18, marginBottom:16, display:"flex", flexDirection:"column", gap:10 }}>
-            <label style={{ fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Title
-              <input value={editF.title} onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))}
+            <label style={{ fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{tip("title")}<input value={editF.title} onChange={e=>setEditF((f:any)=>({...f,title:e.target.value}))}
                 style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
                   border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
             </label>
             <div style={{ display:"flex", gap:10 }}>
-              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Category
-                <select value={editF.category} onChange={e=>setEditF((f:any)=>({...f,category:e.target.value}))}
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{tip("category")}<select value={editF.category} onChange={e=>setEditF((f:any)=>({...f,category:e.target.value}))}
                   style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
                     border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
                   {["PLANNING","EXECUTION","STAKEHOLDER","RISK","COMMUNICATION","TEAM","TECHNICAL","PROCUREMENT","QUALITY","OTHER"]
                     .map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
               </label>
-              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Phase
-                <input value={editF.phase || ""} placeholder="e.g. Phase 2 — Build"
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{tip("lPhase")}<input value={editF.phase || ""} placeholder="e.g. Phase 2 — Build"
                   onChange={e=>setEditF((f:any)=>({...f,phase:e.target.value}))}
                   style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
                     border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
               </label>
-              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>Impact
-                <select value={editF.impact} onChange={e=>setEditF((f:any)=>({...f,impact:e.target.value}))}
+              <label style={{ flex:1, fontSize:11, fontWeight:600, color:"var(--text-3)" }}>{tip("impact")}<select value={editF.impact} onChange={e=>setEditF((f:any)=>({...f,impact:e.target.value}))}
                   style={{ width:"100%", marginTop:4, padding:"8px 10px", fontSize:13, borderRadius:6,
                     border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
-                  <option value="POSITIVE">POSITIVE — worth repeating</option>
-                  <option value="NEGATIVE">NEGATIVE — avoid next time</option>
+                  <option value="POSITIVE">{tip("lPositive")}</option>
+                  <option value="NEGATIVE">{tip("lNegative")}</option>
                 </select>
               </label>
             </div>
@@ -340,11 +336,11 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
               <button onClick={()=>saveLesson(l.id)}
                 style={{ padding:"8px 20px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:600, cursor:"pointer",
-                  fontFamily:"var(--font)" }}>Save changes</button>
+                  fontFamily:"var(--font)" }}>{tip("saveChanges")}</button>
               <button onClick={()=>setEditing(false)}
                 style={{ padding:"8px 16px", background:"none", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:13, cursor:"pointer", color:"var(--text-3)",
-                  fontFamily:"var(--font)" }}>Cancel</button>
+                  fontFamily:"var(--font)" }}>{tip("cancel")}</button>
             </div>
           </div>
         )}
@@ -410,7 +406,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
         padding:"12px 20px", display:"flex", alignItems:"center", justifyContent:"space-between",
         flexShrink:0 }}>
         <div>
-          <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>Lessons Learned</div>
+          <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>{tip("lTitle")}</div>
           <div style={{ fontSize:12, color:"var(--text-3)" }}>
             {lessons.length} lessons · {positiveCount} positive · {negativeCount} issues
           </div>
@@ -463,14 +459,14 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             style={{ padding:"5px 10px", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:12, fontFamily:"var(--font)",
               color:"var(--text-2)", cursor:"pointer" }}>
-            <option value="">All categories</option>
+            <option value="">{tip("lAllCats")}</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABEL[c]}</option>)}
           </select>
           <select value={impactFilter} onChange={e => setImpactFilter(e.target.value)}
             style={{ padding:"5px 10px", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:12, fontFamily:"var(--font)",
               color:"var(--text-2)", cursor:"pointer" }}>
-            <option value="">All types</option>
+            <option value="">{tip("lAllTypes")}</option>
             <option value="POSITIVE">✓ What worked well</option>
             <option value="NEGATIVE">⚠ Issues / Threats</option>
           </select>
@@ -484,9 +480,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
         {lessons.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📚</div>
-            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-              No lessons recorded yet
-            </div>
+            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("lEmpty")}</div>
             <div style={{ fontSize:13, color:"var(--text-3)", marginBottom:6, maxWidth:440, margin:"0 auto 8px" }}>
               PM best practices require lessons learned to be captured throughout the project life cycle —
               not just at the end.
@@ -497,9 +491,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
             <button onClick={() => setView("create")}
               style={{ padding:"10px 20px", background:"var(--steel)", color:"#fff", border:"none",
                 borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
-                fontFamily:"var(--font)" }}>
-              Record first lesson
-            </button>
+                fontFamily:"var(--font)" }}>{tip("lFirst")}</button>
           </div>
         ) : (
           <div style={{ maxWidth:760, margin:"0 auto", display:"flex", flexDirection:"column", gap:10 }}>
@@ -549,7 +541,7 @@ export function ProjectLessonsTab({ projectId, workspaceId, lessons, phases }: {
                     <span style={{ fontSize:10, color:"var(--text-4)" }}>
                       {fmtDate(l.createdAt)}
                     </span>
-                    <span style={{ fontSize:11, color:"var(--steel)" }}>View →</span>
+                    <span style={{ fontSize:11, color:"var(--steel)" }}>{tip("view")}</span>
                   </div>
                 </div>
               )

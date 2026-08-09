@@ -3,6 +3,7 @@
 // Requirements Documentation + Traceability Matrix
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { AIScanPanel } from "@/components/shared/AIScanPanel"
@@ -36,6 +37,7 @@ const lbl: React.CSSProperties = {
 export function RequirementsTab({ projectId, workspaceId, requirements, tasks }: {
   projectId:string; workspaceId:string; requirements:any[]; tasks:any[]
 }) {
+  const tip = useTranslations("tips")
   const { can } = usePermissions()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<"register"|"matrix">("register")
@@ -201,43 +203,43 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
         {showForm && (
           <div style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20, marginBottom:16 }}>
-            <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>New Requirement</div>
+            <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>{tip("qNew")}</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 3fr", gap:12, marginBottom:10 }}>
               <div>
-                <label style={lbl}>Code</label>
+                <label style={lbl}>{tip("qCode")}</label>
                 <input style={inp} value={form.code} placeholder={nextCode()}
                   onChange={e=>setForm(f=>({...f,code:e.target.value}))} />
               </div>
               <div>
-                <label style={lbl}>Title *</label>
+                <label style={lbl}>{tip("titleReq")}</label>
                 <input style={inp} value={form.title}
                   onChange={e=>setForm(f=>({...f,title:e.target.value}))}
                   placeholder="e.g. System must support 500 concurrent users" />
               </div>
             </div>
             <div style={{ marginBottom:10 }}>
-              <label style={lbl}>Description</label>
+              <label style={lbl}>{tip("description")}</label>
               <textarea rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}
                 value={form.description}
                 onChange={e=>setForm(f=>({...f,description:e.target.value}))} />
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
               <div>
-                <label style={lbl}>Type</label>
+                <label style={lbl}>{tip("qType")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.type}
                   onChange={e=>setForm(f=>({...f,type:e.target.value}))}>
                   {REQ_TYPES.map(t=><option key={t}>{t.replace(/_/g," ")}</option>)}
                 </select>
               </div>
               <div>
-                <label style={lbl}>Priority</label>
+                <label style={lbl}>{tip("priority")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.priority}
                   onChange={e=>setForm(f=>({...f,priority:e.target.value}))}>
                   {PRIORITIES.map(p=><option key={p}>{p}</option>)}
                 </select>
               </div>
               <div>
-                <label style={lbl}>Status</label>
+                <label style={lbl}>{tip("status")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.status}
                   onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
                   {STATUSES.map(s=><option key={s}>{s}</option>)}
@@ -246,22 +248,22 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
               <div>
-                <label style={lbl}>Source / Stakeholder</label>
+                <label style={lbl}>{tip("qSource")}</label>
                 <input style={inp} value={form.source}
                   onChange={e=>setForm(f=>({...f,source:e.target.value}))}
                   placeholder="Who requested this?" />
               </div>
               <div>
-                <label style={lbl}>Link to task</label>
+                <label style={lbl}>{tip("qLinkTask")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.linkedTaskId}
                   onChange={e=>setForm(f=>({...f,linkedTaskId:e.target.value}))}>
-                  <option value="">No linked task</option>
+                  <option value="">{tip("qNoTask")}</option>
                   {tasks.map(t=><option key={t.id} value={t.id}>{t.code}: {t.title}</option>)}
                 </select>
               </div>
             </div>
             <div style={{ marginBottom:14 }}>
-              <label style={lbl}>Acceptance Criteria</label>
+              <label style={lbl}>{tip("qAcceptance")}</label>
               <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                 value={form.acceptanceCriteria}
                 onChange={e=>setForm(f=>({...f,acceptanceCriteria:e.target.value}))}
@@ -277,7 +279,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
               <button onClick={()=>{setShowForm(false);resetForm();setError("")}}
                 style={{ padding:"9px 16px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{tip("cancel")}</button>
             </div>
           </div>
         )}
@@ -302,9 +304,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
             {filtered.length === 0 ? (
               <div style={{ textAlign:"center", padding:"50px 20px" }}>
                 <div style={{ fontSize:32, marginBottom:10 }}>📋</div>
-                <div style={{ fontSize:15, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-                  No requirements yet
-                </div>
+                <div style={{ fontSize:15, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("qEmpty")}</div>
                 <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:400, margin:"0 auto 16px" }}>
                   Document functional, non-functional, business and regulatory requirements.
                 </div>
@@ -375,7 +375,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                             }}
                             style={{ padding:"4px 9px", fontSize:10.5, fontWeight:600, cursor:"pointer",
                               border:"1px solid var(--border)", borderRadius:6, background:"#fff",
-                              color:"var(--text-2)", fontFamily:"var(--font)" }}>Edit</button>
+                              color:"var(--text-2)", fontFamily:"var(--font)" }}>{tip("edit")}</button>
                           <button onClick={() => removeReq(r)}
                             style={{ padding:"4px 8px", fontSize:10.5, fontWeight:600, cursor:"pointer",
                               border:"1px solid #FECACA", borderRadius:6, background:"#fff",
@@ -397,16 +397,12 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                             </label>
                           ))}
                           <div style={{ display:"flex", gap:8 }}>
-                            <label style={{ flex:"0 0 110px", fontSize:11, color:"var(--text-3)" }}>
-                              Code
-                              <input value={editF.code || ""}
+                            <label style={{ flex:"0 0 110px", fontSize:11, color:"var(--text-3)" }}>{tip("qCode")}<input value={editF.code || ""}
                                 onChange={e => setEditF((f:any) => ({ ...f, code: e.target.value }))}
                                 style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                                   borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }} />
                             </label>
-                            <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>
-                              Type
-                              <select value={editF.type || "FUNCTIONAL"}
+                            <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>{tip("qType")}<select value={editF.type || "FUNCTIONAL"}
                                 onChange={e => setEditF((f:any) => ({ ...f, type: e.target.value }))}
                                 style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                                   borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
@@ -415,9 +411,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                               </select>
                             </label>
                           </div>
-                          <label style={{ fontSize:11, color:"var(--text-3)" }}>
-                            Linked task (traceability)
-                            <select value={editF.linkedTaskId || ""}
+                          <label style={{ fontSize:11, color:"var(--text-3)" }}>{tip("qLinkedTrace")}<select value={editF.linkedTaskId || ""}
                               onChange={e => setEditF((f:any) => ({ ...f, linkedTaskId: e.target.value }))}
                               style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                                 borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
@@ -427,9 +421,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                               ))}
                             </select>
                           </label>
-                          <label style={{ fontSize:11, color:"var(--text-3)" }}>
-                            Priority
-                            <select value={editF.priority || "MEDIUM"}
+                          <label style={{ fontSize:11, color:"var(--text-3)" }}>{tip("priority")}<select value={editF.priority || "MEDIUM"}
                               onChange={e => setEditF((f:any) => ({ ...f, priority: e.target.value }))}
                               style={{ width:"100%", marginTop:3, padding:"6px 9px", fontSize:12.5,
                                 borderRadius:6, border:"1px solid var(--border)", fontFamily:"var(--font)" }}>
@@ -440,11 +432,11 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                             <button onClick={() => saveReq(r.id)}
                               style={{ flex:1, padding:"6px 0", background:"var(--steel)", color:"#fff",
                                 border:"none", borderRadius:6, fontSize:12, fontWeight:700,
-                                cursor:"pointer", fontFamily:"var(--font)" }}>Save</button>
+                                cursor:"pointer", fontFamily:"var(--font)" }}>{tip("save")}</button>
                             <button onClick={() => setEditId(null)}
                               style={{ padding:"6px 12px", background:"none", border:"1px solid var(--border)",
                                 borderRadius:6, fontSize:12, cursor:"pointer", color:"var(--text-3)",
-                                fontFamily:"var(--font)" }}>Cancel</button>
+                                fontFamily:"var(--font)" }}>{tip("cancel")}</button>
                           </div>
                         </div>
                       )}
@@ -464,9 +456,7 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
               and verification result. Ensures all requirements are implemented and tested.
             </div>
             {requirements.length === 0 ? (
-              <div style={{ textAlign:"center", padding:"40px", color:"var(--text-3)" }}>
-                Add requirements first to build the traceability matrix.
-              </div>
+              <div style={{ textAlign:"center", padding:"40px", color:"var(--text-3)" }}>{tip("qMatrixEmpty")}</div>
             ) : (
               <div style={{ background:"#fff", border:"1px solid var(--border)",
                 borderRadius:"var(--radius)", overflow:"hidden" }}>
@@ -526,9 +516,9 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                 {/* Summary */}
                 <div style={{ padding:"10px 16px", background:"var(--surface)",
                   borderTop:"1px solid var(--border)", display:"flex", gap:20, fontSize:11 }}>
-                  <span>Total: <strong>{total}</strong></span>
-                  <span style={{ color:"#059669" }}>Verified: <strong>{verified}</strong></span>
-                  <span style={{ color:"#1B6CA8" }}>Approved: <strong>{approved}</strong></span>
+                  <span>{tip("qTotal")}<strong>{total}</strong></span>
+                  <span style={{ color:"#059669" }}>{tip("qVerified")}<strong>{verified}</strong></span>
+                  <span style={{ color:"#1B6CA8" }}>{tip("qApproved")}<strong>{approved}</strong></span>
                   <span style={{ color:"#D97706" }}>Linked: <strong>{linked}/{total}</strong></span>
                   <span style={{ color:total>0&&verified===total?"#059669":"#D97706", fontWeight:700 }}>
                     Coverage: {total>0?Math.round((verified/total)*100):0}%

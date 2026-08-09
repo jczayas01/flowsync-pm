@@ -3,6 +3,7 @@
 // PM Best Practices — Stakeholder Communication Plan
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 
 const FORMATS   = ["Status Report","Email","Meeting","Dashboard","Presentation","Memo","Teams Message"]
@@ -12,6 +13,7 @@ const METHODS   = ["Email","Microsoft Teams","In-person","Video call","Project p
 export function CommPlanTab({ projectId, workspaceId, entries, members }: {
   projectId:string; workspaceId:string; entries:any[]; members:any[]
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
   const [adding, setAdding] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -68,41 +70,41 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
           <div style={{ maxWidth:760, display:"flex", flexDirection:"column", gap:10 }}>
             {error && <div style={{ color:"var(--red)", fontSize:12 }}>✗ {error}</div>}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
-              <div><label style={lbl}>Stakeholder *</label>
+              <div><label style={lbl}>{tip("mStakeholder")}</label>
                 <input style={inp} value={form.stakeholderName} placeholder="Name or group"
                   onChange={e=>setForm(f=>({...f,stakeholderName:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Role</label>
+              <div><label style={lbl}>{tip("mRole")}</label>
                 <input style={inp} value={form.role} placeholder="e.g. Sponsor"
                   onChange={e=>setForm(f=>({...f,role:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Format</label>
+              <div><label style={lbl}>{tip("mFormat")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.format} onChange={e=>setForm(f=>({...f,format:e.target.value}))}>
                   {FORMATS.map(v=><option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
-              <div><label style={lbl}>Frequency</label>
+              <div><label style={lbl}>{tip("mFrequency")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.frequency} onChange={e=>setForm(f=>({...f,frequency:e.target.value}))}>
                   {FREQS.map(v=><option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
-              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>Information / Content *</label>
+              <div style={{ gridColumn:"1/-1" }}><label style={lbl}>{tip("mContent")}</label>
                 <input style={inp} value={form.information} placeholder="What information will they receive? e.g. Weekly status report, budget updates, milestone notifications"
                   onChange={e=>setForm(f=>({...f,information:e.target.value}))} />
               </div>
-              <div><label style={lbl}>Method</label>
+              <div><label style={lbl}>{tip("mMethod")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.method} onChange={e=>setForm(f=>({...f,method:e.target.value}))}>
                   {METHODS.map(v=><option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
-              <div><label style={lbl}>Responsible</label>
+              <div><label style={lbl}>{tip("mResponsible")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.ownerId} onChange={e=>setForm(f=>({...f,ownerId:e.target.value}))}>
-                  <option value="">Unassigned</option>
+                  <option value="">{tip("unassigned")}</option>
                   {members.map(m=><option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
                 </select>
               </div>
               {/* PM Standard Stakeholder Engagement */}
-              <div><label style={lbl}>Current engagement level</label>
+              <div><label style={lbl}>{tip("mCurrentEng")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.engagementCurrent}
                   onChange={e=>setForm(f=>({...f,engagementCurrent:e.target.value}))}>
                   {["UNAWARE","RESISTANT","NEUTRAL","SUPPORTIVE","LEADING"].map(v=>(
@@ -110,7 +112,7 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
                   ))}
                 </select>
               </div>
-              <div><label style={lbl}>Target engagement level</label>
+              <div><label style={lbl}>{tip("mTargetEng")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.engagementTarget}
                   onChange={e=>setForm(f=>({...f,engagementTarget:e.target.value}))}>
                   {["UNAWARE","RESISTANT","NEUTRAL","SUPPORTIVE","LEADING"].map(v=>(
@@ -118,13 +120,13 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
                   ))}
                 </select>
               </div>
-              <div><label style={lbl}>Influence</label>
+              <div><label style={lbl}>{tip("mInfluence")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.influence}
                   onChange={e=>setForm(f=>({...f,influence:e.target.value}))}>
                   {["HIGH","MEDIUM","LOW"].map(v=><option key={v}>{v}</option>)}
                 </select>
               </div>
-              <div><label style={lbl}>Interest</label>
+              <div><label style={lbl}>{tip("mInterest")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.interest}
                   onChange={e=>setForm(f=>({...f,interest:e.target.value}))}>
                   {["HIGH","MEDIUM","LOW"].map(v=><option key={v}>{v}</option>)}
@@ -144,7 +146,7 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
         {entries.length === 0 ? (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📣</div>
-            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>No communication plan yet</div>
+            <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{tip("mEmpty")}</div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:440, margin:"0 auto" }}>
               PM best practices require a stakeholder communication plan — defining who receives what information, how often, and through which channel. This ensures no stakeholder is left uninformed.
             </div>
@@ -204,9 +206,7 @@ export function CommPlanTab({ projectId, workspaceId, entries, members }: {
                       router.refresh()
                       setDeletingId(null)
                     }} style={{ fontSize:11, color:"var(--red)", background:"none", border:"none",
-                      cursor:"pointer", fontFamily:"var(--font)" }}>
-                      Remove
-                    </button>
+                      cursor:"pointer", fontFamily:"var(--font)" }}>{tip("mRemove")}</button>
                   </td>
                 </tr>
               ))}

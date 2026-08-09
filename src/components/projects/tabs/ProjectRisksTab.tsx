@@ -4,6 +4,7 @@
 // P×I heat map, risk register, opportunity tracking, response strategies
 
 import { DateField } from "@/components/shared/DatePicker"
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
@@ -79,6 +80,7 @@ const IMPACTS = ["NEGLIGIBLE","MINOR","MODERATE","MAJOR","CRITICAL"]
 export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
   projectId: string; risks: any[]; members: any[]; workspaceId: string
 }) {
+  const tip = useTranslations("tips")
   const router = useRouter()
 
   // ── AI document scan → risk candidates ──
@@ -309,7 +311,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
 
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           style={{ ...inp, width:"auto", padding:"6px 10px", fontSize:12 }}>
-          <option value="">All statuses</option>
+          <option value="">{tip("rAllStatuses")}</option>
           {["OPEN","MITIGATED","ACCEPTED","TRIGGERED","CLOSED"].map(s =>
             <option key={s} value={s}>{s.charAt(0)+s.slice(1).toLowerCase()}</option>
           )}
@@ -424,33 +426,33 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
               )}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
                 <div style={{ gridColumn:"1/-1" }}>
-                  <label style={lbl}>Title *</label>
+                  <label style={lbl}>{tip("titleReq")}</label>
                   <input style={inp} value={form.title} placeholder={showOpp?"Describe the opportunity...":"Describe the risk..."}
                     onChange={e => setForm(f=>({...f,title:e.target.value}))} />
                 </div>
                 <div>
-                  <label style={lbl}>Category</label>
+                  <label style={lbl}>{tip("category")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.category}
                     onChange={e => setForm(f=>({...f,category:e.target.value}))}>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl} title="How likely this is to happen, 1 (rare) to 5 (near certain). Judge it as of today — a risk that was unlikely at kickoff may not be now.">Probability</label>
+                  <label style={lbl} title="How likely this is to happen, 1 (rare) to 5 (near certain). Judge it as of today — a risk that was unlikely at kickoff may not be now.">{tip("rProbability")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.probability}
                     onChange={e => setForm(f=>({...f,probability:e.target.value}))}>
                     {Object.entries(PROB_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl} title="What it costs the project if it happens, 1 (minor) to 5 (severe). Score the consequence after your existing controls, not the raw worst case.">Impact</label>
+                  <label style={lbl} title="What it costs the project if it happens, 1 (minor) to 5 (severe). Score the consequence after your existing controls, not the raw worst case.">{tip("impact")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.impact}
                     onChange={e => setForm(f=>({...f,impact:e.target.value}))}>
                     {Object.entries(IMPACT_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Response strategy</label>
+                  <label style={lbl}>{tip("rResponse")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.responseType}
                     onChange={e => setForm(f=>({...f,responseType:e.target.value}))}>
                     <option value="">— Select —</option>
@@ -458,15 +460,15 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Owner</label>
+                  <label style={lbl}>{tip("owner")}</label>
                   <select style={{...inp,cursor:"pointer"}} value={form.ownerId}
                     onChange={e => setForm(f=>({...f,ownerId:e.target.value}))}>
-                    <option value="">Unassigned</option>
+                    <option value="">{tip("unassigned")}</option>
                     {members.map(m => <option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Review date</label>
+                  <label style={lbl}>{tip("rReviewDate")}</label>
                   <DateField  style={inp} value={form.reviewDate}
                     onChange={e => setForm(f=>({...f,reviewDate:e.target.value}))} />
                 </div>
@@ -478,10 +480,10 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                     onChange={e => setForm(f=>({...f,mitigationPlan:e.target.value}))} />
                 </div>
                 <div style={{ gridColumn:"1/-1" }}>
-                  <label style={lbl}>Contingency plan</label>
+                  <label style={lbl}>{tip("rContingency")}</label>
                   <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                     value={form.contingencyPlan}
-                    placeholder="What will you do if this risk occurs?"
+                    placeholder={tip("rContingencyPh")}
                     onChange={e => setForm(f=>({...f,contingencyPlan:e.target.value}))} />
                 </div>
               </div>
@@ -497,7 +499,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
                     fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                  Cancel
+                  {tip("cancel")}
                 </button>
               </div>
             </div>
@@ -522,7 +524,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   transform:"rotate(180deg)", fontSize:10, fontWeight:700,
                   color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".08em",
                   paddingRight:8 }}>
-                  Probability
+                  {tip("rProbability")}
                 </div>
 
                 {/* Column headers */}
@@ -586,7 +588,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                 <div style={{ gridColumn:"2/-1", textAlign:"center", fontSize:10,
                   fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
                   letterSpacing:".08em", marginTop:6 }}>
-                  Impact
+                  {tip("impact")}
                 </div>
               </div>
 
@@ -596,34 +598,34 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   <>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#059669" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>High value (15-25)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rHighValue")}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#10B981" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>Medium value (9-14)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rMedValue")}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#34D399" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>Low value (1-8)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rLowValue")}</span>
                     </div>
                   </>
                 ) : (
                   <>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#FCA5A5" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>Critical (15-25)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rCritical")}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#FCD34D" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>High (9-14)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rHigh")}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#93C5FD" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>Medium (4-8)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rMedium")}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       <div style={{ width:14, height:14, borderRadius:3, background:"#E2E8F0" }} />
-                      <span style={{ fontSize:11, color:"var(--text-3)" }}>Low (1-3)</span>
+                      <span style={{ fontSize:11, color:"var(--text-3)" }}>{tip("rLow")}</span>
                     </div>
                   </>
                 )}
@@ -718,7 +720,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                           </span>
                         </td>
                         <td style={{ padding:"9px 12px" }}>
-                          <span style={{ fontSize:11, color:"var(--steel)" }}>View →</span>
+                          <span style={{ fontSize:11, color:"var(--steel)" }}>{tip("view")}</span>
                         </td>
                       </tr>
                     )
@@ -784,7 +786,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Probability</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("rProbability")}</div>
                     <select style={{...inp, cursor:"pointer"}} value={editRisk.probability}
                       onChange={e=>setEditRisk((f:any)=>({...f, probability:e.target.value}))}>
                       {["VERY_LOW","LOW","MEDIUM","HIGH","VERY_HIGH"].map(v=>
@@ -793,7 +795,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Impact</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("impact")}</div>
                     <select style={{...inp, cursor:"pointer"}} value={editRisk.impact}
                       onChange={e=>setEditRisk((f:any)=>({...f, impact:e.target.value}))}>
                       {["NEGLIGIBLE","MINOR","MODERATE","MAJOR","CRITICAL"].map(v=>
@@ -802,16 +804,16 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Owner</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("owner")}</div>
                     <select style={{...inp, cursor:"pointer"}} value={editRisk.ownerId}
                       onChange={e=>setEditRisk((f:any)=>({...f, ownerId:e.target.value}))}>
-                      <option value="">Unassigned</option>
+                      <option value="">{tip("unassigned")}</option>
                       {members.map((m:any) => <option key={m.userId||m.id} value={m.userId||m.id}>{m.user?.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                      letterSpacing:".05em", marginBottom:4 }}>Response</div>
+                      letterSpacing:".05em", marginBottom:4 }}>{tip("rResponseCol")}</div>
                     <select style={{...inp, cursor:"pointer"}} value={editRisk.responseType}
                       onChange={e=>setEditRisk((f:any)=>({...f, responseType:e.target.value}))}>
                       <option value="">—</option>
@@ -824,7 +826,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                 </div>
                 <div>
                   <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
-                    letterSpacing:".05em", marginBottom:4 }}>Description</div>
+                    letterSpacing:".05em", marginBottom:4 }}>{tip("description")}</div>
                   <textarea style={{...inp, resize:"vertical"}} rows={2} value={editRisk.description}
                     onChange={e=>setEditRisk((f:any)=>({...f, description:e.target.value}))} />
                 </div>
@@ -847,7 +849,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
                     style={{ padding:"8px 14px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)" }}>
-                    Cancel
+                    {tip("cancel")}
                   </button>
                 </div>
               </div>
@@ -880,7 +882,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
               <div>
                 <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)",
                   textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
-                  Description
+                  {tip("description")}
                 </div>
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.7, margin:0 }}>
                   {selected.description}
@@ -903,7 +905,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
               <div style={{ background:"#FFFBEB", borderRadius:"var(--radius)", padding:12 }}>
                 <div style={{ fontSize:10, fontWeight:700, color:"#92400E",
                   textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
-                  Contingency plan
+                  {tip("rContingency")}
                 </div>
                 <p style={{ fontSize:12, color:"#78350F", lineHeight:1.7, margin:0,
                   whiteSpace:"pre-line" }}>
@@ -915,7 +917,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
               <div style={{ background:"#FEF2F2", borderRadius:"var(--radius)", padding:12 }}>
                 <div style={{ fontSize:10, fontWeight:700, color:"var(--red)",
                   textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
-                  Residual risk
+                  {tip("rResidual")}
                 </div>
                 <p style={{ fontSize:12, color:"#991B1B", lineHeight:1.7, margin:0 }}>
                   {selected.residualRisk}
@@ -927,7 +929,7 @@ export function ProjectRisksTab({ projectId, risks, members, workspaceId }: {
             <div>
               <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)",
                 textTransform:"uppercase", letterSpacing:".05em", marginBottom:8 }}>
-                Update status
+                {tip("rUpdateStatus")}
               </div>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                 {["OPEN","MITIGATED","ACCEPTED","TRIGGERED","CLOSED"].map(s => (
