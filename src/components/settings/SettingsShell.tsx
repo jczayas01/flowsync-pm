@@ -1,4 +1,5 @@
 "use client"
+import { useTranslations } from "next-intl"
 // src/components/settings/SettingsShell.tsx — Phase 3 settings tabs
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -24,6 +25,7 @@ const TABS = [
 export function SettingsShell({ children, role = "", plan = "" }:{
   children:React.ReactNode; role?:string; plan?:string
 }) {
+  const st = useTranslations("tabs")
   const pathname = usePathname()
   const rbacRole = mapDbRoleToRbac(role as any)
   const limits   = limitsForPlan(plan)
@@ -33,7 +35,7 @@ export function SettingsShell({ children, role = "", plan = "" }:{
   return (
     <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"0 24px",flexShrink:0}}>
-        <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",padding:"14px 0 0"}}>Settings</h1>
+        <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",padding:"14px 0 0"}}>{st("Settings")}</h1>
         <div style={{display:"flex",gap:0,marginTop:8,overflowX:"auto"}}>
           {visible.map(tab=>(
             <Link key={tab.href} href={tab.href}

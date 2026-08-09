@@ -5,6 +5,7 @@
 // onUploaded so the Logo URL field and preview update immediately.
 
 import { useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 
 export function LogoUploader({
   disabled,
@@ -13,6 +14,7 @@ export function LogoUploader({
   disabled?: boolean
   onUploaded: (logoUrl: string) => void
 }) {
+  const lu = useTranslations("logoUploader")
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy]   = useState(false)
   const [over, setOver]   = useState(false)
@@ -62,8 +64,8 @@ export function LogoUploader({
         }}
       >
         {busy
-          ? "Uploading…"
-          : <>Drop a logo here or <span style={{ color: "var(--steel,#1B6CA8)", fontWeight: 600 }}>browse</span> — PNG, JPG, SVG or WebP, up to 1 MB</>}
+          ? lu("Uploading…")
+          : <>{lu("dropHere")} <span style={{ color: "var(--steel,#1B6CA8)", fontWeight: 600 }}>{lu("browse")}</span> {lu("fileTypes")}</>}
       </div>
       <input
         ref={inputRef}

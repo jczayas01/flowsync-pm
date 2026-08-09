@@ -1,10 +1,12 @@
 "use client"
 // src/components/settings/WhiteLabelView.tsx
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { isWorkspaceAdmin } from "@/lib/rbac/roles"
 import { LogoUploader } from "./LogoUploader"
 
 export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string }) {
+  const wl = useTranslations("whiteLabel")
   const canEdit = isWorkspaceAdmin(role)
   // White-label is ENTERPRISE-only per the plan matrix. Trial (FREE) previews it.
   const isPro   = ["ENTERPRISE","FREE"].includes(workspace?.plan)
@@ -66,7 +68,7 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
   return (
     <div style={{maxWidth:680}}>
       <div style={{marginBottom:24}}>
-        <h2 style={{fontSize:16,fontWeight:600,color:"var(--text)",marginBottom:4}}>White-label & custom domain</h2>
+        <h2 style={{fontSize:16,fontWeight:600,color:"var(--text)",marginBottom:4}}>{wl("White-label & custom domain")}</h2>
         <p style={{fontSize:13,color:"var(--text-3)"}}>
           Brand FlowSync PM as your own. Present it to clients under your organization's identity.
         </p>
@@ -81,8 +83,8 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
               Enterprise plan required
             </div>
             <div style={{fontSize:12,color:"#92400E"}}>
-              White-label features and custom domains are available on Business ($47/mo) and Enterprise plans.
-              <a href="/settings/billing" style={{color:"var(--steel)",marginLeft:6}}>Upgrade →</a>
+              {wl("upgradeHint")}
+              <a href="/settings/billing" style={{color:"var(--steel)",marginLeft:6}}>{wl("Upgrade →")}</a>
             </div>
           </div>
         </div>
@@ -97,15 +99,15 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
 
       {/* Custom domain */}
       <div style={card}>
-        <div style={secTitle}>Custom domain</div>
+        <div style={secTitle}>{wl("Custom domain")}</div>
         <div style={{marginBottom:12}}>
           <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>
-            Domain name
+            {wl("Domain name")}
           </label>
           <div style={{display:"flex",gap:8}}>
             <input value={form.customDomain} disabled={!canEdit||!isPro}
               onChange={e=>setForm(f=>({...f,customDomain:e.target.value}))}
-              placeholder="pm.yourcompany.com"
+              placeholder={wl("phDomain")}
               style={{...inp,flex:1}} />
             <button onClick={verifyDns} disabled={!form.customDomain.trim()||verifying||!isPro}
               style={{padding:"9px 16px",background:"var(--surface)",border:"1px solid var(--border)",
@@ -125,7 +127,7 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
         </div>
         <div style={{background:"var(--surface)",borderRadius:8,padding:"12px 14px",fontSize:12,
           color:"var(--text-3)",lineHeight:1.7}}>
-          <strong style={{color:"var(--text-2)"}}>Setup instructions:</strong><br/>
+          <strong style={{color:"var(--text-2)"}}>{wl("Setup instructions:")}</strong><br/>
           1. Add a CNAME record: <code style={{background:"#fff",padding:"1px 5px",borderRadius:3,
             fontFamily:"monospace",fontSize:11}}>pm.yourcompany.com → app.flowsyncpm.com</code><br/>
           2. Click "Verify DNS" above<br/>
@@ -135,30 +137,30 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
 
       {/* Brand identity */}
       <div style={card}>
-        <div style={secTitle}>Brand identity</div>
+        <div style={secTitle}>{wl("Brand identity")}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           <div>
             <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>
-              Brand name
+              {wl("Brand name")}
             </label>
             <input value={form.brandName} disabled={!canEdit||!isPro}
               onChange={e=>setForm(f=>({...f,brandName:e.target.value}))}
-              placeholder="Your Organization PM"
+              placeholder={wl("phBrandName")}
               style={inp} />
           </div>
           <div>
             <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>
-              Support email
+              {wl("Support email")}
             </label>
             <input type="email" value={form.supportEmail} disabled={!canEdit||!isPro}
               onChange={e=>setForm(f=>({...f,supportEmail:e.target.value}))}
-              placeholder="support@yourcompany.com"
+              placeholder={wl("phSupportEmail")}
               style={inp} />
           </div>
         </div>
         <div style={{marginBottom:14}}>
           <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>
-            Logo URL (recommended: 300×80px PNG or SVG)
+            {wl("logoUrlLabel")}
           </label>
           <input value={form.logoUrl} disabled={!canEdit||!isPro}
             onChange={e=>setForm(f=>({...f,logoUrl:e.target.value}))}
@@ -169,18 +171,18 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
           {form.logoUrl&&(
             <div style={{marginTop:8,padding:"8px 12px",background:"var(--navy,#0D1B2A)",
               borderRadius:"var(--radius)",display:"inline-block"}}>
-              <img src={form.logoUrl} alt="Logo preview" style={{height:32,objectFit:"contain"}}
+              <img src={form.logoUrl} alt={wl("Logo preview")} style={{height:32,objectFit:"contain"}}
                 onError={e=>(e.currentTarget.style.display="none")} />
             </div>
           )}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           {[
-            {key:"primaryColor",label:"Primary color"},
-            {key:"accentColor", label:"Accent color"},
+            {key:"primaryColor",label:"primaryColor"},
+            {key:"accentColor", label:"accentColor"},
           ].map(({key,label})=>(
             <div key={key}>
-              <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>{label}</label>
+              <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>{wl(label as any)}</label>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input type="color" value={(form as any)[key]} disabled={!canEdit||!isPro}
                   onChange={e=>setForm(f=>({...f,[key]:e.target.value}))}
@@ -210,7 +212,7 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
 
       {/* Preview */}
       <div style={card}>
-        <div style={secTitle}>Brand preview</div>
+        <div style={secTitle}>{wl("Brand preview")}</div>
         <div style={{background:"var(--navy,#0D1B2A)",borderRadius:8,padding:"14px 18px",
           display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:28,height:28,background:form.primaryColor,borderRadius:7,position:"relative",flexShrink:0}}>

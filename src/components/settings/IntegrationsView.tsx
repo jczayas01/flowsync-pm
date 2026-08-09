@@ -1,6 +1,7 @@
 // src/components/settings/IntegrationsView.tsx
 "use client"
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { M365SmartInbox } from "./M365SmartInbox"
 import { useSearchParams, useRouter } from "next/navigation"
 
@@ -9,23 +10,23 @@ const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
 // What each scope actually buys the user, in their words — not Microsoft's.
 const CAPABILITIES = [
-  { scope:"Mail.Read",           icon:"📧", label:"Project email",
-    desc:"Emails about a project get tagged to it, so the thread lives with the work instead of in one person's inbox." },
-  { scope:"Calendars.Read",      icon:"📅", label:"Meetings",
-    desc:"Project meetings are detected from your calendar and can be logged as minutes." },
-  { scope:"OnlineMeetings.Read", icon:"💬", label:"Teams meetings",
-    desc:"Teams meeting details attach to the project record." },
-  { scope:"Tasks.ReadWrite",     icon:"✅", label:"Planner & To Do",
-    desc:"Tasks stay in step between FlowSync PM and Microsoft Planner." },
+  { scope:"Mail.Read",           icon:"📧", label:"capMailLabel",
+    desc:"capMailDesc" },
+  { scope:"Calendars.Read",      icon:"📅", label:"capMeetingsLabel",
+    desc:"capMeetingsDesc" },
+  { scope:"OnlineMeetings.Read", icon:"💬", label:"capTeamsLabel",
+    desc:"capTeamsDesc" },
+  { scope:"Tasks.ReadWrite",     icon:"✅", label:"capPlannerLabel",
+    desc:"capPlannerDesc" },
 ]
 
 const STATUS_MESSAGES: Record<string, { text:string; ok:boolean }> = {
-  connected:      { text:"Microsoft 365 connected.", ok:true },
-  denied:         { text:"You cancelled the Microsoft consent screen. Nothing was connected.", ok:false },
-  state_mismatch: { text:"That sign-in link expired or didn't match. Try connecting again.", ok:false },
-  exchange_failed:{ text:"Microsoft rejected the token exchange. Check the app's client secret and redirect URI.", ok:false },
-  misconfigured:  { text:"Microsoft credentials aren't configured on the server.", ok:false },
-  error:          { text:"Something went wrong connecting to Microsoft 365.", ok:false },
+  connected:      { text:"m365Connected", ok:true },
+  denied:         { text:"m365Denied", ok:false },
+  state_mismatch: { text:"m365StateMismatch", ok:false },
+  exchange_failed:{ text:"m365ExchangeFailed", ok:false },
+  misconfigured:  { text:"m365Misconfigured", ok:false },
+  error:          { text:"m365Error", ok:false },
 }
 
 export function IntegrationsView({
@@ -34,22 +35,23 @@ export function IntegrationsView({
   connected: boolean; signedInWithMicrosoft: boolean; hasRefresh: boolean
   scopes: string[]; expiresAt: string | null; canManage: boolean
 }) {
+  const iv = useTranslations("integrations")
   const params = useSearchParams()
   const router = useRouter()
   const [msg, setMsg] = useState<{ text:string; ok:boolean } | null>(null)
 
   useEffect(() => {
     const s = params.get("m365")
-    if (s && STATUS_MESSAGES[s]) setMsg(STATUS_MESSAGES[s])
+    if (s && STATUS_MESSAGES[s]) setMsg({...STATUS_MESSAGES[s], text: iv(STATUS_MESSAGES[s].text as any)})
   }, [params])
 
   const has = (s: string) => scopes.some(g => g.toLowerCase() === s.toLowerCase())
 
   return (
     <div style={{ padding:"20px 16px", maxWidth:840, margin:"0 auto", fontFamily:"var(--font)" }}>
-      <h1 style={{ fontSize:19, fontWeight:700, color:NAVY, marginBottom:4 }}>Integrations</h1>
+      <h1 style={{ fontSize:19, fontWeight:700, color:NAVY, marginBottom:4 }}>{iv("Integrations")}</h1>
       <p style={{ fontSize:12.5, color:SLATE, marginBottom:18 }}>
-        Connect the tools your team already works in.
+        {iv("subtitle")}
       </p>
 
       {msg && (
@@ -67,16 +69,16 @@ export function IntegrationsView({
           <div style={{ width:40, height:40, borderRadius:9, background:"#EFF6FF",
             display:"grid", placeItems:"center", fontSize:20, flexShrink:0 }}>🪟</div>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:NAVY }}>Microsoft 365</div>
+            <div style={{ fontSize:15, fontWeight:700, color:NAVY }}>{iv("Microsoft 365")}</div>
             <div style={{ fontSize:12, color:SLATE, marginTop:2 }}>
-              Outlook mail, calendar, Teams meetings and Planner tasks.
+              {iv("m365Subtitle")}
             </div>
           </div>
           <span style={{ fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:5,
             fontFamily:MONO, whiteSpace:"nowrap", flexShrink:0,
             background: connected ? "#ECFDF5" : "#F1F5F9",
             color: connected ? GREEN : SLATE }}>
-            {connected ? "CONNECTED" : "NOT CONNECTED"}
+            {connected ? iv("CONNECTED") : iv("NOT CONNECTED")}
           </span>
         </div>
 
@@ -86,8 +88,7 @@ export function IntegrationsView({
           {!connected && signedInWithMicrosoft && (
             <div style={{ padding:"10px 13px", background:"#FFFBEB", border:"1px solid #FDE68A",
               borderRadius:8, fontSize:12.5, color:"#92400E", lineHeight:1.6, marginBottom:14 }}>
-              You sign in with Microsoft, but that only proves who you are. Reading mail,
-              calendar and tasks is a separate permission — connect below to grant it.
+              {iv("signedInHint")}
             </div>
           )}
 
@@ -102,14 +103,14 @@ export function IntegrationsView({
                   <span style={{ fontSize:16, flexShrink:0 }}>{c.icon}</span>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-                      <span style={{ fontSize:13, fontWeight:600, color:NAVY }}>{c.label}</span>
+                      <span style={{ fontSize:13, fontWeight:600, color:NAVY }}>{iv(c.label as any)}</span>
                       <span style={{ fontFamily:MONO, fontSize:9.5, color:SLATE,
                         background:"var(--surface-2,#F1F5F9)", padding:"1px 5px", borderRadius:3 }}>
                         {c.scope}
                       </span>
                       {on && <span style={{ fontSize:11, color:GREEN, fontWeight:700 }}>✓</span>}
                     </div>
-                    <div style={{ fontSize:12, color:SLATE, lineHeight:1.55, marginTop:3 }}>{c.desc}</div>
+                    <div style={{ fontSize:12, color:SLATE, lineHeight:1.55, marginTop:3 }}>{iv(c.desc as any)}</div>
                   </div>
                 </div>
               )
@@ -122,14 +123,14 @@ export function IntegrationsView({
                 style={{ padding:"9px 16px", background:"#fff", color:"var(--text-2)",
                   border:"1px solid var(--border)", borderRadius:8, fontSize:12.5,
                   fontWeight:600, textDecoration:"none" }}>
-                Reconnect
+                {iv("Reconnect")}
               </a>
               <div style={{ fontSize:11.5, color:SLATE }}>
                 {hasRefresh
-                  ? "Access renews automatically."
-                  : "⚠ No refresh token — access will stop when the current token expires. Reconnect to fix."}
+                  ? iv("renewsAuto")
+                  : iv("noRefreshToken")}
                 {expiresAt && (
-                  <> · Token valid until{" "}
+                  <> · {iv("tokenValidUntil")}{" "}
                     <span style={{ fontFamily:MONO }}>
                       {new Date(expiresAt).toLocaleString("en-US",{ month:"short", day:"numeric", hour:"numeric", minute:"2-digit" })}
                     </span>
@@ -141,13 +142,12 @@ export function IntegrationsView({
             <a href="/api/m365/authorize"
               style={{ display:"inline-block", padding:"11px 20px", background:STEEL, color:"#fff",
                 borderRadius:8, fontSize:13, fontWeight:600, textDecoration:"none" }}>
-              Connect Microsoft 365
+              {iv("Connect Microsoft 365")}
             </a>
           )}
 
           <div style={{ marginTop:14, fontSize:11, color:"var(--text-3)", lineHeight:1.6 }}>
-            You'll see Microsoft's consent screen listing exactly what's being granted. You can
-            disconnect at any time from your Microsoft account, and nothing is read until you connect.
+            {iv("consentHint")}
           </div>
         </div>
       </div>

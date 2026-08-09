@@ -1,5 +1,6 @@
 "use client"
 // src/components/settings/ApiDocsView.tsx — Public API docs + key management
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { dateLocale } from "@/lib/date-locale"
 import { Badge, EmptyState } from "@/components/ui"
@@ -76,6 +77,7 @@ interface ApiKey { id:string; name:string; prefix:string; scopes:string[]; lastU
 export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
   apiKeys:any[]; workspaceId:string; role:string
 }) {
+  const ad = useTranslations("apiDocs")
   const canManage = ["SUPER_ADMIN","OWNER","ADMIN"].includes(role)
   const [tab, setTab]           = useState<"keys"|"docs"|"sandbox">("keys")
   const [keys, setKeys]         = useState<ApiKey[]>(initialKeys)
@@ -132,7 +134,7 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
   }
 
   async function revokeKey(id:string) {
-    if(!confirm("Revoke this API key? Any integrations using it will stop working immediately.")) return
+    if(!confirm(ad("confirmRevoke"))) return
     const res = await fetch(`/api/api-keys/${id}`, { method:"DELETE" })
     if(res.ok){ setKeys(k=>k.map(key=>key.id===id?{...key,isActive:false}:key)); showToast("Key revoked") }
     else showToast("✗ Revoke failed")
@@ -160,22 +162,22 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
   return (
     <div style={{maxWidth:860,position:"relative"}}>
       <div style={{marginBottom:20}}>
-        <h2 style={{fontSize:16,fontWeight:600,color:"var(--text)",marginBottom:4}}>API & integrations</h2>
+        <h2 style={{fontSize:16,fontWeight:600,color:"var(--text)",marginBottom:4}}>{ad("API & integrations")}</h2>
         <p style={{fontSize:13,color:"var(--text-3)"}}>
-          Manage API keys, explore the REST API, and test endpoints in the sandbox.
+          {ad("subtitle")}
         </p>
       </div>
 
       {/* Tabs */}
       <div style={{display:"flex",gap:0,borderBottom:"1px solid var(--border)",marginBottom:20}}>
-        {[["keys","🔑 API keys"],["docs","📖 API reference"],["sandbox","🧪 Sandbox"]].map(([id,label])=>(
+        {[["keys","apiKeysTab"],["docs","apiRefTab"],["sandbox","sandboxTab"]].map(([id,label])=>(
           <button key={id} onClick={()=>setTab(id as any)}
             style={{padding:"9px 16px",border:"none",background:"none",cursor:"pointer",
               fontFamily:"var(--font)",fontSize:12,fontWeight:500,
               color:tab===id?"var(--steel)":"var(--text-3)",
               borderBottom:tab===id?"2px solid var(--steel)":"2px solid transparent",
               marginBottom:-1}}>
-            {label}
+            {ad(label as any)}
           </button>
         ))}
       </div>
@@ -187,7 +189,7 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
             <div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:"var(--radius)",
               padding:"14px 16px",marginBottom:16}}>
               <div style={{fontSize:13,fontWeight:600,color:"#065F46",marginBottom:8}}>
-                ✓ Your new API key — copy it now, it won't be shown again
+                ✓ {ad("newKeyWarn")}
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <code style={{fontFamily:"monospace",fontSize:13,color:"#065F46",flex:1,
@@ -199,26 +201,26 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
                   style={{padding:"8px 14px",background:"var(--green)",color:"#fff",border:"none",
                     borderRadius:"var(--radius)",fontSize:12,fontWeight:500,cursor:"pointer",
                     fontFamily:"var(--font)",flexShrink:0}}>
-                  Copy
+                  {ad("Copy")}
                 </button>
               </div>
               <button onClick={()=>setCreatedKey(null)}
                 style={{marginTop:8,fontSize:11,color:"#059669",background:"none",border:"none",
                   cursor:"pointer",fontFamily:"var(--font)"}}>
-                I've saved it — dismiss
+                {ad("dismissedIt")}
               </button>
             </div>
           )}
 
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>
-              API keys ({keys.filter(k=>k.isActive).length} active)
+              {ad("apiKeysActive",{n:keys.filter(k=>k.isActive).length})}
             </div>
             {canManage&&(
               <button onClick={()=>setCreating(true)}
                 style={{padding:"7px 14px",background:"var(--steel)",color:"#fff",border:"none",
                   borderRadius:"var(--radius)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-                + Create API key
+                + {ad("Create API key")}
               </button>
             )}
           </div>
@@ -227,20 +229,20 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
             <form onSubmit={createKey}
               style={{background:"#fff",border:"2px solid var(--steel)",borderRadius:"var(--radius)",
                 padding:20,marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:14}}>New API key</div>
+              <div style={{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:14}}>{ad("New API key")}</div>
               <div style={{marginBottom:12}}>
                 <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-                  Key name *
+                  {ad("Key name *")}
                 </label>
                 <input autoFocus value={newKey.name} onChange={e=>setNewKey(k=>({...k,name:e.target.value}))}
-                  placeholder="e.g. Zapier integration, Power BI connector"
+                  placeholder={ad("phKeyName")}
                   style={{width:"100%",padding:"9px 12px",border:"1px solid var(--border)",
                     borderRadius:"var(--radius)",fontSize:13,fontFamily:"var(--font)",
                     color:"var(--text)",outline:"none"}} />
               </div>
               <div style={{marginBottom:14}}>
                 <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:8}}>
-                  Scopes ({newKey.scopes.length} selected)
+                  {ad("scopesSelected",{n:newKey.scopes.length})}
                 </label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {SCOPES.map(scope=>(
@@ -259,21 +261,21 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
                 <button type="button" onClick={()=>setCreating(false)}
                   style={{padding:"8px 16px",background:"#fff",border:"1px solid var(--border)",
                     borderRadius:"var(--radius)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",color:"var(--text-2)"}}>
-                  Cancel
+                  {ad("Cancel")}
                 </button>
                 <button type="submit" disabled={!newKey.name.trim()||saving}
                   style={{padding:"8px 20px",background:"var(--steel)",color:"#fff",border:"none",
                     borderRadius:"var(--radius)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)",
                     opacity:!newKey.name.trim()?0.5:1}}>
-                  {saving?"Creating…":"Create key"}
+                  {saving?ad("Creating…"):ad("Create key")}
                 </button>
               </div>
             </form>
           )}
 
           {keys.length===0&&!creating?(
-            <EmptyState icon="🔑" title="No API keys yet"
-              description="Create an API key to connect FlowSync PM to Zapier, Power BI, or any custom integration." />
+            <EmptyState icon="🔑" title={ad("No API keys yet")}
+              description={ad("apiKeysEmptyBody")} />
           ):(
             <div style={{background:"#fff",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
               {keys.map(key=>(
@@ -320,9 +322,9 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
           {/* Auth info */}
           <div style={{background:"var(--surface)",border:"1px solid var(--border)",
             borderRadius:"var(--radius)",padding:16,marginTop:16}}>
-            <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:8}}>Authentication</div>
+            <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:8}}>{ad("Authentication")}</div>
             <p style={{fontSize:12,color:"var(--text-3)",marginBottom:8,lineHeight:1.65}}>
-              All API requests must include your API key in the Authorization header:
+              {ad("authHeaderHint")}
             </p>
             <code style={{display:"block",fontFamily:"monospace",fontSize:12,
               background:"var(--navy,#0D1B2A)",color:"#34D399",padding:"10px 14px",
@@ -331,7 +333,7 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
             </code>
             <p style={{fontSize:11,color:"var(--text-3)",marginTop:8}}>
               Base URL: <code style={{fontFamily:"monospace"}}>https://flowsyncpm.com/api/v1</code>
-              {" · "}Rate limit: 1,000 requests/hour per key
+              {" · "}{ad("rateLimit")}
             </p>
           </div>
         </>
@@ -345,10 +347,10 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
             display:"flex",gap:10,alignItems:"center"}}>
             <span style={{fontSize:18}}>📖</span>
             <div>
-              <div style={{fontSize:13,fontWeight:500,color:"var(--text)"}}>REST API v1</div>
+              <div style={{fontSize:13,fontWeight:500,color:"var(--text)"}}>{ad("REST API v1")}</div>
               <div style={{fontSize:12,color:"var(--text-3)"}}>
                 Base URL: <code style={{fontFamily:"monospace",fontSize:11}}>https://flowsyncpm.com/api/v1</code>
-                {" · "}All responses are JSON · Authentication via Bearer token
+                {" · "}{ad("allJson")}
               </div>
             </div>
           </div>
@@ -437,10 +439,10 @@ export function ApiDocsView({ apiKeys:initialKeys, workspaceId, role }:{
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
             <div>
               <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-                API key
+                {ad("API key")}
               </label>
               <input value={sandboxApiKey} onChange={e=>setSandboxApiKey(e.target.value)}
-                placeholder="pxpm_…"
+                placeholder={ad("phApiKey")}
                 style={{width:"100%",padding:"8px 10px",border:"1px solid var(--border)",
                   borderRadius:"var(--radius)",fontSize:12,fontFamily:"monospace",
                   color:"var(--text)",outline:"none"}} />

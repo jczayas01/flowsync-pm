@@ -1,5 +1,6 @@
 "use client"
 // src/components/settings/CustomFieldsView.tsx
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { Badge, EmptyState } from "@/components/ui"
 
@@ -17,21 +18,22 @@ interface CustomField {
 }
 
 const FIELD_TYPE_META: Record<FieldType,{icon:string;label:string;desc:string}> = {
-  text:        { icon:"Aa",   label:"Text",         desc:"Short or long text input" },
-  number:      { icon:"#",    label:"Number",        desc:"Numeric value with optional unit" },
-  date:        { icon:"📅",   label:"Date",          desc:"Date or date range picker" },
-  select:      { icon:"▾",    label:"Dropdown",      desc:"Single choice from a list" },
-  multiselect: { icon:"☑",    label:"Multi-select",  desc:"Multiple choices from a list" },
-  checkbox:    { icon:"✓",    label:"Checkbox",      desc:"Boolean yes/no field" },
-  url:         { icon:"🔗",   label:"URL",           desc:"Web link with preview" },
-  email:       { icon:"@",    label:"Email",         desc:"Email address with validation" },
-  currency:    { icon:"$",    label:"Currency",      desc:"Monetary value with currency code" },
+  text:        { icon:"Aa",   label:"cfText",         desc:"cfTextDesc" },
+  number:      { icon:"#",    label:"cfNumber",        desc:"cfNumberDesc" },
+  date:        { icon:"📅",   label:"cfDate",          desc:"cfDateDesc" },
+  select:      { icon:"▾",    label:"cfDropdown",      desc:"cfDropdownDesc" },
+  multiselect: { icon:"☑",    label:"cfMultiselect",  desc:"cfMultiselectDesc" },
+  checkbox:    { icon:"✓",    label:"cfCheckbox",      desc:"cfCheckboxDesc" },
+  url:         { icon:"🔗",   label:"cfUrl",           desc:"cfUrlDesc" },
+  email:       { icon:"@",    label:"cfEmail",         desc:"cfEmailDesc" },
+  currency:    { icon:"$",    label:"cfCurrency",      desc:"cfCurrencyDesc" },
 }
 
 // Field rows are loaded from the server (see the settings page) — no sample data.
 
 
 export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ workspaceId:string; role:string; initialFields?:CustomField[] }) {
+  const cf = useTranslations("customFields")
   const canEdit = ["SUPER_ADMIN","OWNER","ADMIN"].includes(role)
   const [fields, setFields]   = useState<CustomField[]>(initialFields)
   const [entity, setEntity]   = useState<"project"|"task"|"all">("all")
@@ -83,7 +85,7 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
   }
 
   async function deleteField(id:string) {
-    if(!confirm("Delete this custom field? Data in existing records will be lost.")) return
+    if(!confirm(cf("confirmDelete"))) return
     const res = await fetch(`/api/custom-fields/${id}`, { method:"DELETE" })
     if(res.ok){ setFields(f=>f.filter(fl=>fl.id!==id)); showToast("Field deleted") }
     else showToast("✗ Delete failed")
@@ -102,7 +104,7 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
   return (
     <div style={{maxWidth:760,position:"relative"}}>
       <div style={{marginBottom:24}}>
-        <h2 style={{fontSize:16,fontWeight:600,color:"var(--text)",marginBottom:4}}>Custom fields</h2>
+        <h2 style={{fontSize:16,fontWeight:600,color:"var(--text)",marginBottom:4}}>{cf("Custom fields")}</h2>
         <p style={{fontSize:13,color:"var(--text-3)"}}>
           Add custom fields to projects and tasks to track data specific to your organization.
         </p>
@@ -140,19 +142,19 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
             <div>
               <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-                Field name *
+                {cf("Field name *")}
               </label>
               <input autoFocus value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
-                placeholder="e.g. Client name" style={inp} />
+                placeholder={cf("phFieldName")} style={inp} />
             </div>
             <div>
               <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-                Field type *
+                {cf("Field type *")}
               </label>
               <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value as any}))}
                 style={selStyle}>
                 {Object.entries(FIELD_TYPE_META).map(([id,meta])=>(
-                  <option key={id} value={id}>{meta.icon} {meta.label}</option>
+                  <option key={id} value={id}>{meta.icon} {cf(meta.label as any)}</option>
                 ))}
               </select>
             </div>
@@ -160,12 +162,12 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
             <div>
               <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-                Applied to
+                {cf("Applied to")}
               </label>
               <select value={form.entity} onChange={e=>setForm(f=>({...f,entity:e.target.value as any}))}
                 style={selStyle}>
-                <option value="project">Projects</option>
-                <option value="task">Tasks</option>
+                <option value="project">{cf("Projects")}</option>
+                <option value="task">{cf("Tasks")}</option>
               </select>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10,paddingTop:20}}>
@@ -173,31 +175,31 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
                 onChange={e=>setForm(f=>({...f,required:e.target.checked}))}
                 style={{width:16,height:16,cursor:"pointer",accentColor:"var(--steel)"}} />
               <label htmlFor="req" style={{fontSize:13,color:"var(--text-2)",cursor:"pointer"}}>
-                Required field
+                {cf("Required field")}
               </label>
             </div>
           </div>
           <div style={{marginBottom:12}}>
             <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-              Description (optional)
+              {cf("Description (optional)")}
             </label>
             <input value={form.description||""} onChange={e=>setForm(f=>({...f,description:e.target.value}))}
-              placeholder="Help text shown below the field" style={inp} />
+              placeholder={cf("phHelpText")} style={inp} />
           </div>
           {/* Options for select/multiselect */}
           {(form.type==="select"||form.type==="multiselect")&&(
             <div style={{marginBottom:12}}>
               <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>
-                Options
+                {cf("Options")}
               </label>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
                 <input value={newOption} onChange={e=>setNewOption(e.target.value)}
                   onKeyDown={e=>{ if(e.key==="Enter"){ e.preventDefault(); addOption() } }}
-                  placeholder="Add option…" style={{...inp,flex:1}} />
+                  placeholder={cf("Add option…")} style={{...inp,flex:1}} />
                 <button type="button" onClick={addOption}
                   style={{padding:"8px 14px",background:"var(--surface)",border:"1px solid var(--border)",
                     borderRadius:"var(--radius)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>
-                  Add
+                  {cf("Add")}
                 </button>
               </div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -217,13 +219,13 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
             <button type="button" onClick={()=>setCreating(false)}
               style={{padding:"8px 16px",background:"#fff",border:"1px solid var(--border)",
                 borderRadius:"var(--radius)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",color:"var(--text-2)"}}>
-              Cancel
+              {cf("Cancel")}
             </button>
             <button type="submit" disabled={!form.name?.trim()||saving}
               style={{padding:"8px 18px",background:"var(--steel)",color:"#fff",border:"none",
                 borderRadius:"var(--radius)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)",
                 opacity:!form.name?.trim()?0.5:1}}>
-              {saving?"Saving…":"Create field"}
+              {saving?cf("Saving…"):cf("Create field")}
             </button>
           </div>
         </form>
@@ -231,15 +233,15 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
 
       {/* Fields list */}
       {filtered.length===0?(
-        <EmptyState icon="⚙️" title="No custom fields yet"
-          description={`Create custom fields to track ${entity==="all"?"project and task":entity}-specific data.`} />
+        <EmptyState icon="⚙️" title={cf("No custom fields yet")}
+          description={cf("emptyBody",{e:entity==="all"?cf("projectAndTask"):cf(entity as any)})} />
       ):(
         <div style={{background:"#fff",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
           {/* Header */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 100px 90px 80px auto",
             gap:10,padding:"8px 16px",background:"var(--surface)",borderBottom:"1px solid var(--border)",
             fontSize:10,fontWeight:600,color:"var(--text-3)",letterSpacing:".05em",textTransform:"uppercase"}}>
-            <div>Field</div><div>Type</div><div>Applied to</div><div>Status</div><div/>
+            <div>{cf("Field")}</div><div>{cf("Type")}</div><div>{cf("Applied to")}</div><div>{cf("Status")}</div><div/>
           </div>
           {filtered.map(field=>{
             const meta = FIELD_TYPE_META[field.type]
@@ -254,7 +256,7 @@ export function CustomFieldsView({ workspaceId, role, initialFields=[] }:{ works
                     <span style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>{field.name}</span>
                     {field.required&&(
                       <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:3,
-                        background:"#FEF2F2",color:"var(--red)"}}>Required</span>
+                        background:"#FEF2F2",color:"var(--red)"}}>{cf("Required")}</span>
                     )}
                   </div>
                   {field.description&&(

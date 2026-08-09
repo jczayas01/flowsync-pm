@@ -3,11 +3,13 @@
 // Admin panel: which workspace roles may delete Projects / Programs /
 // Portfolios. SUPER_ADMIN and OWNER are always on and shown locked.
 import { useEffect, useState } from "react"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 
 const ENTITIES = [
-  { key: "project",   label: "Projects",   hint: "Archive first, then delete permanently" },
-  { key: "program",   label: "Programs",   hint: "Projects inside are released, not deleted" },
-  { key: "portfolio", label: "Portfolios", hint: "Must be emptied of programs first" },
+  { key: "project",   label: "drProjects",   hint: "drProjectsHint" },
+  { key: "program",   label: "drPrograms",   hint: "drProgramsHint" },
+  { key: "portfolio", label: "drPortfolios", hint: "drPortfoliosHint" },
 ] as const
 
 const ROLE_NAMES: Record<string,string> = {
@@ -16,6 +18,8 @@ const ROLE_NAMES: Record<string,string> = {
 }
 
 export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string }) {
+  const dr = useTranslations("deleteRoles")
+  const locale = useLocale()
   const [roles, setRoles]           = useState<Record<string,string[]> | null>(null)
   const [assignable, setAssignable] = useState<string[]>([])
   const [alwaysOn, setAlwaysOn]     = useState<string[]>([])
@@ -52,10 +56,10 @@ export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string })
     <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:10, marginTop:18 }}>
       <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
         <div style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>
-          🗑 Deletion permissions {saving && <span style={{ fontSize:11, color:"var(--text-3)", fontWeight:400 }}>· saving…</span>}
+          🗑 {dr("Deletion permissions")} {saving && <span style={{ fontSize:11, color:"var(--text-3)", fontWeight:400 }}>· {dr("saving…")}</span>}
         </div>
         <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:2 }}>
-          Choose which roles may delete each item type. Owner and Super Admin always can.
+          {dr("hint")}
         </div>
         {error && <div style={{ fontSize:11.5, color:"#DC2626", marginTop:4 }}>{error}</div>}
       </div>
@@ -63,10 +67,10 @@ export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string })
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12.5 }}>
           <thead>
             <tr>
-              <th style={{ textAlign:"left", padding:"8px 16px", color:"var(--text-3)", fontWeight:600 }}>Item</th>
+              <th style={{ textAlign:"left", padding:"8px 16px", color:"var(--text-3)", fontWeight:600 }}>{dr("Item")}</th>
               {[...alwaysOn, ...assignable].map(r => (
                 <th key={r} style={{ padding:"8px 10px", color:"var(--text-3)", fontWeight:600, whiteSpace:"nowrap" }}>
-                  {ROLE_NAMES[r] || r}
+                  {enumLabel(r, locale)}
                 </th>
               ))}
             </tr>
@@ -75,12 +79,12 @@ export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string })
             {ENTITIES.map(e => (
               <tr key={e.key} style={{ borderTop:"1px solid var(--surface-1,#F1F5F9)" }}>
                 <td style={{ padding:"10px 16px" }}>
-                  <div style={{ fontWeight:600, color:"var(--text)" }}>{e.label}</div>
-                  <div style={{ fontSize:10.5, color:"var(--text-3)" }}>{e.hint}</div>
+                  <div style={{ fontWeight:600, color:"var(--text)" }}>{dr(e.label as any)}</div>
+                  <div style={{ fontSize:10.5, color:"var(--text-3)" }}>{dr(e.hint as any)}</div>
                 </td>
                 {alwaysOn.map(r => (
                   <td key={r} style={{ textAlign:"center" }}>
-                    <input type="checkbox" checked disabled title="Always allowed" />
+                    <input type="checkbox" checked disabled title={dr("Always allowed")} />
                   </td>
                 ))}
                 {assignable.map(r => (

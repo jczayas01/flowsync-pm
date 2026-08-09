@@ -8,10 +8,12 @@
 //  - No subscription yet (trial): explains packs unlock after upgrade
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", SLATE = "#64748B"
 
 export function OcrPacksCard() {
+  const oc = useTranslations("ocrPacks")
   const [data, setData] = useState<any | null>(null)
   const [packs, setPacks] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -52,9 +54,9 @@ export function OcrPacksCard() {
         gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: SLATE, textTransform: "uppercase",
-            letterSpacing: ".06em", marginBottom: 4 }}>AI document reading (OCR)</div>
+            letterSpacing: ".06em", marginBottom: 4 }}>{oc("AI document reading (OCR)")}</div>
           <div style={{ fontSize: 13.5, color: NAVY }}>
-            <b>{data.used}</b> of <b>{data.cap}</b> pages used this month
+            <b>{data.used}</b> {oc("of")} <b>{data.cap}</b> {oc("pagesUsedThisMonth")}
           </div>
         </div>
         {data.purchasable && (
@@ -63,7 +65,7 @@ export function OcrPacksCard() {
               style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--border,#E2E8F0)",
                 background: "#fff", cursor: "pointer", fontSize: 15 }}>−</button>
             <div style={{ minWidth: 120, textAlign: "center", fontSize: 12.5 }}>
-              <b>{packs}</b> pack{packs === 1 ? "" : "s"} · +{packs * data.packPages} pages
+              {oc("packsSummary",{n:packs, p:packs * data.packPages})}
             </div>
             <button disabled={busy || packs >= 20} onClick={() => setPacks(p => Math.min(20, p + 1))}
               style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid var(--border,#E2E8F0)",
@@ -72,7 +74,7 @@ export function OcrPacksCard() {
               style={{ padding: "7px 14px", borderRadius: 7, border: "none",
                 background: dirty ? STEEL : "#CBD5E1", color: "#fff", fontSize: 12.5,
                 fontWeight: 700, cursor: dirty ? "pointer" : "default" }}>
-              {busy ? "Applying…" : "Apply"}
+              {busy ? oc("Applying…") : oc("Apply")}
             </button>
           </div>
         )}
@@ -84,10 +86,10 @@ export function OcrPacksCard() {
 
       <div style={{ fontSize: 11.5, color: SLATE, marginTop: 8 }}>
         {data.enterprise
-          ? "Your monthly cap is set by your Enterprise agreement. Need more? Contact us and we'll amend the contract."
+          ? oc("enterpriseCapHint")
           : data.purchasable
-            ? `Each pack adds ${data.packPages} pages/month for $${(data.packPriceMonthly / 100).toFixed(0)}/mo — stackable, prorated, cancel anytime.`
-            : `Included: ${data.cap} pages/month. Add-on packs (+${data.packPages} pages for $${(data.packPriceMonthly / 100).toFixed(0)}/mo) unlock once your subscription is active.`}
+            ? oc("packPricingHint",{p:data.packPages, c:(data.packPriceMonthly/100).toFixed(0)})
+            : oc("includedHint",{c:data.cap, p:data.packPages, pr:(data.packPriceMonthly/100).toFixed(0)})}
       </div>
       {msg && <div style={{ fontSize: 11.5, marginTop: 6,
         color: msg.startsWith("Updated") ? "#059669" : "#B91C1C" }}>{msg}</div>}

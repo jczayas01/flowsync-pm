@@ -1,5 +1,7 @@
 "use client"
 // src/components/settings/TeamSettingsView.tsx
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { useState } from "react"
 import { dateLocale } from "@/lib/date-locale"
 import { isWorkspaceManager, ROLE_DESCRIPTIONS, mapDbRoleToRbac } from "@/lib/rbac/roles"
@@ -20,6 +22,8 @@ const ASSIGNABLE_ROLES = ["ADMIN","PMO_DIRECTOR","EXECUTIVE","PROGRAM_MANAGER","
 export function TeamSettingsView({ members, invitations, currentUserId, workspaceId, role }: {
   members:any[]; invitations:any[]; currentUserId:string; workspaceId:string; role:string
 }) {
+  const tm = useTranslations("teamSettings")
+  const locale = useLocale()
   const canManage = isWorkspaceManager(role)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole,  setInviteRole]  = useState("MEMBER")
@@ -64,7 +68,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ costRate: v }),
     })
-    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d.error || "Couldn't save rate.") }
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d.error || tm("saveRateFailed")) }
     else router.refresh()
   }
 
@@ -78,12 +82,12 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
     if (!res.ok) {
       setMem(ms => ms.map(m => m.userId===userId ? { ...m, role:prev } : m))
       const d = await res.json().catch(()=>({}))
-      alert(d.error || "Couldn't change role.")
+      alert(d.error || tm("changeRoleFailed"))
     } else router.refresh()
   }
 
   async function removeMember(userId:string) {
-    if (!confirm("Remove this member from the workspace?")) return
+    if (!confirm(tm("confirmRemove"))) return
     await fetch(`/api/users/${userId}`, { method:"DELETE" })
   }
 
@@ -95,7 +99,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
   return (
     <div style={{ maxWidth:760 }}>
       <div style={{ marginBottom:24 }}>
-        <h2 style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:4 }}>Team members</h2>
+        <h2 style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:4 }}>{tm("Team members")}</h2>
         <p style={{ fontSize:13, color:"var(--text-3)" }}>
           {members.length} member{members.length!==1?"s":""} in this workspace.
         </p>
@@ -105,7 +109,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
       {canManage && (
         <div style={{ ...card, padding:20, marginBottom:16 }}>
           <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:14 }}>
-            Invite team member
+            {tm("Invite team member")}
           </div>
           <form onSubmit={invite}>
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:8, alignItems:"flex-end" }}>
@@ -113,7 +117,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                 <label style={{ display:"block", fontSize:12, color:"var(--text-3)", marginBottom:4 }}>
                   Email address
                 </label>
-                <input type="email" required placeholder="colleague@organization.com"
+                <input type="email" required placeholder={tm("phInviteEmail")}
                   value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
                   style={{ width:"100%", padding:"9px 12px", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
@@ -129,7 +133,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                     color:"var(--text)", appearance:"none" as const,
                     background:"#fff" }}>
                   {ASSIGNABLE_ROLES.map(r => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    <option key={r} value={r}>{enumLabel(r, locale)}</option>
                   ))}
                 </select>
             <div style={{ fontSize:11, color:"var(--text-3)", marginTop:5, lineHeight:1.45, maxWidth:340 }}>
@@ -143,7 +147,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                 style={{ padding:"9px 18px", background:"var(--steel)", color:"#fff", border:"none",
                   borderRadius:"var(--radius)", fontSize:13, fontWeight:500, cursor:"pointer",
                   fontFamily:"var(--font)", whiteSpace:"nowrap" }}>
-                {inviting ? "Sending…" : "Send invite"}
+                {inviting ? tm("Sending…") : tm("Send invite")}
               </button>
             </div>
           </form>
@@ -157,14 +161,14 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:8,
                   padding:"8px 10px", background:"var(--surface)", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)" }}>
-                  <span style={{ fontSize:11, color:"var(--text-3)", flexShrink:0 }}>Invite link:</span>
+                  <span style={{ fontSize:11, color:"var(--text-3)", flexShrink:0 }}>{tm("Invite link:")}</span>
                   <span style={{ fontSize:12, color:"var(--text-2)", overflow:"hidden",
                     textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{inviteLink}</span>
                   <button onClick={() => { navigator.clipboard.writeText(inviteLink); setLinkCopied(true); setTimeout(()=>setLinkCopied(false), 2000) }}
                     style={{ padding:"4px 10px", background:"var(--steel)", color:"#fff", border:"none",
                       borderRadius:"var(--radius)", fontSize:11, fontWeight:500, cursor:"pointer",
                       fontFamily:"var(--font)", flexShrink:0 }}>
-                    {linkCopied ? "✓ Copied" : "Copy"}
+                    {linkCopied ? "✓ "+tm("Copied") : tm("Copy")}
                   </button>
                 </div>
               )}
@@ -190,24 +194,24 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:500, color:"var(--text)" }}>{inv.email}</div>
                 <div style={{ fontSize:11, color:"var(--text-3)" }}>
-                  Invited · Expires {new Date(inv.expiresAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}
+                  {tm("Invited")} · {tm("Expires")} {new Date(inv.expiresAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}
                 </div>
               </div>
-              <Badge variant="amber">{ROLE_LABELS[inv.role] || inv.role}</Badge>
-              <span style={{ fontSize:11, color:"var(--text-3)" }}>Pending</span>
+              <Badge variant="amber">{enumLabel(inv.role, locale)}</Badge>
+              <span style={{ fontSize:11, color:"var(--text-3)" }}>{tm("Pending")}</span>
               <button
                 onClick={async (e) => {
                   const btn = e.currentTarget
-                  btn.disabled = true; btn.textContent = "Sending…"
+                  btn.disabled = true; btn.textContent = tm("Sending…")
                   const res = await fetch(`/api/settings/invitations/${inv.id}/resend`, {
                     method:"POST", headers:{"x-workspace-id":workspaceId},
                   })
                   if (!res.ok) {
                     const d = await res.json().catch(()=>({}))
-                    alert(d?.error || "Could not resend")
-                    btn.disabled = false; btn.textContent = "Resend"; return
+                    alert(d?.error || tm("resendFailed"))
+                    btn.disabled = false; btn.textContent = tm("Resend"); return
                   }
-                  btn.textContent = "Sent ✓"
+                  btn.textContent = "✓ "+tm("Sent")
                   router.refresh()
                 }}
                 style={{ padding:"4px 10px", background:"#fff", border:"1px solid #A7F3D0",
@@ -217,11 +221,11 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
               </button>
               <button
                 onClick={async () => {
-                  if (!confirm(`Revoke the invitation to ${inv.email}?`)) return
+                  if (!confirm(tm("confirmRevoke",{e:inv.email}))) return
                   const res = await fetch(`/api/settings/invitations/${inv.id}`, {
                     method:"DELETE", headers:{"x-workspace-id":workspaceId},
                   })
-                  if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||"Could not revoke"); return }
+                  if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||tm("revokeFailed")); return }
                   router.refresh()
                 }}
                 style={{ padding:"4px 10px", background:"#fff", border:"1px solid #FECACA",
@@ -239,9 +243,9 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
         <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>
-            Members ({members.length})
+            {tm("Members")} ({members.length})
           </span>
-          <input placeholder="Search members…" value={search}
+          <input placeholder={tm("Search members…")} value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ padding:"5px 10px", border:"1px solid var(--border)", borderRadius:6,
               fontSize:12, fontFamily:"var(--font)", outline:"none", width:180 }} />
@@ -257,7 +261,7 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                 <span style={{ fontSize:13, fontWeight:500, color:"var(--text)" }}>{m.user.name}</span>
                 {m.userId === currentUserId && (
                   <span style={{ fontSize:10, fontWeight:600, padding:"1px 6px", borderRadius:4,
-                    background:"var(--steel-pale,#EFF6FF)", color:"var(--steel)" }}>You</span>
+                    background:"var(--steel-pale,#EFF6FF)", color:"var(--steel)" }}>{tm("You")}</span>
                 )}
               </div>
               <div style={{ fontSize:11, color:"var(--text-3)" }}>{m.user.email}</div>
@@ -271,16 +275,16 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
                     color:"var(--text)", appearance:"none" as const,
                     background:"#fff" }}>
                   {ASSIGNABLE_ROLES.map(r => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    <option key={r} value={r}>{enumLabel(r, locale)}</option>
                   ))}
                 </select>
               ) : (
-                <Badge variant={ROLE_COLORS[m.role] || "gray"}>{ROLE_LABELS[m.role] || m.role}</Badge>
+                <Badge variant={ROLE_COLORS[m.role] || "gray"}>{enumLabel(m.role, locale)}</Badge>
               )}
               {canManage && (
                 <input
-                  title="Hourly cost rate — time entries × this rate post to the project budget nightly"
-                  placeholder="$/h"
+                  title={tm("rateTip")}
+                  placeholder={tm("phRate")}
                   defaultValue={m.costRate ?? ""}
                   onBlur={e => { const v = e.target.value
                     if (v !== String(m.costRate ?? "")) saveRate(m.id, v) }}

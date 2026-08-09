@@ -5,6 +5,7 @@
 // meetings, and Teams mentions matched to projects — with one-click apply
 // through the existing acceptSuggestion actions.
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 const NAVY = "#0D1B2A", SLATE = "#64748B", GREEN = "#047857", STEEL = "#1B6CA8"
 
@@ -32,7 +33,7 @@ function mapPayload(d: any): Item[] {
       snippet: e.snippet,
       projectId: e.projectId, projectLabel: e.projectCode || e.projectName,
       action: risky ? "log_risk" : task ? "create_task" : "log_minutes",
-      actionLabel: risky ? "Log as risk" : task ? "Create task" : "Log as note",
+      actionLabel: risky ? "logAsRisk" : task ? "createTask" : "logAsNote",
       data: risky
         ? { title: e.subject, description: e.snippet }
         : task
@@ -46,7 +47,7 @@ function mapPayload(d: any): Item[] {
       meta: `📅 ${m.organizer} · ${new Date(m.startTime).toLocaleString()} · ${m.durationMinutes} min`,
       snippet: m.suggestedMinutes || (m.actionItems?.length ? `Action items: ${m.actionItems.join("; ")}` : undefined),
       projectId: m.projectId, projectLabel: m.projectCode,
-      action: "log_minutes", actionLabel: "Log minutes",
+      action: "log_minutes", actionLabel: "logMinutes",
       data: {
         meetingStart: m.startTime, meetingEnd: m.endTime,
         minutes: m.suggestedMinutes ||
@@ -62,7 +63,7 @@ function mapPayload(d: any): Item[] {
       snippet: c.content,
       projectId: c.projectId, projectLabel: null,
       action: c.hasTaskMention ? "create_task" : "log_minutes",
-      actionLabel: c.hasTaskMention ? "Create task" : "Log as note",
+      actionLabel: c.hasTaskMention ? "createTask" : "logAsNote",
       data: c.hasTaskMention
         ? { title: c.content?.slice(0, 80), description: c.content }
         : { content: `Teams (${c.channelName}) ${c.sender}: ${c.content}` },
@@ -72,6 +73,7 @@ function mapPayload(d: any): Item[] {
 }
 
 export function M365SmartInbox({ connected }: { connected: boolean }) {
+  const mi = useTranslations("m365SmartInbox")
   const [items, setItems]     = useState<Item[] | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [error, setError]     = useState("")
@@ -118,34 +120,33 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 18px",
         borderBottom:"1px solid var(--border)" }}>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:13.5, fontWeight:700, color:NAVY }}>Smart inbox</div>
+          <div style={{ fontSize:13.5, fontWeight:700, color:NAVY }}>{mi("Smart inbox")}</div>
           <div style={{ fontSize:11.5, color:SLATE }}>
-            Emails, meetings, and Teams mentions that look project-related. Detection matches the
-            subject against your project names and codes.
-            {syncedAt && ` · Last sync ${syncedAt}`}
+            {mi("detectionHint")}
+            {syncedAt && ` · ${mi("lastSync",{t:syncedAt})}`}
           </div>
         </div>
         <select value={days} onChange={e => setDays(Number(e.target.value))}
-          title="How far back to scan your mailbox"
+          title={mi("How far back to scan your mailbox")}
           style={{ fontSize:12, padding:"5px 8px", borderRadius:7,
             border:"1px solid var(--border,#E2E8F0)", background:"#fff",
             color:"var(--text-2)", cursor:"pointer", fontFamily:"var(--font)" }}>
-          <option value={7}>Last 7 days</option>
-          <option value={14}>Last 14 days</option>
-          <option value={30}>Last 30 days</option>
+          <option value={7}>{mi("Last 7 days")}</option>
+          <option value={14}>{mi("Last 14 days")}</option>
+          <option value={30}>{mi("Last 30 days")}</option>
         </select>
-        <label title="Only messages you haven't opened yet"
+        <label title={mi("Only messages you haven't opened yet")}
           style={{ display:"flex", alignItems:"center", gap:5, fontSize:12,
             color:"var(--text-2)", cursor:"pointer", userSelect:"none" }}>
           <input type="checkbox" checked={unreadOnly}
             onChange={e => setUnreadOnly(e.target.checked)} />
-          Unread only
+          {mi("Unread only")}
         </label>
         <button onClick={syncNow} disabled={syncing}
           style={{ padding:"9px 18px", background: syncing ? "#94A3B8" : STEEL, color:"#fff",
             border:"none", borderRadius:8, fontSize:12.5, fontWeight:700,
             cursor: syncing ? "default" : "pointer", fontFamily:"var(--font)" }}>
-          {syncing ? "Syncing…" : "Sync now"}
+          {syncing ? mi("Syncing…") : mi("Sync now")}
         </button>
       </div>
 
@@ -157,16 +158,13 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
       {connLost && (
         <div style={{ margin:14, padding:"10px 14px", background:"#FFFBEB", border:"1px solid #FDE68A",
           borderRadius:8, fontSize:12.5, color:"#92400E" }}>
-          Your Microsoft connection has expired — nothing could be read. Use <b>Reconnect</b> above,
-          then sync again.
+          {mi.rich("connLostRich",{b:c=><b>{c}</b>})}
         </div>
       )}
 
       {items && items.length === 0 && !error && !connLost && (
         <div style={{ padding:"18px", fontSize:12.5, color:SLATE }}>
-          Nothing project-related detected in the recent window. Tip: include the project code
-          (e.g. "PRJ-001") or the exact project name in email subjects and meeting titles.
-          Only Active or On-hold projects where you are a team member are matched.
+          {mi("noItemsHint")}
         </div>
       )}
 
@@ -189,20 +187,20 @@ export function M365SmartInbox({ connected }: { connected: boolean }) {
                 {it.projectLabel
                   ? <span style={{ fontSize:10.5, fontWeight:700, color:GREEN, background:"#ECFDF5",
                       padding:"2px 8px", borderRadius:99 }}>{it.projectLabel}</span>
-                  : <span style={{ fontSize:10.5, color:"#94A3B8" }}>No project matched</span>}
+                  : <span style={{ fontSize:10.5, color:"#94A3B8" }}>{mi("No project matched")}</span>}
                 {applied[it.id]
                   ? <span style={{ fontSize:11.5, color: applied[it.id].includes("Fail") ? "#B91C1C" : GREEN,
                       fontWeight:600 }}>{applied[it.id]}</span>
                   : (
                     <button onClick={() => apply(it)} disabled={!it.projectId}
-                      title={!it.projectId ? "Include the project code in the subject so it can be matched" : undefined}
+                      title={!it.projectId ? mi("noProjectTip") : undefined}
                       style={{ padding:"5px 12px", fontSize:11.5, fontWeight:700,
                         background: it.projectId ? "#ECFDF5" : "#F8FAFC",
                         color: it.projectId ? GREEN : "#CBD5E1",
                         border:`1px solid ${it.projectId ? "#A7F3D0" : "#E2E8F0"}`,
                         borderRadius:8, cursor: it.projectId ? "pointer" : "default",
                         fontFamily:"var(--font)" }}>
-                      {it.actionLabel}
+                      {mi(it.actionLabel as any)}
                     </button>
                   )}
               </div>

@@ -1,11 +1,13 @@
 "use client"
 // src/components/settings/SecuritySettingsView.tsx
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Badge } from "@/components/ui"
 
 export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
   userId:string; workspaceId:string; role:string; auditLogs:any[]
 }) {
+  const ss = useTranslations("securitySettings")
   const [tab, setTab] = useState<"2fa"|"sessions"|"audit">("2fa")
   const [twoFAStatus, setTwoFAStatus] = useState<{enabled:boolean}|null>(null)
   const [loading2FA, setLoading2FA] = useState(false)
@@ -97,18 +99,18 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
             borderRadius:"var(--radius)", overflow:"hidden" }}>
             <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)",
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Active sessions</span>
+              <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{ss("Active sessions")}</span>
               <button style={{ fontSize:12, color:"var(--red)", background:"none", border:"none",
                 cursor:"pointer", fontFamily:"var(--font)", fontWeight:500 }}
                 onClick={async () => {
-                  if (!confirm("Sign out all other sessions?")) return
+                  if (!confirm(ss("Sign out all other sessions?"))) return
                   await fetch("/api/security/sessions?all=true", { method:"DELETE" })
                 }}>
-                Sign out all others
+                {ss("Sign out all others")}
               </button>
             </div>
             <div style={{ padding:"20px 16px", fontSize:13, color:"var(--text-3)", textAlign:"center" }}>
-              Session management is available via the API. Current session is active.
+              {ss("sessionMgmtHint")}
             </div>
           </div>
         </div>
@@ -120,14 +122,14 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
           <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)",
             display:"flex", justifyContent:"space-between" }}>
             <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>
-              Audit log ({auditLogs.length} recent events)
+              {ss("auditLogCount",{n:auditLogs.length})}
             </span>
-            <span style={{ fontSize:11, color:"var(--text-3)" }}>Last 50 events</span>
+            <span style={{ fontSize:11, color:"var(--text-3)" }}>{ss("Last 50 events")}</span>
           </div>
           {auditLogs.length === 0 ? (
             <div style={{ padding:"24px 16px", textAlign:"center",
               fontSize:12, color:"var(--text-3)" }}>
-              No audit events recorded yet
+              {ss("No audit events recorded yet")}
             </div>
           ) : (
             auditLogs.map(log => (

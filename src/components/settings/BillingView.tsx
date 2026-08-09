@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl"
 // src/components/settings/BillingView.tsx
 "use client"
 import { sendGAEvent } from "@next/third-parties/google"
@@ -33,24 +34,25 @@ const PLAN_LABEL: Record<string,string> = {
 // ── Compare plans — rows read straight from PLANS limits so the table can
 // never drift from what the gates actually enforce.
 const COMPARE_ROWS: { label:string; get:(l:any)=>string|boolean }[] = [
-  { label:"Projects & users",            get:l => "Unlimited" },
-  { label:"Storage",                     get:l => l.storage },
-  { label:"AI plan import & reports",    get:l => l.aiReports },
-  { label:"Earned value (EVM) & budget", get:l => l.evm },
-  { label:"Full governance suite",       get:l => l.fullGovernance },
-  { label:"OCR of scanned documents",    get:l => l.ocr },
-  { label:"Portfolio & programs view",   get:l => l.portfolio },
-  { label:"Executive dashboard",         get:l => l.executiveDash },
-  { label:"Automations",                 get:l => l.automations === -1 ? "Unlimited" : `${l.automations} rules` },
-  { label:"SSO (Microsoft / Google)",    get:l => l.sso },
-  { label:"Microsoft 365 integration",   get:l => l.m365 },
-  { label:"API access & webhooks",       get:l => l.apiAccess },
-  { label:"White-label branding",        get:l => l.whiteLabel },
-  { label:"Audit log retention",         get:l => l.auditLog === "unlimited" ? "Unlimited" : l.auditLog },
-  { label:"Support",                     get:l => l.support },
+  { label:"cmpProjectsUsers",            get:l => "Unlimited" },
+  { label:"cmpStorage",                     get:l => l.storage },
+  { label:"cmpAiImport",    get:l => l.aiReports },
+  { label:"cmpEvm", get:l => l.evm },
+  { label:"cmpGovernance",       get:l => l.fullGovernance },
+  { label:"cmpOcr",    get:l => l.ocr },
+  { label:"cmpPortfolio",   get:l => l.portfolio },
+  { label:"cmpExecDash",         get:l => l.executiveDash },
+  { label:"cmpAutomations",                 get:l => l.automations === -1 ? "Unlimited" : `${l.automations} rules` },
+  { label:"cmpSso",    get:l => l.sso },
+  { label:"cmpM365",   get:l => l.m365 },
+  { label:"cmpApi",       get:l => l.apiAccess },
+  { label:"cmpWhiteLabel",        get:l => l.whiteLabel },
+  { label:"cmpAuditLog",         get:l => l.auditLog === "unlimited" ? "Unlimited" : l.auditLog },
+  { label:"cmpSupport",                     get:l => l.support },
 ]
 
 function ComparePlans() {
+  const bv = useTranslations("billing")
   const cols: { name:string; limits:any }[] = [
     { name:"Starter",    limits: STARTER_LIMITS },
     { name:"Business",   limits: BUSINESS_LIMITS },
@@ -108,6 +110,7 @@ export function BillingView({
   trialEndsAt:string|null; planRenewsAt:string|null
   hasStripeCustomer:boolean; stripeConfigured:boolean; canManage:boolean
 }) {
+  const bv = useTranslations("billing")
   const [demoOpen, setDemoOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -124,7 +127,7 @@ export function BillingView({
       const d = await res.json().catch(() => ({}))
       const url = d?.data?.url || d?.url
       if (url) window.location.href = url
-      else alert(d?.error || `Billing portal isn't available yet (HTTP ${res.status}).`)
+      else alert(d?.error || bv("portalUnavailable",{s:res.status}))
     } finally { setBusy(false) }
   }
 
@@ -133,7 +136,7 @@ export function BillingView({
 
   return (
     <div style={{ padding:"20px 16px", maxWidth:840, margin:"0 auto", fontFamily:"var(--font)" }}>
-      <h1 style={{ fontSize:19, fontWeight:700, color:NAVY, marginBottom:4 }}>Billing</h1>
+      <h1 style={{ fontSize:19, fontWeight:700, color:NAVY, marginBottom:4 }}>{bv("Billing")}</h1>
       <p style={{ fontSize:12.5, color:SLATE, marginBottom:18 }}>
         Your plan, your seats, and what happens next.
       </p>
@@ -144,7 +147,7 @@ export function BillingView({
         <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
           <div style={{ flex:1, minWidth:220 }}>
             <div style={{ fontSize:11, fontWeight:700, color:SLATE, textTransform:"uppercase",
-              letterSpacing:".06em", marginBottom:5 }}>Current plan</div>
+              letterSpacing:".06em", marginBottom:5 }}>{bv("Current plan")}</div>
             <div style={{ display:"flex", alignItems:"baseline", gap:9 }}>
               <span style={{ fontSize:24, fontWeight:800, color:NAVY }}>{label}</span>
               {onTrial && (
@@ -156,9 +159,9 @@ export function BillingView({
               )}
             </div>
             <div style={{ fontSize:12.5, color:SLATE, marginTop:6, lineHeight:1.6 }}>
-              {memberCount} {memberCount === 1 ? "member" : "members"} · {seats} {seats === 1 ? "seat" : "seats"}
-              {onTrial && <> · trial ends <strong style={{ color:NAVY }}>{fmt(trialEndsAt!)}</strong></>}
-              {!onTrial && planRenewsAt && <> · renews {fmt(planRenewsAt)}</>}
+              {bv("memberCount",{n:memberCount})} · {bv("seatCount",{n:seats})}
+              {onTrial && <> · {bv("trialEnds")} <strong style={{ color:NAVY }}>{fmt(trialEndsAt!)}</strong></>}
+              {!onTrial && planRenewsAt && <> · {bv("renews")} {fmt(planRenewsAt)}</>}
             </div>
           </div>
 
@@ -166,7 +169,7 @@ export function BillingView({
             <button onClick={openPortal} disabled={busy}
               style={{ padding:"10px 18px", background:NAVY, color:"#fff", border:"none",
                 borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
-              {busy ? "Opening…" : "Manage billing"}
+              {busy ? bv("Opening…") : bv("Manage billing")}
             </button>
           )}
         </div>
@@ -175,9 +178,7 @@ export function BillingView({
           <div style={{ marginTop:14, padding:"10px 13px", background:"#EFF6FF",
             borderLeft:`3px solid ${STEEL}`, borderRadius:"0 8px 8px 0",
             fontSize:12.5, color:"#1E40AF", lineHeight:1.6 }}>
-            Your trial includes everything — no feature limits, no card required. Subscribe
-            below whenever you're ready: pay during the trial and your card isn't charged
-            until the trial actually ends.
+            {bv("trialHint")}
           </div>
         )}
       </div>
@@ -187,7 +188,7 @@ export function BillingView({
 
       {/* ── Plans — the same four tiers as everywhere else ── */}
       <div style={{ fontSize:11, fontWeight:700, color:SLATE, textTransform:"uppercase",
-        letterSpacing:".06em", marginBottom:8 }}>Plans</div>
+        letterSpacing:".06em", marginBottom:8 }}>{bv("Plans")}</div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",
         gap:10, marginBottom:14 }}>
         {TIERS.map(t => {
@@ -200,7 +201,7 @@ export function BillingView({
                   textTransform:"uppercase", letterSpacing:".06em" }}>{t.name}</span>
                 {isCurrent && (
                   <span style={{ fontSize:9, fontWeight:800, padding:"2px 6px", borderRadius:4,
-                    background:"#EFF6FF", color:STEEL }}>CURRENT</span>
+                    background:"#EFF6FF", color:STEEL }}>{bv("CURRENT")}</span>
                 )}
               </div>
               <div style={{ display:"flex", alignItems:"baseline", gap:3, marginBottom:6 }}>
@@ -251,6 +252,7 @@ const BUNDLE_PRICE = 20
 const ANNUAL_OFF   = 0.8   // 20% discount
 
 function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterprise:()=>void }) {
+  const bv = useTranslations("billing")
   const [planId, setPlanId]   = useState<"STARTER"|"BUSINESS">("BUSINESS")
   const [annual, setAnnual]   = useState(false)
   const [seats, setSeats]     = useState(String(Math.max(1, Math.min(memberCount, 3))))
@@ -276,8 +278,8 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
       const d = await res.json().catch(() => ({}))
       const url = d?.data?.url || d?.url
       if (res.ok && url) { window.location.href = url; return }
-      setErr(d?.error || "Couldn't start checkout. Try again.")
-    } catch { setErr("Couldn't start checkout. Try again.") }
+      setErr(d?.error || bv("checkoutFailed"))
+    } catch { setErr(bv("checkoutFailed")) }
     finally { setBusy(false) }
   }
 
@@ -285,7 +287,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
     <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
       padding:"18px 20px" }}>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:13.5, fontWeight:700, color:NAVY, flex:1 }}>Subscribe</div>
+        <div style={{ fontSize:13.5, fontWeight:700, color:NAVY, flex:1 }}>{bv("Subscribe")}</div>
         <div style={{ display:"flex", background:"var(--surface-2,#F1F5F9)", borderRadius:8, padding:2 }}>
           {(["monthly","annual"] as const).map(b => (
             <button key={b} onClick={() => setAnnual(b === "annual")}
@@ -294,7 +296,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
                 background: (b === "annual") === annual ? "#fff" : "transparent",
                 color: (b === "annual") === annual ? NAVY : SLATE,
                 boxShadow: (b === "annual") === annual ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>
-              {b === "monthly" ? "Monthly" : "Annual −20%"}
+              {b === "monthly" ? bv("Monthly") : bv("annualOff")}
             </button>
           ))}
         </div>
@@ -308,15 +310,15 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
               fontFamily:"inherit", background:"#fff",
               border: planId === id ? `2px solid ${STEEL}` : "1px solid var(--border)" }}>
             <div style={{ fontSize:12.5, fontWeight:700, color:NAVY }}>
-              {id === "STARTER" ? "Starter" : "Business"}
+              {id === "STARTER" ? bv("Starter") : bv("Business")}
               <span style={{ fontFamily:MONO, fontSize:11, color:SLATE, marginLeft:6 }}>
                 ${Math.round(SEAT_PRICE[id] * mult * 100) / 100}/user/mo
               </span>
             </div>
             <div style={{ fontSize:11, color:SLATE, marginTop:3, lineHeight:1.5 }}>
               {id === "STARTER"
-                ? "Every user is a paid seat."
-                : `Paid seats + $${Math.round(BUNDLE_PRICE * mult * 100) / 100}/mo per 10-user bundle.`}
+                ? bv("everyUserPaid")
+                : bv("bundlePricing",{p:Math.round(BUNDLE_PRICE * mult * 100) / 100})}
             </div>
           </button>
         ))}
@@ -327,7 +329,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
         <label style={{ flex:1, minWidth:150 }}>
           <div style={{ fontSize:10.5, fontWeight:700, color:SLATE, textTransform:"uppercase",
             letterSpacing:".05em", marginBottom:4 }}>
-            {planId === "BUSINESS" ? "Paid seats (drive the work)" : "Users"}
+            {planId === "BUSINESS" ? bv("paidSeatsLabel") : bv("Users")}
           </div>
           <input value={seats} onChange={e => setSeats(e.target.value.replace(/\D/g,""))}
             inputMode="numeric"
@@ -338,7 +340,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
           <label style={{ flex:1, minWidth:150 }}>
             <div style={{ fontSize:10.5, fontWeight:700, color:SLATE, textTransform:"uppercase",
               letterSpacing:".05em", marginBottom:4 }}>
-              Contributor bundles (×10 users)
+              {bv("contributorBundles")}
             </div>
             <input value={bundles} onChange={e => setBundles(e.target.value.replace(/\D/g,""))}
               inputMode="numeric"
@@ -352,9 +354,9 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 13px",
         background:"var(--surface-2,#F8FAFC)", borderRadius:9, marginBottom:12, flexWrap:"wrap" }}>
         <div style={{ fontSize:12, color:SLATE, flex:1, minWidth:180 }}>
-          Covers <strong style={{ color:NAVY }}>{covered}</strong> {covered === 1 ? "person" : "people"}
+          {bv("covers")} <strong style={{ color:NAVY }}>{covered}</strong> {bv("peopleCount",{n:covered})}
           {memberCount > covered && (
-            <span style={{ color:"#B45309" }}> · you have {memberCount} members — add {planId === "BUSINESS" ? "seats or bundles" : "users"}</span>
+            <span style={{ color:"#B45309" }}> · {bv("addMoreHint",{n:memberCount, w: planId === "BUSINESS" ? bv("seatsOrBundles") : bv("Users")})}</span>
           )}
         </div>
         <div style={{ fontFamily:MONO, fontSize:19, fontWeight:800, color:NAVY }}>
@@ -370,11 +372,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
       <div style={{ background:"var(--surface-2,#F8FAFC)", border:"1px solid var(--border)",
         borderRadius:9, padding:"11px 14px", marginBottom:12, fontSize:12, color:"var(--text-3)",
         lineHeight:1.7 }}>
-        Billed in <strong style={{ color:"var(--text-2)" }}>US dollars</strong> by card through Stripe;
-        cards issued anywhere in the Americas are accepted. Formal invoices are issued for customers in
-        the <strong style={{ color:"var(--text-2)" }}>United States and Puerto Rico</strong> — we don't
-        issue country-specific tax documents elsewhere, including CFDI in Mexico. You'll receive a Stripe
-        receipt with our business details, valid as proof of purchase.
+        {bv.rich("billingTermsRich", { usd: c=><strong style={{ color:"var(--text-2)" }}>{c}</strong>, usPr: c=><strong style={{ color:"var(--text-2)" }}>{c}</strong> })}
       </div>
 
 
@@ -382,22 +380,20 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
         <button onClick={checkout} disabled={busy}
           style={{ padding:"11px 20px", background:AMBER, color:NAVY, border:"none",
             borderRadius:8, fontSize:13.5, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-          {busy ? "Opening checkout…" : "Continue to secure checkout →"}
+          {busy ? bv("Opening checkout…") : bv("Continue to secure checkout →")}
         </button>
         <button onClick={onEnterprise}
           style={{ padding:"11px 16px", background:"none", color:SLATE, border:"1px solid var(--border)",
             borderRadius:8, fontSize:12.5, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
-          Need Enterprise?
+          {bv("Need Enterprise?")}
         </button>
       </div>
 
       <div style={{ marginTop:12, fontSize:11, color:"var(--text-3)", lineHeight:1.6 }}>
-        If your trial is still running, your card goes on file now and the first charge lands when
-        the trial ends — exactly the date shown above. By subscribing you agree to the{" "}
+        {bv("chargeTimingHint")}{" "}
         <a href="/legal/billing" target="_blank" rel="noreferrer"
           style={{ color:STEEL, textDecoration:"none", fontWeight:600 }}>
-          Billing &amp; Subscription Terms</a>. Payments are processed by Stripe; cancel any time
-        from Manage billing.
+          {bv("Billing & Subscription Terms")}</a>. {bv("stripeProcessedHint")}
       </div>
     </div>
   )
