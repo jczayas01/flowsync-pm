@@ -17,6 +17,7 @@ const SECTION_META: Record<string, { icon: string; label: string }> = {
 
 export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
   const t = useTranslations("import")
+  const tip = useTranslations("tips")
   const locale = useLocale()
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -262,7 +263,7 @@ export function ImportProjectModal({ workspaceId, onClose }: { workspaceId: stri
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12,
                     padding: "3px 8px 3px 12px", background: "#EFF6FF",
                     border: "1px solid #BFDBFE", borderRadius: 14, color: "var(--steel)", fontWeight: 600 }}
-                    title="The AI built this preview from the selected document — switch to rebuild from another (e.g. your project plan). Every file still gets attached to Docs.">
+                    title={tip("ttImportSource")}>
                     📄 Built from:
                     <select
                       value={allFiles.findIndex(f => f.name === data.sourceFile)}

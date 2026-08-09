@@ -359,6 +359,7 @@ export function ProjectDashboardTab({
   }
 
   const td = useTranslations("projectDash")
+  const tip = useTranslations("tips")
   const router = useRouter()
   const [weekOffset, setWeekOffset] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -547,7 +548,7 @@ export function ProjectDashboardTab({
       <div style={{ ...card, marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:12 }}>
           <span style={{ fontSize:12.5, fontWeight:700, color:"var(--text-2)" }}
-            title="Governance checkpoints the sponsor tracks and signs off. Schedule-level milestones live in Tasks and the Gantt as project milestones.">
+            title={tip("ttGovMilestones")}>
             ◆ Sponsor Milestones
           </span>
           <span style={{ fontSize:11.5, color:"var(--text-4)" }}>

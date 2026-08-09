@@ -1,5 +1,6 @@
 // src/app/auth/signin/page.tsx
 import { Metadata } from 'next'
+import { useTranslations } from 'next-intl'
 import { SignInForm } from '@/components/auth/SignInForm'
 import { AuthShell } from '@/components/auth/AuthShell'
 
@@ -10,10 +11,11 @@ export default function SignInPage({
 }: {
   searchParams: { callbackUrl?: string; error?: string }
 }) {
+  const ap = useTranslations('appPages')
   return (
     <AuthShell
-      title="Welcome back"
-      subtitle="Sign in to your FlowSync PM workspace"
+      title={ap('signinTitle')}
+      subtitle={ap('signinSubtitle')}
     >
       <SignInForm
         callbackUrl={searchParams.callbackUrl}

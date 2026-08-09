@@ -517,14 +517,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           <div style={{ display:"flex", alignItems:"center", gap:14 }}>
             <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
               fontSize:11, color:"rgba(255,255,255,.85)" }}
-              title="When on, earned value on every budget line is recalculated automatically from task progress. Turn off to enter EV manually.">
+              title={tip("ttAutoEv")}>
               <input type="checkbox" checked={autoEv}
                 onChange={e => toggleAutoEv(e.target.checked)}
                 style={{ accentColor:"#F59E0B", width:14, height:14, cursor:"pointer" }} />
               {tip("autoEv")}
             </label>
             <button onClick={recomputeEv} disabled={recalcing}
-              title="Recalculate earned value on every line from current task progress"
+              title={tip("ttRecalcEv")}
               style={{ padding:"4px 10px", borderRadius:6, cursor:recalcing?"wait":"pointer",
                 fontSize:11, fontWeight:600, fontFamily:"var(--font)",
                 background:"rgba(255,255,255,.12)", border:"1px solid rgba(255,255,255,.25)",
@@ -1259,7 +1259,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                           {fmt(planned,currency)}
                           {revised && (
                             <div style={{ fontSize:10, color:"var(--text-4)", marginTop:2 }}
-                              title="The figure the sponsor approved. The current plan has moved since — usually through an approved change request.">
+                              title={tip("ttApprovedBaseline")}>
                               approved {fmt(approved!,currency)}
                               <span style={{ color: planned > approved! ? "var(--amber)" : "var(--green)", fontWeight:600 }}>
                                 {" "}({planned > approved! ? "+" : "−"}{fmt(Math.abs(planned - approved!),currency)})
@@ -1272,7 +1272,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                             no invoice yet look like nothing had happened. */}
                         <td style={{ padding:"10px 14px", fontSize:13, fontFamily:"monospace",
                           color: earned > 0 ? "var(--steel)" : "var(--text-4)" }}
-                          title="Earned value — the value of work completed on this line. It moves with task progress, not with payments.">
+                          title={tip("ttLineEv")}>
                           {fmt(earned,currency)}
                         </td>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text-2)", fontFamily:"monospace" }}>

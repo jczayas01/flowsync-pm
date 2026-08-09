@@ -1,15 +1,17 @@
 // src/app/auth/forgot-password/page.tsx
 import { Metadata } from 'next'
+import { useTranslations } from 'next-intl'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
 
 export const metadata: Metadata = { title: 'Reset your password' }
 
 export default function ForgotPasswordPage() {
+  const ap = useTranslations('appPages')
   return (
     <AuthShell
-      title="Reset your password"
-      subtitle="We'll email you a secure link to set a new one"
+      title={ap('forgotTitle')}
+      subtitle={ap('forgotSubtitle')}
     >
       <ForgotPasswordForm />
     </AuthShell>
