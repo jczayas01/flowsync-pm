@@ -4,7 +4,8 @@
 // Provides Resources & Direction layer: portfolio health, financial, risk,
 // milestone pipeline, benefits realization, pending decisions
 
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -242,7 +243,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                   </div>
                   <div style={{ fontSize:9, color:"rgba(255,255,255,.4)",
                     textTransform:"uppercase" }}>
-                    {HEALTH_CFG[h]?.label}
+                    {enumLabel(h, locale)}
                   </div>
                 </div>
               ))}

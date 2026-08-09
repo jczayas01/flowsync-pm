@@ -3,7 +3,8 @@
 // PM Best Practices — Issue Log (current problems, distinct from risks which are potential)
 
 import { DateField } from "@/components/shared/DatePicker"
-import { useTranslations } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
+import { useTranslations, useLocale } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
@@ -157,7 +158,7 @@ export function IssuesTab({ projectId, workspaceId, issues, members }: {
         <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}
           style={{ ...inp, width:"auto", padding:"5px 10px", fontSize:12 }}>
           <option value="">All</option>
-          {Object.entries(STATUS_CFG).map(([v,c])=><option key={v} value={v}>{c.label}</option>)}
+          {Object.entries(STATUS_CFG).map(([v,c])=><option key={v} value={v}>{enumLabel(v, locale)}</option>)}
         </select>
         <div style={{ marginLeft:"auto" }}>
           {can("projects:edit") && (

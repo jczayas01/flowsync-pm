@@ -4,7 +4,8 @@
 // Tracks contracts, POs, SOWs, MSAs, NDAs per project
 
 import { DateField } from "@/components/shared/DatePicker"
-import { useTranslations } from "next-intl"
+import { enumLabel } from "@/lib/enum-labels"
+import { useTranslations, useLocale } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useEffect, useState } from "react"
 import { usePermissions } from "@/lib/rbac/usePermissions"
@@ -331,7 +332,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <select style={{...inp,cursor:"pointer"}} value={form.type}
                   onChange={e=>setForm(f=>({...f,type:e.target.value}))}>
                   {Object.entries(TYPE_CFG).map(([v,c])=>(
-                    <option key={v} value={v}>{c.label}</option>
+                    <option key={v} value={v}>{enumLabel(v, locale)}</option>
                   ))}
                 </select>
               </div>
@@ -376,7 +377,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <select style={{...inp,cursor:"pointer"}} value={form.status}
                   onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
                   {Object.entries(STATUS_CFG).map(([v,c])=>(
-                    <option key={v} value={v}>{c.label}</option>
+                    <option key={v} value={v}>{enumLabel(v, locale)}</option>
                   ))}
                 </select>
               </div>
@@ -675,7 +676,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                     onClick={()=>setExpanded(isExpanded?null:item.id)}>
                     <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px",
                       borderRadius:8, color:tc.color, background:tc.bg, flexShrink:0 }}>
-                      {tc.label}
+                      {enumLabel(item.type, locale)}
                     </span>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
@@ -695,7 +696,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       )}
                       <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px",
                         borderRadius:8, color:sc.color, background:sc.bg }}>
-                        {sc.label}
+                        {enumLabel(item.status, locale)}
                       </span>
                       {isExpiring && (
                         <span style={{ fontSize:10, fontWeight:700, color:"#D97706" }}>
@@ -821,12 +822,12 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                             <div><div style={lblE}>{tip("qType")}</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.type}
                               onChange={e=>setEditF((f:any)=>({...f,type:e.target.value}))}>
-                              {Object.entries(TYPE_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
+                              {Object.entries(TYPE_CFG).map(([v,c]:any)=><option key={v} value={v}>{enumLabel(v, locale)}</option>)}
                             </select></div>
                             <div><div style={lblE}>{tip("status")}</div>
                             <select style={{...inp,cursor:"pointer"}} value={editF.status}
                               onChange={e=>setEditF((f:any)=>({...f,status:e.target.value}))}>
-                              {Object.entries(STATUS_CFG).map(([v,c]:any)=><option key={v} value={v}>{c.label}</option>)}
+                              {Object.entries(STATUS_CFG).map(([v,c]:any)=><option key={v} value={v}>{enumLabel(v, locale)}</option>)}
                             </select></div>
               <div>
                 <label style={lbl}>{tip("pBillAgainst")}</label>
