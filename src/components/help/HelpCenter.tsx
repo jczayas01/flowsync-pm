@@ -245,10 +245,10 @@ export function HelpCenter({ onClose, topic }: { onClose:()=>void; topic?:string
         {/* Tabs */}
         <div style={{ display:"flex", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
           {[
-            { id:"faq",        label:hc("tab.faq") },
-            { id:"glossary",   label:hc("tab.glossary") },
-            { id:"walkthrough",label:hc("tab.walkthrough") },
-            { id:"shortcuts",  label:hc("tab.shortcuts") },
+            { id:"faq",        label:hc("tab_faq") },
+            { id:"glossary",   label:hc("tab_glossary") },
+            { id:"walkthrough",label:hc("tab_walkthrough") },
+            { id:"shortcuts",  label:hc("tab_shortcuts") },
           ].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id as any)}
               style={{ flex:1, padding:"8px", fontSize:11, fontWeight:500, cursor:"pointer",

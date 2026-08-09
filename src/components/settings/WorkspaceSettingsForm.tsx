@@ -98,7 +98,7 @@ export function WorkspaceSettingsForm({ workspace, role }: { workspace: any; rol
             <select style={{ ...s.input, appearance:"none" as const, cursor:"pointer" }}
               value={form.currency} disabled={!canEdit}
               onChange={e => setForm(f => ({ ...f, currency:e.target.value }))}>
-              {CURRENCIES.map(c => <option key={c} value={c}>{ws_(("cur."+c) as any)}</option>)}
+              {CURRENCIES.map(c => <option key={c} value={c}>{ws_(("cur_"+c) as any)}</option>)}
             </select>
           </div>
         </div>

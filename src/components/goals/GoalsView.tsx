@@ -335,7 +335,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                           Key results
                         </div>
                         {(goal.keyResults||[]).length===0&&(
-                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>{gl("No key results yet.")}</div>
+                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>{gl("No key results yet_")}</div>
                         )}
                         {(goal.keyResults||[]).map((kr:any)=>{
                           const progressColor = kr.progress>=80?"var(--green)":
@@ -411,7 +411,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                           {gl("linkedProjects")}
                         </div>
                         {(goal.linkedProjects||[]).length===0&&(
-                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>{gl("No projects linked.")}</div>
+                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>{gl("No projects linked_")}</div>
                         )}
                         {(goal.linkedProjects||[]).map((p:any)=>{
                           const hc = p.health==="RED"?"var(--red)":p.health==="AMBER"?"var(--amber)":"var(--green)"

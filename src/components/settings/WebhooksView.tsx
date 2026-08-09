@@ -187,7 +187,7 @@ export function WebhooksView({ webhooks:initialWebhooks, workspaceId, role }:{
                         background:form.events.includes(ev.id)?"var(--steel-pale,#EFF6FF)":"#fff",
                         color:form.events.includes(ev.id)?"var(--steel)":"var(--text-3)",
                         borderColor:form.events.includes(ev.id)?"var(--steel)":"var(--border)"}}>
-                      {wh_(("ev."+ev.id) as any)}
+                      {wh_(("ev_"+ev.id.replace(/\./g,"_")) as any)}
                     </button>
                   ))}
                 </div>

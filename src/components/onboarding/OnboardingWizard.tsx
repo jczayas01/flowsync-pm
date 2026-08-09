@@ -417,10 +417,10 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                           </div>
                           <div style={{ fontSize:12,color:selected?`${m.color.replace('#','rgba(')},.9)`:
                             'rgba(255,255,255,.4)',fontWeight:500,marginBottom:6 }}>
-                            {ob(('m.' + m.id + '.tagline') as any)}
+                            {ob(('m.' + m.id + '_tagline') as any)}
                           </div>
                           <p style={{ fontSize:12,color:'rgba(255,255,255,.4)',lineHeight:1.6,marginBottom:8 }}>
-                            {ob(('m.' + m.id + '.desc') as any)}
+                            {ob(('m.' + m.id + '_desc') as any)}
                           </p>
                           {selected && (
                             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
@@ -530,11 +530,11 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                   {ob('Your workspace summary')}
                 </div>
                 {[
-                  [ob('sum.workspace'),   form.workspaceName],
-                  [ob('sum.methodology'), form.methodology ? ob(('m.' + form.methodology) as any) : '—'],
-                  [ob('sum.project'),     form.projectName || (form.templateId ? ob('From template') : ob('noneAddLater'))],
-                  [ob('sum.timezone'),    form.timezone],
-                  [ob('sum.currency'),    form.currency],
+                  [ob('sum_workspace'),   form.workspaceName],
+                  [ob('sum_methodology'), form.methodology ? ob(('m.' + form.methodology) as any) : '—'],
+                  [ob('sum_project'),     form.projectName || (form.templateId ? ob('From template') : ob('noneAddLater'))],
+                  [ob('sum_timezone'),    form.timezone],
+                  [ob('sum_currency'),    form.currency],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display:'flex', justifyContent:'space-between',
                     fontSize:12, padding:'4px 0',

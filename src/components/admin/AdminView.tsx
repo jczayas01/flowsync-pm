@@ -76,7 +76,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
               border: tab===t ? "none" : "1px solid #E2E8F0",
               background: tab===t ? NAVY : "#fff", color: tab===t ? "#fff" : "#475569",
               fontFamily:"inherit" }}>
-            {ad(("tab." + t) as any)}
+            {ad(("tab_" + t) as any)}
             {counts[t] >= 0 && <span style={{ opacity:.6, marginLeft:6 }}>{counts[t]}</span>}
           </button>
         ))}
@@ -138,8 +138,8 @@ function SalesKit() {
         {KIT.map(d => (
           <div key={d.key}
             style={{ padding:"9px 12px", border:"1px solid #E2E8F0", borderRadius:8, background:"#F8FAFC" }}>
-            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY }}>{ad(("kit." + d.key) as any)}</div>
-            <div style={{ fontSize:10.5, color:"#64748B", marginBottom:6 }}>{ad(("kit." + d.key + ".note") as any)}</div>
+            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY }}>{ad(("kit_" + d.key) as any)}</div>
+            <div style={{ fontSize:10.5, color:"#64748B", marginBottom:6 }}>{ad(("kit_" + d.key + "_note") as any)}</div>
             <div style={{ display:"flex", gap:6 }}>
               {d.en && (
                 <a href={`/sales-kit/${d.en}`} download
@@ -197,12 +197,12 @@ function Pill({ text, color }: { text:string; color:string }) {
 function WorkspaceTable({ rows, onManage }: { rows:any[]; onManage:(w:any)=>void }) {
   const ad = useTranslations("admin")
   const now = Date.now()
-  if (!rows.length) return <Empty text={ad("No workspaces yet.")} />
+  if (!rows.length) return <Empty text={ad("No workspaces yet_")} />
   return (
     <table style={{ width:"100%", borderCollapse:"collapse", minWidth:820 }}>
       <thead><tr>
         {["Workspace","Plan","Members","Projects","Seats","Trial","Billing","Created",""].map(h =>
-          <th key={h} style={th}>{h ? ad(("col." + h) as any) : ""}</th>)}
+          <th key={h} style={th}>{h ? ad(("col_" + h) as any) : ""}</th>)}
       </tr></thead>
       <tbody>
         {rows.map(w => {
@@ -249,12 +249,12 @@ function WorkspaceTable({ rows, onManage }: { rows:any[]; onManage:(w:any)=>void
 function UserTable({ rows, onAction, busy }: { rows:any[]; onAction:(b:any)=>void; busy:boolean }) {
   const ad = useTranslations("admin")
   const ago = useAgo()
-  if (!rows.length) return <Empty text={ad("No users found.")} />
+  if (!rows.length) return <Empty text={ad("No users found_")} />
   return (
     <table style={{ width:"100%", borderCollapse:"collapse", minWidth:860 }}>
       <thead><tr>
         {["User","Workspace","Role","Sign-in","Status","Last active","Joined",""].map(h =>
-          <th key={h} style={th}>{h ? ad(("col." + h) as any) : ""}</th>)}
+          <th key={h} style={th}>{h ? ad(("col_" + h) as any) : ""}</th>)}
       </tr></thead>
       <tbody>
         {rows.map(u => {
@@ -323,7 +323,7 @@ function LeadTable({ rows, onAction, busy }: { rows:any[]; onAction:(a:any)=>voi
     <table style={{ width:"100%", borderCollapse:"collapse", minWidth:900 }}>
       <thead><tr>
         {["Status","Contact","Company","Team size","Message","Source","Received",""].map(h =>
-          <th key={h} style={th}>{h ? ad(("col." + h) as any) : ""}</th>)}
+          <th key={h} style={th}>{h ? ad(("col_" + h) as any) : ""}</th>)}
       </tr></thead>
       <tbody>
         {rows.map(d => (

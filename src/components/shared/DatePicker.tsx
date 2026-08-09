@@ -87,7 +87,7 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
         <button style={navBtn} title={sh("Previous year")} onClick={() => nav(-12)}>«</button>
         <button style={navBtn} title={sh("Previous month")} onClick={() => nav(-1)}>‹</button>
         <div style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-          {sh(("mon." + m) as any)} {y}
+          {sh(("mon_" + m) as any)} {y}
         </div>
         <button style={navBtn} title={sh("Next month")} onClick={() => nav(1)}>›</button>
         <button style={navBtn} title={sh("Next year")} onClick={() => nav(12)}>»</button>
@@ -97,7 +97,7 @@ export function DatePickerPopover({ value, onSelect, onClear, onClose , anchor }
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 2 }}>
         {[0,1,2,3,4,5,6].map(d => (
           <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700,
-            color: "var(--text-4)", padding: "3px 0" }}>{sh(("dow." + d) as any)}</div>
+            color: "var(--text-4)", padding: "3px 0" }}>{sh(("dow_" + d) as any)}</div>
         ))}
       </div>
 

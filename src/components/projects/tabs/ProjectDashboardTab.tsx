@@ -906,17 +906,17 @@ export function ProjectDashboardTab({
             <div style={{ padding:14, minHeight:80 }}>
               {statusSection === "summary" && (
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.75, margin:0 }}>
-                  {weekStatus.summary || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No summary recorded.")}</span>}
+                  {weekStatus.summary || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No summary recorded_")}</span>}
                 </p>
               )}
               {statusSection === "accomplishments" && (
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.75, margin:0, whiteSpace:"pre-line" }}>
-                  {weekStatus.accomplishments || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No accomplishments recorded.")}</span>}
+                  {weekStatus.accomplishments || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No accomplishments recorded_")}</span>}
                 </p>
               )}
               {statusSection === "next" && (
                 <p style={{ fontSize:13, color:"var(--text-2)", lineHeight:1.75, margin:0, whiteSpace:"pre-line" }}>
-                  {weekStatus.nextSteps || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No next steps recorded.")}</span>}
+                  {weekStatus.nextSteps || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("No next steps recorded_")}</span>}
                 </p>
               )}
               {statusSection === "risks" && (
@@ -925,14 +925,14 @@ export function ProjectDashboardTab({
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--amber)",
                       textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>⚠ Risks</div>
                     <p style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.7, margin:0, whiteSpace:"pre-line" }}>
-                      {weekStatus.risks || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("None recorded.")}</span>}
+                      {weekStatus.risks || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("None recorded_")}</span>}
                     </p>
                   </div>
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:"var(--red)",
                       textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>🚩 Issues</div>
                     <p style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.7, margin:0, whiteSpace:"pre-line" }}>
-                      {weekStatus.issues || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("None recorded.")}</span>}
+                      {weekStatus.issues || <span style={{ color:"var(--text-4)", fontStyle:"italic" }}>{td("None recorded_")}</span>}
                     </p>
                   </div>
                 </div>

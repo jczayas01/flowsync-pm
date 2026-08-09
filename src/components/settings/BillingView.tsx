@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useTranslations } from "next-intl"
 // src/components/settings/BillingView.tsx
 import { sendGAEvent } from "@next/third-parties/google"
@@ -11,7 +11,7 @@ import { OcrPacksCard } from "./OcrPacksCard"
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", SLATE = "#64748B"
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
-// The four-tier model â€” the same story as the landing page, the pricing page and
+// The four-tier model — the same story as the landing page, the pricing page and
 // the GTM kit. This page previously sold a retired model ($12/$22/Consultant).
 const TIERS = [
   { id:"TRIAL", name:"Trial", price:"$0", suffix:"2 months",
@@ -31,7 +31,7 @@ const PLAN_LABEL: Record<string,string> = {
 }
 
 
-// â”€â”€ Compare plans â€” rows read straight from PLANS limits so the table can
+// ── Compare plans — rows read straight from PLANS limits so the table can
 // never drift from what the gates actually enforce.
 const COMPARE_ROWS: { label:string; get:(l:any)=>string|boolean }[] = [
   { label:"cmpProjectsUsers",            get:l => "Unlimited" },
@@ -59,8 +59,8 @@ function ComparePlans() {
     { name:"Enterprise", limits: ENTERPRISE_LIMITS },
   ]
   const cell = (v: string|boolean) =>
-    v === true  ? <span style={{ color:"#047857", fontWeight:700 }}>âœ“</span> :
-    v === false ? <span style={{ color:"#CBD5E1" }}>â€”</span> :
+    v === true  ? <span style={{ color:"#047857", fontWeight:700 }}>✓</span> :
+    v === false ? <span style={{ color:"#CBD5E1" }}>—</span> :
     <span style={{ color:NAVY }}>{v}</span>
   return (
     <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
@@ -96,7 +96,7 @@ function ComparePlans() {
       </div>
       <div style={{ padding:"9px 20px 13px", fontSize:10.5, color:"var(--text-3)" }}>
         Trial includes everything in Business for two months. Enterprise adds custom terms, DPA,
-        personal onboarding, and priority SLA â€” see "Need Enterprise?".
+        personal onboarding, and priority SLA — see "Need Enterprise?".
       </div>
     </div>
   )
@@ -141,7 +141,7 @@ export function BillingView({
         Your plan, your seats, and what happens next.
       </p>
 
-      {/* â”€â”€ Current plan â€” the truth, from the database â”€â”€ */}
+      {/* ── Current plan — the truth, from the database ── */}
       <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
         padding:"18px 20px", marginBottom:14 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
@@ -154,14 +154,14 @@ export function BillingView({
                 <span style={{ fontFamily:MONO, fontSize:11, fontWeight:700, padding:"3px 8px",
                   borderRadius:5, background: daysLeft <= 7 ? "#FEF2F2" : "#FFFBEB",
                   color: daysLeft <= 7 ? "#B91C1C" : "#B45309" }}>
-                  TRIAL Â· {daysLeft}d left
+                  TRIAL · {daysLeft}d left
                 </span>
               )}
             </div>
             <div style={{ fontSize:12.5, color:SLATE, marginTop:6, lineHeight:1.6 }}>
-              {bv("memberCount",{n:memberCount})} Â· {bv("seatCount",{n:seats})}
-              {onTrial && <> Â· {bv("trialEnds")} <strong style={{ color:NAVY }}>{fmt(trialEndsAt!)}</strong></>}
-              {!onTrial && planRenewsAt && <> Â· {bv("renews")} {fmt(planRenewsAt)}</>}
+              {bv("memberCount",{n:memberCount})} · {bv("seatCount",{n:seats})}
+              {onTrial && <> · {bv("trialEnds")} <strong style={{ color:NAVY }}>{fmt(trialEndsAt!)}</strong></>}
+              {!onTrial && planRenewsAt && <> · {bv("renews")} {fmt(planRenewsAt)}</>}
             </div>
           </div>
 
@@ -169,7 +169,7 @@ export function BillingView({
             <button onClick={openPortal} disabled={busy}
               style={{ padding:"10px 18px", background:NAVY, color:"#fff", border:"none",
                 borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
-              {busy ? bv("Openingâ€¦") : bv("Manage billing")}
+              {busy ? bv("Opening…") : bv("Manage billing")}
             </button>
           )}
         </div>
@@ -183,10 +183,10 @@ export function BillingView({
         )}
       </div>
 
-      {/* â”€â”€ OCR add-on packs â”€â”€ */}
+      {/* ── OCR add-on packs ── */}
       <OcrPacksCard />
 
-      {/* â”€â”€ Plans â€” the same four tiers as everywhere else â”€â”€ */}
+      {/* ── Plans — the same four tiers as everywhere else ── */}
       <div style={{ fontSize:11, fontWeight:700, color:SLATE, textTransform:"uppercase",
         letterSpacing:".06em", marginBottom:8 }}>{bv("Plans")}</div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",
@@ -216,7 +216,7 @@ export function BillingView({
 
       <ComparePlans />
 
-      {/* â”€â”€ Checkout (when Stripe is configured) or the honest fallback â”€â”€ */}
+      {/* ── Checkout (when Stripe is configured) or the honest fallback ── */}
       {stripeConfigured && canManage ? (
         <Checkout memberCount={memberCount} onEnterprise={() => setDemoOpen(true)} />
       ) : (
@@ -227,7 +227,7 @@ export function BillingView({
           </div>
           <div style={{ fontSize:12.5, color:SLATE, lineHeight:1.65, marginBottom:12 }}>
             {canManage
-              ? "During early access we handle plan changes personally â€” usually the same day. Tell us what you need and it's done."
+              ? "During early access we handle plan changes personally — usually the same day. Tell us what you need and it's done."
               : "Plan changes need a workspace owner or admin."}
           </div>
           {canManage && (
@@ -246,7 +246,7 @@ export function BillingView({
 }
 
 
-// â”€â”€ Self-serve checkout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Self-serve checkout ───────────────────────────────────────────────────────
 const SEAT_PRICE   = { STARTER: 19, BUSINESS: 39 }
 const BUNDLE_PRICE = 20
 const ANNUAL_OFF   = 0.8   // 20% discount
@@ -356,11 +356,11 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
         <div style={{ fontSize:12, color:SLATE, flex:1, minWidth:180 }}>
           {bv("covers")} <strong style={{ color:NAVY }}>{covered}</strong> {bv("peopleCount",{n:covered})}
           {memberCount > covered && (
-            <span style={{ color:"#B45309" }}> Â· {bv("addMoreHint",{n:memberCount, w: planId === "BUSINESS" ? bv("seatsOrBundles") : bv("Users")})}</span>
+            <span style={{ color:"#B45309" }}> · {bv("addMoreHint",{n:memberCount, w: planId === "BUSINESS" ? bv("seatsOrBundles") : bv("Users")})}</span>
           )}
         </div>
         <div style={{ fontFamily:MONO, fontSize:19, fontWeight:800, color:NAVY }}>
-          ${monthly.toFixed(2)}<span style={{ fontSize:11, color:SLATE, fontWeight:600 }}>/mo{annual ? " Â· billed annually" : ""}</span>
+          ${monthly.toFixed(2)}<span style={{ fontSize:11, color:SLATE, fontWeight:600 }}>/mo{annual ? " · billed annually" : ""}</span>
         </div>
       </div>
 
@@ -380,7 +380,7 @@ function Checkout({ memberCount, onEnterprise }: { memberCount:number; onEnterpr
         <button onClick={checkout} disabled={busy}
           style={{ padding:"11px 20px", background:AMBER, color:NAVY, border:"none",
             borderRadius:8, fontSize:13.5, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-          {busy ? bv("Opening checkoutâ€¦") : bv("Continue to secure checkout â†’")}
+          {busy ? bv("Opening checkout…") : bv("Continue to secure checkout →")}
         </button>
         <button onClick={onEnterprise}
           style={{ padding:"11px 16px", background:"none", color:SLATE, border:"1px solid var(--border)",

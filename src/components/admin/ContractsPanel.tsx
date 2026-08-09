@@ -195,7 +195,7 @@ export function ContractsPanel({ workspaces }: {
                 <div style={{ fontSize: 11.5, color: "var(--text-3)", overflow: "hidden",
                   textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
               </div>
-              {chip(S[c.status] || S.DRAFT, ct(("st." + (S[c.status] ? c.status : "DRAFT")) as any))}
+              {chip(S[c.status] || S.DRAFT, ct(("st_" + (S[c.status] ? c.status : "DRAFT")) as any))}
               <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>
                 {ct("seatsSummary", { seats: c.paidSeats, bundles: c.contributorBundles })}
                 {c.ocrPageCap ? ct("ocrSummary", { pages: c.ocrPageCap }) : ""}
@@ -260,7 +260,7 @@ export function ContractsPanel({ workspaces }: {
                       <span>{money(inv.amount, inv.currency)}</span>
                       <span style={{ color: "var(--text-3)" }}>{ct("invIssuedDue", { issued: fmtD(inv.issueDate), due: fmtD(inv.dueDate) })}</span>
                       {inv.paidDate && <span style={{ color: "#059669" }}>{ct("invPaid", { date: fmtD(inv.paidDate) })}</span>}
-                      {chip(INV[inv.status] || INV.DRAFT, ct(("inv." + (INV[inv.status] ? inv.status : "DRAFT")) as any))}
+                      {chip(INV[inv.status] || INV.DRAFT, ct(("inv_" + (INV[inv.status] ? inv.status : "DRAFT")) as any))}
                       <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
                         {inv.status !== "PAID" && (
                           <button style={btn()} onClick={() => setInvoiceStatus(c, inv, "PAID")}>{ct("Mark paid")}</button>
@@ -271,7 +271,7 @@ export function ContractsPanel({ workspaces }: {
                       </span>
                     </div>
                   ))}
-                  {!c.invoices?.length && <div style={{ fontSize: 12, color: "var(--text-3)" }}>{ct("No invoices yet.")}</div>}
+                  {!c.invoices?.length && <div style={{ fontSize: 12, color: "var(--text-3)" }}>{ct("No invoices yet_")}</div>}
                 </div>
 
                 {/* Documents */}
@@ -346,7 +346,7 @@ export function ContractsPanel({ workspaces }: {
               <div><label style={lbl}>{ct("Status")}</label>
                 <select style={{ ...inp, cursor: "pointer" }} value={form.status}
                   onChange={e => setForm((f: any) => ({ ...f, status: e.target.value }))}>
-                  {Object.keys(S).map(v => <option key={v} value={v}>{ct(("st." + v) as any)}</option>)}
+                  {Object.keys(S).map(v => <option key={v} value={v}>{ct(("st_" + v) as any)}</option>)}
                 </select></div>
               <div><label style={lbl}>{ct("Alert window (days before end/renewal)")}</label>
                 <input style={inp} type="number" value={form.alertDays}

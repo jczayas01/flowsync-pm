@@ -39,7 +39,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
   const rb = useTranslations("reports")
   const canManage = ["SUPER_ADMIN","OWNER","ADMIN","PMO_DIRECTOR"].includes(userRole)
   const [blocks, setBlocks]       = useState<ReportBlock[]>(
-    () => INITIAL_SECTIONS.map(b => ({ id:b.id, type:b.type, title:rb(("sec."+b.key) as any), config:b.config }))
+    () => INITIAL_SECTIONS.map(b => ({ id:b.id, type:b.type, title:rb(("sec_"+b.key) as any), config:b.config }))
   )
   const [preview, setPreview]     = useState(false)
   const [generating, setGenerating]= useState(false)
@@ -63,7 +63,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
     const newBlock: ReportBlock = {
       id:     `b${Date.now()}`,
       type,
-      title:  rb(("bt."+type) as any),
+      title:  rb(("bt_"+type) as any),
       config: {},
     }
     setBlocks(b=>[...b,newBlock])
@@ -126,7 +126,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
       ],
     }
     const picked = byAudience[audience] || byAudience.TEAM
-    setBlocks(picked.map((b,i)=>({ id:`b${Date.now()}_${i}`, type:b.type, title:rb(("sec."+b.title) as any), config:{} })))
+    setBlocks(picked.map((b,i)=>({ id:`b${Date.now()}_${i}`, type:b.type, title:rb(("sec_"+b.title) as any), config:{} })))
     setSelected(null); setGenerating(false)
     showToast(rb("suggested"))
   }
@@ -161,7 +161,7 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
   function loadTemplate(t:any) {
     setEditingId(t.id); setReportName(t.name); setDescription(t.description||""); setAudience(t.audience||"TEAM")
     const secs:string[] = Array.isArray(t.sections) ? t.sections : []
-    setBlocks(secs.map((type,i)=>({ id:`b${Date.now()}_${i}`, type, title:rb(("bt."+type) as any), config:{} })))
+    setBlocks(secs.map((type,i)=>({ id:`b${Date.now()}_${i}`, type, title:rb(("bt_"+type) as any), config:{} })))
     setSelected(null); setPreview(false)
   }
   async function deleteTemplate(id:string) {
@@ -426,8 +426,8 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
                 onMouseOut={e=>(e.currentTarget.style.background="transparent")}>
                 <span style={{fontSize:16,flexShrink:0}}>{bt.icon}</span>
                 <div>
-                  <div style={{fontSize:12,fontWeight:500,color:"var(--text)"}}>{rb(("bt."+bt.id) as any)}</div>
-                  <div style={{fontSize:10,color:"var(--text-3)"}}>{rb(("bt."+bt.id+".desc") as any)}</div>
+                  <div style={{fontSize:12,fontWeight:500,color:"var(--text)"}}>{rb(("bt_"+bt.id) as any)}</div>
+                  <div style={{fontSize:10,color:"var(--text-3)"}}>{rb(("bt_"+bt.id+ "_desc") as any)}</div>
                 </div>
               </button>
             ))}
@@ -544,17 +544,17 @@ export function ReportBuilderView({ projectId, workspaceId, templates=[], userRo
                       style={{width:"100%",padding:"7px 9px",border:"1px solid var(--border)",
                         borderRadius:"var(--radius)",fontSize:12,fontFamily:"var(--font)",
                         color:"var(--text)",outline:"none",appearance:"none" as const}}>
-                      <option value="7d">{rb("range.7d")}</option>
-                      <option value="30d">{rb("range.30d")}</option>
-                      <option value="90d">{rb("range.90d")}</option>
-                      <option value="all">{rb("range.all")}</option>
+                      <option value="7d">{rb("range_7d")}</option>
+                      <option value="30d">{rb("range_30d")}</option>
+                      <option value="90d">{rb("range_90d")}</option>
+                      <option value="all">{rb("range_all")}</option>
                     </select>
                   </div>
                 )}
                 <div style={{padding:"10px 12px",background:"var(--surface)",borderRadius:"var(--radius)",
                   fontSize:12,color:"var(--text-3)"}}>
                   <strong style={{display:"block",marginBottom:4,color:"var(--text-2)"}}>{rb("Block type")}</strong>
-                  {rb(("bt."+selBlock.type+".desc") as any)}
+                  {rb(("bt_"+selBlock.type+ "_desc") as any)}
                 </div>
               </div>
             )}

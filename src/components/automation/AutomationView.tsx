@@ -93,9 +93,9 @@ export function AutomationView({ rules, recentLogs, workspaceId, userRole }:{
     showToast(au("toastDeleted"))
   }
 
-  const trgLabel = (v:string) => TRIGGER_KEYS.includes(v) ? au(("trg."+v) as any) : v
-  const actLabel = (v:string) => ACTION_KEYS.includes(v) ? au(("act."+v) as any) : v
-  const recName  = (id:string) => au(("rec."+id) as any)
+  const trgLabel = (v:string) => TRIGGER_KEYS.includes(v) ? au(("trg_"+v) as any) : v
+  const actLabel = (v:string) => ACTION_KEYS.includes(v) ? au(("act_"+v) as any) : v
+  const recName  = (id:string) => au(("rec_"+id) as any)
 
   async function installRecipe(recipe:typeof RECIPES[0]) {
     setSaving(true)
@@ -153,7 +153,7 @@ export function AutomationView({ rules, recentLogs, workspaceId, userRole }:{
               fontFamily:"var(--font)",fontSize:12,fontWeight:500,whiteSpace:"nowrap",
               color:tab===id?"var(--steel)":"var(--text-3)",
               borderBottom:tab===id?"2px solid var(--steel)":"2px solid transparent",marginBottom:-1}}>
-            {au(("tab."+id) as any)}
+            {au(("tab_"+id) as any)}
             {id==="rules"&&localRules.length>0&&(
               <span style={{marginLeft:6,fontSize:10,fontWeight:700,padding:"1px 6px",
                 borderRadius:10,background:"var(--steel-pale,#EFF6FF)",color:"var(--steel)"}}>
@@ -199,7 +199,7 @@ export function AutomationView({ rules, recentLogs, workspaceId, userRole }:{
                     onChange={e=>setForm(f=>({...f,trigger:e.target.value}))}>
                     <option value="">{au("Select a trigger…")}</option>
                     {TRIGGERS.map(g=>(
-                      <optgroup key={g.group} label={au(("grp."+g.group) as any)}>
+                      <optgroup key={g.group} label={au(("grp_"+g.group) as any)}>
                         {g.items.map(item=>(
                           <option key={item} value={item}>{trgLabel(item)}</option>
                         ))}
@@ -344,7 +344,7 @@ export function AutomationView({ rules, recentLogs, workspaceId, userRole }:{
                     <span style={{fontSize:24,flexShrink:0}}>{recipe.icon}</span>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:4}}>{recName(recipe.id)}</div>
-                      <div style={{fontSize:12,color:"var(--text-3)",lineHeight:1.55,marginBottom:10}}>{au(("rec."+recipe.id+".desc") as any)}</div>
+                      <div style={{fontSize:12,color:"var(--text-3)",lineHeight:1.55,marginBottom:10}}>{au(("rec_"+recipe.id+ "_desc") as any)}</div>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                         <span style={{fontSize:10,padding:"1px 6px",borderRadius:3,
                           background:"var(--steel-pale,#EFF6FF)",color:"var(--steel)",fontWeight:500}}>

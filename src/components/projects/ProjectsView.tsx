@@ -102,7 +102,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
       <div style={{ flex:1, overflowY:"auto", padding:16 }}>
         {projects.length === 0 ? (
           <EmptyState icon="📁" title={t("No projects found")}
-            description={canCreate ? t("Create your first project or install a template to get started.") : t("No projects match your current filters.")}
+            description={canCreate ? t("Create your first project or install a template to get started_") : t("No projects match your current filters_")}
             action={canCreate ? (
               <div style={{ display:"flex", gap:8, justifyContent:"center" }}>
                 <Link href="/templates"

@@ -249,12 +249,12 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               <ReportSection title={rp("Scope Baseline")}>
                 {report.scopeStatement && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 8px" }}>
-                    <strong style={{ color:"#1E293B" }}>{rp("In scope.")} </strong>{report.scopeStatement}
+                    <strong style={{ color:"#1E293B" }}>{rp("In scope_")} </strong>{report.scopeStatement}
                   </p>
                 )}
                 {report.outOfScope && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>
-                    <strong style={{ color:"#1E293B" }}>{rp("Out of scope.")} </strong>{report.outOfScope}
+                    <strong style={{ color:"#1E293B" }}>{rp("Out of scope_")} </strong>{report.outOfScope}
                   </p>
                 )}
               </ReportSection>
@@ -375,12 +375,12 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
               <ReportSection title={rp("Scope")}>
                 {report.scopeSummary && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:"0 0 8px" }}>
-                    <strong style={{ color:"#1E293B" }}>{rp("In scope.")} </strong>{report.scopeSummary}
+                    <strong style={{ color:"#1E293B" }}>{rp("In scope_")} </strong>{report.scopeSummary}
                   </p>
                 )}
                 {report.outOfScopeSummary && (
                   <p style={{ fontSize:13, lineHeight:1.7, color:"#374151", margin:0 }}>
-                    <strong style={{ color:"#1E293B" }}>{rp("Out of scope.")} </strong>{report.outOfScopeSummary}
+                    <strong style={{ color:"#1E293B" }}>{rp("Out of scope_")} </strong>{report.outOfScopeSummary}
                   </p>
                 )}
               </ReportSection>
@@ -508,7 +508,7 @@ function ReportView({ report, reportType, audience, generatedAt, project, worksp
                         <span style={{ fontSize:13,color:"#374151",lineHeight:1.6 }}>{h}</span>
                       </div>
                     ))
-                  : <p style={{ fontSize:13,color:"#059669" }}>{rp("No critical issues.")}</p>
+                  : <p style={{ fontSize:13,color:"#059669" }}>{rp("No critical issues_")}</p>
                 }
               </ReportSection>
             </div>

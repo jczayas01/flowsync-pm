@@ -123,7 +123,7 @@ export function IntakeView({ items, currentUserId, canSubmit, canReview, canAppr
             </Field>
             <Field label={ik("Urgency")}>
               <select value={form.urgency} onChange={e => setForm({...form, urgency:e.target.value})} style={inp}>
-                {["LOW","MEDIUM","HIGH","CRITICAL"].map(u => <option key={u} value={u}>{ik(("urg." + u) as any)}</option>)}
+                {["LOW","MEDIUM","HIGH","CRITICAL"].map(u => <option key={u} value={u}>{ik(("urg_" + u) as any)}</option>)}
               </select>
             </Field>
           </div>
@@ -165,13 +165,13 @@ export function IntakeView({ items, currentUserId, canSubmit, canReview, canAppr
       {items.length === 0 ? (
         <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)",
           padding:"48px 20px", textAlign:"center", color:"var(--text-3)", fontSize:14 }}>
-          {ik("No ideas submitted yet.")}
+          {ik("No ideas submitted yet_")}
         </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {items.map(it => {
             const scColor = STATUS_COLOR[it.status] || STATUS_COLOR.SUBMITTED
-            const scLabel = ik(("st." + (STATUS_COLOR[it.status] ? it.status : "SUBMITTED")) as any)
+            const scLabel = ik(("st_" + (STATUS_COLOR[it.status] ? it.status : "SUBMITTED")) as any)
             const expanded = expandedId === it.id
             return (
               <div key={it.id} style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)", overflow:"hidden" }}>
@@ -182,7 +182,7 @@ export function IntakeView({ items, currentUserId, canSubmit, canReview, canAppr
                       <span style={{ fontSize:15, fontWeight:600, color:"var(--text-1)" }}>{it.title}</span>
                       <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:10,
                         background:scColor+"1A", color:scColor }}>{scLabel}</span>
-                      <span style={{ fontSize:10, fontWeight:700, color:URGENCY_COLOR[it.urgency]||"#64748B" }}>{ik(("urg." + it.urgency) as any)}</span>
+                      <span style={{ fontSize:10, fontWeight:700, color:URGENCY_COLOR[it.urgency]||"#64748B" }}>{ik(("urg_" + it.urgency) as any)}</span>
                       {it.files && it.files.length > 0 && (
                         <span style={{ fontSize:11, color:"var(--steel)" }}>📎 {it.files.length}</span>
                       )}
@@ -211,13 +211,13 @@ export function IntakeView({ items, currentUserId, canSubmit, canReview, canAppr
                     <DetailRow label={ik("Description")}>{it.description}</DetailRow>
                     {it.problem && <DetailRow label={ik("Problem / Opportunity")}>{it.problem}</DetailRow>}
                     {it.expectedValue && <DetailRow label={ik("Expected value")}>{it.expectedValue}</DetailRow>}
-                    <DetailRow label={ik("Urgency")}>{ik(("urg." + it.urgency) as any)}</DetailRow>
+                    <DetailRow label={ik("Urgency")}>{ik(("urg_" + it.urgency) as any)}</DetailRow>
 
                     <div style={{ marginTop:12 }}>
                       <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
                         letterSpacing:".04em", marginBottom:6 }}>{ik("Attachments")}</div>
                       {(!it.files || it.files.length === 0) ? (
-                        <div style={{ fontSize:12, color:"var(--text-4)" }}>{ik("No documents attached.")}</div>
+                        <div style={{ fontSize:12, color:"var(--text-4)" }}>{ik("No documents attached_")}</div>
                       ) : it.files.map(fl => (
                         <div key={fl.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 10px",
                           background:"#fff", border:"1px solid var(--border)", borderRadius:"var(--radius)", marginBottom:6 }}>

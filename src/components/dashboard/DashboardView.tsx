@@ -236,10 +236,10 @@ export function DashboardView({ projects, milestones, risks, activity,
                 letterSpacing:'.05em', textTransform:'uppercase',
                 borderBottom:'1px solid var(--surface-1,#F1F5F9)' }}>
                 <div/>
-                <div>{t("col.Project")}</div>
-                <div>{t("col.Progress")}</div>
-                <div>{canSeeBudget ? t("col.Budget") : ''}</div>
-                <div>{t("col.Health")}</div>
+                <div>{t("col_Project")}</div>
+                <div>{t("col_Progress")}</div>
+                <div>{canSeeBudget ? t("col_Budget") : ''}</div>
+                <div>{t("col_Health")}</div>
               </div>
               {shownProjects.slice(0, 8).map(p => {
                 const budgetPct = Number(p.budgetTotal) > 0

@@ -782,7 +782,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                     </div>
                   </div>
                   {comments.length === 0 ? (
-                    <div style={{ fontSize:12, color:"var(--text-3)", padding:"8px 0" }}>{tk("No contributions yet.")}</div>
+                    <div style={{ fontSize:12, color:"var(--text-3)", padding:"8px 0" }}>{tk("No contributions yet_")}</div>
                   ) : comments.map(c => (
                     <div key={c.id} style={{ display:"flex", gap:10, padding:"8px 0", borderTop:"1px solid var(--border)" }}>
                       <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, background:"var(--steel)",
