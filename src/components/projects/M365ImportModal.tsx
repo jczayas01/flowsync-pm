@@ -4,6 +4,7 @@
 // selected files are copied into the project's documents.
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 
 interface Item {
   id: string; name: string; isFolder: boolean; size: number
@@ -18,6 +19,7 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
   projectId: string; workspaceId?: string
   onClose: () => void; onImported: (docs: any[]) => void
 }) {
+  const m3 = useTranslations("m365Import")
   const [tab, setTab] = useState<"onedrive" | "sharepoint">("onedrive")
   const [items, setItems] = useState<Item[]>([])
   const [crumbs, setCrumbs] = useState<Crumb[]>([{ label: "OneDrive" }])
@@ -89,7 +91,7 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
     const files = Object.values(sel)
     if (!files.length) return
     const list = files.map(f => ({ driveId: f.driveId, itemId: f.id }))
-    setImporting(`Importing 1/${files.length}…`)
+    setImporting(m3("importingN",{n:files.length}))
     const res = await fetch(`/api/projects/${projectId}/documents/import-m365`, {
       method: "POST", headers: { "Content-Type": "application/json", ...H },
       body: JSON.stringify({ files: list }),
@@ -114,7 +116,7 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border,#E2E8F0)",
           display: "flex", alignItems: "center", gap: 12 }}>
           <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>Import from Microsoft 365</div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>{m3("Import from Microsoft 365")}</div>
           <button onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "none",
             fontSize: 18, cursor: "pointer", color: "var(--text-3)" }}>✕</button>
         </div>
@@ -135,11 +137,11 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
           <div style={{ padding: "10px 20px 0", display: "flex", gap: 8 }}>
             <input value={siteQ} onChange={e => setSiteQ(e.target.value)}
               onKeyDown={e => e.key === "Enter" && loadSites(siteQ)}
-              placeholder="Search sites…" style={{ flex: 1, padding: "7px 10px",
+              placeholder={m3("Search sites…")} style={{ flex: 1, padding: "7px 10px",
                 border: "1px solid var(--border,#E2E8F0)", borderRadius: 8, fontSize: 12.5 }} />
             <button onClick={() => loadSites(siteQ)} style={{ padding: "7px 14px", borderRadius: 8,
               border: "1px solid var(--border,#E2E8F0)", background: "#fff", fontSize: 12.5,
-              fontWeight: 600, cursor: "pointer" }}>Search</button>
+              fontWeight: 600, cursor: "pointer" }}>{m3("Search")}</button>
           </div>
         )}
 
@@ -158,7 +160,7 @@ export function M365ImportModal({ projectId, workspaceId, onClose, onImported }:
 
         <div style={{ flex: 1, overflowY: "auto", padding: "10px 20px", minHeight: 220 }}>
           {loading && <div style={{ padding: 30, textAlign: "center", color: "var(--text-3)",
-            fontSize: 13 }}>Loading…</div>}
+            fontSize: 13 }}>{m3("Loading…")}</div>}
           {!loading && sites?.map(s => (
             <button key={s.id} onClick={() => openSite(s.id, s.name)}
               style={{ display: "flex", alignItems: "center", gap: 10, width: "100%",

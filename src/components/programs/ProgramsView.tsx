@@ -3,6 +3,7 @@
 // PM Standard — Portfolio Hierarchy — Portfolio → Program → Project hierarchy
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -32,6 +33,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
   programs:any[]; portfolios:any[]; unassignedProjects:any[];
   workspaceId:string; userRole:string
 }) {
+  const pg = useTranslations("programs")
   const router = useRouter()
   // Mirror server data into local state so assignment can update the UI optimistically;
   // re-sync whenever the server sends fresh props (after router.refresh()).
@@ -57,18 +59,18 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
         method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ name: editForm.name.trim(), description: editForm.description || null }),
       })
-      if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Update failed (${res.status})`); return }
+      if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||pg("updateFailed",{s:res.status})); return }
       setEditingProg(null)
       router.refresh()
     } finally { setSavingProg(false) }
   }
 
   async function deleteProgram(prog: any) {
-    if (!confirm(`Delete program "${prog.name}"?\n\nIts ${prog.projects.length} project(s) will NOT be deleted — they return to Unassigned.`)) return
+    if (!confirm(pg("confirmDelete",{n:prog.name, c:prog.projects.length}))) return
     const res = await fetch(`/api/programs/${prog.id}`, {
       method:"DELETE", headers:{"x-workspace-id":workspaceId},
     })
-    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Delete failed (${res.status})`); return }
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||pg("deleteFailed",{s:res.status})); return }
     router.refresh()
   }
 
@@ -108,7 +110,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
 
   async function createProgram() {
     if (!form.name.trim() || !form.portfolioId) {
-      setError("Name and portfolio are required"); return
+      setError(pg("nameAndPortfolioRequired")); return
     }
     setSaving(true); setError("")
     try {
@@ -152,15 +154,15 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
             letterSpacing:".08em", marginBottom:4 }}>
             PM Standard — Portfolio Hierarchy — Value Delivery Components
           </div>
-          <div style={{ fontSize:18, fontWeight:700 }}>Programs</div>
+          <div style={{ fontSize:18, fontWeight:700 }}>{pg("Programs")}</div>
           <div style={{ fontSize:12, opacity:.65, marginTop:2 }}>
-            Portfolio → <span style={{ color:"#93C5FD" }}>Program</span> → Project
+            {pg("Portfolio")} → <span style={{ color:"#93C5FD" }}>{pg("Program")}</span> → {pg("Project")}
           </div>
         </div>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
           <div style={{ fontSize:12, opacity:.7 }}>
             {programs.length} program{programs.length!==1?"s":""} ·{" "}
-            {programs.reduce((s,p)=>s+p.projects.length,0)} projects
+            {pg("projectCount",{n:programs.reduce((s,p)=>s+p.projects.length,0)})}
           </div>
           {canCreate && (
             <button onClick={() => setShowCreate(s=>!s)}
@@ -168,7 +170,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                 color:"#fff", border:"1px solid rgba(255,255,255,.3)",
                 borderRadius:"var(--radius)", fontSize:12, fontWeight:500,
                 cursor:"pointer", fontFamily:"var(--font)" }}>
-              {showCreate ? "Cancel" : "+ New program"}
+              {showCreate ? pg("Cancel") : pg("+ New program")}
             </button>
           )}
         </div>
@@ -177,7 +179,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
       {/* PM Standard info strip */}
       <div style={{ background:"#EFF6FF", borderBottom:"1px solid #BFDBFE",
         padding:"8px 20px", fontSize:11, color:"#1E40AF", flexShrink:0 }}>
-        A <strong>Program</strong> is a group of related projects managed in a coordinated way to obtain
+        {pg("programHint")}
         benefits not available from managing them individually (PM Standard — Portfolio Hierarchy).
         Programs sit between Portfolio and individual Projects in the governance hierarchy.
       </div>
@@ -196,23 +198,23 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
             )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={lbl}>Program name *</label>
+                <label style={lbl}>{pg("Program name *")}</label>
                 <input style={inp} value={form.name}
                   onChange={e=>setForm(f=>({...f,name:e.target.value}))}
-                  placeholder="e.g. Digital Health Program" />
+                  placeholder={pg("phProgramName")} />
               </div>
               <div>
-                <label style={lbl}>Portfolio *</label>
+                <label style={lbl}>{pg("Portfolio *")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.portfolioId}
                   onChange={e=>setForm(f=>({...f,portfolioId:e.target.value}))}>
-                  <option value="">Select portfolio…</option>
+                  <option value="">{pg("Select portfolio…")}</option>
                   {portfolios.map(p=>(
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label style={lbl}>Color</label>
+                <label style={lbl}>{pg("Color")}</label>
                 <div style={{ display:"flex", gap:8, paddingTop:4 }}>
                   {COLORS.map(c=>(
                     <div key={c} onClick={()=>setForm(f=>({...f,color:c}))}
@@ -222,11 +224,11 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                 </div>
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={lbl}>Description</label>
+                <label style={lbl}>{pg("Description")}</label>
                 <textarea rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}
                   value={form.description}
                   onChange={e=>setForm(f=>({...f,description:e.target.value}))}
-                  placeholder="What strategic objective does this program deliver?" />
+                  placeholder={pg("phProgramDesc")} />
               </div>
             </div>
             <div style={{ display:"flex", gap:10 }}>
@@ -235,12 +237,12 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                   border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                   cursor:"pointer", fontFamily:"var(--font)",
                   opacity:(!form.name.trim()||!form.portfolioId)?0.5:1 }}>
-                {saving?"Creating…":"Create program"}
+                {saving?pg("Creating…"):pg("Create program")}
               </button>
               <button onClick={()=>{ setShowCreate(false); setError("") }}
                 style={{ padding:"9px 18px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{pg("Cancel")}</button>
             </div>
           </div>
         )}
@@ -250,12 +252,11 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>🗂</div>
             <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-              No programs yet
+              {pg("No programs yet")}
             </div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:440, margin:"0 auto 20px",
               lineHeight:1.7 }}>
-              Programs group related projects to achieve strategic benefits.
-              Create your first program to organize projects under a common objective.
+              {pg("emptyBody")}
             </div>
             {canCreate && (
               <button onClick={()=>setShowCreate(true)}
@@ -287,11 +288,11 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                     <div style={{ padding:"12px 18px", borderBottom:"1px solid var(--border)",
                       background:"var(--surface)", display:"flex", flexDirection:"column", gap:8 }}
                       onClick={e=>e.stopPropagation()}>
-                      <input value={editForm.name} placeholder="Program name"
+                      <input value={editForm.name} placeholder={pg("Program name")}
                         onChange={e=>setEditForm(f=>({...f, name:e.target.value}))}
                         style={{ padding:"8px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
                           fontSize:13, fontFamily:"var(--font)" }} />
-                      <textarea value={editForm.description} placeholder="Description (optional)" rows={2}
+                      <textarea value={editForm.description} placeholder={pg("Description (optional)")} rows={2}
                         onChange={e=>setEditForm(f=>({...f, description:e.target.value}))}
                         style={{ padding:"8px 10px", border:"1px solid var(--border)", borderRadius:"var(--radius)",
                           fontSize:12, fontFamily:"var(--font)", resize:"vertical" }} />
@@ -300,12 +301,12 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                           style={{ padding:"7px 16px", background:"var(--steel)", color:"#fff", border:"none",
                             borderRadius:"var(--radius)", fontSize:12, fontWeight:600, fontFamily:"var(--font)",
                             cursor: savingProg ? "wait" : "pointer" }}>
-                          {savingProg ? "Saving…" : "💾 Save"}
+                          {savingProg ? pg("Saving…") : "💾 "+pg("Save")}
                         </button>
                         <button onClick={() => setEditingProg(null)}
                           style={{ padding:"7px 12px", background:"#fff", border:"1px solid var(--border)",
                             borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
-                            fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                            fontFamily:"var(--font)", color:"var(--text-2)" }}>{pg("Cancel")}</button>
                       </div>
                     </div>
                   )}
@@ -323,7 +324,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                         </span>
                         <span style={{ fontSize:10, padding:"2px 7px", borderRadius:10,
                           background:h.color+"15", color:h.color, fontWeight:700 }}>
-                          {h.dot} {h.label}
+                          {h.dot} {pg(h.label as any)}
                         </span>
                         <span style={{ fontSize:10, color:"var(--text-4)" }}>
                           {prog.portfolio?.name}
@@ -331,7 +332,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                       </div>
                       <div style={{ display:"flex", gap:16, fontSize:11, color:"var(--text-3)" }}>
                         <span>📁 {prog.projects.length} project{prog.projects.length!==1?"s":""}</span>
-                        {budget>0 && <span>💰 {fmtCurrency(budget)} budget</span>}
+                        {budget>0 && <span>💰 {pg("budgetOf",{v:fmtCurrency(budget)})}</span>}
                         <span>📊 {avgPct}% avg complete</span>
                         {prog.manager && (
                           <span style={{ display:"flex", alignItems:"center", gap:4 }}>
@@ -355,12 +356,12 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
 
                     {canAssign && (
                       <div style={{ display:"flex", gap:6, flexShrink:0 }} onClick={e=>e.stopPropagation()}>
-                        <button title="Edit program"
+                        <button title={pg("Edit program")}
                           onClick={() => { setEditingProg(prog); setEditForm({ name:prog.name, description:prog.description||"" }) }}
                           style={{ padding:"4px 9px", background:"#fff", border:"1px solid var(--border)",
                             borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
                             fontFamily:"var(--font)", color:"var(--text-2)" }}>✏️</button>
-                        <button title="Delete program"
+                        <button title={pg("Delete program")}
                           onClick={() => deleteProgram(prog)}
                           style={{ padding:"4px 9px", background:"#fff", border:"1px solid #FECACA",
                             borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
@@ -377,7 +378,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                     <div style={{ padding:"8px 0" }}>
                       {prog.projects.length === 0 ? (
                         <div style={{ padding:"12px 24px", fontSize:12, color:"var(--text-4)" }}>
-                          No projects assigned to this program yet.
+                          {pg("noProjectsInProgram")}
                         </div>
                       ) : prog.projects.map((p:any) => {
                         const ph = HEALTH[p.health] || HEALTH.GREEN
@@ -402,7 +403,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                               {p.methodology}
                             </span>
                             <span style={{ fontSize:10, color:ph.color, fontWeight:700,
-                              flexShrink:0 }}>{ph.dot} {ph.label}</span>
+                              flexShrink:0 }}>{ph.dot} {pg(ph.label as any)}</span>
                             <div style={{ width:60, flexShrink:0 }}>
                               <div style={{ height:4, background:"var(--border)",
                                 borderRadius:2, overflow:"hidden" }}>
@@ -430,7 +431,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                 borderRadius:"var(--radius)", overflow:"hidden" }}>
                 <div style={{ padding:"12px 18px", borderBottom:"1px solid #FDE68A",
                   background:"#FFFBEB", fontSize:12, fontWeight:600, color:"#92400E" }}>
-                  ⚠ {unassignedProjects.length} project{unassignedProjects.length!==1?"s":""} not assigned to any program
+                  ⚠ {pg("unassignedCount",{n:unassignedProjects.length})}
                 </div>
                 {error && (
                   <div style={{ padding:"8px 18px", fontSize:12, color:"var(--red)",
@@ -453,7 +454,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                           {p.name}
                         </Link>
                         <span style={{ fontSize:10, color:ph.color, fontWeight:700 }}>
-                          {ph.dot} {ph.label}
+                          {ph.dot} {pg(ph.label as any)}
                         </span>
                         {canAssign && (
                           <select defaultValue="" disabled={assigning===p.id || programs.length===0}
@@ -461,7 +462,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                             style={{ fontSize:11, padding:"4px 6px", borderRadius:"var(--radius)",
                               border:"1px solid var(--border)", background:"#fff",
                               color:"var(--text-2)", cursor:"pointer", fontFamily:"var(--font)" }}>
-                            <option value="">{assigning===p.id ? "Assigning…" : "Assign to program…"}</option>
+                            <option value="">{assigning===p.id ? pg("Assigning…") : pg("Assign to program…")}</option>
                             {programs.map((pr:any) => (
                               <option key={pr.id} value={pr.id}>{pr.name}</option>
                             ))}

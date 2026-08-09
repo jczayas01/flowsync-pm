@@ -26,7 +26,6 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
   const canCreate = !["VIEWER","CLIENT","MEMBER"].includes(userRole)
 
   function applyFilter(key:string, val:string) {
-  const locale = useLocale()
     const params = new URLSearchParams(window.location.search)
     if (val) params.set(key, val); else params.delete(key)
     router.push(`/projects?${params.toString()}`)
@@ -46,7 +45,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
         padding:"14px 20px", display:"flex", alignItems:"center",
         justifyContent:"space-between", flexShrink:0, flexWrap:"wrap", gap:10 }}>
         <div>
-          <h1 style={{ fontSize:17, fontWeight:600, color:"var(--text)", marginBottom:2 }}>Projects</h1>
+          <h1 style={{ fontSize:17, fontWeight:600, color:"var(--text)", marginBottom:2 }}>{t("Projects")}</h1>
           <p style={{ fontSize:12, color:"var(--text-3)" }}>{projects.length} project{projects.length!==1?"s":""}</p>
         </div>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
@@ -81,10 +80,10 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
         </select>
         <select style={sel} defaultValue={filters.health || ""}
           onChange={e => applyFilter("health", e.target.value)}>
-          <option value="">All health</option>
-          <option value="GREEN">On track</option>
-          <option value="AMBER">At risk</option>
-          <option value="RED">Off track</option>
+          <option value="">{t("All health")}</option>
+          <option value="GREEN">{t("On track")}</option>
+          <option value="AMBER">{t("At risk")}</option>
+          <option value="RED">{t("Off track")}</option>
         </select>
         <select style={sel} defaultValue={filters.method || ""}
           onChange={e => applyFilter("method", e.target.value)}>
@@ -151,7 +150,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                         {p.methodology}
                       </span>
                       {p.isConfidential && (
-                        <span title="Confidential — visible to team members only"
+                        <span title={t("confidentialTip")}
                           style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:4,
                             background:"#FEF2F2", color:"#DC2626", flexShrink:0,
                             border:"1px solid #FECACA" }}>
@@ -190,7 +189,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                       fontWeight:500 }}>
                       {budgetPct}% spent
                     </div>
-                    <div style={{ fontSize:11 }}>budget</div>
+                    <div style={{ fontSize:11 }}>{t("budget")}</div>
                   </div>
                   {/* Health badge */}
                   <div>

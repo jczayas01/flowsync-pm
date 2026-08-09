@@ -3,6 +3,7 @@
 // ⚙️ Project Settings v1 — AI response style + Phase management.
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 const inp: React.CSSProperties = {
   padding: "8px 10px", border: "1px solid var(--border)", borderRadius: "var(--radius)",
@@ -17,6 +18,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
   projectId: string
   onClose: () => void
 }) {
+  const ps = useTranslations("projectSettings")
   const router = useRouter()
   const [loading, setLoading]   = useState(true)
   const [canManage, setCanManage] = useState(false)
@@ -48,7 +50,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
     if (res?.ok) { setIdSaved(true); router.refresh(); setTimeout(() => setIdSaved(false), 2500) }
     else {
       const d = await res?.json().catch(() => null)
-      alert(d?.error || "Could not rename the project.")
+      alert(d?.error || ps("renameFailed"))
     }
   }
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -144,7 +146,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
       const res = await fetch(`/api/projects/${projectId}/phases/${phase.id}${qs}`, { method: "DELETE" })
       const d = await res.json().catch(() => ({}))
       if (res.status === 409) { setDeleting(phase); setMoveTarget("none"); return }
-      if (!res.ok) { setError(d?.error || "Delete failed"); return }
+      if (!res.ok) { setError(d?.error || ps("deleteFailed")); return }
       setDeleting(null)
       await reload()
       router.refresh()
@@ -161,20 +163,20 @@ export function ProjectSettingsModal({ projectId, onClose }: {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", padding: "16px 20px",
           borderBottom: "1px solid var(--border)" }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>⚙️ Project Settings</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>⚙️ {ps("Project Settings")}</span>
           <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none",
             fontSize: 18, cursor: "pointer", color: "var(--text-3)" }}>✕</button>
         </div>
 
         {loading ? (
-          <div style={{ padding: 32, fontSize: 13, color: "var(--text-3)" }}>Loading…</div>
+          <div style={{ padding: 32, fontSize: 13, color: "var(--text-3)" }}>{ps("Loading…")}</div>
         ) : (
           <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 24 }}>
 
             {/* ── Project identity ── */}
             <section>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--steel)", marginBottom: 4 }}>
-                ✏️ Project name and code
+                ✏️ {ps("Project name and code")}
               </div>
               <p style={{ fontSize: 12, color: "var(--text-3)", margin: "0 0 10px", lineHeight: 1.6 }}>
                 The name appears on every report, export and deck. The code prefixes task and
@@ -182,7 +184,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
               </p>
               <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
                 <label style={{ flex: "1 1 220px", fontSize: 11, color: "var(--text-3)" }}>
-                  Name
+                  {ps("Name")}
                   <input value={pName} disabled={!canManage}
                     onChange={e => setPName(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") saveIdentity() }}
@@ -192,7 +194,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                       background: canManage ? "#fff" : "var(--surface)" }} />
                 </label>
                 <label style={{ flex: "0 0 110px", fontSize: 11, color: "var(--text-3)" }}>
-                  Code
+                  {ps("Code")}
                   <input value={pCode} disabled={!canManage}
                     onChange={e => setPCode(e.target.value.toUpperCase())}
                     onKeyDown={e => { if (e.key === "Enter") saveIdentity() }}
@@ -206,7 +208,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                     style={{ padding: "9px 16px", background: "var(--steel)", color: "#fff",
                       border: "none", borderRadius: "var(--radius)", fontSize: 12, fontWeight: 600,
                       fontFamily: "var(--font)", cursor: idBusy ? "wait" : "pointer" }}>
-                    {idBusy ? "Saving…" : idSaved ? "✓ Saved" : "Save"}
+                    {idBusy ? ps("Saving…") : idSaved ? "✓ "+ps("Saved") : ps("Save")}
                   </button>
                 )}
               </div>
@@ -215,29 +217,29 @@ export function ProjectSettingsModal({ projectId, onClose }: {
             {/* ── AI response style ── */}
             <section>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--steel)", marginBottom: 4 }}>
-                🤖 AI response style
+                🤖 {ps("AI response style")}
               </div>
               <p style={{ fontSize: 12, color: "var(--text-3)", margin: "0 0 10px", lineHeight: 1.6 }}>
-                Applies to every AI feature in this project — reports, brief, analyzer, and all document scans.
+                {ps("aiStyleHint")}
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, alignItems: "end" }}>
                 <div>
-                  <div style={lbl}>Tone</div>
+                  <div style={lbl}>{ps("Tone")}</div>
                   <select style={{ ...inp, width: "100%", cursor: "pointer" }} value={aiStyle}
                     disabled={!canManage}
                     onChange={e => setAiStyle(e.target.value)}>
-                    <option value="PROFESSIONAL">Professional (default)</option>
-                    <option value="FORMAL">Formal — executive register</option>
-                    <option value="CONCISE">Concise — essentials only</option>
-                    <option value="DETAILED">Detailed — thorough</option>
+                    <option value="PROFESSIONAL">{ps("tonePro")}</option>
+                    <option value="FORMAL">{ps("toneFormal")}</option>
+                    <option value="CONCISE">{ps("toneConcise")}</option>
+                    <option value="DETAILED">{ps("toneDetailed")}</option>
                   </select>
                 </div>
                 <div>
-                  <div style={lbl}>Language</div>
+                  <div style={lbl}>{ps("Language")}</div>
                   <select style={{ ...inp, width: "100%", cursor: "pointer" }} value={aiLanguage}
                     disabled={!canManage}
                     onChange={e => setAiLanguage(e.target.value)}>
-                    <option value="AUTO">Match documents (auto)</option>
+                    <option value="AUTO">{ps("langAuto")}</option>
                     <option value="EN">English</option>
                     <option value="ES">Español</option>
                   </select>
@@ -247,7 +249,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                     style={{ padding: "9px 16px", background: "var(--steel)", color: "#fff", border: "none",
                       borderRadius: "var(--radius)", fontSize: 12, fontWeight: 600,
                       fontFamily: "var(--font)", cursor: savingAi ? "wait" : "pointer" }}>
-                    {savingAi ? "Saving…" : aiSaved ? "✓ Saved" : "Save"}
+                    {savingAi ? ps("Saving…") : aiSaved ? "✓ "+ps("Saved") : ps("Save")}
                   </button>
                 )}
               </div>
@@ -259,8 +261,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                 📋 Phases
               </div>
               <p style={{ fontSize: 12, color: "var(--text-3)", margin: "0 0 10px", lineHeight: 1.6 }}>
-                Rename, reorder, add, or remove this project's phases. Tasks are never deleted —
-                removing a phase asks where its tasks should go.
+                {ps("phasesHint")}
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -300,20 +301,20 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                       <>
                         <button disabled={idx === 0 || !!busy}
                           onClick={() => movePhase(idx, -1)}
-                          title="Move up"
+                          title={ps("Move up")}
                           style={{ padding: "3px 8px", background: "#fff", border: "1px solid var(--border)",
                             borderRadius: 6, fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer",
                             opacity: idx === 0 ? 0.4 : 1, fontFamily: "var(--font)" }}>↑</button>
                         <button disabled={idx === phases.length - 1 || !!busy}
                           onClick={() => movePhase(idx, 1)}
-                          title="Move down"
+                          title={ps("Move down")}
                           style={{ padding: "3px 8px", background: "#fff", border: "1px solid var(--border)",
                             borderRadius: 6, fontSize: 11,
                             cursor: idx === phases.length - 1 ? "not-allowed" : "pointer",
                             opacity: idx === phases.length - 1 ? 0.4 : 1, fontFamily: "var(--font)" }}>↓</button>
                         <button disabled={!!busy}
                           onClick={() => deletePhase(ph)}
-                          title="Delete phase"
+                          title={ps("Delete phase")}
                           style={{ padding: "3px 8px", background: "#fff", border: "1px solid #FECACA",
                             borderRadius: 6, fontSize: 11, color: "#DC2626", cursor: "pointer",
                             fontFamily: "var(--font)" }}>🗑</button>
@@ -323,7 +324,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                 ))}
                 {!phases.length && (
                   <div style={{ fontSize: 12, color: "var(--text-3)", padding: 8 }}>
-                    No phases yet — add the first one below.
+                    {ps("noPhases")}
                   </div>
                 )}
               </div>
@@ -333,13 +334,12 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                 <div style={{ marginTop: 10, padding: 12, background: "#FFFBEB",
                   border: "1px solid #FDE68A", borderRadius: "var(--radius)" }}>
                   <div style={{ fontSize: 12, color: "#92400E", marginBottom: 8 }}>
-                    <strong>"{deleting.name}"</strong> contains {deleting._count?.tasks} task(s).
-                    Where should they go?
+                    {ps.rich("phaseHasTasks",{n:deleting._count?.tasks||0, name:deleting.name, b:(c:any)=><strong>{c}</strong>})}
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <select style={{ ...inp, cursor: "pointer" }} value={moveTarget}
                       onChange={e => setMoveTarget(e.target.value)}>
-                      <option value="none">Unphased (no phase)</option>
+                      <option value="none">{ps("Unphased (no phase)")}</option>
                       {phases.filter(x => x.id !== deleting.id).map(x =>
                         <option key={x.id} value={x.id}>{x.name}</option>)}
                     </select>
@@ -347,19 +347,19 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                       style={{ padding: "7px 14px", background: "#DC2626", color: "#fff", border: "none",
                         borderRadius: "var(--radius)", fontSize: 12, fontWeight: 600,
                         fontFamily: "var(--font)", cursor: "pointer" }}>
-                      Move tasks & delete phase
+                      {ps("Move tasks & delete phase")}
                     </button>
                     <button onClick={() => setDeleting(null)}
                       style={{ padding: "7px 12px", background: "#fff", border: "1px solid var(--border)",
                         borderRadius: "var(--radius)", fontSize: 12, cursor: "pointer",
-                        fontFamily: "var(--font)", color: "var(--text-2)" }}>Cancel</button>
+                        fontFamily: "var(--font)", color: "var(--text-2)" }}>{ps("Cancel")}</button>
                   </div>
                 </div>
               )}
 
               {canManage && (
                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                  <input style={{ ...inp, flex: 1 }} placeholder="New phase name…" value={newPhase}
+                  <input style={{ ...inp, flex: 1 }} placeholder={ps("New phase name…")} value={newPhase}
                     onChange={e => setNewPhase(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") addPhase() }} />
                   <button onClick={addPhase} disabled={!newPhase.trim() || busy === "new"}
@@ -368,7 +368,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                       fontFamily: "var(--font)",
                       cursor: !newPhase.trim() ? "not-allowed" : "pointer",
                       opacity: !newPhase.trim() ? 0.6 : 1 }}>
-                    ＋ Add phase
+                    ＋ {ps("Add phase")}
                   </button>
                 </div>
               )}
@@ -376,7 +376,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
 
             {canManage && (
               <section style={{ marginTop: 8, border: "1px solid #FECACA", borderRadius: 10, padding: "12px 14px", background: "#FEF2F2" }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#B91C1C", marginBottom: 6 }}>Danger zone</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#B91C1C", marginBottom: 6 }}>{ps("Danger zone")}</div>
                 <div style={{ fontSize: 11.5, color: "#7F1D1D", lineHeight: 1.5, marginBottom: 10 }}>
                   {projStatus === "ARCHIVED"
                     ? "This project is archived. Permanent deletion removes the project and ALL its data (tasks, risks, budget, documents, reports). This cannot be undone."
@@ -385,7 +385,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                 {projStatus !== "ARCHIVED" ? (
                   <button disabled={dangerBusy}
                     onClick={async () => {
-                      if (!confirm("Archive this project? It disappears from active views but keeps all data.")) return
+                      if (!confirm(ps("confirmArchive"))) return
                       setDangerBusy(true)
                       const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" })
                       setDangerBusy(false)
@@ -394,22 +394,22 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                     }}
                     style={{ padding: "7px 14px", background: "#fff", border: "1px solid #FCA5A5", borderRadius: "var(--radius)",
                       fontSize: 12, fontWeight: 600, color: "#B91C1C", cursor: "pointer", fontFamily: "var(--font)" }}>
-                    Archive project
+                    {ps("Archive project")}
                   </button>
                 ) : (
                   <button disabled={dangerBusy}
                     onClick={async () => {
-                      const word = prompt('Type DELETE to permanently remove this project and all its data:')
+                      const word = prompt(ps('promptDelete'))
                       if (word !== "DELETE") return
                       setDangerBusy(true)
                       const res = await fetch(`/api/projects/${projectId}?permanent=1`, { method: "DELETE" })
                       setDangerBusy(false)
-                      if (!res.ok) { const d = await res.json().catch(()=>({})); setError(d?.error || "Not allowed to delete"); return }
+                      if (!res.ok) { const d = await res.json().catch(()=>({})); setError(d?.error || ps("notAllowedDelete")); return }
                       window.location.href = "/projects"
                     }}
                     style={{ padding: "7px 14px", background: "#B91C1C", border: "none", borderRadius: "var(--radius)",
                       fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "var(--font)" }}>
-                    Delete permanently
+                    {ps("Delete permanently")}
                   </button>
                 )}
               </section>

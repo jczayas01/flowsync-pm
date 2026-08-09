@@ -109,10 +109,10 @@ export function ProjectShell({ project, userRole, children }:{
         body: JSON.stringify({ action, reason }),
       })
       const d = await res.json().catch(() => null)
-      if (!res.ok) { window.alert(d?.error || `Failed (${res.status})`); return }
+      if (!res.ok) { window.alert(d?.error || tTabs("shellFailed",{s:res.status})); return }
       if (d?.data?.status) setStatus(d.data.status)
       router.refresh()
-    } catch { window.alert("Connection lost — try again") }
+    } catch { window.alert(tTabs("Connection lost — try again")) }
     finally { setStatusBusy(false) }
   }
 
@@ -140,7 +140,7 @@ export function ProjectShell({ project, userRole, children }:{
         padding:"11px 20px 0",flexShrink:0}}>
         <div style={{fontSize:11,color:"var(--text-3)",marginBottom:5,display:"flex",
           alignItems:"center",gap:5}}>
-          <Link href="/projects" style={{color:"var(--text-3)",textDecoration:"none"}}>Projects</Link>
+          <Link href="/projects" style={{color:"var(--text-3)",textDecoration:"none"}}>{tTabs("Projects")}</Link>
           <span>›</span>
           <span style={{color:"var(--text-2)",fontFamily:"monospace"}}>{project.code}</span>
         </div>
@@ -150,7 +150,7 @@ export function ProjectShell({ project, userRole, children }:{
             {project.name}
           </h1>
           {/* Project settings */}
-          <button onClick={() => setSettingsOpen(true)} title="Project settings"
+          <button onClick={() => setSettingsOpen(true)} title={tTabs("Project settings")}
             style={{ padding:"4px 9px", background:"#fff", border:"1px solid var(--border)",
               borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
               fontFamily:"var(--font)", color:"var(--text-2)", lineHeight:1 }}>⚙️</button>
@@ -171,7 +171,7 @@ export function ProjectShell({ project, userRole, children }:{
           )}
           {status !== "DRAFT" && status !== "PENDING_APPROVAL" && canChangeStatus && (
             <select value={status} onChange={e => changeStatus(e.target.value)} disabled={statusBusy}
-              title="Change project status"
+              title={tTabs("Change project status")}
               style={{ fontSize:10, fontWeight:600, padding:"3px 6px", borderRadius:4,
                 border:"1px solid var(--border)", background:"#fff", color:"var(--text-2)",
                 flexShrink:0, minWidth:74,
@@ -184,7 +184,7 @@ export function ProjectShell({ project, userRole, children }:{
           {/* Admin override while in approval states */}
           {(status === "DRAFT" || status === "PENDING_APPROVAL") && myLevel >= 68 && (
             <select value="" onChange={e => e.target.value && changeStatus(e.target.value)} disabled={statusBusy}
-              title="Admin override — set status directly"
+              title={tTabs("Admin override — set status directly")}
               style={{ fontSize:13, fontWeight:700, padding:0, borderRadius:6,
                 border:"1px solid var(--border)", background:"#fff", color:"var(--text-3)",
                 cursor:"pointer", fontFamily:"var(--font)",

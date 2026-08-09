@@ -1,4 +1,5 @@
 "use client"
+import { useTranslations } from "next-intl"
 // src/components/projects/BaselineComparison.tsx
 // PM Standard — Schedule Variance Analysis (Baseline vs Actual)
 // Compares each task's current schedule against the approved baseline snapshot.
@@ -29,6 +30,7 @@ function fmtVar(v: number | null): string {
 }
 
 export function BaselineComparison({ baselines, tasks }: { baselines: any[]; tasks: any[] }) {
+  const bl = useTranslations("baselines")
   const approved = useMemo(() =>
     (baselines || [])
       .filter(b => b.isApproved)
@@ -106,7 +108,7 @@ export function BaselineComparison({ baselines, tasks }: { baselines: any[]; tas
           Baseline vs Actual — Schedule Variance
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 11, color: "var(--text-3)" }}>Baseline:</span>
+          <span style={{ fontSize: 11, color: "var(--text-3)" }}>{bl("Baseline:")}</span>
           <select value={selId} onChange={e => setSelId(e.target.value)}
             style={{ padding: "5px 8px", fontSize: 12, border: "1px solid var(--border)",
               borderRadius: "var(--radius)", fontFamily: "var(--font)", background: "#fff",
@@ -135,14 +137,14 @@ export function BaselineComparison({ baselines, tasks }: { baselines: any[]; tas
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#1a3a5c" }}>
-              <th style={th}>TASK</th>
-              <th style={th}>BASELINE START</th>
-              <th style={th}>CURRENT START</th>
+              <th style={th}>{bl("TASK")}</th>
+              <th style={th}>{bl("BASELINE START")}</th>
+              <th style={th}>{bl("CURRENT START")}</th>
               <th style={{ ...th, textAlign: "right" }}>Δ START</th>
-              <th style={th}>BASELINE FINISH</th>
-              <th style={th}>CURRENT FINISH</th>
+              <th style={th}>{bl("BASELINE FINISH")}</th>
+              <th style={th}>{bl("CURRENT FINISH")}</th>
               <th style={{ ...th, textAlign: "right" }}>Δ FINISH</th>
-              <th style={{ ...th, textAlign: "center" }}>STATUS</th>
+              <th style={{ ...th, textAlign: "center" }}>{bl("STATUS")}</th>
             </tr>
           </thead>
           <tbody>

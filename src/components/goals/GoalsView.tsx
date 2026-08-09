@@ -1,7 +1,7 @@
 "use client"
 // src/components/goals/GoalsView.tsx
 import { useState } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { Badge, Avatar, EmptyState } from "@/components/ui"
 
@@ -18,6 +18,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
   goals:any[]; projects:any[]; workspaceId:string; userRole:string
 }) {
   const locale = useLocale()
+  const gl = useTranslations("goals")
   const goals = initialGoals
   const isDemo = false
 
@@ -36,7 +37,6 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
   function showToast(msg:string){ setToast(msg); setTimeout(()=>setToast(""),3000) }
 
   const filtered = localGoals.filter(g=>{
-  const locale = useLocale()
     if(filter==="all") return true
     if(filter==="active") return !["COMPLETED","DRAFT"].includes(g.status)
     return g.status===filter
@@ -92,7 +92,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
   }
   async function changeStatus(goalId:string, status:string){ await patchGoal(goalId,{ status }) }
   async function removeGoal(goalId:string){
-    if(!confirm("Delete this goal and its key results?")) return
+    if(!confirm(gl("confirmDelete"))) return
     const res = await fetch(`/api/goals/${goalId}`, { method:"DELETE" })
     if(res.ok){ setLocalGoals(gs=>gs.filter(g=>g.id!==goalId)); showToast("Goal deleted") }
     else showToast("✗ Delete failed")
@@ -116,18 +116,18 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"14px 20px",
         display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>Goals & OKRs</h1>
+          <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>{gl("Goals & OKRs")}</h1>
           <p style={{fontSize:12,color:"var(--text-3)"}}>
             {localGoals.length} goal{localGoals.length!==1?"s":""} · {avgProgress}% avg progress
             {isDemo&&" · "}
-            {isDemo&&<span style={{color:"var(--amber)",fontWeight:500}}>Sample data shown</span>}
+            {isDemo&&<span style={{color:"var(--amber)",fontWeight:500}}>{gl("Sample data shown")}</span>}
           </p>
         </div>
         {canCreate&&(
           <button onClick={()=>setCreating(true)}
             style={{padding:"8px 16px",background:"var(--steel)",color:"#fff",border:"none",
               borderRadius:"var(--radius)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-            + New goal
+            + {gl("New goal")}
           </button>
         )}
       </div>
@@ -136,10 +136,10 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
         {/* KPI strip */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
           {[
-            {label:"On track",   value:onTrack,   color:"var(--green)", bg:"#ECFDF5"},
-            {label:"At risk",    value:atRisk,    color:"var(--amber)", bg:"#FFFBEB"},
-            {label:"Off track",  value:offTrack,  color:"var(--red)",   bg:"#FEF2F2"},
-            {label:"Avg progress",value:`${avgProgress}%`,color:"var(--steel)",bg:"var(--steel-pale,#EFF6FF)"},
+            {label:gl("On track"),   value:onTrack,   color:"var(--green)", bg:"#ECFDF5"},
+            {label:gl("At risk"),    value:atRisk,    color:"var(--amber)", bg:"#FFFBEB"},
+            {label:gl("Off track"),  value:offTrack,  color:"var(--red)",   bg:"#FEF2F2"},
+            {label:gl("Avg progress"),value:`${avgProgress}%`,color:"var(--steel)",bg:"var(--steel-pale,#EFF6FF)"},
           ].map(k=>(
             <div key={k.label} style={{background:k.bg,border:`1px solid ${k.color}20`,
               borderRadius:"var(--radius)",padding:"12px 14px"}}>
@@ -152,12 +152,12 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
         {/* Filters */}
         <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
           {[
-            {id:"all",      label:"All goals"},
-            {id:"active",   label:"Active"},
-            {id:"ON_TRACK", label:"On track"},
-            {id:"AT_RISK",  label:"At risk"},
-            {id:"OFF_TRACK",label:"Off track"},
-            {id:"COMPLETED",label:"Completed"},
+            {id:"all",      label:gl("All goals")},
+            {id:"active",   label:gl("Active")},
+            {id:"ON_TRACK", label:gl("On track")},
+            {id:"AT_RISK",  label:gl("At risk")},
+            {id:"OFF_TRACK",label:gl("Off track")},
+            {id:"COMPLETED",label:gl("Completed")},
           ].map(f=>(
             <button key={f.id} onClick={()=>setFilter(f.id)}
               style={{padding:"6px 12px",border:"1px solid var(--border)",borderRadius:20,
@@ -185,7 +185,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
               </label>
               <input value={form.title} autoFocus
                 onChange={e=>setForm(f=>({...f,title:e.target.value}))}
-                placeholder="e.g. Launch new product by Q4, Reduce costs by 20%, Achieve ISO certification"
+                placeholder={gl("phGoalTitle")}
                 style={input} />
             </div>
             <div style={{marginBottom:12}}>
@@ -194,12 +194,12 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
               </label>
               <textarea value={form.description} rows={2}
                 onChange={e=>setForm(f=>({...f,description:e.target.value}))}
-                placeholder="What does success look like?"
+                placeholder={gl("phGoalDesc")}
                 style={{...input,resize:"vertical",lineHeight:1.5}} />
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
               <div>
-                <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>Type</label>
+                <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>{gl("Type")}</label>
                 <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))}
                   style={{...input,appearance:"none" as const,cursor:"pointer"}}>
                   <option value="ANNUAL">{enumLabel("ANNUAL", locale)}</option>
@@ -208,12 +208,12 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                 </select>
               </div>
               <div>
-                <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>Quarter</label>
+                <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>{gl("Quarter")}</label>
                 <input value={form.quarter} onChange={e=>setForm(f=>({...f,quarter:e.target.value}))}
-                  placeholder="e.g. Q4 2026" style={input} />
+                  placeholder={gl("phQuarter")} style={input} />
               </div>
               <div>
-                <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>Status</label>
+                <label style={{display:"block",fontSize:11,fontWeight:500,color:"var(--text-2)",marginBottom:4}}>{gl("Status")}</label>
                 <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}
                   style={{...input,appearance:"none" as const,cursor:"pointer"}}>
                   <option value="DRAFT">{enumLabel("DRAFT", locale)}</option>
@@ -232,7 +232,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                 style={{padding:"9px 20px",background:"var(--steel)",color:"#fff",border:"none",
                   borderRadius:"var(--radius)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)",
                   opacity:!form.title.trim()?0.5:1}}>
-                {saving?"Saving…":"Create goal"}
+                {saving?gl("Saving…"):gl("Create goal")}
               </button>
             </div>
           </form>
@@ -240,8 +240,8 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
 
         {/* Goals list */}
         {filtered.length===0?(
-          <EmptyState icon="🎯" title="No goals yet"
-            description="Create strategic goals and link them to projects and key results." />
+          <EmptyState icon="🎯" title={gl("No goals yet")}
+            description={gl("emptyBody")} />
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {filtered.map(goal=>{
@@ -314,10 +314,10 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                           style={{fontSize:11,padding:"3px 5px",borderRadius:5,border:"1px solid var(--border)",
                             background:"#fff",color:"var(--text-2)",fontFamily:"var(--font)",cursor:"pointer"}}>
                           {["DRAFT","ON_TRACK","AT_RISK","OFF_TRACK","ACHIEVED","MISSED"].map(s=>(
-                            <option key={s} value={s}>{STATUS_LABELS[s]||s}</option>
+                            <option key={s} value={s}>{enumLabel(s, locale)}</option>
                           ))}
                         </select>
-                        <button onClick={()=>removeGoal(goal.id)} title="Delete goal"
+                        <button onClick={()=>removeGoal(goal.id)} title={gl("Delete goal")}
                           style={{fontSize:13,background:"none",border:"none",cursor:"pointer",color:"var(--text-4)",padding:2}}>🗑</button>
                       </div>
                     )}
@@ -335,7 +335,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                           Key results
                         </div>
                         {(goal.keyResults||[]).length===0&&(
-                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>No key results yet.</div>
+                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>{gl("No key results yet.")}</div>
                         )}
                         {(goal.keyResults||[]).map((kr:any)=>{
                           const progressColor = kr.progress>=80?"var(--green)":
@@ -349,7 +349,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                                 <span style={{fontSize:12,fontWeight:700,color:progressColor,flexShrink:0}}>{kr.progress}%</span>
                                 {canCreate&&(
                                   <button onClick={()=>saveKeyResults(goal.id,(goal.keyResults||[]).filter((k:any)=>k.id!==kr.id))}
-                                    title="Remove key result"
+                                    title={gl("Remove key result")}
                                     style={{fontSize:12,background:"none",border:"none",cursor:"pointer",color:"var(--text-4)",padding:0}}>✕</button>
                                 )}
                               </div>
@@ -359,7 +359,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                               <div style={{display:"flex",alignItems:"center",gap:6,fontSize:10,color:"var(--text-3)",marginTop:4,marginLeft:14}}>
                                 {canCreate?(
                                   <>
-                                    <span>Current</span>
+                                    <span>{gl("Current")}</span>
                                     <input type="number" defaultValue={kr.current}
                                       onBlur={e=>{ const v=Number(e.target.value); if(v!==Number(kr.current)) saveKeyResults(goal.id,(goal.keyResults||[]).map((k:any)=>k.id===kr.id?{...k,current:v}:k)) }}
                                       style={{width:72,fontSize:10,padding:"2px 4px",border:"1px solid var(--border)",borderRadius:4,fontFamily:"var(--font)"}}/>
@@ -374,32 +374,32 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                         })}
                         {canCreate&&(showKrForm[goal.id]?(
                           <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"center",marginTop:4}}>
-                            <input placeholder="Key result" value={krForm[goal.id]?.title||""}
+                            <input placeholder={gl("Key result")} value={krForm[goal.id]?.title||""}
                               onChange={e=>setKrForm(f=>({...f,[goal.id]:{...f[goal.id],title:e.target.value}}))}
                               style={{flex:"1 1 170px",fontSize:12,padding:"5px 7px",border:"1px solid var(--border)",borderRadius:5,fontFamily:"var(--font)"}}/>
-                            <input placeholder="Current" type="number" value={krForm[goal.id]?.current??""}
+                            <input placeholder={gl("Current")} type="number" value={krForm[goal.id]?.current??""}
                               onChange={e=>setKrForm(f=>({...f,[goal.id]:{...f[goal.id],current:e.target.value}}))}
                               style={{width:78,fontSize:12,padding:"5px 7px",border:"1px solid var(--border)",borderRadius:5,fontFamily:"var(--font)"}}/>
-                            <input placeholder="Start" type="number" title="Starting value (for reduction goals, set this above the target)" value={krForm[goal.id]?.baseline??""}
+                            <input placeholder={gl("Start")} type="number" title={gl("startTip")} value={krForm[goal.id]?.baseline??""}
                               onChange={e=>setKrForm(f=>({...f,[goal.id]:{...f[goal.id],baseline:e.target.value}}))}
                               style={{width:70,fontSize:12,padding:"5px 7px",border:"1px solid var(--border)",borderRadius:5,fontFamily:"var(--font)"}}/>
-                            <input placeholder="Target" type="number" value={krForm[goal.id]?.target??""}
+                            <input placeholder={gl("Target")} type="number" value={krForm[goal.id]?.target??""}
                               onChange={e=>setKrForm(f=>({...f,[goal.id]:{...f[goal.id],target:e.target.value}}))}
                               style={{width:78,fontSize:12,padding:"5px 7px",border:"1px solid var(--border)",borderRadius:5,fontFamily:"var(--font)"}}/>
-                            <input placeholder="Unit" value={krForm[goal.id]?.unit||""}
+                            <input placeholder={gl("Unit")} value={krForm[goal.id]?.unit||""}
                               onChange={e=>setKrForm(f=>({...f,[goal.id]:{...f[goal.id],unit:e.target.value}}))}
                               style={{width:64,fontSize:12,padding:"5px 7px",border:"1px solid var(--border)",borderRadius:5,fontFamily:"var(--font)"}}/>
                             <button onClick={async()=>{ const kf=krForm[goal.id]; if(!kf?.title?.trim())return;
                               const okr=await saveKeyResults(goal.id,[...(goal.keyResults||[]),{title:kf.title,current:Number(kf.current)||0,target:Number(kf.target)||100,baseline:(kf.baseline!=null&&kf.baseline!=="")?Number(kf.baseline):null,unit:kf.unit||null}]);
                               if(okr){ setKrForm(f=>({...f,[goal.id]:{}})); setShowKrForm(s=>({...s,[goal.id]:false})) } }}
-                              style={{fontSize:12,padding:"5px 12px",background:"var(--steel)",color:"#fff",border:"none",borderRadius:5,cursor:"pointer",fontFamily:"var(--font)"}}>Add</button>
+                              style={{fontSize:12,padding:"5px 12px",background:"var(--steel)",color:"#fff",border:"none",borderRadius:5,cursor:"pointer",fontFamily:"var(--font)"}}>{gl("Add")}</button>
                             <button onClick={()=>setShowKrForm(s=>({...s,[goal.id]:false}))}
-                              style={{fontSize:12,padding:"5px 8px",background:"none",border:"none",cursor:"pointer",color:"var(--text-4)",fontFamily:"var(--font)"}}>Cancel</button>
+                              style={{fontSize:12,padding:"5px 8px",background:"none",border:"none",cursor:"pointer",color:"var(--text-4)",fontFamily:"var(--font)"}}>{gl("Cancel")}</button>
                           </div>
                         ):(
                           <button onClick={()=>setShowKrForm(s=>({...s,[goal.id]:true}))}
                             style={{fontSize:12,color:"var(--steel)",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font)",padding:"4px 0"}}>
-                            + Add key result
+                            + {gl("Add key result")}
                           </button>
                         ))}
                       </div>
@@ -408,10 +408,10 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                       <div style={{padding:"12px 18px",borderTop:"1px solid var(--border)"}}>
                         <div style={{fontSize:11,fontWeight:600,color:"var(--text-3)",
                           letterSpacing:".06em",textTransform:"uppercase",marginBottom:10}}>
-                          Linked projects · live progress
+                          {gl("linkedProjects")}
                         </div>
                         {(goal.linkedProjects||[]).length===0&&(
-                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>No projects linked.</div>
+                          <div style={{fontSize:12,color:"var(--text-4)",marginBottom:8}}>{gl("No projects linked.")}</div>
                         )}
                         {(goal.linkedProjects||[]).map((p:any)=>{
                           const hc = p.health==="RED"?"var(--red)":p.health==="AMBER"?"var(--amber)":"var(--green)"
@@ -425,7 +425,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                               <span style={{fontSize:11,fontWeight:700,color:hc,width:34,textAlign:"right",flexShrink:0}}>{p.percentComplete||0}%</span>
                               {canCreate&&(
                                 <button onClick={()=>setLinked(goal.id,(goal.linkedProjects||[]).filter((x:any)=>x.id!==p.id).map((x:any)=>x.id))}
-                                  title="Unlink project"
+                                  title={gl("Unlink project")}
                                   style={{fontSize:12,background:"none",border:"none",cursor:"pointer",color:"var(--text-4)",padding:0}}>✕</button>
                               )}
                             </div>
@@ -439,7 +439,7 @@ export function GoalsView({ goals:initialGoals, projects, workspaceId, userRole 
                             <select defaultValue=""
                               onChange={e=>{ const v=e.target.value; e.target.value=""; if(v) setLinked(goal.id,[...(goal.linkedProjects||[]).map((x:any)=>x.id),v]) }}
                               style={{fontSize:11,padding:"4px 6px",borderRadius:5,border:"1px solid var(--border)",background:"#fff",color:"var(--text-2)",cursor:"pointer",fontFamily:"var(--font)",marginTop:4}}>
-                              <option value="">🔗 Link a project…</option>
+                              <option value="">🔗 {gl("Link a project…")}</option>
                               {avail.map((p:any)=>(<option key={p.id} value={p.id}>{p.code} · {p.name}</option>))}
                             </select>
                           )

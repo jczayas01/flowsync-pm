@@ -6,6 +6,7 @@
 // Re-baseline prompt after Change Request implementation
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -30,6 +31,7 @@ function daysDiff(a: any, b: any): string {
 export function BaselinesPage({ projectId, workspaceId, baselines, project, changeRequests, tasks }: {
   projectId:string; workspaceId:string; baselines:any[]; project:any; changeRequests?:any[]; tasks?:any[]
 }) {
+  const bl = useTranslations("baselines")
   const router = useRouter()
   const [deletingId, setDeletingId]   = useState<string|null>(null)
   const [approvingId, setApprovingId] = useState<string|null>(null)
@@ -84,7 +86,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
   }
 
   async function deleteBaseline(baselineId: string) {
-    if (!confirm("Delete this working baseline? This cannot be undone.")) return
+    if (!confirm(bl("confirmDelete"))) return
     setDeletingId(baselineId)
     try {
       await fetch(`/api/projects/${projectId}/baselines/${baselineId}`, {
@@ -121,19 +123,19 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
             boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ fontSize:17, fontWeight:700, color:"var(--text)", marginBottom:4 }}>
-              Approve Baseline
+              {bl("Approve Baseline")}
             </div>
             <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:16, lineHeight:1.6 }}>
               <strong>{approveModal.name}</strong><br/>
               Approving a baseline makes it the official reference point for this project.
-              Approved baselines <strong>cannot be deleted</strong> — they are part of the
+              {bl("approveWarn")}
               project's permanent governance record per PM best practices.
             </div>
             <div style={{ marginBottom:14 }}>
-              <label style={lbl}>Approval notes (optional)</label>
+              <label style={lbl}>{bl("Approval notes (optional)")}</label>
               <textarea rows={3} value={approvalNotes}
                 onChange={e => setApprovalNotes(e.target.value)}
-                placeholder="e.g. Approved by Steering Committee on June 30, 2026 — Phase 1 completion baseline."
+                placeholder={bl("phApprovalNotes")}
                 style={{...inp, resize:"vertical", lineHeight:1.6}} />
             </div>
             <div style={{ background:"#FFFBEB", border:"1px solid #FDE68A", borderRadius:"var(--radius)",
@@ -144,7 +146,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
               <button onClick={() => { setApproveModal(null); setApprovalNotes("") }}
                 style={{ padding:"9px 18px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{bl("Cancel")}</button>
               <button onClick={approveBaseline} disabled={!!approvingId}
                 style={{ padding:"9px 20px", background:"var(--green)", color:"#fff",
                   border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:600,
@@ -174,9 +176,9 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
                 Captured {fmtDate(b.createdAt)}
               </div>
               {[
-                { label:"Project Objective", value:b.objectiveSnapshot },
-                { label:"In Scope",          value:b.scopeSnapshot     },
-                { label:"Out of Scope",      value:b.outOfScopeSnapshot },
+                { label:bl("Project Objective"), value:b.objectiveSnapshot },
+                { label:bl("In Scope"),          value:b.scopeSnapshot     },
+                { label:bl("Out of Scope"),      value:b.outOfScopeSnapshot },
               ].map(s => s.value && (
                 <div key={s.label} style={{ marginBottom:16 }}>
                   <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)",
@@ -194,7 +196,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
                 <button onClick={() => setShowScopeOf(null)}
                   style={{ padding:"8px 18px", background:"var(--steel)", color:"#fff",
                     border:"none", borderRadius:"var(--radius)", fontSize:13,
-                    cursor:"pointer", fontFamily:"var(--font)" }}>Close</button>
+                    cursor:"pointer", fontFamily:"var(--font)" }}>{bl("Close")}</button>
               </div>
             </div>
           </div>
@@ -203,7 +205,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
 
       {/* ── Header ── */}
       <div style={{ background:"var(--steel)", padding:"20px 24px", color:"#fff", flexShrink:0 }}>
-        <div style={{ fontSize:18, fontWeight:700, marginBottom:4 }}>Baseline Management</div>
+        <div style={{ fontSize:18, fontWeight:700, marginBottom:4 }}>{bl("Baseline Management")}</div>
         <div style={{ fontSize:13, opacity:.75, marginBottom:12 }}>
           PM Best Practices — Planning Performance Domain (§2.4) · {project?.name}
         </div>
@@ -217,11 +219,11 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
       {/* ── PM Standard banner ── */}
       <div style={{ background:"#EFF6FF", borderBottom:"1px solid #BFDBFE",
         padding:"10px 20px", fontSize:12, color:"#1E40AF", flexShrink:0 }}>
-        <strong>PM Best Practices — Three Formal Baselines:</strong> &nbsp;
-        📅 <strong>Schedule Baseline</strong> (task dates + dependencies) &nbsp;·&nbsp;
-        💰 <strong>Cost Baseline</strong> (budget by period) &nbsp;·&nbsp;
-        📐 <strong>Scope Baseline</strong> (objective + scope + WBS) &nbsp;·&nbsp;
-        Changes to any baseline require a formal Change Request.
+        <strong>{bl("bannerTitle")}</strong> &nbsp;
+        📅 <strong>{bl("Schedule Baseline")}</strong> {bl("bannerSchedule")} &nbsp;·&nbsp;
+        💰 <strong>{bl("Cost Baseline")}</strong> {bl("bannerCost")} &nbsp;·&nbsp;
+        📐 <strong>{bl("Scope Baseline")}</strong> {bl("bannerScope")} &nbsp;·&nbsp;
+        {bl("bannerChange")}
       </div>
 
       {/* ── CR Re-baseline prompt ── */}
@@ -259,23 +261,23 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
           <div style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20 }}>
             <div style={{ fontSize:14, fontWeight:700, color:"var(--text)", marginBottom:16 }}>
-              📸 Save New Baseline
+              📸 {bl("Save New Baseline")}
             </div>
             {error && (
               <div style={{ color:"var(--red)", fontSize:12, marginBottom:12 }}>✗ {error}</div>
             )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={lbl}>Baseline name *</label>
+                <label style={lbl}>{bl("Baseline name *")}</label>
                 <input style={inp} value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  placeholder="e.g. Original Baseline — Approved Jun 30, 2026" />
+                  placeholder={bl("phBaselineName")} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={lbl}>Description (optional)</label>
+                <label style={lbl}>{bl("Description (optional)")}</label>
                 <textarea rows={2} style={{...inp, resize:"vertical", lineHeight:1.6}}
                   value={newDesc} onChange={e => setNewDesc(e.target.value)}
-                  placeholder="Context for why this baseline was saved..." />
+                  placeholder={bl("phBaselineDesc")} />
               </div>
               {linkedCr && (
                 <div style={{ gridColumn:"1/-1", background:"#FFFBEB", padding:"8px 12px",
@@ -295,12 +297,12 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
                 style={{ padding:"9px 20px", background:"var(--steel)", color:"#fff",
                   border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                   cursor:"pointer", fontFamily:"var(--font)", opacity:!newName.trim()?0.5:1 }}>
-                {savingNew ? "Saving…" : "📸 Save baseline"}
+                {savingNew ? bl("Saving…") : "📸 "+bl("Save baseline")}
               </button>
               <button onClick={() => { setShowSaveForm(false); setError(""); setLinkedCr("") }}
                 style={{ padding:"9px 18px", background:"#fff", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", fontSize:13, cursor:"pointer",
-                  fontFamily:"var(--font)", color:"var(--text-2)" }}>Cancel</button>
+                  fontFamily:"var(--font)", color:"var(--text-2)" }}>{bl("Cancel")}</button>
             </div>
           </div>
         ) : (
@@ -309,7 +311,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
               style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff",
                 border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                 cursor:"pointer", fontFamily:"var(--font)" }}>
-              📸 Save new baseline
+              📸 {bl("Save new baseline")}
             </button>
             {baselines.length >= 2 && (
               <button onClick={() => comparing
@@ -351,7 +353,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:14 }}>
               <div>
-                <label style={lbl}>Compare A</label>
+                <label style={lbl}>{bl("Compare A")}</label>
                 <select value={comparing[0]} onChange={e=>setComparing([e.target.value,comparing[1]])}
                   style={{...inp, cursor:"pointer"}}>
                   {baselines.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
@@ -361,7 +363,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
                 <span style={{ fontSize:20, color:"var(--text-3)" }}>vs</span>
               </div>
               <div>
-                <label style={lbl}>Compare B</label>
+                <label style={lbl}>{bl("Compare B")}</label>
                 <select value={comparing[1]} onChange={e=>setComparing([comparing[0],e.target.value])}
                   style={{...inp, cursor:"pointer"}}>
                   {baselines.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
@@ -380,29 +382,29 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
               </thead>
               <tbody>
                 {[
-                  { label:"Start date",
+                  { label:bl("Start date"),
                     a:fmtDate(compareA.startDate), b:fmtDate(compareB.startDate),
                     delta:daysDiff(compareA.startDate, compareB.startDate) },
-                  { label:"End date",
+                  { label:bl("End date"),
                     a:fmtDate(compareA.endDate), b:fmtDate(compareB.endDate),
                     delta:daysDiff(compareA.endDate, compareB.endDate) },
-                  { label:"Budget (BAC)",
+                  { label:bl("Budget (BAC)"),
                     a:fmtCurrency(Number(compareA.budgetTotal)),
                     b:fmtCurrency(Number(compareB.budgetTotal)),
                     delta:(()=>{
                       const diff=Number(compareB.budgetTotal)-Number(compareA.budgetTotal)
                       return (diff>=0?"+":"")+fmtCurrency(Math.abs(diff))
                     })() },
-                  { label:"Task count",
+                  { label:bl("Task count"),
                     a:compareA.snapshotData?.tasks?.length||"—",
                     b:compareB.snapshotData?.tasks?.length||"—",
                     delta:(()=>{
                       const diff=(compareB.snapshotData?.tasks?.length||0)-(compareA.snapshotData?.tasks?.length||0)
                       return diff===0?"No change":(diff>0?"+":"")+diff+" tasks"
                     })() },
-                  { label:"Status",
+                  { label:bl("Status"),
                     a:compareA.isApproved?"✓ Approved":"⏳ Working",
-                    b:compareB.isApproved?"✓ Approved":"⏳ Working",
+                    b:compareB.isApproved?"✓ "+bl("Approved"):"⏳ "+bl("Working"),
                     delta:"—" },
                 ].map(row => (
                   <tr key={row.label} style={{ borderBottom:"1px solid var(--surface-1,#F8FAFC)" }}>
@@ -426,7 +428,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:"var(--green)",
               textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>
-              ✓ Official Approved Baselines — Permanent Record
+              ✓ {bl("approvedSection")}
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {approvedBaselines.map(b => (
@@ -445,7 +447,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:"var(--amber)",
               textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>
-              ⏳ Working Baselines — Pending Approval
+              ⏳ {bl("workingSection")}
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {workingBaselines.map(b => (
@@ -463,7 +465,7 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📸</div>
             <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>
-              No baselines saved yet
+              {bl("No baselines saved yet")}
             </div>
             <div style={{ fontSize:13, color:"var(--text-3)", maxWidth:480, margin:"0 auto 20px",
               lineHeight:1.7 }}>
@@ -491,6 +493,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
   onApprove:(()=>void)|null; onDelete:(()=>void)|null;
   deletingId:string|null
 }) {
+  const bl = useTranslations("baselines")
   const taskCount = b.snapshotData?.tasks?.length || 0
 
   return (
@@ -503,11 +506,11 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
             <span style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>{b.name}</span>
             {b.isApproved && (
               <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:10,
-                background:"#ECFDF5", color:"var(--green)" }}>✓ APPROVED</span>
+                background:"#ECFDF5", color:"var(--green)" }}>✓ {bl("APPROVED")}</span>
             )}
             {!b.isApproved && (
               <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:10,
-                background:"#FFFBEB", color:"var(--amber)" }}>⏳ WORKING</span>
+                background:"#FFFBEB", color:"var(--amber)" }}>⏳ {bl("WORKING")}</span>
             )}
             {b.linkedCrId && (
               <span style={{ fontSize:10, padding:"2px 8px", borderRadius:10,
@@ -519,7 +522,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
           <div style={{ display:"flex", gap:16, fontSize:11, color:"var(--text-3)", flexWrap:"wrap" }}>
             <span>📅 {new Date(b.startDate).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })} → {new Date(b.endDate).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
             <span>💰 {b.budgetTotal ? `$${Number(b.budgetTotal).toLocaleString("en-US")}` : "—"}</span>
-            <span>📋 {taskCount} tasks</span>
+            <span>📋 {bl("taskCount",{n:taskCount})}</span>
             <span>📐 Scope {b.scopeSnapshot ? "✓" : "—"}</span>
             <span>Saved {new Date(b.createdAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}</span>
           </div>
@@ -535,7 +538,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
             <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8,
               fontSize:11, color:"var(--green)" }}>
               <Avatar name={b.approvedBy.name} size={16} />
-              Approved by {b.approvedBy.name} · {new Date(b.approvedAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}
+              {bl("Approved by")} {b.approvedBy.name} · {new Date(b.approvedAt).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })}
               {b.approvalNotes && <span style={{ color:"var(--text-3)" }}> · {b.approvalNotes}</span>}
             </div>
           )}
@@ -548,7 +551,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
               style={{ padding:"6px 12px", background:"#EFF6FF", border:"1px solid #BFDBFE",
                 borderRadius:"var(--radius)", fontSize:11, cursor:"pointer",
                 fontFamily:"var(--font)", color:"var(--steel)" }}>
-              📐 View scope
+              📐 {bl("View scope")}
             </button>
           )}
           {onApprove && (
@@ -556,7 +559,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
               style={{ padding:"6px 14px", background:"var(--green)", color:"#fff",
                 border:"none", borderRadius:"var(--radius)", fontSize:11, fontWeight:600,
                 cursor:"pointer", fontFamily:"var(--font)" }}>
-              ✓ Approve
+              ✓ {bl("Approve")}
             </button>
           )}
           {onDelete && (
@@ -564,7 +567,7 @@ function BaselineCard({ baseline:b, onViewScope, onApprove, onDelete, deletingId
               style={{ padding:"6px 10px", background:"#FEF2F2", border:"1px solid #FECACA",
                 borderRadius:"var(--radius)", fontSize:11, color:"var(--red)",
                 cursor:"pointer", fontFamily:"var(--font)" }}>
-              {deletingId===b.id ? "…" : "Delete"}
+              {deletingId===b.id ? "…" : bl("Delete")}
             </button>
           )}
           {b.isApproved && !onApprove && (

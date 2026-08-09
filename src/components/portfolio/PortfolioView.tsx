@@ -1,6 +1,7 @@
 "use client"
 // src/components/portfolio/PortfolioView.tsx
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -33,6 +34,7 @@ function rollup(projects:any[]) {
 export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:{
   portfolios:any[]; unassigned:any[]; workspaceId:string; userRole:string
 }) {
+  const pf = useTranslations("portfolioView")
   // Collapsed by default — the summary rows already tell the health story;
   // expand on demand (single-portfolio workspaces auto-expand the only card).
   const [openPorts, setOpenPorts] = useState<Record<string,boolean>>(
@@ -54,7 +56,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
         method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({ name: editForm.name.trim(), description: editForm.description || null }),
       })
-      if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Update failed (${res.status})`); return }
+      if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||pf("updateFailed",{s:res.status})); return }
       setEditingPort(null)
       router.refresh()
     } finally { setSavingPort(false) }
@@ -62,14 +64,14 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
 
   async function deletePortfolio(port: any) {
     if (port.programs?.length > 0) {
-      alert(`"${port.name}" still contains ${port.programs.length} program(s).\n\nDelete or move its programs first — nothing is removed implicitly.`)
+      alert(pf("stillHasPrograms",{n:port.name, c:port.programs.length}))
       return
     }
-    if (!confirm(`Delete portfolio "${port.name}"?`)) return
+    if (!confirm(pf("confirmDelete",{n:port.name}))) return
     const res = await fetch(`/api/portfolio/${port.id}`, {
       method:"DELETE", headers:{"x-workspace-id":workspaceId},
     })
-    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||`Delete failed (${res.status})`); return }
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error||pf("deleteFailed",{s:res.status})); return }
     router.refresh()
   }
 
@@ -135,10 +137,10 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
               <div>
                 <label style={{ display:"block", fontSize:11, fontWeight:700,
                   color:"var(--text-3)", textTransform:"uppercase",
-                  letterSpacing:".05em", marginBottom:5 }}>Name *</label>
+                  letterSpacing:".05em", marginBottom:5 }}>{pf("Name *")}</label>
                 <input autoFocus value={portForm.name}
                   onChange={e => setPortForm(f=>({...f, name:e.target.value}))}
-                  placeholder="e.g. Digital Transformation Portfolio"
+                  placeholder={pf("phName")}
                   style={{ width:"100%", padding:"9px 12px", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
                     color:"var(--text)", outline:"none" }} />
@@ -146,10 +148,10 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
               <div>
                 <label style={{ display:"block", fontSize:11, fontWeight:700,
                   color:"var(--text-3)", textTransform:"uppercase",
-                  letterSpacing:".05em", marginBottom:5 }}>Description</label>
+                  letterSpacing:".05em", marginBottom:5 }}>{pf("Description")}</label>
                 <textarea rows={3} value={portForm.description}
                   onChange={e => setPortForm(f=>({...f, description:e.target.value}))}
-                  placeholder="What projects or programs does this portfolio contain?"
+                  placeholder={pf("phDescription")}
                   style={{ width:"100%", padding:"9px 12px", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", fontSize:13, fontFamily:"var(--font)",
                     color:"var(--text)", outline:"none", resize:"vertical", lineHeight:1.6 }} />
@@ -157,7 +159,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
               <div>
                 <label style={{ display:"block", fontSize:11, fontWeight:700,
                   color:"var(--text-3)", textTransform:"uppercase",
-                  letterSpacing:".05em", marginBottom:8 }}>Color</label>
+                  letterSpacing:".05em", marginBottom:8 }}>{pf("Color")}</label>
                 <div style={{ display:"flex", gap:8 }}>
                   {COLORS.map(c => (
                     <div key={c} onClick={() => setPortForm(f=>({...f, color:c}))}
@@ -180,7 +182,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                   border:"none", borderRadius:"var(--radius)", fontSize:13, fontWeight:500,
                   cursor:portSaving?"wait":"pointer", fontFamily:"var(--font)",
                   opacity:!portForm.name.trim()?0.5:1 }}>
-                {portSaving ? "Creating…" : "Create portfolio"}
+                {portSaving ? pf("Creating…") : pf("Create portfolio")}
               </button>
             </div>
           </div>
@@ -190,16 +192,16 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
       <div style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"14px 20px",
         display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>Portfolio</h1>
+          <h1 style={{fontSize:17,fontWeight:600,color:"var(--text)",marginBottom:2}}>{pf("Portfolio")}</h1>
           <p style={{fontSize:12,color:"var(--text-3)"}}>
-            {portfolios.length} portfolio{portfolios.length!==1?"s":""} · {allProjects.length} projects total
+            {pf("portfolioCount",{n:portfolios.length})} · {pf("projectsTotal",{n:allProjects.length})}
           </p>
         </div>
         {canCreate && (
           <button onClick={()=>setCreating(true)}
             style={{padding:"8px 16px",background:"var(--steel)",color:"#fff",border:"none",
               borderRadius:"var(--radius)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-            + New portfolio
+            + {pf("New portfolio")}
           </button>
         )}
       </div>
@@ -208,11 +210,11 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
         {/* Global KPI strip */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
           {[
-            {label:"Total projects", value:allProjects.length, icon:"📁"},
-            {label:"On track",  value:global.counts.GREEN, icon:"🟢", color:"var(--green)"},
-            {label:"At risk",   value:global.counts.AMBER, icon:"🟡", color:"var(--amber)"},
-            {label:"Off track", value:global.counts.RED,   icon:"🔴", color:"var(--red)"},
-            {label:"Avg complete", value:`${global.avgPct}%`, icon:"📊"},
+            {label:pf("Total projects"), value:allProjects.length, icon:"📁"},
+            {label:pf("On track"),  value:global.counts.GREEN, icon:"🟢", color:"var(--green)"},
+            {label:pf("At risk"),   value:global.counts.AMBER, icon:"🟡", color:"var(--amber)"},
+            {label:pf("Off track"), value:global.counts.RED,   icon:"🔴", color:"var(--red)"},
+            {label:pf("Avg complete"), value:`${global.avgPct}%`, icon:"📊"},
           ].map(k=>(
             <div key={k.label} style={{...card,padding:"12px 14px"}}>
               <div style={{fontSize:18,marginBottom:4}}>{k.icon}</div>
@@ -226,8 +228,8 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
         {global.budget>0 && (
           <div style={{...card,padding:"12px 16px",marginBottom:20}}>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:8}}>
-              <span style={{fontWeight:500,color:"var(--text)"}}>Total portfolio budget</span>
-              <span style={{color:"var(--text-3)"}}>{fmt(global.spent)} of {fmt(global.budget)} ({global.pct}%)</span>
+              <span style={{fontWeight:500,color:"var(--text)"}}>{pf("Total portfolio budget")}</span>
+              <span style={{color:"var(--text-3)"}}>{pf("spentOf",{a:fmt(global.spent),b:fmt(global.budget),p:global.pct})}</span>
             </div>
             <div style={{height:8,background:"var(--border)",borderRadius:4,overflow:"hidden"}}>
               <div style={{height:"100%",width:`${Math.min(global.pct,100)}%`,borderRadius:4,
@@ -241,15 +243,15 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
         {portfolios.length===0 && unassigned.length===0 ? (
           <div style={{textAlign:"center",padding:"48px 24px"}}>
             <div style={{fontSize:40,marginBottom:12}}>📊</div>
-            <div style={{fontSize:15,fontWeight:600,color:"var(--text)",marginBottom:6}}>No portfolios yet</div>
+            <div style={{fontSize:15,fontWeight:600,color:"var(--text)",marginBottom:6}}>{pf("No portfolios yet")}</div>
             <p style={{fontSize:13,color:"var(--text-3)",marginBottom:20}}>
-              Create a portfolio to organize your programs and projects.
+              {pf("emptyBody")}
             </p>
             {canCreate && (
               <button onClick={()=>setCreating(true)}
                 style={{padding:"9px 20px",background:"var(--steel)",color:"#fff",border:"none",
                   borderRadius:"var(--radius)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"var(--font)"}}>
-                + Create portfolio
+                + {pf("Create portfolio")}
               </button>
             )}
           </div>
@@ -265,11 +267,11 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                     <div style={{padding:"12px 18px",borderBottom:"1px solid var(--border)",
                       background:"var(--surface)",display:"flex",flexDirection:"column",gap:8}}
                       onClick={e=>e.stopPropagation()}>
-                      <input value={editForm.name} placeholder="Portfolio name"
+                      <input value={editForm.name} placeholder={pf("Portfolio name")}
                         onChange={e=>setEditForm(f=>({...f,name:e.target.value}))}
                         style={{padding:"8px 10px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
                           fontSize:13,fontFamily:"var(--font)"}} />
-                      <textarea value={editForm.description} placeholder="Description (optional)" rows={2}
+                      <textarea value={editForm.description} placeholder={pf("Description (optional)")} rows={2}
                         onChange={e=>setEditForm(f=>({...f,description:e.target.value}))}
                         style={{padding:"8px 10px",border:"1px solid var(--border)",borderRadius:"var(--radius)",
                           fontSize:12,fontFamily:"var(--font)",resize:"vertical"}} />
@@ -278,12 +280,12 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                           style={{padding:"7px 16px",background:"var(--steel)",color:"#fff",border:"none",
                             borderRadius:"var(--radius)",fontSize:12,fontWeight:600,fontFamily:"var(--font)",
                             cursor:savingPort?"wait":"pointer"}}>
-                          {savingPort?"Saving…":"💾 Save"}
+                          {savingPort?pf("Saving…"):"💾 "+pf("Save")}
                         </button>
                         <button onClick={()=>setEditingPort(null)}
                           style={{padding:"7px 12px",background:"#fff",border:"1px solid var(--border)",
                             borderRadius:"var(--radius)",fontSize:12,cursor:"pointer",
-                            fontFamily:"var(--font)",color:"var(--text-2)"}}>Cancel</button>
+                            fontFamily:"var(--font)",color:"var(--text-2)"}}>{pf("Cancel")}</button>
                       </div>
                     </div>
                   )}
@@ -298,7 +300,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                         <span style={{fontSize:15,fontWeight:600,color:"var(--text)"}}>{port.name}</span>
                         <Badge variant={healthBadgeVariant(pr.health)}>{healthLabel(pr.health)}</Badge>
                         <span style={{fontSize:11,color:"var(--text-3)"}}>
-                          {port.programs.length} program{port.programs.length!==1?"s":""} · {portProjects.length} projects
+                          {pf("programCount",{n:port.programs.length})} · {pf("projectCount",{n:portProjects.length})}
                         </span>
                       </div>
                       <div style={{display:"flex",gap:16,fontSize:12,color:"var(--text-3)"}}>
@@ -315,12 +317,12 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                     </div>
                     {canCreate && (
                       <div style={{display:"flex",gap:6,flexShrink:0}} onClick={e=>e.stopPropagation()}>
-                        <button title="Edit portfolio"
+                        <button title={pf("Edit portfolio")}
                           onClick={()=>{ setEditingPort(port); setEditForm({ name:port.name, description:port.description||"" }) }}
                           style={{padding:"4px 9px",background:"#fff",border:"1px solid var(--border)",
                             borderRadius:"var(--radius)",fontSize:11,cursor:"pointer",
                             fontFamily:"var(--font)",color:"var(--text-2)"}}>✏️</button>
-                        <button title="Delete portfolio"
+                        <button title={pf("Delete portfolio")}
                           onClick={()=>deletePortfolio(port)}
                           style={{padding:"4px 9px",background:"#fff",border:"1px solid #FECACA",
                             borderRadius:"var(--radius)",fontSize:11,cursor:"pointer",
@@ -350,7 +352,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
                                   <span style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{prog.name}</span>
                                   <span style={{fontSize:11,color:"var(--text-3)"}}>
-                                    {prog.projects.length} project{prog.projects.length!==1?"s":""}
+                                    {pf("projectCount",{n:prog.projects.length})}
                                   </span>
                                 </div>
                                 <div style={{display:"flex",gap:12,fontSize:11,color:"var(--text-3)"}}>
@@ -382,7 +384,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                 <div style={{padding:"12px 18px",fontSize:13,fontWeight:600,
                   color:"var(--text-2)",borderBottom:"1px solid var(--border)",
                   background:"var(--surface)"}}>
-                  Unassigned projects ({unassigned.length})
+                  {pf("unassignedProjects",{n:unassigned.length})}
                 </div>
                 {unassigned.map(p=><ProjectRow key={p.id} project={p}/>)}
               </div>

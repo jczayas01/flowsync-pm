@@ -6,6 +6,7 @@
 
 import { DateField } from "@/components/shared/DatePicker"
 import { dateLocale } from "@/lib/date-locale"
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui"
@@ -53,6 +54,7 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
   workspaceName?: string
   documents?: { id: string; name: string }[]
 }) {
+  const pb = useTranslations("projectBrief")
   const router = useRouter()
   const [editingKey, setEditingKey] = useState<string|null>(null)
   const [editValue, setEditValue]   = useState("")
@@ -291,10 +293,10 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
                       border:"1px solid var(--steel)", borderRadius:6, fontFamily:"var(--font)",
                       background:"#fff", width:"100%" }} />
                 ) : (
-                  <div title="Click to change" onClick={() => setEditingDate(dk)}
+                  <div title={pb("Click to change")} onClick={() => setEditingDate(dk)}
                     style={{ fontSize:13, fontWeight:600, color:"var(--text)", cursor:"pointer",
                       borderBottom:"1px dashed var(--border)", display:"inline-block" }}>
-                    {fmtDate(localProject?.[dk]) || "Set date…"}
+                    {fmtDate(localProject?.[dk]) || pb("Set date…")}
                   </div>
                 )}
               </div>
@@ -378,11 +380,11 @@ export function ProjectBrief({ projectId, project, members, workspaceName, docum
             background:"var(--surface)" }}>
             <div style={sectionTitle}>
               <span>👥</span>
-              <span>Project Team</span>
+              <span>{pb("Project Team")}</span>
             </div>
             {members.length === 0 ? (
               <p style={{ fontSize:13, color:"var(--text-4)", fontStyle:"italic", margin:0 }}>
-                No team members assigned yet — add them in the Team tab.
+                {pb("noTeamYet")}
               </p>
             ) : (
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:10 }}>

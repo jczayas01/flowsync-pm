@@ -1,7 +1,7 @@
 "use client"
 // src/components/projects/NewProjectForm.tsx
 import { DateField } from "@/components/shared/DatePicker"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -9,10 +9,10 @@ import Link from "next/link"
 import { Avatar } from "@/components/ui"
 
 const METHODOLOGIES = [
-  { id:"WATERFALL", label:"Waterfall", desc:"Sequential phases with gate approvals", icon:"📊", color:"#1B6CA8" },
-  { id:"AGILE",     label:"Agile",     desc:"Iterative delivery with backlogs",      icon:"🔄", color:"#059669" },
-  { id:"SCRUM",     label:"Scrum",     desc:"Sprint-based with ceremonies",          icon:"🏃", color:"#7C3AED" },
-  { id:"HYBRID",    label:"Hybrid",    desc:"Phased governance with iterative delivery", icon:"🔀", color:"#0891B2" },
+  { id:"WATERFALL", label:"methWaterfall", desc:"methWaterfallDesc", icon:"📊", color:"#1B6CA8" },
+  { id:"AGILE",     label:"methAgile",     desc:"methAgileDesc",      icon:"🔄", color:"#059669" },
+  { id:"SCRUM",     label:"methScrum",     desc:"methScrumDesc",          icon:"🏃", color:"#7C3AED" },
+  { id:"HYBRID",    label:"methHybrid",    desc:"methHybridDesc", icon:"🔀", color:"#0891B2" },
 ]
 
 const CURRENCIES = ["USD","EUR","GBP","MXN"]
@@ -22,6 +22,7 @@ export function NewProjectForm({ workspaceId, members }:{
   workspaceId:string; members:any[]
 }) {
   const locale = useLocale()
+  const np = useTranslations("newProject")
   const router = useRouter()
   const [form, setForm] = useState({
     name:           "",
@@ -37,9 +38,14 @@ export function NewProjectForm({ workspaceId, members }:{
     timezone:       "America/New_York",
   })
   const [selectedMembers, setSelectedMembers] = useState<Record<string,{role:string; projectRole:string}>>({})
-  const PHASE_LIBRARY = ["Initiation","Planning","Requirements","Design","Development","Execution","Integration","Testing","Deployment","Monitoring & Control","Training","Closure"]
+  const PHASE_LIBRARY_EN = ["Initiation","Planning","Requirements","Design","Development","Execution","Integration","Testing","Deployment","Monitoring & Control","Training","Closure"]
+  const PHASE_LIBRARY_ES = ["Iniciación","Planificación","Requisitos","Diseño","Desarrollo","Ejecución","Integración","Pruebas","Despliegue","Monitoreo y Control","Capacitación","Cierre"]
+  const PHASE_LIBRARY = locale === "es" ? PHASE_LIBRARY_ES : PHASE_LIBRARY_EN
+  const DEFAULT_PHASES_EN = ["Initiation","Planning","Design","Execution","Monitoring & Control","Closure"]
   const [selectedPhases, setSelectedPhases] = useState<string[]>(
-    ["Initiation","Planning","Design","Execution","Monitoring & Control","Closure"]
+    locale === "es"
+      ? ["Iniciación","Planificación","Diseño","Ejecución","Monitoreo y Control","Cierre"]
+      : DEFAULT_PHASES_EN
   )
   function togglePhase(name:string) {
     setSelectedPhases(s => s.includes(name) ? s.filter(x=>x!==name) : [...s, name])
@@ -64,7 +70,6 @@ export function NewProjectForm({ workspaceId, members }:{
   const docInputRef = useRef<HTMLInputElement>(null)
   const MAX_DOC_MB = 20
   function stageFiles(list: FileList | File[]) {
-  const locale = useLocale()
     const incoming = Array.from(list).filter(f => f.size <= MAX_DOC_MB * 1024 * 1024)
     setStagedDocs(prev => {
       const seen = new Set(prev.map(f => f.name + f.size))
@@ -74,7 +79,7 @@ export function NewProjectForm({ workspaceId, members }:{
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name.trim()) { setError("Project name is required"); return }
+    if (!form.name.trim()) { setError(np("Project name is required")); return }
     setSaving(true); setError("")
     try {
       const res = await fetch("/api/projects", {
@@ -120,7 +125,7 @@ export function NewProjectForm({ workspaceId, members }:{
       }
       router.push(`/projects/${data.id}`)
     } catch {
-      setError("Network error — please try again")
+      setError(np("netError"))
       setSaving(false)
     }
   }
@@ -144,10 +149,10 @@ export function NewProjectForm({ workspaceId, members }:{
       <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",
         padding:"14px 20px", flexShrink:0 }}>
         <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:5 }}>
-          <Link href="/projects" style={{ color:"var(--text-3)", textDecoration:"none" }}>Projects</Link>
+          <Link href="/projects" style={{ color:"var(--text-3)", textDecoration:"none" }}>{np("Projects")}</Link>
           {" › "}New project
         </div>
-        <h1 style={{ fontSize:17, fontWeight:600, color:"var(--text)" }}>Create new project</h1>
+        <h1 style={{ fontSize:17, fontWeight:600, color:"var(--text)" }}>{np("Create new project")}</h1>
       </div>
 
       {/* Form */}
@@ -164,16 +169,16 @@ export function NewProjectForm({ workspaceId, members }:{
           <div style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20, marginBottom:14 }}>
             <div style={{ marginBottom:14 }}>
-              <label style={label}>Project name *</label>
+              <label style={label}>{np("Project name *")}</label>
               <input autoFocus value={form.name}
                 onChange={e => setForm(f => ({ ...f, name:e.target.value }))}
-                placeholder="e.g. CRM Migration, Office Expansion, Product Launch" style={inp} />
+                placeholder={np("phProjectName")} style={inp} />
             </div>
             <div>
-              <label style={label}>Description</label>
+              <label style={label}>{np("Description")}</label>
               <textarea value={form.description} rows={3}
                 onChange={e => setForm(f => ({ ...f, description:e.target.value }))}
-                placeholder="What is this project about?"
+                placeholder={np("phProjectDesc")}
                 style={{ ...inp, resize:"vertical", lineHeight:1.5 }} />
             </div>
           </div>
@@ -181,7 +186,7 @@ export function NewProjectForm({ workspaceId, members }:{
           {/* Methodology */}
           <div style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20, marginBottom:14 }}>
-            <label style={{ ...label, marginBottom:10 }}>Methodology *</label>
+            <label style={{ ...label, marginBottom:10 }}>{np("Methodology *")}</label>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
               {METHODOLOGIES.map(m => (
                 <div key={m.id} onClick={() => setForm(f => ({ ...f, methodology:m.id }))}
@@ -191,9 +196,9 @@ export function NewProjectForm({ workspaceId, members }:{
                     transition:"all .15s" }}>
                   <div style={{ fontSize:22, marginBottom:6 }}>{m.icon}</div>
                   <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:3 }}>
-                    {m.label}
+                    {np(m.label as any)}
                   </div>
-                  <div style={{ fontSize:11, color:"var(--text-3)", lineHeight:1.4 }}>{m.desc}</div>
+                  <div style={{ fontSize:11, color:"var(--text-3)", lineHeight:1.4 }}>{np(m.desc as any)}</div>
                 </div>
               ))}
             </div>
@@ -202,9 +207,9 @@ export function NewProjectForm({ workspaceId, members }:{
           {/* Phase Builder — pick which phases this project will use */}
           <div style={{ background:"#fff", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:20, marginBottom:14 }}>
-            <label style={label}>Project phases</label>
+            <label style={label}>{np("Project phases")}</label>
             <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:10 }}>
-              Choose which phases this project will use. Tasks can be organized under any selected phase.
+              {np("phasesHint")}
             </div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
               {PHASE_LIBRARY.map(name => {
@@ -222,8 +227,8 @@ export function NewProjectForm({ workspaceId, members }:{
               })}
             </div>
             <div style={{ fontSize:11, color:"var(--text-4)", marginTop:10 }}>
-              {selectedPhases.length} phase{selectedPhases.length!==1?"s":""} selected
-              {selectedPhases.length===0 && " — project will start with no phases"}
+              {np("phasesSelected",{n:selectedPhases.length})}
+              {selectedPhases.length===0 && " — "+np("noPhasesWarn")}
             </div>
           </div>
 
@@ -232,32 +237,32 @@ export function NewProjectForm({ workspaceId, members }:{
             borderRadius:"var(--radius)", padding:20, marginBottom:14 }}>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
               <div>
-                <label style={label}>Start date</label>
+                <label style={label}>{np("Start date")}</label>
                 <DateField  value={form.startDate}
                   onChange={e => setForm(f => ({ ...f, startDate:e.target.value }))} style={inp} />
               </div>
               <div>
-                <label style={label}>End date</label>
+                <label style={label}>{np("End date")}</label>
                 <DateField  value={form.endDate}
                   onChange={e => setForm(f => ({ ...f, endDate:e.target.value }))} style={inp} />
               </div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
               <div>
-                <label style={label}>Total budget</label>
+                <label style={label}>{np("Total budget")}</label>
                 <input type="number" min={0} value={form.budgetTotal}
                   onChange={e => setForm(f => ({ ...f, budgetTotal:e.target.value }))}
                   placeholder="0" style={inp} />
               </div>
               <div>
-                <label style={label}>Currency</label>
+                <label style={label}>{np("Currency")}</label>
                 <select style={sel} value={form.currency}
                   onChange={e => setForm(f => ({ ...f, currency:e.target.value }))}>
                   {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label style={label}>Timezone</label>
+                <label style={label}>{np("Timezone")}</label>
                 <select style={sel} value={form.timezone}
                   onChange={e => setForm(f => ({ ...f, timezone:e.target.value }))}>
                   {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
@@ -268,7 +273,7 @@ export function NewProjectForm({ workspaceId, members }:{
             {/* Priority + Confidential */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginTop:14 }}>
               <div>
-                <label style={label}>Project Priority</label>
+                <label style={label}>{np("Project Priority")}</label>
                 <select style={{ ...sel, fontWeight:600,
                   color: form.priority==="CRITICAL"?"#DC2626":
                          form.priority==="HIGH"?"#F59E0B":
@@ -282,7 +287,7 @@ export function NewProjectForm({ workspaceId, members }:{
                 </select>
               </div>
               <div style={{ display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
-                <label style={{ ...label, marginBottom:12 }}>Confidential Project</label>
+                <label style={{ ...label, marginBottom:12 }}>{np("Confidential Project")}</label>
                 <div onClick={() => setForm(f => ({ ...f, isConfidential:!f.isConfidential }))}
                   style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
                   <div style={{ width:40, height:22, borderRadius:11, position:"relative",
@@ -304,11 +309,11 @@ export function NewProjectForm({ workspaceId, members }:{
 
             {/* Economic Impact */}
             <div style={{ marginTop:14 }}>
-              <label style={label}>Economic Impact / ROI (optional)</label>
+              <label style={label}>{np("Economic Impact / ROI (optional)")}</label>
               <textarea rows={2}
                 value={form.economicImpact}
                 onChange={e => setForm(f => ({ ...f, economicImpact:e.target.value }))}
-                placeholder="e.g. Expected to save $200K/year in operational costs, ROI within 18 months..."
+                placeholder={np("phRoi")}
                 style={{ ...inp, resize:"vertical", lineHeight:1.6 }} />
             </div>
           </div>
@@ -341,17 +346,17 @@ export function NewProjectForm({ workspaceId, members }:{
                           onClick={e => e.stopPropagation()}
                           onChange={e => setSelectedMembers(s => ({ ...s,
                             [m.userId]: { ...s[m.userId], projectRole:e.target.value } }))}
-                          title="PM Standard project role"
+                          title={np("roleTip")}
                           style={{ ...sel, width:160, padding:"4px 22px 4px 8px", fontSize:11 }}>
                           <option value="EXECUTIVE_SPONSOR">{enumLabel("EXECUTIVE_SPONSOR", locale)}</option>
-                          <option value="SPONSOR">Project Sponsor</option>
+                          <option value="SPONSOR">{np("Project Sponsor")}</option>
                           <option value="STEERING_COMMITTEE">{enumLabel("STEERING_COMMITTEE", locale)}</option>
                           <option value="PMO_DIRECTOR">{enumLabel("PMO_DIRECTOR", locale)}</option>
-                          <option value="PMO">PMO Analyst</option>
-                          <option value="PM">Project Manager</option>
+                          <option value="PMO">{np("PMO Analyst")}</option>
+                          <option value="PM">{np("Project Manager")}</option>
                           <option value="PRODUCT_OWNER">{enumLabel("PRODUCT_OWNER", locale)}</option>
                           <option value="BUSINESS_ANALYST">{enumLabel("BUSINESS_ANALYST", locale)}</option>
-                          <option value="TECH_LEAD">Technical Lead</option>
+                          <option value="TECH_LEAD">{np("Technical Lead")}</option>
                           <option value="SCRUM_MASTER">{enumLabel("SCRUM_MASTER", locale)}</option>
                           <option value="TEAM_MEMBER">{enumLabel("TEAM_MEMBER", locale)}</option>
                           <option value="STAKEHOLDER">{enumLabel("STAKEHOLDER", locale)}</option>
@@ -363,9 +368,9 @@ export function NewProjectForm({ workspaceId, members }:{
                           onClick={e => e.stopPropagation()}
                           onChange={e => setSelectedMembers(s => ({ ...s,
                             [m.userId]: { ...s[m.userId], role:e.target.value } }))}
-                          title="Access level"
+                          title={np("Access level")}
                           style={{ ...sel, width:100, padding:"4px 22px 4px 8px", fontSize:11 }}>
-                          <option value="PM">PM access</option>
+                          <option value="PM">{np("PM access")}</option>
                           <option value="MEMBER">{enumLabel("MEMBER", locale)}</option>
                           <option value="VIEWER">{enumLabel("VIEWER", locale)}</option>
                           <option value="CLIENT">{enumLabel("CLIENT", locale)}</option>
@@ -382,7 +387,7 @@ export function NewProjectForm({ workspaceId, members }:{
           <div style={{ marginBottom:22 }}>
             <div style={{ fontSize:12, fontWeight:600, color:"var(--text-2)", marginBottom:6 }}>
               Attach project documents <span style={{ fontWeight:400, color:"var(--text-3)" }}>
-              (optional — charter, plan, minutes… AI can build the project from them)</span>
+              {np("aiDocsHint")}</span>
             </div>
             <div
               role="button" tabIndex={0}
@@ -397,7 +402,7 @@ export function NewProjectForm({ workspaceId, members }:{
                 background: docOver ? "#EFF6FF" : "var(--bg-2,#F8FAFC)",
                 color:"var(--text-3)", fontSize:12.5, outline:"none",
                 transition:"background .15s ease, border-color .15s ease" }}>
-              Drop files here or <span style={{ color:"var(--steel)", fontWeight:600 }}>browse</span>
+              {np("dropHere")} <span style={{ color:"var(--steel)", fontWeight:600 }}>{np("browse")}</span>
               {" "}— Word, Excel, PDF (incl. scans), up to 12 files, {`${20}`} MB each
             </div>
             <input ref={docInputRef} type="file" multiple style={{ display:"none" }}

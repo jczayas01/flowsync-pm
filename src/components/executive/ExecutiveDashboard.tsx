@@ -172,7 +172,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
       method: "PATCH", headers: { "Content-Type": "application/json", "x-workspace-id": workspaceId },
       body: JSON.stringify({ action: "approve" }),
     })
-    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error || "Approval failed"); return }
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error || tx("approvalFailed")); return }
     router.refresh()
   }
 
@@ -185,7 +185,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
     })
     if (!res.ok) {
       const d = await res.json().catch(() => ({}))
-      alert(d?.error || `Action failed (${res.status})`)
+      alert(d?.error || tx("actionFailed",{s:res.status}))
       return
     }
     router.refresh()
@@ -218,7 +218,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                     method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
                     body: JSON.stringify({ flavor:"EXECUTIVE" }),
                   })
-                  if (!res.ok) { alert("Deck generation failed"); return }
+                  if (!res.ok) { alert(tx("deckFailed")); return }
                   const blob = await res.blob()
                   const url = URL.createObjectURL(blob)
                   const a = document.createElement("a"); a.href = url; a.download = "Executive_Portfolio_Deck.pptx"; a.click()
@@ -397,7 +397,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           <Section title={tx("Project Health Scorecard")} icon="🚦"
             action={
               <Link href="/projects" style={{ fontSize:11, color:"var(--steel)",
-                textDecoration:"none" }}>All projects →</Link>
+                textDecoration:"none" }}>{tx("All projects →")}</Link>
             }>
             <div style={{ overflowX:"auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse" }}>
@@ -479,7 +479,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                   })}
                   {projects.length === 0 && (
                     <tr><td colSpan={7} style={{ padding:"20px", textAlign:"center",
-                      fontSize:12, color:"var(--text-3)" }}>No active projects</td></tr>
+                      fontSize:12, color:"var(--text-3)" }}>{tx("No active projects")}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -494,7 +494,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                 <div style={{ marginBottom:14 }}>
                   <div style={{ display:"flex", justifyContent:"space-between",
                     fontSize:12, marginBottom:6 }}>
-                    <span style={{ color:"var(--text-2)", fontWeight:500 }}>Portfolio budget utilization</span>
+                    <span style={{ color:"var(--text-2)", fontWeight:500 }}>{tx("Portfolio budget utilization")}</span>
                     <span style={{ fontWeight:700,
                       color:budgetPct>90?"var(--red)":budgetPct>75?"var(--amber)":"var(--text)" }}>
                       {budgetPct}%
@@ -610,7 +610,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             }>
             {risks.length === 0 ? (
               <div style={{ padding:"16px", textAlign:"center", fontSize:12,
-                color:"var(--text-3)" }}>No high risks open</div>
+                color:"var(--text-3)" }}>{tx("No high risks open")}</div>
             ) : risks.slice(0,8).map(r => {
               const scoreColor = r.score>=15?"var(--red)":r.score>=9?"var(--amber)":"var(--steel)"
               const scoreBg    = r.score>=15?"#FEF2F2":r.score>=9?"#FFFBEB":"#EFF6FF"
@@ -633,7 +633,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                   </div>
                   <Link href={`/projects/${r.project?.id}/risks`}
                     style={{ fontSize:10, color:"var(--steel)", textDecoration:"none",
-                      flexShrink:0 }}>View →</Link>
+                      flexShrink:0 }}>{tx("View →")}</Link>
                 </div>
               )
             })}
@@ -683,7 +683,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                       {days===0?"Today":days===1?"Tomorrow":`${days}d`}
                     </div>
                     {isAtRisk && (
-                      <div style={{ fontSize:9, color:"var(--red)", fontWeight:600 }}>AT RISK</div>
+                      <div style={{ fontSize:9, color:"var(--red)", fontWeight:600 }}>{tx("AT RISK")}</div>
                     )}
                   </div>
                 </div>
@@ -705,7 +705,7 @@ export function ExecutiveDashboard({ projects, risks, milestones,
             ) : undefined}>
             {pendingCRs.length === 0 ? (
               <div style={{ padding:"16px", textAlign:"center", fontSize:12,
-                color:"var(--text-3)" }}>No pending change requests</div>
+                color:"var(--text-3)" }}>{tx("No pending change requests")}</div>
             ) : pendingCRs.slice(0,6).map(cr => {
               const sc = STATUS_CFG[cr.status] || STATUS_CFG.SUBMITTED
               const pc = PRIORITY_CFG[cr.priority] || PRIORITY_CFG.MEDIUM
@@ -756,11 +756,11 @@ export function ExecutiveDashboard({ projects, risks, milestones,
           {/* Recent key decisions */}
           <Section title={tx("Recent Key Decisions")} icon="⚡"
             action={
-              <span style={{ fontSize:11, color:"var(--text-3)" }}>Last 5 recorded</span>
+              <span style={{ fontSize:11, color:"var(--text-3)" }}>{tx("Last 5 recorded")}</span>
             }>
             {decisions.length === 0 ? (
               <div style={{ padding:"16px", textAlign:"center", fontSize:12,
-                color:"var(--text-3)" }}>No decisions recorded</div>
+                color:"var(--text-3)" }}>{tx("No decisions recorded")}</div>
             ) : decisions.map(d => (
               <div key={d.id} style={{ padding:"10px 14px",
                 borderBottom:"1px solid var(--surface-1,#F8FAFC)" }}>

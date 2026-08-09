@@ -4,7 +4,7 @@
 // Opens as a fixed panel on the right side of the screen, does not float or cover the full page
 
 import { DateField } from "@/components/shared/DatePicker"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { dateLocale } from "@/lib/date-locale"
 import { useState, useEffect, useRef } from "react"
@@ -53,6 +53,7 @@ const fieldRow: React.CSSProperties = {
 function AssigneeDropdown({ members, selectedIds, onToggle }: {
   members: any[]; selectedIds: string[]; onToggle: (uid: string) => void
 }) {
+  const tk = useTranslations("taskModal")
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const ref = useRef<HTMLDivElement>(null)
@@ -86,7 +87,7 @@ function AssigneeDropdown({ members, selectedIds, onToggle }: {
           boxShadow:"0 8px 24px rgba(0,0,0,.12)", marginTop:4, overflow:"hidden" }}>
           <div style={{ padding:"8px 10px", borderBottom:"1px solid var(--border)" }}>
             <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name or role…"
+              placeholder={tk("searchMemberPh")}
               style={{ ...inp, fontSize:12, padding:"6px 10px" }} />
           </div>
           <div style={{ maxHeight:180, overflowY:"auto" }}>
@@ -140,6 +141,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   onCommentsRead?: (taskId: string) => void
 }) {
   const locale = useLocale()
+  const tk = useTranslations("taskModal")
   // Control account: which budget line this work consumes. Lines with linked
   // tasks earn value from their own progress instead of the project average.
   const [budgetLines, setBudgetLines] = useState<any[]>([])
@@ -182,7 +184,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
     fetch(`/api/tasks/${taskId}`)
       .then(r => r.json())
       .then(d => {
-        if (!d.data) { setError("Task not found"); setLoading(false); return }
+        if (!d.data) { setError(tk("Task not found")); setLoading(false); return }
         setTask(d.data)
         setForm({
           title:           d.data.title || "",
@@ -202,7 +204,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
         })
         setLoading(false)
       })
-      .catch(() => { setError("Failed to load task"); setLoading(false) })
+      .catch(() => { setError(tk("Failed to load task")); setLoading(false) })
   }, [taskId])
 
   function handleClose() {
@@ -233,13 +235,13 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
       })
       if (!res.ok) {
         const d = await res.json().catch(()=>({}))
-        setError(d.error || "Save failed — check required fields")
+        setError(d.error || tk("saveFailed"))
         setSaving(false); return
       }
       router.refresh()
       handleClose()
     } catch {
-      setError("Network error — please try again")
+      setError(tk("netError"))
       setSaving(false)
     }
   }
@@ -305,9 +307,9 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   }
 
   const TABS = [
-    { id:"details",  label:"Details"       },
-    { id:"deps",     label:"Dependencies"  },
-    { id:"activity", label:"Activity"      },
+    { id:"details",  label:tk("Details")       },
+    { id:"deps",     label:tk("Dependencies")  },
+    { id:"activity", label:tk("Activity")      },
   ]
 
   return (
@@ -359,7 +361,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
             style={{ padding:"6px 14px", background:"var(--steel)", color:"#fff",
               border:"none", borderRadius:"var(--radius)", fontSize:12, fontWeight:600,
               cursor:saving||loading?"wait":"pointer", fontFamily:"var(--font)" }}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? tk("Saving…") : tk("Save")}
           </button>
           <button onClick={handleClose}
             style={{ width:28, height:28, display:"flex", alignItems:"center", justifyContent:"center",
@@ -388,7 +390,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
 
           {loading ? (
             <div style={{ textAlign:"center", padding:"60px 20px", color:"var(--text-3)" }}>
-              Loading task…
+              {tk("Loading task…")}
             </div>
           ) : error && !form ? (
             <div style={{ textAlign:"center", padding:"40px 20px" }}>
@@ -396,7 +398,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
               <button onClick={handleClose}
                 style={{ padding:"8px 16px", border:"1px solid var(--border)",
                   borderRadius:"var(--radius)", cursor:"pointer", fontFamily:"var(--font)",
-                  fontSize:12 }}>Close</button>
+                  fontSize:12 }}>{tk("Close")}</button>
             </div>
           ) : form ? (
             <>
@@ -412,30 +414,30 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                 <>
                   {/* Title */}
                   <div style={fieldRow}>
-                    <label style={lbl}>Task title</label>
+                    <label style={lbl}>{tk("Task title")}</label>
                     <input value={form.title}
                       onChange={e => setForm((f:any) => ({ ...f, title:e.target.value }))}
                       style={{ ...inp, fontSize:15, fontWeight:600 }}
-                      placeholder="Task title…" />
+                      placeholder={tk("Task title…")} />
                   </div>
 
                   {/* Status + Priority */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                     <div>
-                      <label style={lbl}>Status</label>
+                      <label style={lbl}>{tk("Status")}</label>
                       <select style={sel} value={form.status}
                         onChange={e => setForm((f:any) => ({ ...f, status:e.target.value }))}>
                         {STATUS_OPTS.map(s => (
-                          <option key={s} value={s}>{s.replace(/_/g," ")}</option>
+                          <option key={s} value={s}>{enumLabel(s, locale)}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label style={lbl}>Priority</label>
+                      <label style={lbl}>{tk("Priority")}</label>
                       <select style={sel} value={form.priority}
                         onChange={e => setForm((f:any) => ({ ...f, priority:e.target.value }))}>
                         {PRIORITY_OPTS.map(p => (
-                          <option key={p} value={p} style={{ color:PRIORITY_COLORS[p] }}>{p}</option>
+                          <option key={p} value={p} style={{ color:PRIORITY_COLORS[p] }}>{enumLabel(p, locale)}</option>
                         ))}
                       </select>
                     </div>
@@ -443,10 +445,10 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
 
                   {/* Phase */}
                   <div style={fieldRow}>
-                    <label style={lbl}>Phase</label>
+                    <label style={lbl}>{tk("Phase")}</label>
                     <select style={sel} value={form.phaseId || ""}
                       onChange={e => setForm((f:any) => ({ ...f, phaseId:e.target.value }))}>
-                      <option value="">No phase</option>
+                      <option value="">{tk("No phase")}</option>
                       {phaseList.map((p:any) => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
@@ -475,12 +477,12 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                       ;(groups[g] = groups[g] || []).push(b)
                     }
                     const nameOf = (id: string) =>
-                      budgetLines.find((b:any) => b.id === id)?.name || "Budget line"
+                      budgetLines.find((b:any) => b.id === id)?.name || tk("Budget line")
 
                     return (
                       <div style={fieldRow}>
                         <label style={lbl}>
-                          Budget lines{picked.length > 1 ? ` — effort splits evenly across ${picked.length}` : ""}
+                          {picked.length > 1 ? tk("budgetLinesSplit",{n:picked.length}) : tk("Budget lines")}
                         </label>
 
                         {/* Chosen lines, removable */}
@@ -491,7 +493,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                                 padding:"4px 8px 4px 11px", borderRadius:16, fontSize:12, fontWeight:600,
                                 background:"#EFF6FF", border:"1px solid #BFDBFE", color:"var(--steel)" }}>
                                 {nameOf(id)}
-                                <button type="button" onClick={() => toggle(id)} aria-label="Remove"
+                                <button type="button" onClick={() => toggle(id)} aria-label={tk("Remove")}
                                   style={{ border:"none", background:"none", cursor:"pointer",
                                     color:"var(--steel)", fontSize:13, lineHeight:1, padding:0 }}>×</button>
                               </span>
@@ -513,7 +515,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                         {blOpen && (
                           <div style={{ marginTop:6, border:"1px solid var(--border)", borderRadius:8,
                             background:"#fff", boxShadow:"0 10px 28px rgba(13,27,42,.12)", overflow:"hidden" }}>
-                            <input autoFocus value={blQuery} placeholder="Search lines…"
+                            <input autoFocus value={blQuery} placeholder={tk("Search lines…")}
                               onChange={e => setBlQuery(e.target.value)}
                               style={{ width:"100%", padding:"9px 11px", fontSize:12.5, border:"none",
                                 borderBottom:"1px solid var(--border)", fontFamily:"var(--font)",
@@ -551,10 +553,10 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                               padding:"7px 12px", borderTop:"1px solid var(--border)", background:"var(--surface)" }}>
                               <button type="button" onClick={() => setForm((f:any) => ({ ...f, budgetItemIds: [] }))}
                                 style={{ border:"none", background:"none", cursor:"pointer", fontSize:11.5,
-                                  color:"var(--text-3)", fontFamily:"var(--font)" }}>Clear</button>
+                                  color:"var(--text-3)", fontFamily:"var(--font)" }}>{tk("Clear")}</button>
                               <button type="button" onClick={() => { setBlOpen(false); setBlQuery("") }}
                                 style={{ border:"none", background:"none", cursor:"pointer", fontSize:11.5,
-                                  fontWeight:700, color:"var(--steel)", fontFamily:"var(--font)" }}>Done</button>
+                                  fontWeight:700, color:"var(--steel)", fontFamily:"var(--font)" }}>{tk("Done")}</button>
                             </div>
                           </div>
                         )}
@@ -585,12 +587,12 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                   {/* Dates */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                     <div>
-                      <label style={lbl}>Start date</label>
+                      <label style={lbl}>{tk("Start date")}</label>
                       <DateField  style={inp} value={form.startDate}
                         onChange={e => setForm((f:any) => ({ ...f, startDate:e.target.value }))} />
                     </div>
                     <div>
-                      <label style={lbl}>Due date</label>
+                      <label style={lbl}>{tk("Due date")}</label>
                       <DateField  style={inp} value={form.dueDate}
                         onChange={e => setForm((f:any) => ({ ...f, dueDate:e.target.value }))} />
                     </div>
@@ -599,14 +601,14 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                   {/* Est hours + Completed date */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                     <div>
-                      <label style={lbl}>Estimated hours</label>
+                      <label style={lbl}>{tk("Estimated hours")}</label>
                       <input type="number" min={0} step={0.5} style={inp}
                         value={form.estimatedHours}
                         onChange={e => setForm((f:any) => ({ ...f, estimatedHours:e.target.value }))}
-                        placeholder="e.g. 8" />
+                        placeholder={tk("phHours")} />
                     </div>
                     <div>
-                      <label style={lbl}>Completed on</label>
+                      <label style={lbl}>{tk("Completed on")}</label>
                       <DateField  style={inp} value={form.completedAt}
                         onChange={e => setForm((f:any) => ({ ...f, completedAt:e.target.value }))} />
                     </div>
@@ -614,16 +616,16 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
 
                   {/* Description */}
                   <div style={fieldRow}>
-                    <label style={lbl}>Description</label>
+                    <label style={lbl}>{tk("Description")}</label>
                     <textarea rows={4} value={form.description}
                       onChange={e => setForm((f:any) => ({ ...f, description:e.target.value }))}
-                      placeholder="Add context, acceptance criteria, or notes…"
+                      placeholder={tk("phDescription")}
                       style={{ ...inp, resize:"vertical", lineHeight:1.6 }} />
                   </div>
 
                   {/* Assignees */}
                   <div style={fieldRow}>
-                    <label style={lbl}>Assignees</label>
+                    <label style={lbl}>{tk("Assignees")}</label>
                     {/* Selected assignee tags */}
                     {form.assigneeIds.length > 0 && (
                       <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:8 }}>
@@ -663,13 +665,13 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
               {activeTab === "deps" && (
                 <div>
                   <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:14, lineHeight:1.6 }}>
-                    This task is <strong>blocked by</strong> the tasks below. It cannot start until they are done.
+                    {tk("blockedIntro")}
                   </div>
 
                   {(task?.dependencies||[]).length === 0 ? (
                     <div style={{ textAlign:"center", padding:"30px 20px",
                       color:"var(--text-4)", fontSize:12 }}>
-                      No dependencies set
+                      {tk("No dependencies set")}
                     </div>
                   ) : (
                     <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:14 }}>
@@ -679,7 +681,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                           border:"1px solid var(--border)" }}>
                           <span style={{ fontSize:10,
                             padding:"2px 6px", background:"#FEF3C7", borderRadius:3,
-                            fontWeight:600, color:"#92400E" }}>blocked by</span>
+                            fontWeight:600, color:"#92400E" }}>{tk("blocked by")}</span>
                           <span style={{ fontSize:11, fontFamily:"monospace",
                             color:"var(--text-3)" }}>{dep.precedingTask?.code}</span>
                           {Number(dep.lagDays) !== 0 && (
@@ -713,7 +715,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                     style={{ padding:"8px 16px", background:"#fff", border:"1px solid var(--border)",
                       borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
                       fontFamily:"var(--font)", color:"var(--text-2)", marginBottom:8 }}>
-                    {depPickerOpen ? "Cancel" : "+ Add dependency"}
+                    {depPickerOpen ? tk("Cancel") : tk("+ Add dependency")}
                   </button>
 
                   {depPickerOpen && (
@@ -721,10 +723,10 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                       overflow:"hidden", marginTop:4 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8,
                         borderBottom:"1px solid var(--border)" }}>
-                        <input placeholder="Search tasks…" value={depSearch} autoFocus
+                        <input placeholder={tk("Search tasks…")} value={depSearch} autoFocus
                           onChange={e => setDepSearch(e.target.value)}
                           style={{ ...inp, border:"none", borderRadius:0, flex:1 }} />
-                        <label title="Lag: wait N days after the predecessor finishes (negative = lead/overlap)"
+                        <label title={tk("lagTip")}
                           style={{ display:"flex", alignItems:"center", gap:4, paddingRight:10,
                           fontSize:11, color:"var(--text-3)", whiteSpace:"nowrap" }}>
                           Lag
@@ -737,7 +739,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                       <div style={{ maxHeight:200, overflowY:"auto" }}>
                         {availableForDeps.length === 0 ? (
                           <div style={{ padding:14, fontSize:12, color:"var(--text-3)", textAlign:"center" }}>
-                            No tasks found
+                            {tk("No tasks found")}
                           </div>
                         ) : availableForDeps.slice(0,20).map(t => (
                           <div key={t.id} onClick={() => addDependency(t.id)}
@@ -765,7 +767,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                   <div style={{ marginBottom:12 }}>
                     <textarea rows={2} value={newComment}
                       onChange={e => setNewComment(e.target.value)}
-                      placeholder="Add a note or reply to the team…"
+                      placeholder={tk("phContribution")}
                       style={{ width:"100%", padding:"8px 10px", fontSize:12.5, borderRadius:"var(--radius)",
                         border:"1px solid var(--border)", fontFamily:"var(--font)", color:"var(--text)",
                         resize:"vertical", boxSizing:"border-box" }} />
@@ -775,12 +777,12 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                           border:"none", cursor:"pointer", fontFamily:"var(--font)",
                           background: newComment.trim() ? "var(--steel)" : "var(--border)",
                           color: newComment.trim() ? "#fff" : "var(--text-3)" }}>
-                        {postingC ? "Posting…" : "Post"}
+                        {postingC ? tk("Posting…") : tk("Post")}
                       </button>
                     </div>
                   </div>
                   {comments.length === 0 ? (
-                    <div style={{ fontSize:12, color:"var(--text-3)", padding:"8px 0" }}>No contributions yet.</div>
+                    <div style={{ fontSize:12, color:"var(--text-3)", padding:"8px 0" }}>{tk("No contributions yet.")}</div>
                   ) : comments.map(c => (
                     <div key={c.id} style={{ display:"flex", gap:10, padding:"8px 0", borderTop:"1px solid var(--border)" }}>
                       <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, background:"var(--steel)",
