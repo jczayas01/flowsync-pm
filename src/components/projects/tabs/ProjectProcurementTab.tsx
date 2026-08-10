@@ -689,6 +689,9 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 : null
               const isExpiring = daysLeft !== null && daysLeft > 0 && daysLeft <= 30
               const isExpired  = daysLeft !== null && daysLeft <= 0
+              const alloc      = allocState(item)
+              const allocShort = alloc.split ? alloc.diff > 0 : !alloc.linked
+              const allocOver  = alloc.split && alloc.diff < 0
 
               return (
                 <div key={item.id}
@@ -717,6 +720,21 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       {item.value && (
                         <span style={{ fontSize:12, fontWeight:600, color:"var(--text)" }}>
                           {fmtCurrency(item.value, item.currency)}
+                        </span>
+                      )}
+                      {(allocShort || allocOver) && (
+                        <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px",
+                          borderRadius:8, whiteSpace:"nowrap",
+                          color: allocOver ? "#B91C1C" : "#92400E",
+                          background: allocOver ? "#FEF2F2" : "#FFFBEB",
+                          border:`1px solid ${allocOver ? "#FECACA" : "#FDE68A"}` }}
+                          title={tip("pAllocWarnTitle")}>
+                          {"⚠ "}
+                          {allocOver
+                            ? tip("pOverChip", { amount: fmtExact(Math.abs(alloc.diff), item.currency) })
+                            : alloc.split
+                              ? tip("pUnallocChip", { amount: fmtExact(alloc.diff, item.currency) })
+                              : tip("pNoLineChip")}
                         </span>
                       )}
                       <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px",
