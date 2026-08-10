@@ -19,7 +19,8 @@ type Tx = Pick<typeof db, "project" | "budgetItem" | "task">
  * Recompute earned value for one project's budget items.
  * @param client  db or an open Prisma transaction
  * @param projectId project to recompute
- * @param pct optional already-known percent complete (0–100); fetched if omitted
+ * @param pct accepted for call-site compatibility; no longer used for earned
+ *            value — an unlinked line earns 0, not the project's overall percent.
  */
 export async function recomputeProjectEV(
   client: Tx, projectId: string, pct?: number,
@@ -34,8 +35,6 @@ export async function recomputeProjectEV(
   // Auto EV off means the PM curates earned value by hand, so automatic passes
   // must leave it alone — but a deliberate "recalculate" is not an automatic pass.
   if (project.autoEv === false && !force) return
-
-  const projectFraction = Math.min(100, Math.max(0, pct ?? project.percentComplete ?? 0)) / 100
 
   const items = await client.budgetItem.findMany({
     where: { projectId },
@@ -101,11 +100,17 @@ export async function recomputeProjectEV(
     // A line with its own tasks uses their progress; a line with none keeps the
     // proportional behaviour, so existing projects are unaffected.
     const taskPct  = acc && acc.weight > 0 ? acc.weighted / acc.weight : null
+    // A line with no linked tasks earns nothing. Earned value is a claim about
+    // work delivered on THIS line, and the only evidence of that work is a task.
+    // This used to inherit the project's overall percent complete, which credited
+    // a line for progress made everywhere else: a four-year service program showed
+    // 12% earned because robot installs on other lines advanced. That inflates EV,
+    // SPI and CPI, and is exactly the advance-payment blindness EVM exists to
+    // prevent. Zero on an unmeasured line is the honest figure; the budget tab
+    // already tells the PM to link tasks.
     const fraction = taskPct !== null
       ? applyRule((item as any).earnRule, taskPct, taskPct > 0)
-      // No linked tasks: the proportional fallback is an estimate, and applying
-      // a delivery rule to an estimate would dress a guess as a measurement.
-      : projectFraction
+      : 0
     const target = Math.round(Number(item.plannedCost || 0) * fraction * 100) / 100
     if (Number(item.earnedValue || 0) !== target) {
       await client.budgetItem.update({ where: { id: item.id }, data: { earnedValue: target } })
