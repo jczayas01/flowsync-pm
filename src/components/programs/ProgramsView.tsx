@@ -179,9 +179,7 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
       {/* PM Standard info strip */}
       <div style={{ background:"#EFF6FF", borderBottom:"1px solid #BFDBFE",
         padding:"8px 20px", fontSize:11, color:"#1E40AF", flexShrink:0 }}>
-        {pg("programHint")}
-        benefits not available from managing them individually (PM Standard — Portfolio Hierarchy).
-        Programs sit between Portfolio and individual Projects in the governance hierarchy.
+        {pg("programHint")} {pg("programHint_hierarchy")}
       </div>
 
       <div style={{ flex:1, overflowY:"auto", padding:16 }}>

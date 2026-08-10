@@ -74,3 +74,16 @@ body { font-family: var(--font); color: var(--text); background: var(--surface);
   .fs-cols-4 { grid-template-columns:1fr; }
   .fs-cols-6 { grid-template-columns:1fr 1fr; }
 }
+
+
+/* ── Mobile: project list rows stack instead of overlapping (≤720px) ── */
+@media (max-width: 720px) {
+  .fsp-projrow {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px 16px !important;
+    align-items: center !important;
+  }
+  .fsp-projrow .fsp-projname { flex: 1 1 0; min-width: 72%; }
+  .fsp-projrow .fsp-projstat { text-align: left !important; min-width: 0 !important; }
+}

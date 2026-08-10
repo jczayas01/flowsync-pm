@@ -198,6 +198,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
   const [heroY, setHeroY] = useState(0)          // parallax depth on the hero card
   const [lineState, setLineState] = useState(0)  // which budget verdict is on show
   const [lineAuto, setLineAuto]   = useState(true)
+  const [menuOpen, setMenuOpen]   = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
 
@@ -297,7 +298,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
   }, [])
 
   return (
-    <div ref={rootRef} style={{ background:"#fff", color:INK, fontFamily:"var(--font)" }}>
+    <div ref={rootRef} style={{ background:"#fff", color:INK, fontFamily:"var(--font)", overflowX:"clip" }}>
       <style>{`
         h1, h2, .fs-display { font-family: ${displayFont.style.fontFamily}, var(--font); }
         .fs-offer-dot { animation: fsOffer 2s ease-in-out infinite; }
@@ -414,6 +415,17 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
         @keyframes fsFloatA { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-9px); } }
         @keyframes fsFloatB { 0%,100% { transform:translateY(0); } 50% { transform:translateY(8px); } }
 
+        /* Nav: mobile collapse */
+        .fs-burger { display:none; background:none; border:1px solid rgba(255,255,255,.18);
+          border-radius:8px; color:#fff; font-size:17px; line-height:1; padding:8px 11px;
+          cursor:pointer; margin-left:6px; font-family:inherit; }
+        .fs-mobilemenu { flex-direction:column; }
+        @media (max-width:880px) {
+          .fs-navlinks, .fs-navsec { display:none !important; }
+          .fs-burger { display:inline-flex; align-items:center; }
+          .fs-cta-nav { margin-left:auto; }
+        }
+        @media (min-width:881px) { .fs-mobilemenu { display:none !important; } }
         /* Capability marquee */
         .fs-marquee { display:flex; width:max-content; animation:fsMarquee 34s linear infinite; }
         .fs-marquee:hover { animation-play-state:paused; }
@@ -452,7 +464,7 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
             <Wordmark size={15} />
           </Link>
 
-          <div style={{ display:"flex", gap:2, marginRight:"auto" }}>
+          <div className="fs-navlinks" style={{ display:"flex", gap:2, marginRight:"auto" }}>
             {NAV.map(l => (
               <a key={l.href} href={l.href} className="fs-link"
                 style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
@@ -464,29 +476,65 @@ export default function LandingPage({ lang = "en" }: { lang?: "en" | "es" } = {}
 
           {/* The Spanish landing existed but nothing pointed at it — a visitor who
               reads Spanish had no way to find the page written for them. */}
-          <Link href={lang === "es" ? "/" : "/es"} className="fs-link"
+          <Link href={lang === "es" ? "/" : "/es"} className="fs-link fs-navsec"
             onClick={() => trackLanguage(lang === "es" ? "en" : "es", "nav")}
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none",
               padding:"6px 10px", whiteSpace:"nowrap" }}>
             {t("Español")}
           </Link>
-          <button onClick={() => setDemoOpen(true)} className="fs-link"
+          <button onClick={() => setDemoOpen(true)} className="fs-link fs-navsec"
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", background:"none", border:"none",
               cursor:"pointer", padding:"6px 10px", fontFamily:"inherit", whiteSpace:"nowrap" }}>
             {t("Request a demo")}
           </button>
-          <Link href="/auth/signin" className="fs-link"
+          <Link href="/auth/signin" className="fs-link fs-navsec"
             onClick={() => trackSignIn("nav")}
             style={{ fontSize:13, color:"rgba(255,255,255,.5)", textDecoration:"none", padding:"6px 10px" }}>
             {t("Sign in")}
           </Link>
-          <Link href="/auth/signup" className="fs-cta"
+          <Link href="/auth/signup" className="fs-cta fs-cta-nav"
             onClick={() => trackCta("nav", "start_free")}
             style={{ padding:"8px 16px", background:AMBER, color:NAVY, borderRadius:8,
               fontSize:13, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
             {t("Start free")}
           </Link>
+          <button className="fs-burger" aria-label="Menu" aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(o => !o)}>
+            {menuOpen ? "\u2715" : "\u2630"}
+          </button>
         </div>
+        {menuOpen && (
+          <div className="fs-mobilemenu" style={{ display:"flex",
+            borderTop:"1px solid rgba(255,255,255,.1)",
+            background:"rgba(13,27,42,.97)", backdropFilter:"blur(14px)",
+            padding:"6px 24px 14px" }}>
+            {NAV.map(l => (
+              <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+                style={{ padding:"13px 2px", fontSize:15, color:"rgba(255,255,255,.78)",
+                  textDecoration:"none", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
+                {l.label}
+              </a>
+            ))}
+            <Link href={lang === "es" ? "/" : "/es"}
+              onClick={() => { trackLanguage(lang === "es" ? "en" : "es", "nav"); setMenuOpen(false) }}
+              style={{ padding:"13px 2px", fontSize:15, color:"rgba(255,255,255,.78)",
+                textDecoration:"none", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
+              {t("Español")}
+            </Link>
+            <button onClick={() => { setMenuOpen(false); setDemoOpen(true) }}
+              style={{ padding:"13px 2px", fontSize:15, color:"rgba(255,255,255,.78)",
+                background:"none", border:"none", textAlign:"left", cursor:"pointer",
+                fontFamily:"inherit", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
+              {t("Request a demo")}
+            </button>
+            <Link href="/auth/signin"
+              onClick={() => { trackSignIn("nav"); setMenuOpen(false) }}
+              style={{ padding:"13px 2px", fontSize:15, color:"rgba(255,255,255,.78)",
+                textDecoration:"none" }}>
+              {t("Sign in")}
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* ── HERO ──────────────────────────────────────────────── */}

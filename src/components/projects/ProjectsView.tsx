@@ -124,7 +124,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
               const budgetPct = Number(p.budgetTotal)>0
                 ? Math.round(Number(p.budgetSpent||0)/Number(p.budgetTotal)*100) : 0
               return (
-                <Link key={p.id} href={`/projects/${p.id}`}
+                <Link key={p.id} href={`/projects/${p.id}`} className="fsp-projrow"
                   style={{ background:"#fff", border:"1px solid var(--border)",
                     borderRadius:"var(--radius)", padding:"14px 16px",
                     textDecoration:"none", display:"grid",
@@ -136,8 +136,8 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                   <div style={{ width:10, height:10, borderRadius:"50%", flexShrink:0,
                     background:p.health==="GREEN"?"var(--green)":p.health==="AMBER"?"var(--amber)":"var(--red)" }}/>
                   {/* Name */}
-                  <div style={{ minWidth:0 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:2 }}>
+                  <div className="fsp-projname" style={{ minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:2, flexWrap:"wrap" }}>
                       <span style={{ fontSize:13, fontWeight:600, color:"var(--text)",
                         overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                         {p.name}
@@ -158,7 +158,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                         </span>
                       )}
                     </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:10, fontSize:11, color:"var(--text-3)" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, fontSize:11, color:"var(--text-3)", flexWrap:"wrap" }}>
                       {pm && (
                         <span style={{ display:"flex", alignItems:"center", gap:4 }}>
                           <Avatar name={pm.name} avatarUrl={pm.avatarUrl} size={16} />
@@ -173,7 +173,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                     </div>
                   </div>
                   {/* Progress */}
-                  <div style={{ textAlign:"right", minWidth:80 }}>
+                  <div className="fsp-projstat" style={{ textAlign:"right", minWidth:80 }}>
                     <div style={{ fontSize:12, fontWeight:600, color:"var(--text)", marginBottom:3 }}>
                       {p.percentComplete}%
                     </div>
@@ -184,7 +184,7 @@ export function ProjectsView({ projects, workspaceId, userRole, filters }: {
                     </div>
                   </div>
                   {/* Budget */}
-                  <div style={{ textAlign:"right", fontSize:12, color:"var(--text-3)", minWidth:70 }}>
+                  <div className="fsp-projstat" style={{ textAlign:"right", fontSize:12, color:"var(--text-3)", minWidth:70 }}>
                     <div style={{ color:budgetPct>90?"var(--red)":budgetPct>75?"var(--amber)":"var(--text-2)",
                       fontWeight:500 }}>
                       {budgetPct}% spent
