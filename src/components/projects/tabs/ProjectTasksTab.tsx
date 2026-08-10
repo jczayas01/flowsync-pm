@@ -499,6 +499,12 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           list.splice(above ? refIdx : refIdx+1, 0, created)
           setLocalTasks(list)
           await persistReorder(list)
+          // The optimistic insert alone is not enough: persistReorder calls
+          // taskCtx.updateTask, which changes the context identity and re-fires
+          // the sync effect that rebuilds localTasks from the `tasks` prop. The
+          // new row isn't in that prop yet, so it gets dropped. Refresh so the
+          // server sends it — without this the row only appears on a hard reload.
+          router.refresh()
           return
         }
       }
