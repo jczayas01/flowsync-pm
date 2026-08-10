@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { ContractsPanel } from "./ContractsPanel"
+import { ContractsWorkspace } from "./ContractsWorkspace"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", RED = "#DC2626"
 
@@ -16,6 +17,11 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
 }) {
   const ad = useTranslations("admin")
   const [tab, setTab]   = useState<Tab>("workspaces")
+  // CLM: the workspace owns the portfolio/record views; ContractsPanel supplies
+  // the single contract form, driven from here.
+  const [clmEditId, setClmEditId] = useState<string | null>(null)
+  const [clmNew, setClmNew]       = useState(false)
+  const [clmReload, setClmReload] = useState(0)
   const [manage, setManage] = useState<any>(null)   // workspace row being managed
   const [busy, setBusy]     = useState(false)
   const [msg, setMsg]       = useState("")
@@ -98,8 +104,19 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
         <div style={{ overflowX:"auto" }}>
           {tab === "workspaces" && <WorkspaceTable rows={ws} onManage={setManage} />}
           {tab === "users"      && <UserTable rows={us} onAction={run} busy={busy} />}
-          {tab === "contracts"  && <ContractsPanel
-            workspaces={workspaces.map((w: any) => ({ id: w.id, name: w.name, plan: w.plan }))} />}
+          {tab === "contracts"  && <>
+            <ContractsWorkspace
+              onEdit={id => { setClmNew(false); setClmEditId(id) }}
+              onNew={() => { setClmEditId(null); setClmNew(true) }}
+              reloadKey={clmReload} />
+            <ContractsPanel
+              workspaces={workspaces.map((w: any) => ({ id: w.id, name: w.name, plan: w.plan }))}
+              hideList
+              driveEditId={clmEditId}
+              driveNew={clmNew}
+              onSaved={() => setClmReload(k => k + 1)}
+              onModalClose={() => { setClmEditId(null); setClmNew(false) }} />
+          </>}
           {tab === "leads"      && <LeadTable rows={lds} onAction={run} busy={busy} />}
         </div>
       </div>

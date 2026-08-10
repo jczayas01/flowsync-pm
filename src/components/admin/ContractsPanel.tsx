@@ -52,10 +52,16 @@ const EMPTY_FORM = {
   autoRenew: false, alertDays: 60, paidSeats: 0, contributorBundles: 0, ocrPageCap: "",
   billingCycle: "ANNUAL", amount: "", currency: "USD",
   supportTier: "", responseHours: "", uptimePct: "", slaNotes: "", notes: "",
+  serviceHourlyRate: "", onboardingFee: "",
 }
 
-export function ContractsPanel({ workspaces }: {
+export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose, onSaved, hideList }: {
   workspaces: { id: string; name: string; plan?: string }[]
+  driveEditId?: string | null
+  driveNew?: boolean
+  onModalClose?: () => void
+  onSaved?: () => void
+  hideList?: boolean
 }) {
   const locale = useLocale()
   const ct = useTranslations("contracts")
@@ -75,6 +81,17 @@ export function ContractsPanel({ workspaces }: {
   }
   useEffect(() => { load() }, [])
 
+  // Externally driven modal: the CLM workspace owns the list, this panel owns the
+  // one contract form. Waits for `contracts` so startEdit has a record to read.
+  useEffect(() => {
+    if (driveNew) { startNew(); return }
+    if (driveEditId && contracts) {
+      const c = contracts.find((x: any) => x.id === driveEditId)
+      if (c) startEdit(c)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driveNew, driveEditId, contracts])
+
   function startNew() {
     setForm({ ...EMPTY_FORM })
     setEditing("new")
@@ -90,6 +107,7 @@ export function ContractsPanel({ workspaces }: {
       amount: c.amount ?? "", currency: c.currency,
       supportTier: c.supportTier || "", responseHours: c.responseHours ?? "",
       uptimePct: c.uptimePct ?? "", slaNotes: c.slaNotes || "", notes: c.notes || "",
+      serviceHourlyRate: c.serviceHourlyRate ?? "", onboardingFee: c.onboardingFee ?? "",
     })
     setEditing(c)
   }
@@ -112,6 +130,8 @@ export function ContractsPanel({ workspaces }: {
       supportTier: form.supportTier || null,
       slaNotes: form.slaNotes || null,
       notes: form.notes || null,
+      serviceHourlyRate: form.serviceHourlyRate === "" ? null : Number(form.serviceHourlyRate),
+      onboardingFee:     form.onboardingFee === "" ? null : Number(form.onboardingFee),
     }
     const isNew = editing === "new"
     const res = await fetch(isNew ? "/api/admin/contracts" : `/api/admin/contracts/${editing.id}`, {
@@ -124,7 +144,7 @@ export function ContractsPanel({ workspaces }: {
       const d = await res?.json().catch(() => ({}))
       setError(d?.error || ct("Save failed")); return
     }
-    setEditing(null); load()
+    setEditing(null); load(); onSaved?.(); onModalClose?.()
   }
 
   async function removeContract(c: any) {
@@ -168,18 +188,18 @@ export function ContractsPanel({ workspaces }: {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      {!hideList && <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 13, color: "var(--text-3)" }}>
           {contracts ? ct("contractCount", { n: contracts.length }) : ct("Loading…")}
           {" · "}{ct("alertHint")}
         </div>
         <button style={btn(true)} onClick={startNew}>{ct("+ New contract")}</button>
-      </div>
+      </div>}
 
       {error && <div style={{ marginBottom: 12, padding: "8px 12px", background: "#FEF2F2",
         border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C" }}>{error}</div>}
 
-      {contracts?.map(c => {
+      {!hideList && contracts?.map(c => {
         const dl = daysLeft(c)
         const dlColor = dl < 0 ? "#DC2626" : dl <= c.alertDays ? "#D97706" : "#059669"
         const isOpen = !!open[c.id]
@@ -317,7 +337,7 @@ export function ContractsPanel({ workspaces }: {
 
       {/* ── Create / edit modal ── */}
       {editing !== null && (
-        <div onClick={() => !saving && setEditing(null)}
+        <div onClick={() => { if (!saving) { setEditing(null); onModalClose?.() } }}
           style={{ position: "fixed", inset: 0, background: "rgba(13,27,42,.45)", zIndex: 60,
             display: "grid", placeItems: "center", padding: 20 }}>
           <div onClick={e => e.stopPropagation()}
@@ -403,6 +423,12 @@ export function ContractsPanel({ workspaces }: {
               <div><label style={lbl}>{ct("Uptime commitment (%)")}</label>
                 <input style={inp} type="number" step="0.01" value={form.uptimePct} placeholder="99.9"
                   onChange={e => setForm((f: any) => ({ ...f, uptimePct: e.target.value }))} /></div>
+              <div><label style={lbl}>{ct("Service hourly rate")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={form.serviceHourlyRate}
+                  onChange={e => setForm({ ...form, serviceHourlyRate: e.target.value })} /></div>
+              <div><label style={lbl}>{ct("Onboarding fee (fixed)")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={form.onboardingFee}
+                  onChange={e => setForm({ ...form, onboardingFee: e.target.value })} /></div>
               <div><label style={lbl}>{ct("SLA notes")}</label>
                 <input style={inp} value={form.slaNotes}
                   onChange={e => setForm((f: any) => ({ ...f, slaNotes: e.target.value }))} /></div>
@@ -413,7 +439,7 @@ export function ContractsPanel({ workspaces }: {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
-              <button style={btn()} disabled={saving} onClick={() => setEditing(null)}>{ct("Cancel")}</button>
+              <button style={btn()} disabled={saving} onClick={() => { setEditing(null); onModalClose?.() }}>{ct("Cancel")}</button>
               <button style={btn(true)} disabled={saving} onClick={save}>
                 {saving ? ct("Saving…") : editing === "new" ? ct("Create contract") : ct("Save changes")}
               </button>
