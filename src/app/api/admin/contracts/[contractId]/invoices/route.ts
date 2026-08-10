@@ -17,6 +17,24 @@ const createSchema = z.object({
   notes:     z.string().max(2000).optional().nullable(),
 })
 
+/** List invoices with the work each one billed, so the record can show provenance. */
+export async function GET(_req: NextRequest, { params }: { params: { contractId: string } }) {
+  const session = await requirePlatformAdmin()
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  const invoices = await db.contractInvoice.findMany({
+    where:   { contractId: params.contractId },
+    orderBy: { issueDate: "desc" },
+    include: {
+      serviceEntries:       { select: { id: true } },
+      onboardingMilestones: { select: { id: true } },
+    },
+  })
+  return NextResponse.json({
+    data: invoices.map(i => ({ ...i, amount: Number(i.amount) })),
+  })
+}
+
 export async function POST(req: NextRequest, { params }: { params: { contractId: string } }) {
   const session = await requirePlatformAdmin()
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })

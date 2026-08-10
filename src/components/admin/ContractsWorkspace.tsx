@@ -521,10 +521,10 @@ function ContractRecord({ contract, onBack, onEdit, onChanged }: {
   contract: any; onBack: () => void; onEdit: () => void; onChanged: () => void
 }) {
   const cl = useTranslations("clm")
-  const [tab, setTab] = useState<"terms" | "sla" | "service" | "onboarding">("terms")
+  const [tab, setTab] = useState<"terms" | "sla" | "service" | "onboarding" | "invoices">("terms")
   const c = contract
 
-  const TABS = ["terms", "sla", "service", "onboarding"] as const
+  const TABS = ["terms", "sla", "service", "onboarding", "invoices"] as const
 
   return (
     <div>
@@ -566,6 +566,7 @@ function ContractRecord({ contract, onBack, onEdit, onChanged }: {
       {tab === "sla"        && <SlaTab c={c} />}
       {tab === "service"    && <ServiceTab c={c} onChanged={onChanged} />}
       {tab === "onboarding" && <OnboardingTab c={c} onChanged={onChanged} />}
+      {tab === "invoices"   && <InvoicesTab c={c} onChanged={onChanged} />}
     </div>
   )
 }
@@ -966,6 +967,238 @@ function OnboardingTab({ c, onChanged }: { c: any; onChanged: () => void }) {
           </table>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Invoices: bill logged work ───────────────────────────────────────────────
+const INVOICE_STATUS_COLOR: Record<string, string> = {
+  DRAFT: "#64748B", SENT: STEEL, PAID: GREEN, OVERDUE: RED, VOID: "#94A3B8",
+}
+
+function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
+  const cl = useTranslations("clm")
+  const [invoices, setInvoices] = useState<any[] | null>(null)
+  const [billable, setBillable] = useState<any>(null)
+  const [picked, setPicked]     = useState<Set<string>>(new Set())
+  const [form, setForm]         = useState<any>(null)
+  const [saving, setSaving]     = useState(false)
+  const [err, setErr]           = useState("")
+
+  const load = useCallback(async () => {
+    const [ri, rb] = await Promise.all([
+      fetch(`/api/admin/contracts/${c.id}/invoices`, { cache: "no-store" }),
+      fetch(`/api/admin/contracts/${c.id}/invoices/from-work`, { cache: "no-store" }),
+    ])
+    const di = await ri.json().catch(() => ({}))
+    const db2 = await rb.json().catch(() => ({}))
+    setInvoices(ri.ok ? (di.data || []) : [])
+    setBillable(rb.ok ? db2.data : null)
+  }, [c.id])
+  useEffect(() => { load() }, [load])
+
+  const rows = useMemo(() => {
+    if (!billable) return []
+    return [
+      ...billable.entries.map((e: any) => ({ kind: "entry", id: e.id,
+        label: e.description, meta: `${e.hours} h · ${fmtD(e.entryDate)}`, amount: e.amount })),
+      ...billable.milestones.map((m: any) => ({ kind: "ms", id: m.id,
+        label: m.name, meta: fmtD(m.completedDate), amount: m.amount })),
+    ]
+  }, [billable])
+
+  const total = rows.filter(r => picked.has(r.id)).reduce((s, r) => s + r.amount, 0)
+
+  function toggle(id: string) {
+    setPicked(p => { const n2 = new Set(p); n2.has(id) ? n2.delete(id) : n2.add(id); return n2 })
+  }
+
+  async function bill() {
+    setSaving(true); setErr("")
+    try {
+      const res = await fetch(`/api/admin/contracts/${c.id}/invoices/from-work`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entryIds:     rows.filter(r => r.kind === "entry" && picked.has(r.id)).map(r => r.id),
+          milestoneIds: rows.filter(r => r.kind === "ms" && picked.has(r.id)).map(r => r.id),
+          number:    form.number,
+          issueDate: form.issueDate,
+          dueDate:   form.dueDate,
+          notes:     form.notes || null,
+        }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setErr(d?.error || cl("errBill")); return }
+      setForm(null); setPicked(new Set()); await load(); onChanged()
+    } catch { setErr(cl("errBill")) }
+    finally { setSaving(false) }
+  }
+
+  async function setStatus(id: string, status: string) {
+    const res = await fetch(`/api/admin/contracts/${c.id}/invoices/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, ...(status === "PAID" ? { paidDate: new Date().toISOString() } : {}) }),
+    })
+    if (res.ok) { await load(); onChanged() }
+  }
+
+  const today = new Date().toISOString().slice(0, 10)
+  const net30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10)
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Bill logged work */}
+      <div style={{ ...card, padding: 0 }}>
+        <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border,#E2E8F0)" }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: NAVY }}>{cl("billWork")}</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3,#64748B)", marginTop: 2 }}>
+            {cl("billWorkIntro")}
+          </div>
+        </div>
+
+        {err && <div style={{ padding: "8px 14px", color: RED, fontSize: 12 }}>{err}</div>}
+
+        {!billable ? (
+          <div style={{ padding: 18, fontSize: 12.5, color: "var(--text-3,#64748B)" }}>{cl("Loading…")}</div>
+        ) : !rows.length ? (
+          <div style={{ padding: 22, fontSize: 12.5, color: "var(--text-3,#64748B)" }}>
+            {cl("nothingToBill")}
+          </div>
+        ) : (
+          <>
+            <div style={{ padding: "10px 14px" }}>
+              {rows.map(r => (
+                <label key={r.id} style={{ display: "flex", alignItems: "baseline", gap: 9,
+                  padding: "6px 0", fontSize: 12.5, cursor: "pointer",
+                  borderBottom: "1px solid #F1F5F9" }}>
+                  <input type="checkbox" checked={picked.has(r.id)} onChange={() => toggle(r.id)} />
+                  <span style={{ flex: 1 }}>
+                    {r.label}
+                    <span style={{ color: "var(--text-3,#64748B)", marginLeft: 8, fontSize: 11 }}>
+                      {r.kind === "ms" ? cl("msSection") : cl("svcSection")} · {r.meta}
+                    </span>
+                  </span>
+                  <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                    {money2(r.amount, c.currency)}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div style={{ padding: "10px 14px", background: "#F8FAFC",
+              borderTop: "1px solid var(--border,#E2E8F0)", display: "flex",
+              alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 12, color: "var(--text-3,#64748B)" }}>
+                {cl("selectedCount", { n: picked.size })}
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: NAVY,
+                fontVariantNumeric: "tabular-nums" }}>
+                {cl("billTotal", { amount: money2(total, c.currency) })}
+              </span>
+              <button style={{ ...btn(true), marginLeft: "auto" }} disabled={!picked.size}
+                onClick={() => setForm({ number: "", issueDate: today, dueDate: net30, notes: "" })}>
+                {cl("billSelected")}
+              </button>
+            </div>
+          </>
+        )}
+
+        {form && (
+          <div style={{ padding: 14, borderTop: "1px solid var(--border,#E2E8F0)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10 }}>
+              <div>
+                <label style={lbl}>{cl("inv_number")}</label>
+                <input style={inp} value={form.number} placeholder={cl("numberPlaceholder")}
+                  onChange={e => setForm({ ...form, number: e.target.value })} />
+              </div>
+              <div>
+                <label style={lbl}>{cl("inv_issue")}</label>
+                <input style={inp} type="date" value={form.issueDate}
+                  onChange={e => setForm({ ...form, issueDate: e.target.value })} />
+              </div>
+              <div>
+                <label style={lbl}>{cl("inv_due")}</label>
+                <input style={inp} type="date" value={form.dueDate}
+                  onChange={e => setForm({ ...form, dueDate: e.target.value })} />
+              </div>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <label style={lbl}>{cl("inv_notes")}</label>
+              <input style={inp} value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "flex-end" }}>
+              <button style={btn()} onClick={() => setForm(null)}>{cl("Cancel")}</button>
+              <button style={btn(true)} disabled={saving || !form.number.trim()} onClick={bill}>
+                {saving ? cl("Saving…") : cl("billSelected")}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Existing invoices */}
+      <div style={{ ...card, padding: 0 }}>
+        <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--border,#E2E8F0)",
+          fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase",
+          color: "var(--text-3,#64748B)" }}>
+          {cl("invoicesCount", { n: invoices?.length || 0 })}
+        </div>
+        {!invoices ? (
+          <div style={{ padding: 18, fontSize: 12.5, color: "var(--text-3,#64748B)" }}>{cl("Loading…")}</div>
+        ) : !invoices.length ? (
+          <div style={{ padding: 22, textAlign: "center", fontSize: 12.5,
+            color: "var(--text-3,#64748B)" }}>{cl("noInvoices")}</div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr>
+                {["number", "amount", "issued", "due", "status"].map(h =>
+                  <th key={h} style={th}>{cl(("i_" + h) as any)}</th>)}
+                <th style={th} />
+              </tr></thead>
+              <tbody>
+                {invoices.map((iv: any) => {
+                  const workCount = (iv.serviceEntries?.length || 0) + (iv.onboardingMilestones?.length || 0)
+                  return (
+                    <tr key={iv.id}>
+                      <td style={{ ...td, fontWeight: 600 }}>
+                        {iv.number}
+                        {workCount > 0 && (
+                          <div style={{ fontSize: 10.5, color: "var(--text-3,#64748B)" }}>
+                            {cl("billedWork", { n: workCount })}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ ...td, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                        {money2(Number(iv.amount), iv.currency || c.currency)}
+                      </td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>{fmtD(iv.issueDate)}</td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>{fmtD(iv.dueDate)}</td>
+                      <td style={td}>
+                        <Pill text={cl(("ist_" + iv.status) as any)}
+                          color={INVOICE_STATUS_COLOR[iv.status] || "#64748B"} />
+                      </td>
+                      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                        {iv.status === "DRAFT" && (
+                          <button style={miniBtn} onClick={() => setStatus(iv.id, "SENT")}>
+                            {cl("Mark sent")}
+                          </button>
+                        )}
+                        {(iv.status === "SENT" || iv.status === "OVERDUE") && (
+                          <button style={miniBtn} onClick={() => setStatus(iv.id, "PAID")}>
+                            {cl("Mark paid")}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
