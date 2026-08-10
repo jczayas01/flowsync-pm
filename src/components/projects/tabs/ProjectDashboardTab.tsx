@@ -676,7 +676,7 @@ export function ProjectDashboardTab({
       {/* ── Stakeholders strip ── */}
       <div style={card}>
         <div style={sTitle}>👥 Project Leadership & Stakeholders</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)" }}>
+        <div className="fsp-kpis" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)" }}>
           {[
             { role:td("Project Manager"), people:pm?[pm]:[], color:"#1B6CA8" },
             { role:"Sponsor",         people:sponsors,    color:"#7C3AED" },
@@ -793,7 +793,7 @@ export function ProjectDashboardTab({
       )}
 
       {/* ── KPI cards ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
+      <div className="fsp-kpis" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
         {[
           { icon:"✅", label:td("Tasks complete"),
             tip:"Tasks marked Done out of every task on the project. Cancelled tasks are excluded.",
@@ -862,7 +862,7 @@ export function ProjectDashboardTab({
             <button onClick={() => setWeekOffset(w=>w-1)}
               style={{ padding:"2px 7px", background:"#fff", border:"1px solid var(--border)",
                 borderRadius:4, cursor:"pointer", fontSize:12, fontFamily:"var(--font)" }}>‹</button>
-            <span style={{ fontSize:11, fontWeight:500, color:"var(--text-2)",
+            <span className="fsp-weeklabel" style={{ fontSize:11, fontWeight:500, color:"var(--text-2)",
               minWidth:150, textAlign:"center" }}>{weekLabel}</span>
             <button onClick={() => setWeekOffset(w=>w+1)}
               style={{ padding:"2px 7px", background:"#fff", border:"1px solid var(--border)",

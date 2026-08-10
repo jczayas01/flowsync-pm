@@ -208,7 +208,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
 
       <div style={{flex:1,overflowY:"auto",padding:20}}>
         {/* Global KPI strip */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
+        <div className="fsp-kpis" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
           {[
             {label:pf("Total projects"), value:allProjects.length, icon:"📁"},
             {label:pf("On track"),  value:global.counts.GREEN, icon:"🟢", color:"var(--green)"},
@@ -292,7 +292,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
 
                   {/* Portfolio header */}
                   <div onClick={()=>togglePort(port.id)}
-                    style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",
+                    style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",flexWrap:"wrap",
                       borderLeft:`4px solid ${port.color||"var(--steel)"}`,
                       background:isOpen?"#fff":"var(--surface)",transition:"background .15s"}}>
                     <div style={{flex:1,minWidth:0}}>
@@ -403,13 +403,14 @@ function ProjectRow({project:p}:{project:any}) {
   const hColor = p.health==="GREEN"?"var(--green)":p.health==="AMBER"?"var(--amber)":"var(--red)"
   return (
     <Link href={`/projects/${p.id}`}
+      className="fsp-listrow"
       style={{display:"grid",gridTemplateColumns:"auto 1fr 100px 80px 70px 80px",
         gap:10,padding:"9px 18px 9px 44px",alignItems:"center",textDecoration:"none",
         borderBottom:"1px solid var(--surface-1,#F1F5F9)",transition:"background .1s"}}
       onMouseOver={e=>(e.currentTarget.style.background="var(--steel-pale,#EFF6FF)")}
       onMouseOut={e=>(e.currentTarget.style.background="transparent")}>
       <div style={{width:8,height:8,borderRadius:"50%",background:hColor,flexShrink:0}}/>
-      <div style={{minWidth:0}}>
+      <div className="fsp-projname" style={{minWidth:0}}>
         <div style={{fontSize:12,fontWeight:500,color:"var(--text)",
           overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
           {p.name}

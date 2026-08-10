@@ -230,7 +230,7 @@ export function DashboardView({ projects, milestones, risks, activity,
           ) : (
             <div>
               {/* Header */}
-              <div style={{ display:'grid', gridTemplateColumns:'auto 1fr 90px 80px 70px',
+              <div className="fsp-exec-head" style={{ display:'grid', gridTemplateColumns:'auto 1fr 90px 80px 70px',
                 gap:10, padding:'7px 16px',
                 fontSize:10, fontWeight:600, color:'var(--text-3)',
                 letterSpacing:'.05em', textTransform:'uppercase',
@@ -248,6 +248,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                 const pm = p.members?.[0]?.user
                 return (
                   <Link key={p.id} href={`/projects/${p.id}`}
+                    className="fsp-listrow"
                     style={{ display:'grid', gridTemplateColumns:'auto 1fr 90px 80px 70px',
                       gap:10, padding:'10px 16px', alignItems:'center', textDecoration:'none',
                       borderBottom:'1px solid var(--surface-1,#F1F5F9)',
@@ -257,7 +258,7 @@ export function DashboardView({ projects, milestones, risks, activity,
                   >
                     <div style={{ width:8, height:8, borderRadius:'50%',
                       background:healthColor(p.health), flexShrink:0 }}/>
-                    <div style={{ minWidth:0 }}>
+                    <div className="fsp-projname" style={{ minWidth:0 }}>
                       <div style={{ fontSize:13, fontWeight:500, color:'var(--text)',
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {p.name}

@@ -87,3 +87,19 @@ body { font-family: var(--font); color: var(--text); background: var(--surface);
   .fsp-projrow .fsp-projname { flex: 1 1 0; min-width: 72%; }
   .fsp-projrow .fsp-projstat { text-align: left !important; min-width: 0 !important; }
 }
+
+/* ── Mobile tanda 2: portfolio / executive / project dashboard (≤720px) ── */
+@media (max-width: 720px) {
+  .fsp-kpis { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)) !important; }
+  .fsp-kpis > * { min-width: 0; }
+  .fsp-listrow {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px 14px !important;
+    align-items: center !important;
+    padding-left: 16px !important;
+  }
+  .fsp-listrow .fsp-projname { flex: 1 1 0; min-width: 70%; }
+  .fsp-exec-head { display: none !important; }
+  .fsp-weeklabel { min-width: 0 !important; }
+}
