@@ -33,6 +33,29 @@ function fmtDate(d:any) {
   if (!d) return "—"
   return new Date(d).toLocaleDateString(dateLocale(), {month:"short",day:"numeric",year:"numeric", timeZone:"UTC" })
 }
+/** Exact money — fmtCurrency abbreviates to K/M, which hides the cents that
+ *  make an allocation gap visible. Use this anywhere a shortfall is shown. */
+function fmtExact(n:number|null|undefined, currency="USD") {
+  const v = Number(n) || 0
+  const sym = currency === "USD" ? "$" : ""
+  const body = v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return sym ? `${sym}${body}` : `${currency} ${body}`
+}
+
+/** Allocation state for one procurement item. Split mode (allocations present)
+ *  compares the sum to the contract value; single-line mode is only "unallocated"
+ *  when no budget line is linked at all. */
+function allocState(item: any) {
+  const value = Number(item?.value) || 0
+  const allocs = item?.allocations || []
+  if (allocs.length > 0) {
+    const sum = allocs.reduce((s2: number, a: any) => s2 + (Number(a.amount) || 0), 0)
+    const diff = Math.round((value - sum) * 100) / 100
+    return { split: true, sum, value, diff, linked: true }
+  }
+  return { split: false, sum: value, value, diff: 0, linked: !!item?.budgetItemId }
+}
+
 function fmtCurrency(n:number|null|undefined, currency="USD") {
   if (!n) return "—"
   if (n>=1_000_000) return `${currency} ${(n/1_000_000).toFixed(1)}M`
@@ -445,10 +468,11 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                     return (
                       <div style={{ fontSize:11.5, marginTop:4,
                         color: diff === 0 ? "var(--green)" : "var(--amber)", fontWeight:600 }}>
-                        Allocated ${sum.toLocaleString()} of ${val.toLocaleString()}
-                        {diff === 0 ? " — balanced ✓"
-                          : diff > 0 ? ` — $${diff.toLocaleString()} unallocated`
-                          : ` — over by $${Math.abs(diff).toLocaleString()}`}
+                        {tip("pAllocated", { sum: fmtExact(sum, form.currency), total: fmtExact(val, form.currency) })}
+                        {" — "}
+                        {diff === 0 ? tip("pAllocBalanced")
+                          : diff > 0 ? tip("pAllocUnder", { amount: fmtExact(diff, form.currency) })
+                          : tip("pAllocOver", { amount: fmtExact(Math.abs(diff), form.currency) })}
                       </div>
                     )
                   })()}
@@ -750,6 +774,37 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                             whiteSpace:"pre-line" }}>{item.deliverables}</p>
                         </div>
                       )}
+                      {(() => {
+                        const a = allocState(item)
+                        const short = a.split ? a.diff > 0 : !a.linked
+                        const over  = a.split && a.diff < 0
+                        if (!short && !over) return null
+                        const amber = "var(--amber)"
+                        return (
+                          <div style={{ gridColumn:"1 / -1", marginTop:8, display:"flex",
+                            alignItems:"baseline", gap:8, flexWrap:"wrap",
+                            padding:"7px 11px", borderRadius:7,
+                            background: over ? "#FEF2F2" : "#FFFBEB",
+                            border:`1px solid ${over ? "#FECACA" : "#FDE68A"}`,
+                            borderLeft:`3px solid ${over ? "var(--red)" : amber}` }}
+                            title={tip("pAllocWarnTitle")}>
+                            <span style={{ fontSize:12, fontWeight:700,
+                              color: over ? "var(--red)" : "#92400E" }}>
+                              {!a.linked && !a.split
+                                ? tip("pAllocNoLine")
+                                : <>
+                                    {tip("pAllocated", {
+                                      sum: fmtExact(a.sum, item.currency),
+                                      total: fmtExact(a.value, item.currency) })}
+                                    {" — "}
+                                    {over
+                                      ? tip("pAllocOver", { amount: fmtExact(Math.abs(a.diff), item.currency) })
+                                      : tip("pAllocUnder", { amount: fmtExact(a.diff, item.currency) })}
+                                  </>}
+                            </span>
+                          </div>
+                        )
+                      })()}
                       {(item.allocations || []).length > 0 && (
                         <div style={{ gridColumn:"1 / -1", marginTop:8 }}>
                           <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:4 }}>
