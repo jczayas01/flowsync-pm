@@ -67,16 +67,280 @@ function Pill({ text, color }: { text: string; color: string }) {
   )
 }
 
-// ── Portfolio KPI tile ───────────────────────────────────────────────────────
-function Kpi({ label, value, sub, color }: {
-  label: string; value: string; sub?: string; color?: string
-}) {
+// ═════════════════════════════════════════════════════════════════════════════
+// Portfolio — the contract term chart is the anchor. A contract is a
+// time-bounded instrument, so the portfolio reads as a Gantt of terms on one
+// shared calendar axis: you see who ends when, and how close, spatially rather
+// than as a number to interpret. The old KPI strip and renewal runway are both
+// folded into this plus the action rail; neither earned a card of its own.
+const MS_DAY = 864e5
+const FLAG_LABEL: Record<string, string> = {
+  overdue: "actOverdue", expired: "actExpired", expiring: "actExpiring",
+  unbilled: "actUnbilled", readybill: "actReadyBill",
+}
+
+function monthTicks(start: number, end: number) {
+  const out: { t: number; label: string; first: boolean }[] = []
+  const d = new Date(start)
+  d.setUTCDate(1); d.setUTCHours(0, 0, 0, 0)
+  if (d.getTime() < start) d.setUTCMonth(d.getUTCMonth() + 1)
+  while (d.getTime() <= end) {
+    const jan = d.getUTCMonth() === 0
+    out.push({
+      t: d.getTime(),
+      label: d.toLocaleDateString(dateLocale(), { month: "short", timeZone: "UTC" }),
+      first: jan,
+    })
+    d.setUTCMonth(d.getUTCMonth() + 1)
+  }
+  return out
+}
+
+function TermChart({ rows, onOpen }: { rows: any[]; onOpen: (id: string) => void }) {
+  const cl = useTranslations("clm")
+  const [drawn, setDrawn] = useState(false)
+
+  useEffect(() => {
+    const reduce = typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    if (reduce) { setDrawn(true); return }
+    const id = requestAnimationFrame(() => setDrawn(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  const now = Date.now()
+
+  const axis = useMemo(() => {
+    if (!rows.length) return null
+    const starts = rows.map(r => new Date(r.startDate).getTime())
+    const ends   = rows.map(r => new Date(r.endDate).getTime())
+    let lo = Math.min(...starts, now)
+    let hi = Math.max(...ends, now + 90 * MS_DAY)
+    const pad = (hi - lo) * 0.02
+    lo -= pad; hi += pad
+    return { lo, hi, span: hi - lo }
+  }, [rows, now])
+
+  if (!axis) {
+    return (
+      <div style={{ padding: 24, fontSize: 12.5, color: "rgba(255,255,255,.5)" }}>
+        {cl("noTerms")}
+      </div>
+    )
+  }
+
+  const pct = (t: number) => ((t - axis.lo) / axis.span) * 100
+  const ticks = monthTicks(axis.lo, axis.hi)
+  const todayPct = pct(now)
+
   return (
-    <div style={{ ...card, padding: 14 }}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-3,#64748B)",
-        textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: color || NAVY, lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "var(--text-3,#64748B)", marginTop: 4 }}>{sub}</div>}
+    <div>
+      {/* month scale */}
+      <div style={{ position: "relative", height: 18, marginBottom: 6,
+        borderBottom: "1px solid rgba(255,255,255,.10)" }}>
+        {ticks.map(tk => (
+          <span key={tk.t} style={{
+            position: "absolute", left: `${pct(tk.t)}%`, top: 0, transform: "translateX(-50%)",
+            fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase",
+            color: tk.first ? "rgba(255,255,255,.62)" : "rgba(255,255,255,.32)",
+            fontWeight: tk.first ? 700 : 500, whiteSpace: "nowrap",
+          }}>{tk.label}</span>
+        ))}
+      </div>
+
+      <div style={{ position: "relative" }}>
+        {/* month gridlines */}
+        {ticks.map(tk => (
+          <span key={tk.t} aria-hidden style={{
+            position: "absolute", left: `${pct(tk.t)}%`, top: 0, bottom: 0, width: 1,
+            background: tk.first ? "rgba(255,255,255,.13)" : "rgba(255,255,255,.055)",
+          }} />
+        ))}
+
+        {/* today */}
+        {todayPct >= 0 && todayPct <= 100 && (
+          <>
+            <span aria-hidden style={{
+              position: "absolute", left: `${todayPct}%`, top: -4, bottom: -4, width: 2,
+              marginLeft: -1, background: AMBER, opacity: drawn ? 1 : 0,
+              transition: "opacity .5s ease .35s", zIndex: 2,
+            }} />
+            <span style={{
+              position: "absolute", left: `${todayPct}%`, top: -18, transform: "translateX(-50%)",
+              fontSize: 9, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase",
+              color: AMBER, opacity: drawn ? 1 : 0, transition: "opacity .5s ease .35s",
+              zIndex: 3, whiteSpace: "nowrap", pointerEvents: "none",
+            }}>{cl("today")}</span>
+          </>
+        )}
+
+        {rows.map((r, i) => {
+          const s = new Date(r.startDate).getTime()
+          const e = new Date(r.endDate).getTime()
+          const left = pct(s)
+          const width = Math.max(pct(e) - left, 0.6)
+          const expired = e < now
+          const elapsedEnd = Math.min(now, e)
+          const elapsedW = Math.max(pct(elapsedEnd) - left, 0)
+          const alertStart = e - r.alertDays * MS_DAY
+          const alertLeft = Math.max(pct(alertStart), left)
+          const alertW = Math.max(pct(e) - alertLeft, 0)
+          const hot = !expired && r.inAlertWindow
+
+          return (
+            <button key={r.id} onClick={() => onOpen(r.id)}
+              style={{
+                position: "relative", display: "block", width: "100%", textAlign: "left",
+                background: "none", border: "none", padding: "9px 0", cursor: "pointer",
+                fontFamily: "var(--font)",
+              }}>
+              <span style={{ position: "relative", display: "block", height: 26 }}>
+                {/* term bar */}
+                <span style={{
+                  position: "absolute", left: `${left}%`, width: drawn ? `${width}%` : 0,
+                  top: 0, height: 26, borderRadius: 4,
+                  background: expired ? "rgba(220,38,38,.20)" : "rgba(255,255,255,.10)",
+                  border: `1px solid ${expired ? "rgba(220,38,38,.45)" : "rgba(255,255,255,.16)"}`,
+                  overflow: "hidden",
+                  transition: `width .55s cubic-bezier(.22,.9,.3,1) ${i * 45}ms`,
+                }}>
+                  {/* elapsed fill */}
+                  <span style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0,
+                    width: `${width ? (elapsedW / width) * 100 : 0}%`,
+                    background: expired
+                      ? "rgba(220,38,38,.34)"
+                      : "linear-gradient(90deg, rgba(27,108,168,.75), rgba(27,108,168,.5))",
+                  }} />
+                  {/* alert window */}
+                  {!expired && alertW > 0 && (
+                    <span aria-hidden style={{
+                      position: "absolute", top: 0, bottom: 0,
+                      left: `${width ? ((alertLeft - left) / width) * 100 : 0}%`,
+                      width: `${width ? (alertW / width) * 100 : 0}%`,
+                      background: `repeating-linear-gradient(115deg, ${AMBER}55 0 5px, transparent 5px 10px)`,
+                      borderLeft: `1px solid ${AMBER}88`,
+                    }} />
+                  )}
+                </span>
+
+                {/* label rides just past the bar, or inside when it would overflow */}
+                <span style={{
+                  position: "absolute", top: 4,
+                  left: left + width > 72 ? undefined : `calc(${left + width}% + 9px)`,
+                  right: left + width > 72 ? `calc(${100 - left}% + 9px)` : undefined,
+                  fontSize: 11.5, whiteSpace: "nowrap", opacity: drawn ? 1 : 0,
+                  transition: `opacity .4s ease ${i * 45 + 220}ms`,
+                  color: hot ? AMBER : expired ? "#FCA5A5" : "rgba(255,255,255,.88)",
+                  fontWeight: hot || expired ? 700 : 600,
+                }}>
+                  {r.workspace?.name}
+                  <span style={{ color: "rgba(255,255,255,.42)", fontWeight: 500, marginLeft: 7,
+                    fontVariantNumeric: "tabular-nums" }}>
+                    {money(r.acv, r.currency)}
+                  </span>
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* legend */}
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, paddingTop: 10,
+        borderTop: "1px solid rgba(255,255,255,.10)", fontSize: 10,
+        color: "rgba(255,255,255,.5)", letterSpacing: ".04em" }}>
+        {[
+          { c: "rgba(27,108,168,.75)", t: cl("legendElapsed") },
+          { c: "rgba(255,255,255,.12)", t: cl("legendRemaining") },
+          { c: `${AMBER}66`, t: cl("legendAlert") },
+          { c: "rgba(220,38,38,.4)", t: cl("legendExpired") },
+        ].map(l => (
+          <span key={l.t} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 14, height: 8, borderRadius: 2, background: l.c }} />{l.t}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Action rail ──────────────────────────────────────────────────────────────
+function ActionRail({ s, onFilter }: { s: any; onFilter: (f: string) => void }) {
+  const cl = useTranslations("clm")
+
+  const items = [
+    { k: "overdue",  on: s.overdueCount > 0,          label: cl("actOverdue"),
+      value: money(s.overdueAmount), meta: String(s.overdueCount), color: RED },
+    { k: "expired",  on: s.expiredUnrenewed > 0,      label: cl("actExpired"),
+      value: String(s.expiredUnrenewed), meta: "", color: RED },
+    { k: "expiring", on: s.renewals30 > 0,            label: cl("actExpiring"),
+      value: String(s.renewals30), meta: "", color: AMBER },
+    { k: "unbilled", on: s.unbilledAmount > 0,        label: cl("actUnbilled"),
+      value: money(s.unbilledAmount), meta: cl("hoursValue", { n: s.unbilledHours }), color: AMBER },
+    { k: "readybill", on: s.onboardingReadyToBill > 0, label: cl("actReadyBill"),
+      value: money(s.onboardingReadyToBill), meta: "", color: AMBER },
+  ].filter(i => i.on)
+
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase",
+        color: "var(--text-3,#64748B)", marginBottom: 10 }}>
+        {cl("needsAction")}
+      </div>
+
+      {!items.length ? (
+        <div style={{ ...card, padding: "14px 14px", fontSize: 12.5, color: GREEN,
+          borderColor: "#BBF7D0", background: "#F0FDF4" }}>
+          {cl("nothingToDo")}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {items.map(i => (
+            <button key={i.k} onClick={() => onFilter(i.k)}
+              style={{
+                display: "flex", alignItems: "baseline", gap: 8, width: "100%", textAlign: "left",
+                padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "var(--font)",
+                background: "#fff", border: "1px solid var(--border,#E2E8F0)",
+                borderLeft: `3px solid ${i.color}`,
+              }}>
+              <span style={{ flex: 1, fontSize: 12, color: "var(--text-2,#334155)" }}>{i.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: i.color,
+                fontVariantNumeric: "tabular-nums" }}>{i.value}</span>
+              {i.meta && (
+                <span style={{ fontSize: 10.5, color: "var(--text-3,#64748B)",
+                  fontVariantNumeric: "tabular-nums" }}>{i.meta}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* quiet context — deliberately not competing with the action list */}
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase",
+        color: "var(--text-3,#64748B)", margin: "20px 0 10px" }}>
+        {cl("ctxHeading")}
+      </div>
+      <div style={{ ...card, padding: "12px 14px" }}>
+        <div style={{ fontSize: 26, fontWeight: 700, color: NAVY, lineHeight: 1.05,
+          fontVariantNumeric: "tabular-nums", letterSpacing: "-.02em" }}>
+          {money(s.arr)}
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text-3,#64748B)", marginTop: 3, marginBottom: 10 }}>
+          {cl("ctxArr")}
+        </div>
+        {[
+          [cl("ctxActive"), String(s.byStatus?.ACTIVE || 0)],
+          [cl("ctxTotal"), String(s.total)],
+          [cl("ctxHours"), cl("hoursValue", { n: s.unbilledHours })],
+        ].map(([k, v]) => (
+          <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10,
+            padding: "4px 0", fontSize: 12, borderTop: "1px solid #F1F5F9" }}>
+            <span style={{ color: "var(--text-3,#64748B)" }}>{k}</span>
+            <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{v}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -88,11 +352,11 @@ export function ContractsWorkspace({ onEdit, onNew, reloadKey }: {
   reloadKey?: number
 }) {
   const cl = useTranslations("clm")
-  const [data, setData]       = useState<any>(null)
-  const [error, setError]     = useState("")
-  const [openId, setOpenId]   = useState<string | null>(null)
-  const [search, setSearch]   = useState("")
-  const [statusF, setStatusF] = useState("")
+  const [data, setData]     = useState<any>(null)
+  const [error, setError]   = useState("")
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const [flag, setFlag]     = useState("")
 
   const load = useCallback(async () => {
     try {
@@ -111,168 +375,142 @@ export function ContractsWorkspace({ onEdit, onNew, reloadKey }: {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return contracts.filter(c => {
-      if (statusF && c.status !== statusF) return false
+      if (flag === "overdue"   && !(c.overdueCount > 0)) return false
+      if (flag === "expired"   && !(c.expired && c.status === "ACTIVE")) return false
+      if (flag === "expiring"  && !(!c.expired && c.daysToRenewal <= 30)) return false
+      if (flag === "unbilled"  && !(c.unbilledAmount > 0)) return false
+      if (flag === "readybill" && !(c.onboarding?.readyToBill > 0)) return false
       if (!q) return true
       return c.name.toLowerCase().includes(q) || (c.workspace?.name || "").toLowerCase().includes(q)
     })
-  }, [contracts, search, statusF])
+  }, [contracts, search, flag])
 
-  if (error) {
-    return <div style={{ ...card, color: RED, fontSize: 12.5 }}>{error}</div>
-  }
-  if (!data) {
-    return <div style={{ ...card, color: "var(--text-3,#64748B)", fontSize: 12.5 }}>{cl("Loading…")}</div>
-  }
+  const plotted = useMemo(
+    () => contracts.filter(c => c.status === "ACTIVE" || c.status === "RENEWED" || c.expired)
+      .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+      .slice(0, 14),
+    [contracts],
+  )
+
+  if (error)  return <div style={{ ...card, color: RED, fontSize: 12.5 }}>{error}</div>
+  if (!data)  return <div style={{ ...card, color: "var(--text-3,#64748B)", fontSize: 12.5 }}>{cl("Loading…")}</div>
 
   if (open) {
-    return (
-      <ContractRecord
-        contract={open}
-        onBack={() => setOpenId(null)}
-        onEdit={() => onEdit(open.id)}
-        onChanged={load}
-      />
-    )
+    return <ContractRecord contract={open} onBack={() => setOpenId(null)}
+      onEdit={() => onEdit(open.id)} onChanged={load} />
   }
 
   const s = data.summary
 
   return (
     <div>
-      {/* ── KPI strip ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
-        gap: 10, marginBottom: 14 }}>
-        <Kpi label={cl("kpi_arr")} value={money(s.arr)} sub={cl("kpi_arr_sub")} color={GREEN} />
-        <Kpi label={cl("kpi_contracts")} value={String(s.total)}
-          sub={cl("kpi_contracts_sub", { n: s.byStatus?.ACTIVE || 0 })} />
-        <Kpi label={cl("kpi_renewals")} value={String(s.renewals90)} sub={cl("kpi_renewals_sub")}
-          color={s.renewals30 > 0 ? AMBER : undefined} />
-        <Kpi label={cl("kpi_overdue")} value={money(s.overdueAmount)}
-          sub={cl("kpi_overdue_sub", { n: s.overdueCount })}
-          color={s.overdueCount > 0 ? RED : undefined} />
-        <Kpi label={cl("kpi_unbilled")} value={money(s.unbilledAmount)}
-          sub={cl("kpi_unbilled_sub", { h: s.unbilledHours })}
-          color={s.unbilledAmount > 0 ? AMBER : undefined} />
-        <Kpi label={cl("kpi_onboarding")} value={money(s.onboardingReadyToBill)}
-          sub={cl("kpi_onboarding_sub")} color={s.onboardingReadyToBill > 0 ? AMBER : undefined} />
-      </div>
-
-      {/* ── Renewal runway ── */}
-      <RenewalRunway contracts={contracts} onOpen={setOpenId} />
-
-      {/* ── Contract table ── */}
-      <div style={{ ...card, padding: 0, marginTop: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
-          padding: "12px 14px", borderBottom: "1px solid var(--border,#E2E8F0)" }}>
-          <strong style={{ fontSize: 13, color: NAVY }}>{cl("allContracts")}</strong>
-          <input style={{ ...inp, width: 200, marginLeft: "auto" }} placeholder={cl("search")}
-            value={search} onChange={e => setSearch(e.target.value)} />
-          <select style={{ ...inp, width: 150 }} value={statusF} onChange={e => setStatusF(e.target.value)}>
-            <option value="">{cl("filterAll")}</option>
-            {Object.keys(STATUS_COLOR).map(v => (
-              <option key={v} value={v}>{cl(("st_" + v) as any)}</option>
-            ))}
-          </select>
-          <button style={btn(true)} onClick={onNew}>{cl("+ New contract")}</button>
+      {/* ── Anchor: contract terms on a shared calendar axis ── */}
+      <div style={{
+        background: "linear-gradient(160deg,#0B1F33 0%,#122C46 100%)",
+        borderRadius: 12, padding: "18px 22px 16px", marginBottom: 16,
+        border: "1px solid rgba(255,255,255,.08)",
+      }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 18,
+          flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em",
+            textTransform: "uppercase", color: "rgba(255,255,255,.55)" }}>
+            {cl("termsHeading")}
+          </span>
+          <span style={{ marginLeft: "auto" }}>
+            <button style={{ ...btn(true), padding: "6px 13px" }} onClick={onNew}>
+              {cl("+ New contract")}
+            </button>
+          </span>
         </div>
-
-        {!filtered.length ? (
-          <div style={{ padding: 28, textAlign: "center", fontSize: 12.5, color: "var(--text-3,#64748B)" }}>
-            {contracts.length ? cl("noMatch") : cl("noContracts")}
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>
-                {["customer", "contract", "status", "value", "acv", "renewal", "health"].map(h =>
-                  <th key={h} style={th}>{cl(("col_" + h) as any)}</th>)}
-              </tr></thead>
-              <tbody>
-                {filtered.map(c => (
-                  <tr key={c.id} onClick={() => setOpenId(c.id)}
-                    style={{ cursor: "pointer" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <td style={{ ...td, fontWeight: 600, color: NAVY }}>{c.workspace?.name || "—"}</td>
-                    <td style={td}>{c.name}</td>
-                    <td style={td}>
-                      <Pill text={cl(("st_" + c.status) as any)} color={STATUS_COLOR[c.status] || "#64748B"} />
-                    </td>
-                    <td style={{ ...td, whiteSpace: "nowrap" }}>{money(c.amount, c.currency)}</td>
-                    <td style={{ ...td, whiteSpace: "nowrap", fontWeight: 600 }}>{money(c.acv, c.currency)}</td>
-                    <td style={{ ...td, whiteSpace: "nowrap" }}>
-                      {fmtD(c.renewalDate || c.endDate)}
-                      <div style={{ fontSize: 10.5, color: c.expired ? RED : c.inAlertWindow ? AMBER : "var(--text-3,#64748B)" }}>
-                        {c.expired
-                          ? cl("expired", { n: Math.abs(c.daysToRenewal) })
-                          : cl("daysLeft", { n: c.daysToRenewal })}
-                      </div>
-                    </td>
-                    <td style={td}>
-                      <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                        {c.expired && c.status === "ACTIVE" && <Pill text={cl("flagExpired")} color={RED} />}
-                        {!c.expired && c.inAlertWindow && <Pill text={cl("flagRenewal")} color={AMBER} />}
-                        {c.overdueCount > 0 && <Pill text={cl("flagOverdue")} color={RED} />}
-                        {c.unbilledAmount > 0 && <Pill text={cl("flagUnbilled")} color={AMBER} />}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <TermChart rows={plotted} onOpen={setOpenId} />
       </div>
-    </div>
-  )
-}
 
-// ── Renewal runway ───────────────────────────────────────────────────────────
-function RenewalRunway({ contracts, onOpen }: { contracts: any[]; onOpen: (id: string) => void }) {
-  const cl = useTranslations("clm")
-  const buckets = useMemo(() => {
-    const active = contracts.filter(c => c.status === "ACTIVE" && c.daysToRenewal >= 0)
-    return [
-      { key: "in30", color: RED,   items: active.filter(c => c.daysToRenewal <= 30) },
-      { key: "in60", color: AMBER, items: active.filter(c => c.daysToRenewal > 30 && c.daysToRenewal <= 60) },
-      { key: "in90", color: STEEL, items: active.filter(c => c.daysToRenewal > 60 && c.daysToRenewal <= 90) },
-    ]
-  }, [contracts])
+      {/* ── Action rail + reference table ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(240px,280px) 1fr",
+        gap: 16, alignItems: "start" }} className="clm-split">
+        <ActionRail s={s} onFilter={f => setFlag(flag === f ? "" : f)} />
 
-  const any = buckets.some(b => b.items.length)
+        <div style={{ ...card, padding: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+            padding: "11px 14px", borderBottom: "1px solid var(--border,#E2E8F0)" }}>
+            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".12em",
+              textTransform: "uppercase", color: "var(--text-3,#64748B)" }}>
+              {cl("contractsHeading")}
+            </span>
+            {flag && (
+              <button style={{ ...miniBtn, borderColor: AMBER, color: AMBER }}
+                onClick={() => setFlag("")}>
+                {cl(FLAG_LABEL[flag] as any)} ✕
+              </button>
+            )}
+            <input style={{ ...inp, width: 190, marginLeft: "auto" }} placeholder={cl("search")}
+              value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
 
-  return (
-    <div style={card}>
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: NAVY, marginBottom: 10 }}>
-        {cl("renewalRunway")}
-      </div>
-      {!any ? (
-        <div style={{ fontSize: 12, color: "var(--text-3,#64748B)" }}>{cl("noRenewals")}</div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
-          {buckets.map(b => (
-            <div key={b.key}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 4, background: b.color }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2,#334155)" }}>
-                  {cl(b.key as any)}
-                </span>
-                <span style={{ fontSize: 11, color: "var(--text-3,#64748B)" }}>({b.items.length})</span>
-              </div>
-              {b.items.map(c => (
-                <div key={c.id} onClick={() => onOpen(c.id)}
-                  style={{ padding: "6px 8px", borderRadius: 6, cursor: "pointer",
-                    borderLeft: `3px solid ${b.color}`, background: "#F8FAFC", marginBottom: 5 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: NAVY }}>{c.workspace?.name}</div>
-                  <div style={{ fontSize: 10.5, color: "var(--text-3,#64748B)" }}>
-                    {money(c.acv, c.currency)} · {fmtD(c.renewalDate || c.endDate)}
-                  </div>
-                </div>
-              ))}
+          {!filtered.length ? (
+            <div style={{ padding: 28, textAlign: "center", fontSize: 12.5,
+              color: "var(--text-3,#64748B)" }}>
+              {contracts.length ? cl("noMatch") : cl("noContracts")}
             </div>
-          ))}
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  {["customer", "status", "acv", "renewal", "health"].map(h =>
+                    <th key={h} style={th}>{cl(("col_" + h) as any)}</th>)}
+                </tr></thead>
+                <tbody>
+                  {filtered.map(c => {
+                    const urgent = (c.expired && c.status === "ACTIVE") || c.overdueCount > 0
+                    const warn = !urgent && (c.inAlertWindow || c.unbilledAmount > 0)
+                    return (
+                      <tr key={c.id} onClick={() => setOpenId(c.id)} style={{ cursor: "pointer" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "#F8FAFC")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                        <td style={{ ...td, borderLeft: `3px solid ${urgent ? RED : warn ? AMBER : "transparent"}`,
+                          paddingLeft: 11 }}>
+                          <div style={{ fontWeight: 600, color: NAVY }}>{c.workspace?.name || "—"}</div>
+                          <div style={{ fontSize: 11, color: "var(--text-3,#64748B)" }}>{c.name}</div>
+                        </td>
+                        <td style={td}>
+                          <Pill text={cl(("st_" + c.status) as any)} color={STATUS_COLOR[c.status] || "#64748B"} />
+                        </td>
+                        <td style={{ ...td, whiteSpace: "nowrap", fontWeight: 600,
+                          fontVariantNumeric: "tabular-nums" }}>{money(c.acv, c.currency)}</td>
+                        <td style={{ ...td, whiteSpace: "nowrap" }}>
+                          {fmtD(c.renewalDate || c.endDate)}
+                          <div style={{ fontSize: 10.5, fontVariantNumeric: "tabular-nums",
+                            color: c.expired ? RED : c.inAlertWindow ? AMBER : "var(--text-3,#64748B)" }}>
+                            {c.expired ? cl("expired", { n: Math.abs(c.daysToRenewal) })
+                                       : cl("daysLeft", { n: c.daysToRenewal })}
+                          </div>
+                        </td>
+                        <td style={td}>
+                          <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                            {c.expired && c.status === "ACTIVE" && <Pill text={cl("flagExpired")} color={RED} />}
+                            {!c.expired && c.inAlertWindow && <Pill text={cl("flagRenewal")} color={AMBER} />}
+                            {c.overdueCount > 0 && <Pill text={cl("flagOverdue")} color={RED} />}
+                            {c.unbilledAmount > 0 && <Pill text={cl("flagUnbilled")} color={AMBER} />}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .clm-split { grid-template-columns: 1fr !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .clm-split * { transition: none !important; }
+        }
+      `}</style>
     </div>
   )
 }
