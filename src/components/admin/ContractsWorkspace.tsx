@@ -1180,6 +1180,10 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                           color={INVOICE_STATUS_COLOR[iv.status] || "#64748B"} />
                       </td>
                       <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                        <button style={miniBtn}
+                          onClick={() => window.open(`/admin/contracts/${c.id}/invoices/${iv.id}/print`, "_blank")}>
+                          {cl("invoicePdf")}
+                        </button>
                         {iv.status === "DRAFT" && (
                           <button style={miniBtn} onClick={() => setStatus(iv.id, "SENT")}>
                             {cl("Mark sent")}
