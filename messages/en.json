@@ -2673,7 +2673,13 @@
     "vUnpaidPo": "{amount} delivered but unpaid — likely an outstanding balance",
     "view": "View →",
     "withinForecast": "✓ Within budget forecast",
-    "yourEtc": "Your estimate to complete"
+    "yourEtc": "Your estimate to complete",
+    "pVendorMatchHint": "Will be added to existing vendor:",
+    "pEditVendor": "Edit vendor details — applies to all their agreements",
+    "pEditVendorTitle": "Edit vendor",
+    "pEditVendorNote": "Changes apply to every agreement with this vendor.",
+    "pVendorSaveFailed": "Some agreements could not be updated — refresh and try again",
+    "pScanForVendor": "Scan a document — new items go to this vendor"
   },
   "webhooks": {
     "+ New webhook": "+ New webhook",

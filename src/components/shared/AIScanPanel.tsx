@@ -9,13 +9,16 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { DocScanPicker } from "@/components/shared/DocScanPicker"
 
-export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, renderCandidate, commit }: {
+export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, renderCandidate, commit, buttonLabel, buttonTitle, compact }: {
   projectId: string
   workspaceId: string
   domain: "issues" | "changes" | "decisions" | "requirements" | "lessons" | "benefits" | "procurement" | "quality" | "meetings"
   commitLabel: string                               // e.g. "to issue log"
   renderCandidate: (c: any) => React.ReactNode      // card body (checkbox handled here)
   commit: (chosen: any[]) => Promise<number>        // returns count of failures
+  buttonLabel?: string                              // override "🤖 Scan documents"
+  buttonTitle?: string                              // override tooltip
+  compact?: boolean                                 // small square trigger for index cards
 }) {
   const sh = useTranslations("shared")
   const router = useRouter()
@@ -71,11 +74,15 @@ export function AIScanPanel({ projectId, workspaceId, domain, commitLabel, rende
   return (
     <div style={{ position:"relative", display:"inline-block" }}>
       <button ref={btnRef} onClick={() => { setOpen(o => !o); setCandidates(null); setError("") }}
-        title={sh("scanTitle")}
-        style={{ padding:"7px 14px", background:"#fff", color:"var(--text-2)",
-          border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:12,
-          fontWeight:500, cursor:"pointer", fontFamily:"var(--font)", whiteSpace:"nowrap" }}>
-        {sh("🤖 Scan documents")}
+        title={buttonTitle || sh("scanTitle")}
+        style={compact
+          ? { width:22, height:22, borderRadius:6, border:"1px solid var(--border)",
+              background:"#fff", cursor:"pointer", fontSize:12, lineHeight:1,
+              fontFamily:"var(--font)", display:"grid", placeItems:"center", padding:0 }
+          : { padding:"7px 14px", background:"#fff", color:"var(--text-2)",
+              border:"1px solid var(--border)", borderRadius:"var(--radius)", fontSize:12,
+              fontWeight:500, cursor:"pointer", fontFamily:"var(--font)", whiteSpace:"nowrap" }}>
+        {buttonLabel || sh("🤖 Scan documents")}
       </button>
 
       {open && (

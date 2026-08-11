@@ -2673,7 +2673,13 @@
     "vUnpaidPo": "{amount} entregado sin pagar — probablemente un saldo pendiente",
     "view": "Ver →",
     "withinForecast": "✓ Pronóstico dentro del presupuesto",
-    "yourEtc": "Tu estimación para completar"
+    "yourEtc": "Tu estimación para completar",
+    "pVendorMatchHint": "Se agregará al proveedor existente:",
+    "pEditVendor": "Editar datos del proveedor — aplica a todos sus acuerdos",
+    "pEditVendorTitle": "Editar proveedor",
+    "pEditVendorNote": "Los cambios aplican a todos los acuerdos con este proveedor.",
+    "pVendorSaveFailed": "Algunos acuerdos no se pudieron actualizar — recarga e intenta de nuevo",
+    "pScanForVendor": "Escanear un documento — lo nuevo entra a este proveedor"
   },
   "webhooks": {
     "+ New webhook": "+ Nuevo webhook",

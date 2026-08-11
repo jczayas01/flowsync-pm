@@ -72,6 +72,11 @@ const toDateInput = (v: any): string => {
   return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10)
 }
 
+/** Vendors are grouped by the exact vendorName string — "123 BOTS LLC" and
+ *  "123BOTS LLC" render as two vendors. Compare names with spacing, case and
+ *  punctuation stripped so a scanned document lands on the existing vendor. */
+const normVendor = (s: any): string => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+
 export function ProjectProcurementTab({ projectId, items, members, workspaceId }: {
   projectId:string; items:any[]; members:any[]; workspaceId:string
 }) {
@@ -105,6 +110,104 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     })
   }
 
+  /** Resolve a typed or scanned name to the exact spelling already on the
+   *  project, so near-duplicates ("123 BOTS LLC" vs "123BOTS LLC") merge into
+   *  one vendor. excludeGroup lets an item edit rename its own vendor's
+   *  spelling without being snapped back to the old one. */
+  function canonicalVendor(name: string, excludeGroup?: string): string {
+    const n = normVendor(name)
+    if (!n) return name
+    const hit = items.find((i: any) =>
+      normVendor(i.vendorName) === n &&
+      (excludeGroup === undefined || (i.vendorName || "Unknown vendor") !== excludeGroup))
+    return hit ? hit.vendorName : name
+  }
+
+  // ── Vendor-level edit: one form, PATCHes every agreement in the group ──
+  const [editVendor, setEditVendor]     = useState<string|null>(null)
+  const [vendorF, setVendorF]           = useState<any>({})
+  const [savingVendor, setSavingVendor] = useState(false)
+
+  function openEditVendor(v: any) {
+    setEditVendor(v.name)
+    setVendorF({ name: v.name || "", contact: v.contact || "", email: v.email || "",
+                 phone: v.phone || "", location: v.location || "" })
+  }
+
+  async function saveVendorEdit() {
+    if (!editVendor || !vendorF.name?.trim() || savingVendor) return
+    setSavingVendor(true); setError("")
+    try {
+      // Renaming onto another existing vendor's spelling merges the groups.
+      const newName = canonicalVendor(vendorF.name.trim(), editVendor)
+      const group = items.filter((i: any) => (i.vendorName || "Unknown vendor") === editVendor)
+      const rs = await Promise.all(group.map((i: any) =>
+        fetch(`/api/projects/${projectId}/procurement/${i.id}`, {
+          method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+          body: JSON.stringify({
+            vendorName:    newName,
+            vendorContact: vendorF.contact?.trim() || null,
+            vendorEmail:   vendorF.email?.trim()   || "",
+            vendorPhone:   vendorF.phone?.trim()   || null,
+            vendorLocation: vendorF.location?.trim() || null,
+          }),
+        })))
+      const failed = rs.filter(r => !r.ok).length
+      if (failed) { setError(tip("pVendorSaveFailed")) }
+      else {
+        if (selectedVendor === editVendor) setSelectedVendor(newName)
+        setEditVendor(null)
+      }
+      router.refresh()
+    } finally { setSavingVendor(false) }
+  }
+
+  /** Shared commit for scan candidates. forceVendor pins every chosen
+   *  candidate to an existing vendor (the per-card scan button); otherwise
+   *  each candidate's name is canonicalized — including against names already
+   *  used earlier in the same batch. */
+  async function commitCandidates(chosen: any[], forceVendor?: any) {
+    const TYPES = ["CONTRACT","PURCHASE_ORDER","SOW","MSA","NDA","OTHER"]
+    const iso = (v: any) => /^\d{4}-\d{2}-\d{2}$/.test(String(v||"")) ? String(v) : null
+    const seen = new Map<string, string>()
+    for (const i of items) {
+      const n = normVendor(i.vendorName)
+      if (n && !seen.has(n)) seen.set(n, i.vendorName)
+    }
+    const resolve = (raw: any): string => {
+      const name = String(raw || "Unknown vendor").slice(0, 200)
+      const n = normVendor(name)
+      if (!n) return name
+      if (!seen.has(n)) seen.set(n, name)
+      return seen.get(n)!
+    }
+    const bodies = chosen.map(c => ({
+      title: String(c.title||"").slice(0,300),
+      vendorName: forceVendor ? String(forceVendor.name).slice(0,200) : resolve(c.vendorName),
+      vendorContact: forceVendor?.contact ? String(forceVendor.contact).slice(0,200)
+                   : c.vendorContact ? String(c.vendorContact).slice(0,200) : null,
+      vendorPhone: forceVendor?.phone ? String(forceVendor.phone).slice(0,50)
+                 : c.vendorPhone ? String(c.vendorPhone).slice(0,50) : null,
+      vendorLocation: forceVendor?.location ? String(forceVendor.location).slice(0,300)
+                    : c.vendorLocation ? String(c.vendorLocation).slice(0,300) : null,
+      type: TYPES.includes(c.type) ? c.type : "OTHER",
+      poNumber: c.poNumber ? String(c.poNumber).slice(0,100) : null,
+      contractRef: c.contractRef ? String(c.contractRef).slice(0,100) : null,
+      value: Number(c.value) > 0 ? Number(c.value) : null,
+      currency: c.currency && String(c.currency).length === 3 ? String(c.currency).toUpperCase() : "USD",
+      startDate: iso(c.startDate),
+      endDate: iso(c.endDate),
+      status: "DRAFT",
+      deliverables: c.deliverables ? String(c.deliverables).slice(0,3000) : null,
+      notes: c.evidence ? `Source: ${c.sourceDoc} — "${String(c.evidence).slice(0,200)}"` : null,
+    }))
+    const rs = await Promise.all(bodies.map(b => fetch(`/api/projects/${projectId}/procurement`, {
+      method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
+      body: JSON.stringify(b),
+    })))
+    return rs.filter(r => !r.ok).length
+  }
+
   async function patchItem(itemId: string, body: any) {
     const res = await fetch(`/api/projects/${projectId}/procurement/${itemId}`, {
       method:"PATCH", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
@@ -120,7 +223,10 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
     setSavingEdit(true)
     try {
       const okd = await patchItem(editItem.id, {
-        title: editF.title.trim(), vendorName: editF.vendorName.trim(),
+        title: editF.title.trim(),
+        // Snap a near-duplicate spelling onto the existing vendor it matches,
+        // but let a deliberate respelling of this item's own vendor through.
+        vendorName: canonicalVendor(editF.vendorName.trim(), editItem.vendorName || "Unknown vendor"),
         vendorContact: editF.vendorContact||null, vendorEmail: editF.vendorEmail||"",
         vendorPhone: editF.vendorPhone||null, vendorLocation: editF.vendorLocation||null,
         ownerId: editF.ownerId||null,
@@ -197,6 +303,7 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
         headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
         body: JSON.stringify({
           ...form,
+          vendorName: canonicalVendor(form.vendorName.trim()),
           value: form.value ? Number(form.value) : null,
           startDate: form.startDate || null,
           endDate:   form.endDate   || null,
@@ -298,33 +405,17 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                 <div style={{ fontSize:12, color:"var(--text-2)" }}>
                   {c.vendorName}{c.poNumber ? ` · ${c.poNumber}` : ""}{c.startDate ? ` · ${c.startDate}${c.endDate ? " → " + c.endDate : ""}` : ""}
                 </div>
+                {(() => {
+                  const cv = canonicalVendor(String(c.vendorName || ""))
+                  return cv && cv !== String(c.vendorName || "") ? (
+                    <div style={{ fontSize:11, color:"#059669", marginTop:2 }}>
+                      ↪ {tip("pVendorMatchHint")} <strong>{cv}</strong>
+                    </div>
+                  ) : null
+                })()}
               </div>
             )}
-            commit={async (chosen: any[]) => {
-              const TYPES = ["CONTRACT","PURCHASE_ORDER","SOW","MSA","NDA","OTHER"]
-              const iso = (v: any) => /^\d{4}-\d{2}-\d{2}$/.test(String(v||"")) ? String(v) : null
-              const rs = await Promise.all(chosen.map(c => fetch(`/api/projects/${projectId}/procurement`, {
-                method:"POST", headers:{"Content-Type":"application/json","x-workspace-id":workspaceId},
-                body: JSON.stringify({
-                  title: String(c.title||"").slice(0,300),
-                  vendorName: String(c.vendorName||"Unknown vendor").slice(0,200),
-                  vendorContact: c.vendorContact ? String(c.vendorContact).slice(0,200) : null,
-                  vendorPhone: c.vendorPhone ? String(c.vendorPhone).slice(0,50) : null,
-                  vendorLocation: c.vendorLocation ? String(c.vendorLocation).slice(0,300) : null,
-                  type: TYPES.includes(c.type) ? c.type : "OTHER",
-                  poNumber: c.poNumber ? String(c.poNumber).slice(0,100) : null,
-                  contractRef: c.contractRef ? String(c.contractRef).slice(0,100) : null,
-                  value: Number(c.value) > 0 ? Number(c.value) : null,
-                  currency: c.currency && String(c.currency).length === 3 ? String(c.currency).toUpperCase() : "USD",
-                  startDate: iso(c.startDate),
-                  endDate: iso(c.endDate),
-                  status: "DRAFT",
-                  deliverables: c.deliverables ? String(c.deliverables).slice(0,3000) : null,
-                  notes: c.evidence ? `Source: ${c.sourceDoc} — "${String(c.evidence).slice(0,200)}"` : null,
-                }),
-              })))
-              return rs.filter(r => !r.ok).length
-            }} />
+            commit={(chosen: any[]) => commitCandidates(chosen)} />
         </div>
       </div>
 
@@ -626,19 +717,88 @@ export function ProjectProcurementTab({ projectId, items, members, workspaceId }
                       <span style={{ fontSize:11, color:"var(--text-2)", fontWeight:600 }}>
                         {v.count} agreement{v.count!==1?"s":""}{v.total>0 ? ` · ${fmtCurrency(v.total)}` : ""}
                       </span>
-                      <button
-                        onClick={e => { e.stopPropagation(); newAgreementFor(v) }}
-                        title={`Add another agreement with ${v.name} — their details are filled in for you`}
-                        style={{ marginLeft:"auto", width:22, height:22, borderRadius:6,
-                          border:"1px solid var(--border)", background:"#fff", cursor:"pointer",
-                          color:"var(--steel)", fontSize:14, fontWeight:700, lineHeight:1,
-                          fontFamily:"var(--font)", display:"grid", placeItems:"center" }}>
-                        +
-                      </button>
+                      <span style={{ marginLeft:"auto", display:"flex", gap:4 }}
+                        onClick={e => e.stopPropagation()}>
+                        {can("projects:edit") && (
+                          <button
+                            onClick={() => openEditVendor(v)}
+                            title={tip("pEditVendor")}
+                            style={{ width:22, height:22, borderRadius:6,
+                              border:"1px solid var(--border)", background:"#fff", cursor:"pointer",
+                              color:"var(--text-2)", fontSize:11, lineHeight:1,
+                              fontFamily:"var(--font)", display:"grid", placeItems:"center" }}>
+                            ✎
+                          </button>
+                        )}
+                        {can("projects:edit") && (
+                          <AIScanPanel projectId={projectId} workspaceId={workspaceId}
+                            domain={"procurement" as any} commitLabel="to procurement"
+                            compact buttonLabel="🤖" buttonTitle={tip("pScanForVendor")}
+                            renderCandidate={(c: any) => (
+                              <div>
+                                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{c.title}</div>
+                                <div style={{ fontSize:12, color:"var(--text-2)" }}>
+                                  {c.poNumber ? `${c.poNumber} · ` : ""}
+                                  <span style={{ color:"#059669" }}>→ {v.name}</span>
+                                </div>
+                              </div>
+                            )}
+                            commit={(chosen: any[]) => commitCandidates(chosen, v)} />
+                        )}
+                        <button
+                          onClick={() => newAgreementFor(v)}
+                          title={`Add another agreement with ${v.name} — their details are filled in for you`}
+                          style={{ width:22, height:22, borderRadius:6,
+                            border:"1px solid var(--border)", background:"#fff", cursor:"pointer",
+                            color:"var(--steel)", fontSize:14, fontWeight:700, lineHeight:1,
+                            fontFamily:"var(--font)", display:"grid", placeItems:"center" }}>
+                          +
+                        </button>
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* Vendor edit — one form, applied to every agreement in the group */}
+              {editVendor && (
+                <div style={{ marginTop:10, background:"#fff", border:"1px solid var(--border)",
+                  borderLeft:"3px solid var(--steel)", borderRadius:"var(--radius)", padding:"12px 14px" }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:"var(--text)", marginBottom:2 }}>
+                    {tip("pEditVendorTitle")} — {editVendor}
+                  </div>
+                  <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:10 }}>
+                    {tip("pEditVendorNote")}
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:8 }}>
+                    <input style={inp} placeholder={tip("pVendorReq")} value={vendorF.name || ""}
+                      onChange={e=>setVendorF((f:any)=>({...f, name:e.target.value}))} />
+                    <input style={inp} placeholder={tip("pContactPerson")} value={vendorF.contact || ""}
+                      onChange={e=>setVendorF((f:any)=>({...f, contact:e.target.value}))} />
+                    <input style={inp} placeholder={tip("pEmail")} value={vendorF.email || ""}
+                      onChange={e=>setVendorF((f:any)=>({...f, email:e.target.value}))} />
+                    <input style={inp} placeholder={tip("pPhone")} value={vendorF.phone || ""}
+                      onChange={e=>setVendorF((f:any)=>({...f, phone:e.target.value}))} />
+                    <input style={inp} placeholder={tip("pLocation")} value={vendorF.location || ""}
+                      onChange={e=>setVendorF((f:any)=>({...f, location:e.target.value}))} />
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginTop:10 }}>
+                    <button onClick={saveVendorEdit} disabled={savingVendor || !vendorF.name?.trim()}
+                      style={{ padding:"6px 14px", background:"var(--steel)", color:"#fff", border:"none",
+                        borderRadius:"var(--radius)", fontSize:12, fontWeight:500, fontFamily:"var(--font)",
+                        cursor: savingVendor || !vendorF.name?.trim() ? "not-allowed" : "pointer",
+                        opacity: savingVendor || !vendorF.name?.trim() ? 0.6 : 1 }}>
+                      {savingVendor ? "…" : tip("save")}
+                    </button>
+                    <button onClick={()=>setEditVendor(null)}
+                      style={{ padding:"6px 12px", background:"#fff", border:"1px solid var(--border)",
+                        borderRadius:"var(--radius)", fontSize:12, cursor:"pointer",
+                        fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                      {tip("cancel")}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })()}
