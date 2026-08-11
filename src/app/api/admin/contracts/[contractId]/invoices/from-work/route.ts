@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest, { params }: { params: { contractId:
   const session = await requirePlatformAdmin()
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-  const [entries, milestones, contract] = await Promise.all([
+  const [entries, milestones, contract, invoicedAgg] = await Promise.all([
     db.contractServiceEntry.findMany({
       where:   { contractId: params.contractId, billable: true, status: { in: ["DRAFT", "APPROVED"] } },
       orderBy: { entryDate: "asc" },
@@ -49,8 +49,13 @@ export async function GET(_req: NextRequest, { params }: { params: { contractId:
     db.customerContract.findUnique({
       where: { id: params.contractId },
       select: { currency: true, serviceHourlyRate: true,
-                serviceBundleHours: true, serviceBundlePrice: true } as any,
+                serviceBundleHours: true, serviceBundlePrice: true,
+                serviceDiscountPct: true, bundleInOnboarding: true } as any,
     }) as any,
+    db.contractServiceEntry.aggregate({
+      where: { contractId: params.contractId, status: "INVOICED", billable: true },
+      _sum: { hours: true },
+    }),
   ])
 
   return NextResponse.json({
@@ -59,6 +64,9 @@ export async function GET(_req: NextRequest, { params }: { params: { contractId:
       serviceHourlyRate:  contract?.serviceHourlyRate  == null ? null : n(contract.serviceHourlyRate),
       serviceBundleHours: contract?.serviceBundleHours == null ? null : n(contract.serviceBundleHours),
       serviceBundlePrice: contract?.serviceBundlePrice == null ? null : n(contract.serviceBundlePrice),
+      serviceDiscountPct: contract?.serviceDiscountPct == null ? null : n(contract.serviceDiscountPct),
+      bundleInOnboarding: !!contract?.bundleInOnboarding,
+      hoursAlreadyInvoiced: n(invoicedAgg?._sum?.hours),
       entries: entries.map(e => ({
         id: e.id, entryDate: e.entryDate, category: e.category, description: e.description,
         hours: n(e.hours), rate: n(e.rate), amount: n(e.amount), status: e.status,
@@ -90,7 +98,8 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
   const contract = await db.customerContract.findUnique({
     where: { id: params.contractId },
     select: { id: true, currency: true, serviceBundleHours: true,
-              serviceBundlePrice: true } as any,
+              serviceBundlePrice: true, serviceDiscountPct: true,
+              bundleInOnboarding: true } as any,
   }) as any
   if (!contract) return NextResponse.json({ error: "Contract not found" }, { status: 404 })
 
@@ -123,32 +132,54 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
         (entries.reduce((s: number, e: any) => s + n(e.amount), 0)
        + milestones.reduce((s: number, m: any) => s + n(m.amount), 0)) * 100) / 100
 
-      // Bundle discount: for each whole bundle of selected service hours, the
-      // customer pays the bundle price instead of hours × rate. Per-bundle
-      // saving = (bundleHours × avg rate of those hours) − bundlePrice, never
-      // negative — a "discount" that raises the bill is a pricing mistake.
-      let discount = 0
-      let bundleCount = 0
+      const r2 = (x: number) => Math.round(x * 100) / 100
+      const svcHours  = entries.reduce((s: number, e: any) => s + n(e.hours), 0)
+      const svcAmount = entries.reduce((s: number, e: any) => s + n(e.amount), 0)
+      const avgRate   = svcHours > 0 ? svcAmount / svcHours : 0
       const bH = n(contract.serviceBundleHours)
       const bP = contract.serviceBundlePrice == null ? null : n(contract.serviceBundlePrice)
-      if (d.applyBundle && bH > 0 && bP != null && entries.length) {
-        const svcHours  = entries.reduce((s: number, e: any) => s + n(e.hours), 0)
-        const svcAmount = entries.reduce((s: number, e: any) => s + n(e.amount), 0)
-        bundleCount = Math.floor(svcHours / bH)
-        if (bundleCount > 0 && svcHours > 0) {
-          const avgRate = svcAmount / svcHours
-          discount = Math.max(0,
-            Math.round(bundleCount * (bH * avgRate - bP) * 100) / 100)
+
+      // (1) Onboarding includes the first bH service hours free — a one-time
+      // allowance measured against hours already INVOICED on this contract,
+      // re-read inside the transaction so two simultaneous invoices can't
+      // both claim it.
+      let freeHours = 0, freeDisc = 0
+      if (contract.bundleInOnboarding && bH > 0 && svcHours > 0) {
+        const used = await tx.contractServiceEntry.aggregate({
+          where: { contractId: params.contractId, status: "INVOICED", billable: true },
+          _sum: { hours: true },
+        })
+        freeHours = Math.min(svcHours, Math.max(0, bH - n(used?._sum?.hours)))
+        freeDisc  = r2(freeHours * avgRate)
+      }
+
+      // (2) Prepaid bundle on the hours that remain chargeable: pay the
+      // bundle price instead of hours × rate. Never negative.
+      let bundleDisc = 0, bundleCount = 0
+      const chargeableHours = svcHours - freeHours
+      if (d.applyBundle && bH > 0 && bP != null && chargeableHours > 0) {
+        bundleCount = Math.floor(chargeableHours / bH)
+        if (bundleCount > 0) {
+          bundleDisc = Math.max(0, r2(bundleCount * (bH * avgRate - bP)))
         }
       }
 
-      const amount = d.courtesy ? 0
-        : Math.max(0, Math.round((grossAmount - discount) * 100) / 100)
+      // (3) Negotiated service % on the service value still being charged.
+      const pct = contract.serviceDiscountPct == null ? 0 : n(contract.serviceDiscountPct)
+      const svcCharged = Math.max(0, svcAmount - freeDisc - bundleDisc)
+      const pctDisc = pct > 0 ? r2(svcCharged * pct / 100) : 0
+
+      const discount = r2(freeDisc + bundleDisc + pctDisc)
+      const amount = d.courtesy ? 0 : Math.max(0, r2(grossAmount - discount))
 
       const noteLines: string[] = []
       if (d.notes) noteLines.push(d.notes)
-      if (discount > 0) noteLines.push(
-        `Bundle: ${bundleCount} × ${bH} h @ ${bP} → −${discount.toFixed(2)}`)
+      if (freeDisc > 0) noteLines.push(
+        `Onboarding: ${freeHours} h incluidas / included → −${freeDisc.toFixed(2)}`)
+      if (bundleDisc > 0) noteLines.push(
+        `Bundle: ${bundleCount} × ${bH} h @ ${bP} → −${bundleDisc.toFixed(2)}`)
+      if (pctDisc > 0) noteLines.push(
+        `Descuento servicio / Service discount ${pct}% → −${pctDisc.toFixed(2)}`)
       if (d.courtesy) noteLines.push(`Cortesía / Courtesy — ${grossAmount.toFixed(2)} waived`)
 
       const invoice = await tx.contractInvoice.create({

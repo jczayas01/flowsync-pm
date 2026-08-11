@@ -1792,6 +1792,16 @@ model CustomerContract {
   // billing N bundle-fuls of hours applies the bundle price instead of rate.
   serviceBundleHours Int?
   serviceBundlePrice Decimal?    @db.Decimal(12, 2)
+  // Negotiated discounts, all percentages 0–100. Subscription applies to
+  // seats+bundles, onboarding to the fixed fee, service to the hourly rate at
+  // invoicing time (entry rates stay snapshotted; the discount is a visible
+  // invoice line, never a rewritten rate).
+  subscriptionDiscountPct Decimal? @db.Decimal(5, 2)
+  onboardingDiscountPct   Decimal? @db.Decimal(5, 2)
+  serviceDiscountPct      Decimal? @db.Decimal(5, 2)
+  // Onboarding includes the first serviceBundleHours of service at no charge —
+  // a one-time allowance consumed by the earliest invoiced hours.
+  bundleInOnboarding      Boolean  @default(false)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

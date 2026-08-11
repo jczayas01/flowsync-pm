@@ -1170,10 +1170,24 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
               const ent = (billable?.entries || []).filter((e: any) => selIds.has(e.id))
               const svcHours  = ent.reduce((s2: number, e: any) => s2 + (Number(e.hours) || 0), 0)
               const svcAmount = ent.reduce((s2: number, e: any) => s2 + (Number(e.amount) || 0), 0)
-              const bundles = bH > 0 ? Math.floor(svcHours / bH) : 0
-              const disc = (bundles > 0 && bP != null && svcHours > 0)
-                ? Math.max(0, Math.round(bundles * (bH * (svcAmount / svcHours) - Number(bP)) * 100) / 100)
+              const avgRate = svcHours > 0 ? svcAmount / svcHours : 0
+              // (1) free onboarding hours (one-time allowance)
+              const freeHours = (billable?.bundleInOnboarding && bH > 0)
+                ? Math.min(svcHours, Math.max(0, bH - (Number(billable?.hoursAlreadyInvoiced) || 0)))
                 : 0
+              const freeDisc = Math.round(freeHours * avgRate * 100) / 100
+              // (2) prepaid bundle on chargeable hours
+              const chHours = svcHours - freeHours
+              const bundles = bH > 0 ? Math.floor(chHours / bH) : 0
+              const bundleDisc = (form.applyBundle && bundles > 0 && bP != null && chHours > 0)
+                ? Math.max(0, Math.round(bundles * (bH * avgRate - Number(bP)) * 100) / 100)
+                : 0
+              // (3) negotiated service %
+              const pct = Number(billable?.serviceDiscountPct) || 0
+              const pctDisc = pct > 0
+                ? Math.round(Math.max(0, svcAmount - freeDisc - bundleDisc) * pct) / 100
+                : 0
+              const disc = Math.round((freeDisc + bundleDisc + pctDisc) * 100) / 100
               const canBundle = bH > 0 && bP != null
               return (
                 <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
@@ -1192,7 +1206,19 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                       onChange={e => setForm({ ...form, courtesy: e.target.checked })} />
                     {cl("courtesyToggle")}
                   </label>
-                  {(form.applyBundle && disc > 0 || form.courtesy) && (
+                  {freeDisc > 0 && (
+                    <span style={{ fontSize: 11.5, color: GREEN }}>
+                      {cl("onbFreeChip", { h: freeHours,
+                        d: money2(freeDisc, billable?.currency || c.currency) })}
+                    </span>
+                  )}
+                  {pctDisc > 0 && (
+                    <span style={{ fontSize: 11.5, color: GREEN }}>
+                      {cl("svcDiscChip", { pct,
+                        d: money2(pctDisc, billable?.currency || c.currency) })}
+                    </span>
+                  )}
+                  {(disc > 0 || form.courtesy) && (
                     <span style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, marginLeft: "auto",
                       fontVariantNumeric: "tabular-nums" }}>
                       {cl("billTotal", { amount: money2(

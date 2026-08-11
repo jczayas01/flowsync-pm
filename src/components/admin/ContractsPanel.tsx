@@ -54,6 +54,8 @@ const EMPTY_FORM = {
   supportTier: "", responseHours: "", uptimePct: "", slaNotes: "", notes: "",
   serviceHourlyRate: "", onboardingFee: "",
   serviceBundleHours: "", serviceBundlePrice: "",
+  subscriptionDiscountPct: "", onboardingDiscountPct: "", serviceDiscountPct: "",
+  bundleInOnboarding: false,
 }
 
 export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose, onSaved, hideList }: {
@@ -110,11 +112,15 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       uptimePct: c.uptimePct ?? "", slaNotes: c.slaNotes || "", notes: c.notes || "",
       serviceHourlyRate: c.serviceHourlyRate ?? "", onboardingFee: c.onboardingFee ?? "",
       serviceBundleHours: c.serviceBundleHours ?? "", serviceBundlePrice: c.serviceBundlePrice ?? "",
+      subscriptionDiscountPct: c.subscriptionDiscountPct ?? "",
+      onboardingDiscountPct: c.onboardingDiscountPct ?? "",
+      serviceDiscountPct: c.serviceDiscountPct ?? "",
+      bundleInOnboarding: !!c.bundleInOnboarding,
     })
     setEditing(c)
   }
 
-  async function save() {
+  async function save(withInvoice = false) {
     if (!form.workspaceId || !form.name.trim() || !form.startDate || !form.endDate) {
       setError(ct("errRequired")); return
     }
@@ -136,6 +142,10 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       onboardingFee:     form.onboardingFee === "" ? null : Number(form.onboardingFee),
       serviceBundleHours: form.serviceBundleHours === "" ? null : Number(form.serviceBundleHours),
       serviceBundlePrice: form.serviceBundlePrice === "" ? null : Number(form.serviceBundlePrice),
+      subscriptionDiscountPct: form.subscriptionDiscountPct === "" ? null : Number(form.subscriptionDiscountPct),
+      onboardingDiscountPct:   form.onboardingDiscountPct   === "" ? null : Number(form.onboardingDiscountPct),
+      serviceDiscountPct:      form.serviceDiscountPct      === "" ? null : Number(form.serviceDiscountPct),
+      bundleInOnboarding:      !!form.bundleInOnboarding,
     }
     const isNew = editing === "new"
     const res = await fetch(isNew ? "/api/admin/contracts" : `/api/admin/contracts/${editing.id}`, {
@@ -143,11 +153,55 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(isNew ? payload : (({ workspaceId, ...rest }) => rest)(payload)),
     }).catch(() => null)
-    setSaving(false)
     if (!res || !res.ok) {
+      setSaving(false)
       const d = await res?.json().catch(() => ({}))
       setError(d?.error || ct("Save failed")); return
     }
+
+    // First invoice: discounted subscription period + discounted onboarding.
+    // Same math as Calculate; the breakdown rides in the notes so the PDF
+    // shows the negotiation, not just a bare number.
+    if (withInvoice && isNew) {
+      try {
+        const created = await res.json().catch(() => ({}))
+        const contractId = created?.data?.id
+        if (contractId) {
+          const perMo = (Number(form.paidSeats) || 0) * 39
+                      + (Number(form.contributorBundles) || 0) * 20
+          const d1 = Math.min(100, Number(form.subscriptionDiscountPct) || 0)
+          const d2 = Math.min(100, Number(form.onboardingDiscountPct) || 0)
+          const cyc = form.billingCycle === "MONTHLY" ? 1 : 12
+          const sub = Math.round(perMo * cyc * (1 - d1 / 100) * 100) / 100
+          const onb = Math.round((Number(form.onboardingFee) || 0) * (1 - d2 / 100) * 100) / 100
+          // Contract amount wins when the admin typed their own negotiated
+          // figure; the formula is the fallback.
+          const amount = form.amount !== "" ? Number(form.amount) : Math.round((sub + onb) * 100) / 100
+          const now = new Date()
+          const number = `FSPM-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`
+          const noteLines = [
+            `Suscripción / Subscription ${form.billingCycle}: $${sub.toLocaleString("en-US")}${d1 > 0 ? ` (−${d1}%)` : ""}`,
+          ]
+          if (onb > 0) noteLines.push(
+            `Onboarding: $${onb.toLocaleString("en-US")}${d2 > 0 ? ` (−${d2}%)` : ""}`)
+          const ri = await fetch(`/api/admin/contracts/${contractId}/invoices`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              number, amount,
+              issueDate: new Date().toISOString().slice(0, 10),
+              dueDate: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
+              status: "DRAFT",
+              notes: noteLines.join("\n"),
+            }),
+          }).catch(() => null)
+          const di = await ri?.json().catch(() => ({}))
+          const invoiceId = di?.data?.id
+          if (invoiceId) window.open(`/admin/contracts/${contractId}/invoices/${invoiceId}/print`, "_blank")
+        }
+      } catch { /* the contract itself saved — the invoice can be created from the record */ }
+    }
+
+    setSaving(false)
     setEditing(null); load(); onSaved?.(); onModalClose?.()
   }
 
@@ -400,6 +454,10 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
               <div><label style={lbl}>{ct("Contributor bundles (×10)")}</label>
                 <input style={inp} type="number" value={form.contributorBundles}
                   onChange={e => setForm((f: any) => ({ ...f, contributorBundles: e.target.value }))} /></div>
+              <div><label style={lbl}>{ct("subDiscLbl")}</label>
+                <input style={inp} type="number" min="0" max="100" step="1" value={form.subscriptionDiscountPct}
+                  placeholder="0"
+                  onChange={e => setForm((f: any) => ({ ...f, subscriptionDiscountPct: e.target.value }))} /></div>
               <div><label style={lbl}>{ct("OCR page cap /mo (Enterprise custom)")}</label>
                 <input style={inp} type="number" value={form.ocrPageCap} placeholder={ct("default")}
                   onChange={e => setForm((f: any) => ({ ...f, ocrPageCap: e.target.value }))} /></div>
@@ -420,7 +478,11 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                       // negotiates, so this fills the field — it doesn't lock it.
                       const perMo = (Number(f.paidSeats) || 0) * 39
                                   + (Number(f.contributorBundles) || 0) * 20
-                      const total = perMo * (f.billingCycle === "MONTHLY" ? 1 : 12)
+                      const d1 = Math.min(100, Number(f.subscriptionDiscountPct) || 0)
+                      const d2 = Math.min(100, Number(f.onboardingDiscountPct) || 0)
+                      const sub = perMo * (f.billingCycle === "MONTHLY" ? 1 : 12) * (1 - d1 / 100)
+                      const onb = (Number(f.onboardingFee) || 0) * (1 - d2 / 100)
+                      const total = Math.round((sub + onb) * 100) / 100
                       return { ...f, amount: total ? String(total) : f.amount }
                     })}
                     style={{ padding: "0 10px", fontSize: 11, fontWeight: 600, cursor: "pointer",
@@ -429,19 +491,30 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                     {ct("calcBtn")}
                   </button>
                 </div>
-                {(Number(form.paidSeats) > 0 || Number(form.contributorBundles) > 0) && (
-                  <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 3 }}>
-                    {ct("calcBreakdown", {
-                      seats: Number(form.paidSeats) || 0,
-                      bundles: Number(form.contributorBundles) || 0,
-                      perMo: ((Number(form.paidSeats) || 0) * 39
-                            + (Number(form.contributorBundles) || 0) * 20).toLocaleString("en-US"),
-                    })}
-                    {form.onboardingFee !== "" && Number(form.onboardingFee) > 0 &&
-                      " · " + ct("calcOnboarding", {
-                        fee: Number(form.onboardingFee).toLocaleString("en-US") })}
-                  </div>
-                )}</div>
+                {(Number(form.paidSeats) > 0 || Number(form.contributorBundles) > 0) && (() => {
+                  const perMo = (Number(form.paidSeats) || 0) * 39
+                              + (Number(form.contributorBundles) || 0) * 20
+                  const d1 = Math.min(100, Number(form.subscriptionDiscountPct) || 0)
+                  const d2 = Math.min(100, Number(form.onboardingDiscountPct) || 0)
+                  const cyc = form.billingCycle === "MONTHLY" ? 1 : 12
+                  const sub = Math.round(perMo * cyc * (1 - d1 / 100) * 100) / 100
+                  const onb = Math.round((Number(form.onboardingFee) || 0) * (1 - d2 / 100) * 100) / 100
+                  return (
+                    <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 3 }}>
+                      {ct("calcBreakdown", {
+                        seats: Number(form.paidSeats) || 0,
+                        bundles: Number(form.contributorBundles) || 0,
+                        perMo: perMo.toLocaleString("en-US"),
+                      })}
+                      {d1 > 0 && " − " + d1 + "%"}
+                      {" → $" + sub.toLocaleString("en-US")}
+                      {onb > 0 && " · " + ct("calcOnboarding", { fee: onb.toLocaleString("en-US") })
+                        + (d2 > 0 ? ` (−${d2}%)` : "")}
+                      {" · " + ct("calcTotal", {
+                        total: (sub + onb).toLocaleString("en-US") })}
+                    </div>
+                  )
+                })()}</div>
               <div><label style={lbl}>{ct("Currency")}</label>
                 <input style={inp} value={form.currency}
                   onChange={e => setForm((f: any) => ({ ...f, currency: e.target.value }))} /></div>
@@ -460,9 +533,17 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
               <div><label style={lbl}>{ct("Service hourly rate")}</label>
                 <input style={inp} type="number" min="0" step="0.01" value={form.serviceHourlyRate}
                   onChange={e => setForm({ ...form, serviceHourlyRate: e.target.value })} /></div>
+              <div><label style={lbl}>{ct("svcDiscLbl")}</label>
+                <input style={inp} type="number" min="0" max="100" step="1" value={form.serviceDiscountPct}
+                  placeholder="0"
+                  onChange={e => setForm({ ...form, serviceDiscountPct: e.target.value })} /></div>
               <div><label style={lbl}>{ct("Onboarding fee (fixed)")}</label>
                 <input style={inp} type="number" min="0" step="0.01" value={form.onboardingFee}
                   onChange={e => setForm({ ...form, onboardingFee: e.target.value })} /></div>
+              <div><label style={lbl}>{ct("onbDiscLbl")}</label>
+                <input style={inp} type="number" min="0" max="100" step="1" value={form.onboardingDiscountPct}
+                  placeholder="0"
+                  onChange={e => setForm({ ...form, onboardingDiscountPct: e.target.value })} /></div>
               <div><label style={lbl}>{ct("bundleHoursLbl")}</label>
                 <input style={inp} type="number" min="1" step="1" value={form.serviceBundleHours}
                   placeholder="10"
@@ -471,6 +552,14 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                 <input style={inp} type="number" min="0" step="0.01" value={form.serviceBundlePrice}
                   placeholder="125"
                   onChange={e => setForm({ ...form, serviceBundlePrice: e.target.value })} /></div>
+              <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 6 }}>
+                <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12,
+                  color: "var(--text-2)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={!!form.bundleInOnboarding}
+                    onChange={e => setForm({ ...form, bundleInOnboarding: e.target.checked })} />
+                  {ct("bundleInOnbLbl")}
+                </label>
+              </div>
               <div><label style={lbl}>{ct("SLA notes")}</label>
                 <input style={inp} value={form.slaNotes}
                   onChange={e => setForm((f: any) => ({ ...f, slaNotes: e.target.value }))} /></div>
@@ -482,7 +571,13 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
               <button style={btn()} disabled={saving} onClick={() => { setEditing(null); onModalClose?.() }}>{ct("Cancel")}</button>
-              <button style={btn(true)} disabled={saving} onClick={save}>
+              {editing === "new" && (
+                <button style={btn()} disabled={saving} onClick={() => save(true)}
+                  title={ct("createWithInvoiceTitle")}>
+                  {ct("createWithInvoice")}
+                </button>
+              )}
+              <button style={btn(true)} disabled={saving} onClick={() => save()}>
                 {saving ? ct("Saving…") : editing === "new" ? ct("Create contract") : ct("Save changes")}
               </button>
             </div>

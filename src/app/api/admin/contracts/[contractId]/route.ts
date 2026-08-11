@@ -29,6 +29,10 @@ const patchSchema = z.object({
   onboardingFee:     z.number().min(0).optional().nullable(),
   serviceBundleHours: z.number().int().min(1).optional().nullable(),
   serviceBundlePrice: z.number().min(0).optional().nullable(),
+  subscriptionDiscountPct: z.number().min(0).max(100).optional().nullable(),
+  onboardingDiscountPct:   z.number().min(0).max(100).optional().nullable(),
+  serviceDiscountPct:      z.number().min(0).max(100).optional().nullable(),
+  bundleInOnboarding:      z.boolean().optional(),
 })
 
 export async function PATCH(req: NextRequest, { params }: { params: { contractId: string } }) {

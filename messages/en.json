@@ -676,7 +676,9 @@
     "invEditTitle": "Edit invoice {number}",
     "voidConfirm": "Void this invoice? Linked service hours and milestones will be released and can be billed again.",
     "applyBundle": "{n, plural, =0 {Hour bundle (select at least one full bundle)} =1 {Apply 1 bundle of {h} h (−{d})} other {Apply # bundles of {h} h (−{d})}}",
-    "courtesyToggle": "Courtesy — invoice at $0"
+    "courtesyToggle": "Courtesy — invoice at $0",
+    "onbFreeChip": "{h} h free (onboarding): −{d}",
+    "svcDiscChip": "Service −{pct}%: −{d}"
   },
   "contracts": {
     "+ Invoice": "+ Invoice",
@@ -766,7 +768,14 @@
     "calcBtn": "Calculate",
     "calcTitle": "Fill with list price: seats × $39 + contributor bundles × $20, × 12 if annual",
     "calcBreakdown": "{seats} seats × $39 + {bundles} bundles × $20 = ${perMo}/mo (list price)",
-    "calcOnboarding": "onboarding (one-time): ${fee}"
+    "calcOnboarding": "onboarding (one-time): ${fee}",
+    "subDiscLbl": "Subscription discount %",
+    "onbDiscLbl": "Onboarding discount %",
+    "svcDiscLbl": "Service discount %",
+    "bundleInOnbLbl": "Bundle hours included in onboarding (free)",
+    "calcTotal": "total: ${total}",
+    "createWithInvoice": "Create + 1st invoice (PDF)",
+    "createWithInvoiceTitle": "Save the contract and generate its first invoice — subscription + onboarding with discounts — then open the PDF"
   },
   "customFields": {
     "Add": "Add",

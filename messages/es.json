@@ -676,7 +676,9 @@
     "invEditTitle": "Editar factura {number}",
     "voidConfirm": "¿Anular esta factura? Las horas de servicio e hitos enlazados se liberarán y podrán facturarse de nuevo.",
     "applyBundle": "{n, plural, =0 {Bundle de horas (selecciona al menos un bundle completo)} =1 {Aplicar 1 bundle de {h} h (−{d})} other {Aplicar # bundles de {h} h (−{d})}}",
-    "courtesyToggle": "Cortesía — factura en $0"
+    "courtesyToggle": "Cortesía — factura en $0",
+    "onbFreeChip": "{h} h gratis (onboarding): −{d}",
+    "svcDiscChip": "Servicio −{pct}%: −{d}"
   },
   "contracts": {
     "+ Invoice": "+ Factura",
@@ -766,7 +768,14 @@
     "calcBtn": "Calcular",
     "calcTitle": "Llenar con precio de lista: sillas × $39 + paquetes de colaboradores × $20, × 12 si es anual",
     "calcBreakdown": "{seats} sillas × $39 + {bundles} paquetes × $20 = ${perMo}/mes (precio de lista)",
-    "calcOnboarding": "onboarding (una vez): ${fee}"
+    "calcOnboarding": "onboarding (una vez): ${fee}",
+    "subDiscLbl": "Descuento suscripción %",
+    "onbDiscLbl": "Descuento onboarding %",
+    "svcDiscLbl": "Descuento servicio %",
+    "bundleInOnbLbl": "Horas del bundle incluidas en onboarding (gratis)",
+    "calcTotal": "total: ${total}",
+    "createWithInvoice": "Crear + 1.ª factura (PDF)",
+    "createWithInvoiceTitle": "Guarda el contrato y genera su primera factura — suscripción + onboarding con descuentos — y abre el PDF"
   },
   "customFields": {
     "Add": "Añadir",
