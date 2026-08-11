@@ -130,6 +130,7 @@ const updateSchema = z.object({
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   accentColor:  z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  aiEnabled:    z.boolean().optional(),
 }).strict()
 
 export async function PATCH(req: NextRequest) {
@@ -165,6 +166,7 @@ export async function PATCH(req: NextRequest) {
   if (parsed.data.primaryColor) updates.primaryColor     = parsed.data.primaryColor
   if (parsed.data.secondaryColor) updates.secondaryColor = parsed.data.secondaryColor
   if (parsed.data.accentColor)  updates.accentColor      = parsed.data.accentColor
+  if (parsed.data.aiEnabled !== undefined) updates.aiEnabled = parsed.data.aiEnabled
 
   const workspace = await db.workspace.update({
     where: { id: member.workspaceId },

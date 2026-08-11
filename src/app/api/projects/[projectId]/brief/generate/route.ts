@@ -14,6 +14,7 @@ import { verifyProjectAccess } from "@/lib/api"
 import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
 import { ocrScannedPdf, OCR_MONTHLY_PAGE_CAP } from "@/lib/ocr"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const PER_DOC_CHARS = 6000
 const TOTAL_CHARS   = 15000
@@ -34,6 +35,8 @@ export async function POST(
     new URL(req.url).searchParams.get("workspaceId") ||
     (session.user as any).activeWorkspaceId
   if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
+  if (!(await aiGuard(workspaceId, "brief", session.user.id, params.projectId)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })

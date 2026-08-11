@@ -1,6 +1,6 @@
 "use client"
 // src/components/settings/SecuritySettingsView.tsx
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Badge } from "@/components/ui"
 
@@ -8,7 +8,26 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
   userId:string; workspaceId:string; role:string; auditLogs:any[]
 }) {
   const ss = useTranslations("securitySettings")
-  const [tab, setTab] = useState<"2fa"|"sessions"|"audit">("2fa")
+  const [tab, setTab] = useState<"2fa"|"sessions"|"audit"|"ai">("2fa")
+  const [ai, setAi] = useState<{ aiEnabled: boolean; logs: any[] } | null>(null)
+  const [aiSaving, setAiSaving] = useState(false)
+  useEffect(() => {
+    if (tab !== "ai" || ai) return
+    fetch("/api/workspace/ai-audit").then(r => r.json())
+      .then(d => { if (d?.data) setAi(d.data) }).catch(() => {})
+  }, [tab, ai])
+
+  async function toggleAi(next: boolean) {
+    if (aiSaving) return
+    setAiSaving(true)
+    try {
+      const res = await fetch("/api/workspace", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aiEnabled: next }),
+      })
+      if (res.ok) setAi(a => a ? { ...a, aiEnabled: next } : a)
+    } finally { setAiSaving(false) }
+  }
   const [twoFAStatus, setTwoFAStatus] = useState<{enabled:boolean}|null>(null)
   const [loading2FA, setLoading2FA] = useState(false)
 
@@ -42,7 +61,7 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
 
       {/* Tabs */}
       <div style={{ display:"flex", gap:0, borderBottom:"1px solid var(--border)", marginBottom:20 }}>
-        {[["2fa","Two-factor auth"],["sessions","Active sessions"],["audit","Audit log"]].map(([id,label]) => (
+        {[["2fa","Two-factor auth"],["sessions","Active sessions"],["audit","Audit log"],["ai","AI governance"]].map(([id,label]) => (
           <button key={id} onClick={() => setTab(id as any)}
             style={{ padding:"9px 16px", border:"none", background:"none", cursor:"pointer",
               fontFamily:"var(--font)", fontSize:12, fontWeight:500,
@@ -113,6 +132,77 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
               {ss("sessionMgmtHint")}
             </div>
           </div>
+        </div>
+      )}
+
+      {tab === "ai" && (
+        <div style={{ background:"#fff", border:"1px solid var(--border)",
+          borderRadius:"var(--radius)", padding:24 }}>
+          <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:6 }}>
+            {ss("aiTitle")}
+          </div>
+          <p style={{ fontSize:13, color:"var(--text-3)", marginBottom:16, lineHeight:1.6 }}>
+            {ss("aiIntro")}
+          </p>
+          <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+            borderRadius:"var(--radius)", padding:"14px 16px", marginBottom:20,
+            display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:24 }}>{ai?.aiEnabled === false ? "⛔" : "🤖"}</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:500, color:"var(--text)", marginBottom:2 }}>
+                {ai == null ? "…" : ai.aiEnabled ? ss("aiOn") : ss("aiOff")}
+              </div>
+              <div style={{ fontSize:12, color:"var(--text-3)" }}>{ss("aiEnforced")}</div>
+            </div>
+            {ai != null && ["ADMIN","SYSTEM_ADMIN"].includes(role) && (
+              <button onClick={() => toggleAi(!ai.aiEnabled)} disabled={aiSaving}
+                style={{ padding:"7px 14px", borderRadius:"var(--radius)", fontSize:12,
+                  fontWeight:600, cursor:"pointer", fontFamily:"var(--font)",
+                  border: ai.aiEnabled ? "1px solid #DC2626" : "1px solid var(--border)",
+                  background: ai.aiEnabled ? "#fff" : "var(--steel)",
+                  color: ai.aiEnabled ? "#DC2626" : "#fff" }}>
+                {aiSaving ? "…" : ai.aiEnabled ? ss("aiDisableBtn") : ss("aiEnableBtn")}
+              </button>
+            )}
+          </div>
+          <div style={{ fontSize:12, fontWeight:700, color:"var(--text-2)", marginBottom:8 }}>
+            {ss("aiLogTitle")}
+          </div>
+          {!ai?.logs?.length ? (
+            <div style={{ fontSize:12.5, color:"var(--text-3)" }}>{ss("aiLogEmpty")}</div>
+          ) : (
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12.5 }}>
+              <thead><tr>
+                {[ss("aiColWhen"), ss("aiColFeature"), ss("aiColUser"), ss("aiColResult")].map(h => (
+                  <th key={h} style={{ textAlign:"left", padding:"6px 8px", fontSize:10.5,
+                    textTransform:"uppercase", letterSpacing:".05em", color:"var(--text-3)",
+                    borderBottom:"1px solid var(--border)" }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {ai.logs.map((l: any) => (
+                  <tr key={l.id}>
+                    <td style={{ padding:"6px 8px", borderBottom:"1px solid var(--border)",
+                      whiteSpace:"nowrap", color:"var(--text-3)" }}>
+                      {new Date(l.at).toLocaleString()}
+                    </td>
+                    <td style={{ padding:"6px 8px", borderBottom:"1px solid var(--border)" }}>
+                      {l.feature}
+                    </td>
+                    <td style={{ padding:"6px 8px", borderBottom:"1px solid var(--border)" }}>
+                      {l.by}
+                    </td>
+                    <td style={{ padding:"6px 8px", borderBottom:"1px solid var(--border)" }}>
+                      <span style={{ fontSize:11, fontWeight:700,
+                        color: l.action === "ai.blocked" ? "#DC2626" : "#059669" }}>
+                        {l.action === "ai.blocked" ? ss("aiBlocked") : ss("aiAllowed")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 

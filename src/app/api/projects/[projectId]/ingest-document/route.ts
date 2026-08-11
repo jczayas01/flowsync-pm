@@ -10,6 +10,7 @@ import { getAiStyleDirective } from "@/lib/ai-style"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { extractTextFromBuffer } from "@/lib/extract"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const TYPE_PROMPTS: Record<string, string> = {
   TEAM_CHARTER: `You are extracting structured data from a Team Charter document.
@@ -105,6 +106,12 @@ Return ONLY valid JSON:
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error:"Unauthorized" }, { status:401 })
+
+  const _gWs = req.headers.get("x-workspace-id") ||
+    new URL(req.url).searchParams.get("workspaceId") ||
+    (session.user as any).activeWorkspaceId
+  if (_gWs && !(await aiGuard(_gWs, "document-ingest", session.user.id, params.projectId)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
   const pid = params.projectId
 

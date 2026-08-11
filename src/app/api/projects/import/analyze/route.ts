@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { extractTextFromBuffer } from "@/lib/extract"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const MAX_FILE = 8 * 1024 * 1024 // 8 MB
 
@@ -65,6 +66,8 @@ export async function POST(req: NextRequest) {
 
   const workspaceId = req.headers.get("x-workspace-id") || (session.user as any).activeWorkspaceId
   if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
+  if (!(await aiGuard(workspaceId, "project-import", session.user.id, null)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
   const member = await db.workspaceMember.findFirst({ where: { workspaceId, userId: session.user.id }, select: { id: true } })
   if (!member) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 

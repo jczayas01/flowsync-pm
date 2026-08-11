@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth"
 import { verifyProjectAccess } from "@/lib/api"
 import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const PER_DOC = 6000
 const TOTAL   = 18000
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     new URL(req.url).searchParams.get("workspaceId") ||
     (session.user as any).activeWorkspaceId
   if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
+  if (!(await aiGuard(workspaceId, "budget-scan", session.user.id, params.projectId)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })

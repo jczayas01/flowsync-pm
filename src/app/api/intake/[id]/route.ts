@@ -9,6 +9,7 @@ import { withWorkspace, ok, err, notFound, ApiContext } from "@/lib/api"
 import { can, mapDbRoleToRbac } from "@/lib/rbac/roles"
 import { notify } from "@/lib/notify"
 import { signRef } from "@/lib/storage"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const patchSchema = z.object({
   action:     z.enum(["review","approve","reject","convert"]),
@@ -27,6 +28,9 @@ async function updateIntake(ctx: ApiContext, params?: Record<string,string>) {
   const role = mapDbRoleToRbac(ctx.userRole as any)
   const CAN_EVAL = ["EXECUTIVE","PMO_DIRECTOR","SUPER_ADMIN","OWNER","ADMIN"]
   if (!CAN_EVAL.includes(role)) return err("Only PMO and C-level can evaluate intake requests", 403)
+
+  if (!(await aiGuard(ctx.workspaceId, "intake-analysis", ctx.userId, null)))
+    return err(AI_DISABLED_ERROR, 403)
 
   const item = await db.projectIntake.findFirst({ where: { id, workspaceId: ctx.workspaceId } })
   if (!item) return notFound("Intake not found")

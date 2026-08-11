@@ -28,6 +28,7 @@ const schema = z.discriminatedUnion("action", [
 ])
 
 import { suggestionFingerprint } from "@/lib/ai/fingerprint"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 function buildAnalyzePrompt(content: string, contentType: string, project: any, phaseNames: string[] = []) {
   return `You are a PMO assistant for ${project.name} (${project.code}).${phaseNames.length ? `\nProject phases: ${phaseNames.join(" | ")}` : ""}
@@ -115,6 +116,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     (session.user as any).activeWorkspaceId
 
   if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
+  if (!(await aiGuard(workspaceId, "ai-analyze", session.user.id, params.projectId)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })

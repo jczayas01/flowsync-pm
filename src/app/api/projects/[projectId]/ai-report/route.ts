@@ -11,6 +11,7 @@ import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const schema = z.object({
   reportType: z.enum(["STATUS","EXECUTIVE","PHASE_GATE","EVM","RISK_SUMMARY","BRIEF","PLAN"]),
@@ -109,6 +110,12 @@ Rules: Return ONLY valid JSON. No markdown. No backticks. Use actual data from t
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error:"Unauthorized" }, { status:401 })
+
+  const _gWs = req.headers.get("x-workspace-id") ||
+    new URL(req.url).searchParams.get("workspaceId") ||
+    (session.user as any).activeWorkspaceId
+  if (_gWs && !(await aiGuard(_gWs, "weekly-report", session.user.id, params.projectId)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
   let body: any
   try { body = await req.json() } catch { return NextResponse.json({ error:"Invalid body" }, { status:400 }) }

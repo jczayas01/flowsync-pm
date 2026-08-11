@@ -12,6 +12,7 @@ import { withWorkspace, ok, err, notFound, verifyProjectAccess, audit, ApiContex
 import { requirePermission } from "@/lib/rbac/guards"
 import { uploadFile } from "@/lib/storage"
 import { monthlyOcrPagesUsed, resolveOcrCap, recordOcrPages, ocrAllowed } from "@/lib/ocr"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const IMG = new Set(["image/png", "image/jpeg", "image/webp"])
 // Invoices arrive as PDF far more often than as a phone photo. Claude reads
@@ -83,6 +84,9 @@ async function post(ctx: ApiContext, params?: Record<string, string>) {
   if (!projectId || !itemId) return err("IDs required")
   const access = await verifyProjectAccess(projectId, ctx.userId, ctx.workspaceId)
   if (!access.ok) return notFound("Project")
+
+  if (!(await aiGuard(ctx.workspaceId, "receipt-ocr", ctx.userId, projectId)))
+    return err(AI_DISABLED_ERROR, 403)
 
   const ws = await db.workspace.findUnique({
     where: { id: ctx.workspaceId }, select: { plan: true } })

@@ -1953,7 +1953,22 @@
     "Sign out all other sessions?": "¿Cerrar todas las demás sesiones?",
     "Sign out all others": "Cerrar todas las demás",
     "auditLogCount": "Registro de auditoría ({n} eventos recientes)",
-    "sessionMgmtHint": "La gestión de sesiones está disponible vía la API. La sesión actual está activa."
+    "sessionMgmtHint": "La gestión de sesiones está disponible vía la API. La sesión actual está activa.",
+    "aiTitle": "Gobernanza de IA",
+    "aiIntro": "Todas las funciones de IA corren del lado del servidor mediante la API de Anthropic (Claude). Los datos del cliente nunca se usan para entrenar modelos. Cada llamada de IA queda registrada abajo, y desactivar la IA aquí bloquea todos los endpoints de IA de este workspace — se aplica en el servidor, no solo se oculta en la interfaz.",
+    "aiOn": "Las funciones de IA están activadas en este workspace",
+    "aiOff": "Las funciones de IA están desactivadas en este workspace",
+    "aiEnforced": "La aplicación es del lado del servidor en todos los endpoints de IA (escaneo de documentos, reportes, OCR, briefs, análisis, asistente de ayuda)",
+    "aiDisableBtn": "Desactivar IA",
+    "aiEnableBtn": "Activar IA",
+    "aiLogTitle": "Registro de actividad de IA (últimas 200)",
+    "aiLogEmpty": "Aún no hay actividad de IA registrada",
+    "aiColWhen": "Cuándo",
+    "aiColFeature": "Función",
+    "aiColUser": "Usuario",
+    "aiColResult": "Resultado",
+    "aiAllowed": "Permitida",
+    "aiBlocked": "Bloqueada por política"
   },
   "shared": {
     "Adding…": "Agregando…",

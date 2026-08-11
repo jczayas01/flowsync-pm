@@ -174,6 +174,9 @@ model Workspace {
   name                 String
   slug                 String                @unique
   plan                 Plan                  @default(FREE)
+  // AI governance: workspace-level kill switch. Enforced server-side in every
+  // AI route via aiGuard(); calls and blocks land in AuditLog as "ai.*".
+  aiEnabled            Boolean               @default(true)
   logoUrl              String?
   primaryColor         String                @default("#1B6CA8")
   secondaryColor       String                @default("#F59E0B")

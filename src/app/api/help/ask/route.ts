@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
+import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
 const schema = z.object({
   question: z.string().min(3).max(500),
@@ -28,6 +29,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ask a question between 3 and 500 characters." }, { status: 400 })
   }
   const { question, context, locale = "en" } = parsed.data
+
+  const _gWs = (session.user as any).activeWorkspaceId
+  if (_gWs && !(await aiGuard(_gWs, "help-assistant", session.user.id, null)))
+    return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "AI help isn't configured on this server yet." }, { status: 503 })

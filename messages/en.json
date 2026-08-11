@@ -1953,7 +1953,22 @@
     "Sign out all other sessions?": "Sign out all other sessions?",
     "Sign out all others": "Sign out all others",
     "auditLogCount": "Audit log ({n} recent events)",
-    "sessionMgmtHint": "Session management is available via the API. Current session is active."
+    "sessionMgmtHint": "Session management is available via the API. Current session is active.",
+    "aiTitle": "AI governance",
+    "aiIntro": "All AI features run server-side through the Anthropic API (Claude). Customer data is never used to train models. Every AI call is logged below, and disabling AI here blocks every AI endpoint for this workspace — enforced on the server, not just hidden in the interface.",
+    "aiOn": "AI features are enabled for this workspace",
+    "aiOff": "AI features are disabled for this workspace",
+    "aiEnforced": "Enforcement is server-side across all AI endpoints (document scan, reports, OCR, briefs, analysis, help assistant)",
+    "aiDisableBtn": "Disable AI",
+    "aiEnableBtn": "Enable AI",
+    "aiLogTitle": "AI activity log (last 200)",
+    "aiLogEmpty": "No AI activity recorded yet",
+    "aiColWhen": "When",
+    "aiColFeature": "Feature",
+    "aiColUser": "User",
+    "aiColResult": "Result",
+    "aiAllowed": "Allowed",
+    "aiBlocked": "Blocked by policy"
   },
   "shared": {
     "Adding…": "Adding…",
