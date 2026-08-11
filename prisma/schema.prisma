@@ -1802,6 +1802,14 @@ model CustomerContract {
   // Onboarding includes the first serviceBundleHours of service at no charge —
   // a one-time allowance consumed by the earliest invoiced hours.
   bundleInOnboarding      Boolean  @default(false)
+  // Negotiated unit prices — null means list price ($39 seat, $20 contributor
+  // bundle, $10 OCR pack). Enterprise deals reprice these per contract.
+  seatUnitPrice           Decimal? @db.Decimal(12, 2)
+  contributorBundlePrice  Decimal? @db.Decimal(12, 2)
+  ocrPackPrice            Decimal? @db.Decimal(12, 2)
+  // Monthly service retainer: N packages of serviceBundleHours hours per month,
+  // priced at hours × rate × (1 − serviceDiscountPct), annualized on ANNUAL.
+  serviceRetainerPackages Int?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

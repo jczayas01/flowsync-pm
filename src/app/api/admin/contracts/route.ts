@@ -35,6 +35,10 @@ const createSchema = z.object({
   onboardingDiscountPct:   z.number().min(0).max(100).optional().nullable(),
   serviceDiscountPct:      z.number().min(0).max(100).optional().nullable(),
   bundleInOnboarding:      z.boolean().optional(),
+  seatUnitPrice:           z.number().min(0).optional().nullable(),
+  contributorBundlePrice:  z.number().min(0).optional().nullable(),
+  ocrPackPrice:            z.number().min(0).optional().nullable(),
+  serviceRetainerPackages: z.number().int().min(0).optional().nullable(),
 })
 
 export async function GET() {

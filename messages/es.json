@@ -775,7 +775,13 @@
     "bundleInOnbLbl": "Horas del bundle incluidas en onboarding (gratis)",
     "calcTotal": "total: ${total}",
     "createWithInvoice": "Crear + 1.ª factura (PDF)",
-    "createWithInvoiceTitle": "Guarda el contrato y genera su primera factura — suscripción + onboarding con descuentos — y abre el PDF"
+    "createWithInvoiceTitle": "Guarda el contrato y genera su primera factura — suscripción + onboarding con descuentos — y abre el PDF",
+    "seatPriceLbl": "Precio silla $/mes",
+    "bundlePriceUnitLbl": "Precio paquete $/mes",
+    "ocrPackPriceLbl": "Precio paquete OCR $/mes (+200 pág.)",
+    "retainerLbl": "Retainer de servicio (paquetes/mes)",
+    "retainerLine": "{n} × {h} h/mes @ ${price}",
+    "firstPkgFree": "1.er paquete incluido (−${d})"
   },
   "customFields": {
     "Add": "Añadir",

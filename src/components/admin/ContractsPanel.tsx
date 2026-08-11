@@ -47,6 +47,43 @@ const money = (n?: number | null, cur = "USD") =>
 const fmtD = (d?: string | null) => d ? new Date(d).toLocaleDateString(dateLocale(),
   { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—"
 
+/** One source of truth for contract pricing — Calculate, the breakdown line
+ *  and the first invoice all read this. Mirrors the negotiation sheet:
+ *  (seats + contributor bundles + extra OCR packs + service retainer) per
+ *  month × cycle, per-component discounts, first OCR pack always included,
+ *  onboarding one-time. */
+export function contractMath(f: any) {
+  const nn = (v: any, def = 0) => (v === "" || v == null ? def : Number(v) || 0)
+  const seatPrice   = nn(f.seatUnitPrice, 39)
+  const bundlePrice = nn(f.contributorBundlePrice, 20)
+  const ocrPrice    = nn(f.ocrPackPrice, 10)
+  const perMoSeats  = nn(f.paidSeats) * seatPrice
+  const perMoBund   = nn(f.contributorBundles) * bundlePrice
+  const subDisc     = Math.min(100, nn(f.subscriptionDiscountPct))
+  const onbDisc     = Math.min(100, nn(f.onboardingDiscountPct))
+  const svcDisc     = Math.min(100, nn(f.serviceDiscountPct))
+  // First 200-page pack is included in the plan; only extra packs bill.
+  const ocrPacks    = Math.max(0, Math.ceil(nn(f.ocrPageCap) / 200) - 1)
+  const perMoOcr    = ocrPacks * ocrPrice
+  const pkgHours    = nn(f.serviceBundleHours)
+  const pkgPrice    = Math.round(pkgHours * nn(f.serviceHourlyRate) * (1 - svcDisc / 100) * 100) / 100
+  const retainer    = nn(f.serviceRetainerPackages)
+  const perMoSvc    = retainer * pkgPrice
+  const cyc         = f.billingCycle === "MONTHLY" ? 1 : 12
+  const r2 = (x: number) => Math.round(x * 100) / 100
+  const subAnnual   = r2((perMoSeats + perMoBund) * (1 - subDisc / 100) * cyc)
+  const ocrAnnual   = r2(perMoOcr * cyc)
+  const svcAnnual   = r2(perMoSvc * cyc)
+  // Onboarding-included package: one package free, once, on the first bill.
+  const firstFree   = f.bundleInOnboarding && retainer > 0 ? pkgPrice : 0
+  const onboarding  = r2(nn(f.onboardingFee) * (1 - onbDisc / 100))
+  const total       = r2(subAnnual + ocrAnnual + svcAnnual - firstFree + onboarding)
+  return { seatPrice, bundlePrice, ocrPrice, perMoSeats, perMoBund, perMoOcr,
+           ocrPacks, pkgPrice, pkgHours, retainer, perMoSvc, cyc,
+           subDisc, onbDisc, svcDisc, subAnnual, ocrAnnual, svcAnnual,
+           firstFree, onboarding, total }
+}
+
 const EMPTY_FORM = {
   workspaceId: "", name: "", status: "DRAFT", startDate: "", endDate: "", renewalDate: "",
   autoRenew: false, alertDays: 60, paidSeats: 0, contributorBundles: 0, ocrPageCap: "",
@@ -56,6 +93,8 @@ const EMPTY_FORM = {
   serviceBundleHours: "", serviceBundlePrice: "",
   subscriptionDiscountPct: "", onboardingDiscountPct: "", serviceDiscountPct: "",
   bundleInOnboarding: false,
+  seatUnitPrice: "", contributorBundlePrice: "", ocrPackPrice: "",
+  serviceRetainerPackages: "",
 }
 
 export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose, onSaved, hideList }: {
@@ -116,6 +155,8 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       onboardingDiscountPct: c.onboardingDiscountPct ?? "",
       serviceDiscountPct: c.serviceDiscountPct ?? "",
       bundleInOnboarding: !!c.bundleInOnboarding,
+      seatUnitPrice: c.seatUnitPrice ?? "", contributorBundlePrice: c.contributorBundlePrice ?? "",
+      ocrPackPrice: c.ocrPackPrice ?? "", serviceRetainerPackages: c.serviceRetainerPackages ?? "",
     })
     setEditing(c)
   }
@@ -146,6 +187,10 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       onboardingDiscountPct:   form.onboardingDiscountPct   === "" ? null : Number(form.onboardingDiscountPct),
       serviceDiscountPct:      form.serviceDiscountPct      === "" ? null : Number(form.serviceDiscountPct),
       bundleInOnboarding:      !!form.bundleInOnboarding,
+      seatUnitPrice:          form.seatUnitPrice          === "" ? null : Number(form.seatUnitPrice),
+      contributorBundlePrice: form.contributorBundlePrice === "" ? null : Number(form.contributorBundlePrice),
+      ocrPackPrice:           form.ocrPackPrice           === "" ? null : Number(form.ocrPackPrice),
+      serviceRetainerPackages: form.serviceRetainerPackages === "" ? null : Number(form.serviceRetainerPackages),
     }
     const isNew = editing === "new"
     const res = await fetch(isNew ? "/api/admin/contracts" : `/api/admin/contracts/${editing.id}`, {
@@ -167,23 +212,27 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
         const created = await res.json().catch(() => ({}))
         const contractId = created?.data?.id
         if (contractId) {
-          const perMo = (Number(form.paidSeats) || 0) * 39
-                      + (Number(form.contributorBundles) || 0) * 20
-          const d1 = Math.min(100, Number(form.subscriptionDiscountPct) || 0)
-          const d2 = Math.min(100, Number(form.onboardingDiscountPct) || 0)
-          const cyc = form.billingCycle === "MONTHLY" ? 1 : 12
-          const sub = Math.round(perMo * cyc * (1 - d1 / 100) * 100) / 100
-          const onb = Math.round((Number(form.onboardingFee) || 0) * (1 - d2 / 100) * 100) / 100
+          const m = contractMath(form)
           // Contract amount wins when the admin typed their own negotiated
           // figure; the formula is the fallback.
-          const amount = form.amount !== "" ? Number(form.amount) : Math.round((sub + onb) * 100) / 100
+          const amount = form.amount !== "" ? Number(form.amount) : m.total
           const now = new Date()
           const number = `FSPM-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`
-          const noteLines = [
-            `Suscripción / Subscription ${form.billingCycle}: $${sub.toLocaleString("en-US")}${d1 > 0 ? ` (−${d1}%)` : ""}`,
-          ]
-          if (onb > 0) noteLines.push(
-            `Onboarding: $${onb.toLocaleString("en-US")}${d2 > 0 ? ` (−${d2}%)` : ""}`)
+          const fm = (x: number) => x.toLocaleString("en-US")
+          const noteLines: string[] = []
+          if (m.perMoSeats > 0) noteLines.push(
+            `Sillas / Seats: ${form.paidSeats} × $${fm(m.seatPrice)}/mo`)
+          if (m.perMoBund > 0) noteLines.push(
+            `Paquetes colaboradores / Contributor bundles: ${form.contributorBundles} × $${fm(m.bundlePrice)}/mo`)
+          if (m.subDisc > 0) noteLines.push(`Descuento suscripción / Subscription discount: −${m.subDisc}%`)
+          if (m.ocrPacks > 0) noteLines.push(
+            `OCR: +${m.ocrPacks} × $${fm(m.ocrPrice)}/mo (primeras 200 pág. incluidas / first 200 pages included)`)
+          if (m.retainer > 0) noteLines.push(
+            `Servicio / Service: ${m.retainer} × ${m.pkgHours} h/mo @ $${fm(m.pkgPrice)}${m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""}`)
+          if (m.firstFree > 0) noteLines.push(
+            `Primer paquete incluido en onboarding / First package included: −$${fm(m.firstFree)}`)
+          if (m.onboarding > 0) noteLines.push(
+            `Onboarding: $${fm(m.onboarding)}${m.onbDisc > 0 ? ` (−${m.onbDisc}%)` : ""}`)
           const ri = await fetch(`/api/admin/contracts/${contractId}/invoices`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -451,9 +500,17 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
               <div><label style={lbl}>{ct("Paid seats")}</label>
                 <input style={inp} type="number" value={form.paidSeats}
                   onChange={e => setForm((f: any) => ({ ...f, paidSeats: e.target.value }))} /></div>
+              <div><label style={lbl}>{ct("seatPriceLbl")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={form.seatUnitPrice}
+                  placeholder="39"
+                  onChange={e => setForm((f: any) => ({ ...f, seatUnitPrice: e.target.value }))} /></div>
               <div><label style={lbl}>{ct("Contributor bundles (×10)")}</label>
                 <input style={inp} type="number" value={form.contributorBundles}
                   onChange={e => setForm((f: any) => ({ ...f, contributorBundles: e.target.value }))} /></div>
+              <div><label style={lbl}>{ct("bundlePriceUnitLbl")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={form.contributorBundlePrice}
+                  placeholder="20"
+                  onChange={e => setForm((f: any) => ({ ...f, contributorBundlePrice: e.target.value }))} /></div>
               <div><label style={lbl}>{ct("subDiscLbl")}</label>
                 <input style={inp} type="number" min="0" max="100" step="1" value={form.subscriptionDiscountPct}
                   placeholder="0"
@@ -461,6 +518,10 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
               <div><label style={lbl}>{ct("OCR page cap /mo (Enterprise custom)")}</label>
                 <input style={inp} type="number" value={form.ocrPageCap} placeholder={ct("default")}
                   onChange={e => setForm((f: any) => ({ ...f, ocrPageCap: e.target.value }))} /></div>
+              <div><label style={lbl}>{ct("ocrPackPriceLbl")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={form.ocrPackPrice}
+                  placeholder="10"
+                  onChange={e => setForm((f: any) => ({ ...f, ocrPackPrice: e.target.value }))} /></div>
               <div><label style={lbl}>{ct("Billing")}</label>
                 <select style={{ ...inp, cursor: "pointer" }} value={form.billingCycle}
                   onChange={e => setForm((f: any) => ({ ...f, billingCycle: e.target.value }))}>
@@ -473,17 +534,8 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                     onChange={e => setForm((f: any) => ({ ...f, amount: e.target.value }))} />
                   <button type="button" title={ct("calcTitle")}
                     onClick={() => setForm((f: any) => {
-                      // List-price suggestion: Business $39/seat/mo + $20 per
-                      // contributor bundle/mo, × 12 on ANNUAL. Enterprise
-                      // negotiates, so this fills the field — it doesn't lock it.
-                      const perMo = (Number(f.paidSeats) || 0) * 39
-                                  + (Number(f.contributorBundles) || 0) * 20
-                      const d1 = Math.min(100, Number(f.subscriptionDiscountPct) || 0)
-                      const d2 = Math.min(100, Number(f.onboardingDiscountPct) || 0)
-                      const sub = perMo * (f.billingCycle === "MONTHLY" ? 1 : 12) * (1 - d1 / 100)
-                      const onb = (Number(f.onboardingFee) || 0) * (1 - d2 / 100)
-                      const total = Math.round((sub + onb) * 100) / 100
-                      return { ...f, amount: total ? String(total) : f.amount }
+                      const m = contractMath(f)
+                      return { ...f, amount: m.total ? String(m.total) : f.amount }
                     })}
                     style={{ padding: "0 10px", fontSize: 11, fontWeight: 600, cursor: "pointer",
                       border: "1px solid var(--border)", borderRadius: 6, background: "#fff",
@@ -491,27 +543,26 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                     {ct("calcBtn")}
                   </button>
                 </div>
-                {(Number(form.paidSeats) > 0 || Number(form.contributorBundles) > 0) && (() => {
-                  const perMo = (Number(form.paidSeats) || 0) * 39
-                              + (Number(form.contributorBundles) || 0) * 20
-                  const d1 = Math.min(100, Number(form.subscriptionDiscountPct) || 0)
-                  const d2 = Math.min(100, Number(form.onboardingDiscountPct) || 0)
-                  const cyc = form.billingCycle === "MONTHLY" ? 1 : 12
-                  const sub = Math.round(perMo * cyc * (1 - d1 / 100) * 100) / 100
-                  const onb = Math.round((Number(form.onboardingFee) || 0) * (1 - d2 / 100) * 100) / 100
+                {(() => {
+                  const m = contractMath(form)
+                  if (m.total <= 0) return null
+                  const fm = (x: number) => x.toLocaleString("en-US")
                   return (
-                    <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 3 }}>
-                      {ct("calcBreakdown", {
-                        seats: Number(form.paidSeats) || 0,
-                        bundles: Number(form.contributorBundles) || 0,
-                        perMo: perMo.toLocaleString("en-US"),
-                      })}
-                      {d1 > 0 && " − " + d1 + "%"}
-                      {" → $" + sub.toLocaleString("en-US")}
-                      {onb > 0 && " · " + ct("calcOnboarding", { fee: onb.toLocaleString("en-US") })
-                        + (d2 > 0 ? ` (−${d2}%)` : "")}
-                      {" · " + ct("calcTotal", {
-                        total: (sub + onb).toLocaleString("en-US") })}
+                    <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 3, lineHeight: 1.7 }}>
+                      {Number(form.paidSeats) > 0 &&
+                        `${form.paidSeats} × $${fm(m.seatPrice)} = $${fm(m.perMoSeats)}/mo`}
+                      {Number(form.contributorBundles) > 0 &&
+                        ` · ${form.contributorBundles} × $${fm(m.bundlePrice)} = $${fm(m.perMoBund)}/mo`}
+                      {m.subDisc > 0 && ` (−${m.subDisc}%)`}
+                      {m.ocrPacks > 0 &&
+                        ` · OCR +${m.ocrPacks} × $${fm(m.ocrPrice)} = $${fm(m.perMoOcr)}/mo`}
+                      {m.retainer > 0 &&
+                        ` · ${ct("retainerLine", { n: m.retainer, h: m.pkgHours,
+                            price: fm(m.pkgPrice) })}`}
+                      {m.firstFree > 0 && ` · ${ct("firstPkgFree", { d: fm(m.firstFree) })}`}
+                      {m.onboarding > 0 && ` · ${ct("calcOnboarding", { fee: fm(m.onboarding) })}`}
+                      {m.onbDisc > 0 && m.onboarding > 0 && ` (−${m.onbDisc}%)`}
+                      {` · ${ct("calcTotal", { total: fm(m.total) })}`}
                     </div>
                   )
                 })()}</div>
@@ -552,6 +603,10 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                 <input style={inp} type="number" min="0" step="0.01" value={form.serviceBundlePrice}
                   placeholder="125"
                   onChange={e => setForm({ ...form, serviceBundlePrice: e.target.value })} /></div>
+              <div><label style={lbl}>{ct("retainerLbl")}</label>
+                <input style={inp} type="number" min="0" step="1" value={form.serviceRetainerPackages}
+                  placeholder="0"
+                  onChange={e => setForm({ ...form, serviceRetainerPackages: e.target.value })} /></div>
               <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 6 }}>
                 <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12,
                   color: "var(--text-2)", cursor: "pointer" }}>

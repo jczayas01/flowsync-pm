@@ -775,7 +775,13 @@
     "bundleInOnbLbl": "Bundle hours included in onboarding (free)",
     "calcTotal": "total: ${total}",
     "createWithInvoice": "Create + 1st invoice (PDF)",
-    "createWithInvoiceTitle": "Save the contract and generate its first invoice — subscription + onboarding with discounts — then open the PDF"
+    "createWithInvoiceTitle": "Save the contract and generate its first invoice — subscription + onboarding with discounts — then open the PDF",
+    "seatPriceLbl": "Seat price $/mo",
+    "bundlePriceUnitLbl": "Bundle price $/mo",
+    "ocrPackPriceLbl": "OCR pack price $/mo (+200 pages)",
+    "retainerLbl": "Service retainer (packages/mo)",
+    "retainerLine": "{n} × {h} h/mo @ ${price}",
+    "firstPkgFree": "1st package included (−${d})"
   },
   "customFields": {
     "Add": "Add",
