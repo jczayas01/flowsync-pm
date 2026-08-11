@@ -678,7 +678,9 @@
     "applyBundle": "{n, plural, =0 {Hour bundle (select at least one full bundle)} =1 {Apply 1 bundle of {h} h (−{d})} other {Apply # bundles of {h} h (−{d})}}",
     "courtesyToggle": "Courtesy — invoice at $0",
     "onbFreeChip": "{h} h free (onboarding): −{d}",
-    "svcDiscChip": "Service −{pct}%: −{d}"
+    "svcDiscChip": "Service −{pct}%: −{d}",
+    "billSubscription": "+ Subscription invoice (PDF)",
+    "billSubscriptionTitle": "Generate a subscription invoice from the contract pricing — seats, bundles, OCR packs and service retainer, without onboarding. For renewals."
   },
   "contracts": {
     "+ Invoice": "+ Invoice",

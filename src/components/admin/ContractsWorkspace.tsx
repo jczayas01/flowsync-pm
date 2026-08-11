@@ -7,6 +7,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
+import { contractMath } from "@/components/admin/ContractsPanel"
 
 const NAVY = "#0F2942", STEEL = "#1B6CA8", GREEN = "#059669", AMBER = "#D97706", RED = "#DC2626"
 
@@ -1057,6 +1058,41 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
     } finally { setSavingInv(false) }
   }
 
+  // Subscription invoice for an existing contract — the renewal path. Same
+  // contractMath as the create flow, minus onboarding and the one-time free
+  // package: those belong to the first invoice only.
+  async function billSubscription() {
+    const m = contractMath(c)
+    const amount = Math.round((m.subAnnual + m.ocrAnnual + m.svcAnnual) * 100) / 100
+    if (amount <= 0 || savingInv) return
+    setSavingInv(true); setErr("")
+    try {
+      const fm = (x: number) => x.toLocaleString("en-US")
+      const noteLines: string[] = []
+      if (m.perMoSeats > 0) noteLines.push(`Sillas / Seats: ${c.paidSeats} × $${fm(m.seatPrice)}/mo`)
+      if (m.perMoBund > 0) noteLines.push(`Paquetes colaboradores / Contributor bundles: ${c.contributorBundles} × $${fm(m.bundlePrice)}/mo`)
+      if (m.subDisc > 0) noteLines.push(`Descuento suscripción / Subscription discount: −${m.subDisc}%`)
+      if (m.ocrPacks > 0) noteLines.push(`OCR: +${m.ocrPacks} × $${fm(m.ocrPrice)}/mo (primeras 200 pág. incluidas / first 200 pages included)`)
+      if (m.retainer > 0) noteLines.push(`Servicio / Service: ${m.retainer} × ${m.pkgHours} h/mo @ $${fm(m.pkgPrice)}${m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""}`)
+      const now = new Date()
+      const number = `FSPM-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`
+      const res = await fetch(`/api/admin/contracts/${c.id}/invoices`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          number, amount,
+          issueDate: new Date().toISOString().slice(0, 10),
+          dueDate: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
+          status: "DRAFT",
+          notes: noteLines.join("\n"),
+        }),
+      })
+      const di = await res.json().catch(() => ({}))
+      if (!res.ok) { setErr(di?.error || cl("errBill")); return }
+      if (di?.data?.id) window.open(`/admin/contracts/${c.id}/invoices/${di.data.id}/print`, "_blank")
+      await load(); onChanged()
+    } finally { setSavingInv(false) }
+  }
+
   async function voidInvoice(iv: any) {
     if (!confirm(cl("voidConfirm"))) return
     const res = await fetch(`/api/admin/contracts/${c.id}/invoices/${iv.id}`, {
@@ -1243,8 +1279,14 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
       <div style={{ ...card, padding: 0 }}>
         <div style={{ padding: "11px 14px", borderBottom: "1px solid var(--border,#E2E8F0)",
           fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase",
-          color: "var(--text-3,#64748B)" }}>
+          color: "var(--text-3,#64748B)", display: "flex", alignItems: "center" }}>
           {cl("invoicesCount", { n: invoices?.length || 0 })}
+          <button style={{ ...miniBtn, marginLeft: "auto", textTransform: "none",
+              letterSpacing: "normal", fontWeight: 600 }}
+            disabled={savingInv} onClick={billSubscription}
+            title={cl("billSubscriptionTitle")}>
+            {savingInv ? cl("Saving…") : cl("billSubscription")}
+          </button>
         </div>
         {!invoices ? (
           <div style={{ padding: 18, fontSize: 12.5, color: "var(--text-3,#64748B)" }}>{cl("Loading…")}</div>

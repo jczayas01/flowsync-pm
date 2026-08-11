@@ -678,7 +678,9 @@
     "applyBundle": "{n, plural, =0 {Bundle de horas (selecciona al menos un bundle completo)} =1 {Aplicar 1 bundle de {h} h (−{d})} other {Aplicar # bundles de {h} h (−{d})}}",
     "courtesyToggle": "Cortesía — factura en $0",
     "onbFreeChip": "{h} h gratis (onboarding): −{d}",
-    "svcDiscChip": "Servicio −{pct}%: −{d}"
+    "svcDiscChip": "Servicio −{pct}%: −{d}",
+    "billSubscription": "+ Factura de suscripción (PDF)",
+    "billSubscriptionTitle": "Genera una factura de suscripción con el precio del contrato — sillas, paquetes, OCR y retainer de servicio, sin onboarding. Para renovaciones."
   },
   "contracts": {
     "+ Invoice": "+ Factura",
