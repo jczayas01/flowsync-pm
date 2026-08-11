@@ -22,6 +22,12 @@ const bodySchema = z.object({
   issueDate:    z.string(),
   dueDate:      z.string(),
   notes:        z.string().max(2000).optional().nullable(),
+  // Prepaid hours bundle (e.g. 10 h at $125): each whole bundle of selected
+  // service hours is billed at the bundle price instead of hours × rate.
+  applyBundle:  z.boolean().default(false),
+  // Courtesy invoice — first-customer freebie: work is marked INVOICED and the
+  // paper trail exists, but the total is $0.
+  courtesy:     z.boolean().default(false),
 })
 
 const n = (v: any) => Number(v ?? 0)
@@ -41,13 +47,18 @@ export async function GET(_req: NextRequest, { params }: { params: { contractId:
       orderBy: [{ sortOrder: "asc" }],
     }),
     db.customerContract.findUnique({
-      where: { id: params.contractId }, select: { currency: true },
-    }),
+      where: { id: params.contractId },
+      select: { currency: true, serviceHourlyRate: true,
+                serviceBundleHours: true, serviceBundlePrice: true } as any,
+    }) as any,
   ])
 
   return NextResponse.json({
     data: {
       currency: contract?.currency || "USD",
+      serviceHourlyRate:  contract?.serviceHourlyRate  == null ? null : n(contract.serviceHourlyRate),
+      serviceBundleHours: contract?.serviceBundleHours == null ? null : n(contract.serviceBundleHours),
+      serviceBundlePrice: contract?.serviceBundlePrice == null ? null : n(contract.serviceBundlePrice),
       entries: entries.map(e => ({
         id: e.id, entryDate: e.entryDate, category: e.category, description: e.description,
         hours: n(e.hours), rate: n(e.rate), amount: n(e.amount), status: e.status,
@@ -77,8 +88,10 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
   }
 
   const contract = await db.customerContract.findUnique({
-    where: { id: params.contractId }, select: { id: true, currency: true },
-  })
+    where: { id: params.contractId },
+    select: { id: true, currency: true, serviceBundleHours: true,
+              serviceBundlePrice: true } as any,
+  }) as any
   if (!contract) return NextResponse.json({ error: "Contract not found" }, { status: 404 })
 
   try {
@@ -106,9 +119,37 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
       const badMs = milestones.find((m: any) => m.status !== "COMPLETED")
       if (badMs) throw new Error("MILESTONE_NOT_READY")
 
-      const amount = Math.round(
+      const grossAmount = Math.round(
         (entries.reduce((s: number, e: any) => s + n(e.amount), 0)
        + milestones.reduce((s: number, m: any) => s + n(m.amount), 0)) * 100) / 100
+
+      // Bundle discount: for each whole bundle of selected service hours, the
+      // customer pays the bundle price instead of hours × rate. Per-bundle
+      // saving = (bundleHours × avg rate of those hours) − bundlePrice, never
+      // negative — a "discount" that raises the bill is a pricing mistake.
+      let discount = 0
+      let bundleCount = 0
+      const bH = n(contract.serviceBundleHours)
+      const bP = contract.serviceBundlePrice == null ? null : n(contract.serviceBundlePrice)
+      if (d.applyBundle && bH > 0 && bP != null && entries.length) {
+        const svcHours  = entries.reduce((s: number, e: any) => s + n(e.hours), 0)
+        const svcAmount = entries.reduce((s: number, e: any) => s + n(e.amount), 0)
+        bundleCount = Math.floor(svcHours / bH)
+        if (bundleCount > 0 && svcHours > 0) {
+          const avgRate = svcAmount / svcHours
+          discount = Math.max(0,
+            Math.round(bundleCount * (bH * avgRate - bP) * 100) / 100)
+        }
+      }
+
+      const amount = d.courtesy ? 0
+        : Math.max(0, Math.round((grossAmount - discount) * 100) / 100)
+
+      const noteLines: string[] = []
+      if (d.notes) noteLines.push(d.notes)
+      if (discount > 0) noteLines.push(
+        `Bundle: ${bundleCount} × ${bH} h @ ${bP} → −${discount.toFixed(2)}`)
+      if (d.courtesy) noteLines.push(`Cortesía / Courtesy — ${grossAmount.toFixed(2)} waived`)
 
       const invoice = await tx.contractInvoice.create({
         data: {
@@ -119,7 +160,7 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
           issueDate:  new Date(d.issueDate),
           dueDate:    new Date(d.dueDate),
           status:     "DRAFT",
-          notes:      d.notes || null,
+          notes:      noteLines.length ? noteLines.join("\n") : null,
         },
       })
 

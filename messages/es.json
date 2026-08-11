@@ -670,7 +670,13 @@
     "ist_SENT": "Enviada",
     "ist_PAID": "Pagada",
     "ist_OVERDUE": "Vencida",
-    "ist_VOID": "Anulada"
+    "ist_VOID": "Anulada",
+    "invEdit": "Editar",
+    "invVoid": "Anular",
+    "invEditTitle": "Editar factura {number}",
+    "voidConfirm": "¿Anular esta factura? Las horas de servicio e hitos enlazados se liberarán y podrán facturarse de nuevo.",
+    "applyBundle": "{n, plural, =0 {Bundle de horas (selecciona al menos un bundle completo)} =1 {Aplicar 1 bundle de {h} h (−{d})} other {Aplicar # bundles de {h} h (−{d})}}",
+    "courtesyToggle": "Cortesía — factura en $0"
   },
   "contracts": {
     "+ Invoice": "+ Factura",
@@ -754,7 +760,13 @@
     "st_EXPIRED": "Vencido",
     "st_RENEWED": "Renovado",
     "st_TERMINATED": "Terminado",
-    "supportTierPlaceholder": "Prioritario"
+    "supportTierPlaceholder": "Prioritario",
+    "bundleHoursLbl": "Bundle de servicio — horas",
+    "bundlePriceLbl": "Bundle de servicio — precio",
+    "calcBtn": "Calcular",
+    "calcTitle": "Llenar con precio de lista: sillas × $39 + paquetes de colaboradores × $20, × 12 si es anual",
+    "calcBreakdown": "{seats} sillas × $39 + {bundles} paquetes × $20 = ${perMo}/mes (precio de lista)",
+    "calcOnboarding": "onboarding (una vez): ${fee}"
   },
   "customFields": {
     "Add": "Añadir",

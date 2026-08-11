@@ -29,6 +29,8 @@ const createSchema = z.object({
   notes:       z.string().max(5000).optional().nullable(),
   serviceHourlyRate: z.number().min(0).optional().nullable(),
   onboardingFee:     z.number().min(0).optional().nullable(),
+  serviceBundleHours: z.number().int().min(1).optional().nullable(),
+  serviceBundlePrice: z.number().min(0).optional().nullable(),
 })
 
 export async function GET() {

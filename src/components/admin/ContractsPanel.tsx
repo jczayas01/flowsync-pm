@@ -53,6 +53,7 @@ const EMPTY_FORM = {
   billingCycle: "ANNUAL", amount: "", currency: "USD",
   supportTier: "", responseHours: "", uptimePct: "", slaNotes: "", notes: "",
   serviceHourlyRate: "", onboardingFee: "",
+  serviceBundleHours: "", serviceBundlePrice: "",
 }
 
 export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose, onSaved, hideList }: {
@@ -108,6 +109,7 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       supportTier: c.supportTier || "", responseHours: c.responseHours ?? "",
       uptimePct: c.uptimePct ?? "", slaNotes: c.slaNotes || "", notes: c.notes || "",
       serviceHourlyRate: c.serviceHourlyRate ?? "", onboardingFee: c.onboardingFee ?? "",
+      serviceBundleHours: c.serviceBundleHours ?? "", serviceBundlePrice: c.serviceBundlePrice ?? "",
     })
     setEditing(c)
   }
@@ -132,6 +134,8 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
       notes: form.notes || null,
       serviceHourlyRate: form.serviceHourlyRate === "" ? null : Number(form.serviceHourlyRate),
       onboardingFee:     form.onboardingFee === "" ? null : Number(form.onboardingFee),
+      serviceBundleHours: form.serviceBundleHours === "" ? null : Number(form.serviceBundleHours),
+      serviceBundlePrice: form.serviceBundlePrice === "" ? null : Number(form.serviceBundlePrice),
     }
     const isNew = editing === "new"
     const res = await fetch(isNew ? "/api/admin/contracts" : `/api/admin/contracts/${editing.id}`, {
@@ -406,8 +410,38 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
                   <option value="MONTHLY">{enumLabel("MONTHLY", locale)}</option>
                 </select></div>
               <div><label style={lbl}>{ct("Amount")}</label>
-                <input style={inp} type="number" value={form.amount}
-                  onChange={e => setForm((f: any) => ({ ...f, amount: e.target.value }))} /></div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input style={{ ...inp, flex: 1 }} type="number" value={form.amount}
+                    onChange={e => setForm((f: any) => ({ ...f, amount: e.target.value }))} />
+                  <button type="button" title={ct("calcTitle")}
+                    onClick={() => setForm((f: any) => {
+                      // List-price suggestion: Business $39/seat/mo + $20 per
+                      // contributor bundle/mo, × 12 on ANNUAL. Enterprise
+                      // negotiates, so this fills the field — it doesn't lock it.
+                      const perMo = (Number(f.paidSeats) || 0) * 39
+                                  + (Number(f.contributorBundles) || 0) * 20
+                      const total = perMo * (f.billingCycle === "MONTHLY" ? 1 : 12)
+                      return { ...f, amount: total ? String(total) : f.amount }
+                    })}
+                    style={{ padding: "0 10px", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      border: "1px solid var(--border)", borderRadius: 6, background: "#fff",
+                      color: "var(--steel,#1B6CA8)", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                    {ct("calcBtn")}
+                  </button>
+                </div>
+                {(Number(form.paidSeats) > 0 || Number(form.contributorBundles) > 0) && (
+                  <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 3 }}>
+                    {ct("calcBreakdown", {
+                      seats: Number(form.paidSeats) || 0,
+                      bundles: Number(form.contributorBundles) || 0,
+                      perMo: ((Number(form.paidSeats) || 0) * 39
+                            + (Number(form.contributorBundles) || 0) * 20).toLocaleString("en-US"),
+                    })}
+                    {form.onboardingFee !== "" && Number(form.onboardingFee) > 0 &&
+                      " · " + ct("calcOnboarding", {
+                        fee: Number(form.onboardingFee).toLocaleString("en-US") })}
+                  </div>
+                )}</div>
               <div><label style={lbl}>{ct("Currency")}</label>
                 <input style={inp} value={form.currency}
                   onChange={e => setForm((f: any) => ({ ...f, currency: e.target.value }))} /></div>
@@ -429,6 +463,14 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
               <div><label style={lbl}>{ct("Onboarding fee (fixed)")}</label>
                 <input style={inp} type="number" min="0" step="0.01" value={form.onboardingFee}
                   onChange={e => setForm({ ...form, onboardingFee: e.target.value })} /></div>
+              <div><label style={lbl}>{ct("bundleHoursLbl")}</label>
+                <input style={inp} type="number" min="1" step="1" value={form.serviceBundleHours}
+                  placeholder="10"
+                  onChange={e => setForm({ ...form, serviceBundleHours: e.target.value })} /></div>
+              <div><label style={lbl}>{ct("bundlePriceLbl")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={form.serviceBundlePrice}
+                  placeholder="125"
+                  onChange={e => setForm({ ...form, serviceBundlePrice: e.target.value })} /></div>
               <div><label style={lbl}>{ct("SLA notes")}</label>
                 <input style={inp} value={form.slaNotes}
                   onChange={e => setForm((f: any) => ({ ...f, slaNotes: e.target.value }))} /></div>

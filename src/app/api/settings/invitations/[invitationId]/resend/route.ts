@@ -10,9 +10,11 @@ import { withWorkspace, ok, err, notFound, ApiContext } from "@/lib/api"
 import { SITE_URL } from "@/lib/site-url"
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 async function resendInvite(ctx: ApiContext, params?: Record<string, string>) {
+  // Instantiated per-request like every other Resend call site: at module
+  // scope the constructor throws during `next build` on any machine without
+  // RESEND_API_KEY in .env, killing the whole build at page-data collection.
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const me = await db.workspaceMember.findFirst({
     where: { workspaceId: ctx.workspaceId, userId: ctx.userId },
     select: { role: true },

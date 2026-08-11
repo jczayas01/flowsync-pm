@@ -27,6 +27,7 @@ const STRINGS = {
     number: "Núm. de factura", issued: "Fecha", terms: "Términos", due: "Vencimiento",
     description: "Descripción", qty: "Cant.", unit: "Precio unitario", amount: "Importe",
     service: "Servicio", onboarding: "Hito de implementación", otherCharges: "Otros cargos",
+    discount: "Descuento",
     hours: "hrs", subtotal: "Subtotal", total: "Total a pagar",
     taxNote: "* Impuesto sobre ventas y uso de Puerto Rico (IVU) aplicado donde la ley lo requiera.",
     payTitle: "Pago",
@@ -44,6 +45,7 @@ const STRINGS = {
     number: "Invoice no.", issued: "Issue date", terms: "Terms", due: "Due date",
     description: "Description", qty: "Qty", unit: "Unit price", amount: "Amount",
     service: "Service", onboarding: "Onboarding milestone", otherCharges: "Other charges",
+    discount: "Discount",
     hours: "hrs", subtotal: "Subtotal", total: "Total due",
     taxNote: "* Puerto Rico sales and use tax (IVU) applied where required by law.",
     payTitle: "Payment",
@@ -122,7 +124,8 @@ export default async function InvoicePrintPage({ params, searchParams }: {
     lines.push({ desc: inv.contract.name, sub: inv.notes || undefined, qty: "1",
       unit: fmtMoney(amount, currency), amount })
   } else if (diff !== 0) {
-    lines.push({ desc: t.otherCharges, qty: "1", unit: fmtMoney(diff, currency), amount: diff })
+    lines.push({ desc: diff < 0 ? t.discount : t.otherCharges, qty: "1",
+      unit: fmtMoney(diff, currency), amount: diff })
   }
 
   const ink = "#0D1B2A", faint = "#64748B", border = "#E2E8F0"

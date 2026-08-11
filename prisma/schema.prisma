@@ -1788,6 +1788,10 @@ model CustomerContract {
   // Billable service delivery (outside SLA/error support)
   serviceHourlyRate Decimal?     @db.Decimal(12, 2)
   onboardingFee     Decimal?     @db.Decimal(15, 2)
+  // Prepaid service-hours bundle (e.g. 10 h at $125 vs 10 × $15 = $150):
+  // billing N bundle-fuls of hours applies the bundle price instead of rate.
+  serviceBundleHours Int?
+  serviceBundlePrice Decimal?    @db.Decimal(12, 2)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

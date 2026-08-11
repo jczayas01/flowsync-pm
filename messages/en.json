@@ -670,7 +670,13 @@
     "ist_SENT": "Sent",
     "ist_PAID": "Paid",
     "ist_OVERDUE": "Overdue",
-    "ist_VOID": "Void"
+    "ist_VOID": "Void",
+    "invEdit": "Edit",
+    "invVoid": "Void",
+    "invEditTitle": "Edit invoice {number}",
+    "voidConfirm": "Void this invoice? Linked service hours and milestones will be released and can be billed again.",
+    "applyBundle": "{n, plural, =0 {Hour bundle (select at least one full bundle)} =1 {Apply 1 bundle of {h} h (−{d})} other {Apply # bundles of {h} h (−{d})}}",
+    "courtesyToggle": "Courtesy — invoice at $0"
   },
   "contracts": {
     "+ Invoice": "+ Invoice",
@@ -754,7 +760,13 @@
     "st_EXPIRED": "Expired",
     "st_RENEWED": "Renewed",
     "st_TERMINATED": "Terminated",
-    "supportTierPlaceholder": "Priority"
+    "supportTierPlaceholder": "Priority",
+    "bundleHoursLbl": "Service bundle — hours",
+    "bundlePriceLbl": "Service bundle — price",
+    "calcBtn": "Calculate",
+    "calcTitle": "Fill with list price: seats × $39 + contributor bundles × $20, × 12 if annual",
+    "calcBreakdown": "{seats} seats × $39 + {bundles} bundles × $20 = ${perMo}/mo (list price)",
+    "calcOnboarding": "onboarding (one-time): ${fee}"
   },
   "customFields": {
     "Add": "Add",

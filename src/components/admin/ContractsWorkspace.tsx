@@ -984,6 +984,8 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
   const [form, setForm]         = useState<any>(null)
   const [saving, setSaving]     = useState(false)
   const [err, setErr]           = useState("")
+  const [editInv, setEditInv]   = useState<any>(null)
+  const [savingInv, setSavingInv] = useState(false)
 
   const load = useCallback(async () => {
     const [ri, rb] = await Promise.all([
@@ -1025,6 +1027,8 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
           issueDate: form.issueDate,
           dueDate:   form.dueDate,
           notes:     form.notes || null,
+          applyBundle: !!form.applyBundle,
+          courtesy:    !!form.courtesy,
         }),
       })
       const d = await res.json()
@@ -1032,6 +1036,34 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
       setForm(null); setPicked(new Set()); await load(); onChanged()
     } catch { setErr(cl("errBill")) }
     finally { setSaving(false) }
+  }
+
+  async function saveInvEdit() {
+    if (!editInv || savingInv || !editInv.number?.trim()) return
+    setSavingInv(true); setErr("")
+    try {
+      const res = await fetch(`/api/admin/contracts/${c.id}/invoices/${editInv.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          number:    editInv.number.trim(),
+          amount:    Number(editInv.amount) || 0,
+          issueDate: editInv.issueDate,
+          dueDate:   editInv.dueDate,
+          notes:     editInv.notes || null,
+        }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setErr(d?.error || cl("errBill")); return }
+      setEditInv(null); await load(); onChanged()
+    } finally { setSavingInv(false) }
+  }
+
+  async function voidInvoice(iv: any) {
+    if (!confirm(cl("voidConfirm"))) return
+    const res = await fetch(`/api/admin/contracts/${c.id}/invoices/${iv.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "VOID" }),
+    })
+    if (res.ok) { await load(); onChanged() }
   }
 
   async function setStatus(id: string, status: string) {
@@ -1096,7 +1128,8 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                 {cl("billTotal", { amount: money2(total, c.currency) })}
               </span>
               <button style={{ ...btn(true), marginLeft: "auto" }} disabled={!picked.size}
-                onClick={() => setForm({ number: "", issueDate: today, dueDate: net30, notes: "" })}>
+                onClick={() => setForm({ number: "", issueDate: today, dueDate: net30, notes: "",
+                  applyBundle: false, courtesy: false })}>
                 {cl("billSelected")}
               </button>
             </div>
@@ -1127,6 +1160,49 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
               <input style={inp} value={form.notes}
                 onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
+            {(() => {
+              // Mirror of the server's bundle math, for preview only — the
+              // amount that lands on the invoice is computed server-side.
+              const bH = Number(billable?.serviceBundleHours) || 0
+              const bP = billable?.serviceBundlePrice
+              const sel = rows.filter(r => r.kind === "entry" && picked.has(r.id))
+              const selIds = new Set(sel.map(r => r.id))
+              const ent = (billable?.entries || []).filter((e: any) => selIds.has(e.id))
+              const svcHours  = ent.reduce((s2: number, e: any) => s2 + (Number(e.hours) || 0), 0)
+              const svcAmount = ent.reduce((s2: number, e: any) => s2 + (Number(e.amount) || 0), 0)
+              const bundles = bH > 0 ? Math.floor(svcHours / bH) : 0
+              const disc = (bundles > 0 && bP != null && svcHours > 0)
+                ? Math.max(0, Math.round(bundles * (bH * (svcAmount / svcHours) - Number(bP)) * 100) / 100)
+                : 0
+              const canBundle = bH > 0 && bP != null
+              return (
+                <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
+                  {canBundle && (
+                    <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12,
+                      color: bundles > 0 ? NAVY : "var(--text-3,#64748B)", cursor: "pointer" }}>
+                      <input type="checkbox" checked={!!form.applyBundle} disabled={bundles === 0}
+                        onChange={e => setForm({ ...form, applyBundle: e.target.checked })} />
+                      {cl("applyBundle", { n: bundles, h: bH,
+                        d: money2(disc, billable?.currency || c.currency) })}
+                    </label>
+                  )}
+                  <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12,
+                    color: NAVY, cursor: "pointer" }}>
+                    <input type="checkbox" checked={!!form.courtesy}
+                      onChange={e => setForm({ ...form, courtesy: e.target.checked })} />
+                    {cl("courtesyToggle")}
+                  </label>
+                  {(form.applyBundle && disc > 0 || form.courtesy) && (
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, marginLeft: "auto",
+                      fontVariantNumeric: "tabular-nums" }}>
+                      {cl("billTotal", { amount: money2(
+                        form.courtesy ? 0 : Math.max(0, total - disc),
+                        billable?.currency || c.currency) })}
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
             <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "flex-end" }}>
               <button style={btn()} onClick={() => setForm(null)}>{cl("Cancel")}</button>
               <button style={btn(true)} disabled={saving || !form.number.trim()} onClick={bill}>
@@ -1184,6 +1260,21 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                           onClick={() => window.open(`/admin/contracts/${c.id}/invoices/${iv.id}/print`, "_blank")}>
                           {cl("invoicePdf")}
                         </button>
+                        {iv.status !== "VOID" && iv.status !== "PAID" && (
+                          <button style={miniBtn} onClick={() => setEditInv({
+                            id: iv.id, number: iv.number, amount: String(Number(iv.amount)),
+                            issueDate: String(iv.issueDate).slice(0, 10),
+                            dueDate: String(iv.dueDate).slice(0, 10),
+                            notes: iv.notes || "",
+                          })}>
+                            {cl("invEdit")}
+                          </button>
+                        )}
+                        {iv.status !== "VOID" && iv.status !== "PAID" && (
+                          <button style={{ ...miniBtn, color: RED }} onClick={() => voidInvoice(iv)}>
+                            {cl("invVoid")}
+                          </button>
+                        )}
                         {iv.status === "DRAFT" && (
                           <button style={miniBtn} onClick={() => setStatus(iv.id, "SENT")}>
                             {cl("Mark sent")}
@@ -1200,6 +1291,39 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {editInv && (
+          <div style={{ padding: 14, borderTop: "1px solid var(--border,#E2E8F0)" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 8 }}>
+              {cl("invEditTitle", { number: editInv.number })}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10 }}>
+              <div><label style={lbl}>{cl("inv_number")}</label>
+                <input style={inp} value={editInv.number}
+                  onChange={e => setEditInv({ ...editInv, number: e.target.value })} /></div>
+              <div><label style={lbl}>{cl("i_amount")}</label>
+                <input style={inp} type="number" min="0" step="0.01" value={editInv.amount}
+                  onChange={e => setEditInv({ ...editInv, amount: e.target.value })} /></div>
+              <div><label style={lbl}>{cl("inv_issue")}</label>
+                <input style={inp} type="date" value={editInv.issueDate}
+                  onChange={e => setEditInv({ ...editInv, issueDate: e.target.value })} /></div>
+              <div><label style={lbl}>{cl("inv_due")}</label>
+                <input style={inp} type="date" value={editInv.dueDate}
+                  onChange={e => setEditInv({ ...editInv, dueDate: e.target.value })} /></div>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <label style={lbl}>{cl("inv_notes")}</label>
+              <input style={inp} value={editInv.notes}
+                onChange={e => setEditInv({ ...editInv, notes: e.target.value })} />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "flex-end" }}>
+              <button style={btn()} onClick={() => setEditInv(null)}>{cl("Cancel")}</button>
+              <button style={btn(true)} disabled={savingInv || !editInv.number?.trim()} onClick={saveInvEdit}>
+                {savingInv ? cl("Saving…") : cl("Save")}
+              </button>
+            </div>
           </div>
         )}
       </div>
