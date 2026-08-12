@@ -12,7 +12,12 @@ import { verifyProjectAccess, audit, ok, err } from "@/lib/api"
 import { can, mapDbRoleToRbac } from "@/lib/rbac/roles"
 import { uploadFile, signRef, BUCKET } from "@/lib/storage"
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+// Vercel serverless hard-caps request bodies at 4.5 MB and rejects with a
+// raw 413 BEFORE this code runs, so any declared limit above that is a lie
+// the user pays for. 4 MB keeps us under the platform cap so uploads that
+// are too big get THIS message instead of an unexplained 413. Real fix:
+// direct browser→Supabase Storage upload with signed URLs (roadmap).
+const MAX_FILE_SIZE = 4 * 1024 * 1024 // 4 MB — see note above
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
@@ -87,7 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
   if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: "File too large — maximum 50 MB" }, { status: 400 })
+    return NextResponse.json({ error: "File exceeds the 4 MB upload limit — compress the PDF (e.g. Acrobat > Reduce File Size) or split it / El archivo excede el límite de 4 MB — comprime el PDF (Acrobat > Reducir tamaño) o divídelo" }, { status: 400 })
   }
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json({ error: `File type not allowed: ${file.type}` }, { status: 400 })

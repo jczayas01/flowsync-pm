@@ -1169,7 +1169,7 @@
     "Start date": "Fecha de inicio",
     "Tasks": "Tareas",
     "Upload a project plan — the AI builds the project, you review before anything is created": "Sube un plan de proyecto — la IA construye el proyecto y tú lo revisas antes de crear nada",
-    "Word · PDF (scans read visually) · Excel · text — max 8 MB": "Word · PDF (escaneos leídos visualmente) · Excel · texto — máx. 8 MB",
+    "Word · PDF (scans read visually) · Excel · text — max 8 MB": "Word · PDF (escaneos leídos visualmente) · Excel · texto — máx. 4 MB",
     "from budget lines": "desde líneas de presupuesto",
     "items": "elementos",
     "of": "de",
@@ -2753,7 +2753,8 @@
     "pEditVendorTitle": "Editar proveedor",
     "pEditVendorNote": "Los cambios aplican a todos los acuerdos con este proveedor.",
     "pVendorSaveFailed": "Algunos acuerdos no se pudieron actualizar — recarga e intenta de nuevo",
-    "pScanForVendor": "Escanear un documento — lo nuevo entra a este proveedor"
+    "pScanForVendor": "Escanear un documento — lo nuevo entra a este proveedor",
+    "uploadTooBig": "excede el límite de 4 MB — comprime el PDF (Acrobat > Reducir tamaño) o divídelo"
   },
   "webhooks": {
     "+ New webhook": "+ Nuevo webhook",

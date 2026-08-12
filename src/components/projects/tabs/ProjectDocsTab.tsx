@@ -112,6 +112,10 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
 
   // Uploads any number of files sequentially; used by the picker (now
   // multi-select) and by drag-and-drop onto the Files area.
+  // Vercel rejects bodies >4.5 MB with a bare 413 before our API runs, so the
+  // check has to happen here to give the person an actionable message.
+  const MAX_UPLOAD = 4 * 1024 * 1024
+
   async function uploadMany(list: FileList | File[]) {
     const items = Array.from(list)
     if (!items.length) return
@@ -122,6 +126,10 @@ export function ProjectDocsTab({ projectId, workspaceId, workspaceName, project,
       const file = items[i]
       setUploadSuccess(items.length > 1 ? tip("docUploadingN",{i:i+1,t:items.length,f:file.name}) : "")
       try {
+        if (file.size > MAX_UPLOAD) {
+          errors.push(`${file.name}: ${tip("uploadTooBig")}`)
+          continue
+        }
         const fd = new FormData()
         fd.append("file", file)
         const res = await fetch(`/api/projects/${projectId}/documents`, {

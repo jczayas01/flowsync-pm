@@ -1169,7 +1169,7 @@
     "Start date": "Start date",
     "Tasks": "Tasks",
     "Upload a project plan — the AI builds the project, you review before anything is created": "Upload a project plan — the AI builds the project, you review before anything is created",
-    "Word · PDF (scans read visually) · Excel · text — max 8 MB": "Word · PDF (scans read visually) · Excel · text — max 8 MB",
+    "Word · PDF (scans read visually) · Excel · text — max 8 MB": "Word · PDF (scans read visually) · Excel · text — max 4 MB",
     "from budget lines": "from budget lines",
     "items": "items",
     "of": "of",
@@ -2753,7 +2753,8 @@
     "pEditVendorTitle": "Edit vendor",
     "pEditVendorNote": "Changes apply to every agreement with this vendor.",
     "pVendorSaveFailed": "Some agreements could not be updated — refresh and try again",
-    "pScanForVendor": "Scan a document — new items go to this vendor"
+    "pScanForVendor": "Scan a document — new items go to this vendor",
+    "uploadTooBig": "over the 4 MB limit — compress the PDF (Acrobat > Reduce File Size) or split it"
   },
   "webhooks": {
     "+ New webhook": "+ New webhook",

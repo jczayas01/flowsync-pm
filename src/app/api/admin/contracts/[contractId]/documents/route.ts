@@ -13,7 +13,7 @@ const ALLOWED = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "image/png", "image/jpeg",
 ])
-const MAX_BYTES = 15_000_000 // 15 MB
+const MAX_BYTES = 4_000_000 // 4 MB — Vercel body cap is 4.5 MB; see projects documents route
 
 export async function POST(req: NextRequest, { params }: { params: { contractId: string } }) {
   const session = await requirePlatformAdmin()
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
     return NextResponse.json({ error: "PDF, Word, PNG or JPG only" }, { status: 400 })
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "File must be under 15 MB" }, { status: 400 })
+    return NextResponse.json({ error: "File exceeds the 4 MB upload limit — compress the PDF (e.g. Acrobat > Reduce File Size) or split it / El archivo excede el límite de 4 MB — comprime el PDF (Acrobat > Reducir tamaño) o divídelo" }, { status: 400 })
   }
 
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 120)

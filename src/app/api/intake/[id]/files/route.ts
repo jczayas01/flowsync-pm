@@ -31,7 +31,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const formData = await req.formData()
   const file = formData.get("file") as File | null
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 })
-  if (file.size > 25 * 1024 * 1024) return NextResponse.json({ error: "File too large (max 25MB)" }, { status: 400 })
+  // 4 MB: Vercel body cap is 4.5 MB — see documents/route.ts note
+  if (file.size > 4 * 1024 * 1024) return NextResponse.json({ error: "File exceeds the 4 MB upload limit — compress the PDF (e.g. Acrobat > Reduce File Size) or split it / El archivo excede el límite de 4 MB — comprime el PDF (Acrobat > Reducir tamaño) o divídelo" }, { status: 400 })
 
   const path = `intake/${params.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`
   const { path: storedPath, error } = await uploadFile(file, path, file.type)

@@ -8,7 +8,7 @@ import { db } from "@/lib/db"
 import { extractTextFromBuffer } from "@/lib/extract"
 import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
-const MAX_FILE = 8 * 1024 * 1024 // 8 MB
+const MAX_FILE = 4 * 1024 * 1024 // 4 MB — Vercel body cap is 4.5 MB; see documents/route.ts
 
 const SPEC = `{
   "project": {
