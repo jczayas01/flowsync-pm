@@ -1088,7 +1088,7 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
       })
       const di = await res.json().catch(() => ({}))
       if (!res.ok) { setErr(di?.error || cl("errBill")); return }
-      if (di?.data?.id) window.open(`/admin/contracts/${c.id}/invoices/${di.data.id}/print`, "_blank")
+      if (di?.data?.id) window.open(`/print/contracts/${c.id}/invoices/${di.data.id}`, "_blank")
       await load(); onChanged()
     } finally { setSavingInv(false) }
   }
@@ -1325,7 +1325,7 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                       </td>
                       <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
                         <button style={miniBtn}
-                          onClick={() => window.open(`/admin/contracts/${c.id}/invoices/${iv.id}/print`, "_blank")}>
+                          onClick={() => window.open(`/print/contracts/${c.id}/invoices/${iv.id}`, "_blank")}>
                           {cl("invoicePdf")}
                         </button>
                         {iv.status !== "VOID" && iv.status !== "PAID" && (

@@ -14,7 +14,7 @@ import { redirect, notFound } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { LogoMark } from "@/components/shared/Logo"
-import { PrintActions } from "./PrintActions"
+import { PrintActions } from "@/components/shared/PrintActions"
 
 function platformAdmins(): string[] {
   return (process.env.PLATFORM_ADMIN_EMAILS || "")

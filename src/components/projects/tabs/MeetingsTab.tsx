@@ -325,7 +325,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                       </div>
                     </div>
                     <button onClick={e=>{ e.stopPropagation();
-                        window.open(`/projects/${projectId}/meetings/${m.id}/print`, "_blank") }}
+                        window.open(`/print/projects/${projectId}/minutes/${m.id}`, "_blank") }}
                       style={{ padding:"3px 9px", fontSize:11, fontWeight:600, cursor:"pointer",
                         border:"1px solid var(--border)", borderRadius:6, background:"#fff",
                         color:"var(--text-2)", fontFamily:"var(--font)" }}>{mt("pdfBtn")}</button>

@@ -245,7 +245,7 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
           }).catch(() => null)
           const di = await ri?.json().catch(() => ({}))
           const invoiceId = di?.data?.id
-          if (invoiceId) window.open(`/admin/contracts/${contractId}/invoices/${invoiceId}/print`, "_blank")
+          if (invoiceId) window.open(`/print/contracts/${contractId}/invoices/${invoiceId}`, "_blank")
         }
       } catch { /* the contract itself saved — the invoice can be created from the record */ }
     }
