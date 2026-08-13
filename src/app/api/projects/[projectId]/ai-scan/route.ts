@@ -13,8 +13,11 @@ import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
 import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
 
-const PER_DOC = 6000
-const TOTAL   = 18000
+// A one-hour meeting transcript runs ~45,000 characters; the old 6,000 cap
+// silently fed Claude only the first few minutes and the minutes came out
+// covering two hospitals out of six. Sonnet's context takes this easily.
+const PER_DOC = 60_000
+const TOTAL   = 120_000
 
 type DomainCfg = {
   existing: (projectId: string) => Promise<string[]>
@@ -133,7 +136,13 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     try {
       const buf = await downloadBuffer(d.fileUrl)
       if (!buf) { skipped.push({ name: d.name, reason: "could not download from storage" }); continue }
-      const t = (await extractTextFromBuffer(d.name, buf)).slice(0, PER_DOC)
+      const full = await extractTextFromBuffer(d.name, buf)
+      // Over the cap, keep the beginning AND the end — in meeting transcripts
+      // the decisions and next steps live in the final minutes.
+      const t = full.length <= PER_DOC ? full
+        : full.slice(0, Math.floor(PER_DOC * 0.7))
+          + "\n\n[… middle of document truncated …]\n\n"
+          + full.slice(-Math.floor(PER_DOC * 0.3))
       if (t.trim().length > 40) {
         chunks.push(`## Document: ${d.name}\n${t}`)
         scanned.push(d.name)
@@ -182,7 +191,7 @@ ${chunks.join("\n\n")}`
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 4000,
+        max_tokens: 8000,
         messages: [{
           role: "user",
           content: [
