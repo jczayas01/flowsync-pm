@@ -1335,7 +1335,9 @@
     "docStatus": "Minutes status",
     "mst_DRAFT": "Draft",
     "mst_FINAL": "Final",
-    "mst_APPROVED": "Approved"
+    "mst_APPROVED": "Approved",
+    "locationLbl": "Location",
+    "phLocation": "e.g. Teams / Conference room / Aibonito site"
   },
   "myTasks": {
     "Active": "Active",

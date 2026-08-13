@@ -70,14 +70,16 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
   const [error, setError] = useState("")
   const [form, setForm] = useState({
     title:"", meetingDate:new Date().toISOString().split("T")[0],
-    meetingType:"STATUS", attendees:"", agenda:"", discussion:"",
-    decisions:"", actionItems:"", nextMeeting:"",
+    meetingType:"STATUS", location:"", facilitator:"", attendees:"",
+    agenda:"", discussion:"", decisions:"", actionItems:"", nextMeeting:"",
+    status:"DRAFT",
   })
 
   function resetForm() {
     setForm({ title:"", meetingDate:new Date().toISOString().split("T")[0],
-      meetingType:"STATUS", attendees:"", agenda:"", discussion:"",
-      decisions:"", actionItems:"", nextMeeting:"" })
+      meetingType:"STATUS", location:"", facilitator:"", attendees:"",
+      agenda:"", discussion:"", decisions:"", actionItems:"", nextMeeting:"",
+      status:"DRAFT" })
   }
 
   const [editId, setEditId] = useState<string|null>(null)
@@ -93,6 +95,9 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
       agenda:      toText(m2.agenda) || "",
       discussion:  toText(m2.discussion) || "",
       decisions:   toText(m2.decisions) || "",
+      actionItems: toText(m2.actionItems) || "",
+      location:    m2.location || "",
+      nextMeeting: m2.nextMeeting ? new Date(m2.nextMeeting).toISOString().slice(0,10) : "",
       status:      m2.status || "DRAFT",
     })
     setEditId(m2.id)
@@ -110,6 +115,9 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
         agenda:      editF.agenda || null,
         discussion:  editF.discussion || null,
         decisions:   editF.decisions || [],
+        actionItems: editF.actionItems || [],
+        location:    editF.location || null,
+        nextMeeting: editF.nextMeeting ? new Date(`${editF.nextMeeting}T12:00:00Z`).toISOString() : null,
         status:      editF.status || "DRAFT",
       }),
     }).catch(() => null)
@@ -232,6 +240,26 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                   onChange={e=>setForm(f=>({...f,meetingType:e.target.value}))}>
                   {MTG_TYPES.map(t=><option key={t} value={t}>{enumLabel(t, locale)}</option>)}
                 </select>
+              </div>
+              <div>
+                <label style={lbl}>{mt("docStatus")}</label>
+                <select style={{...inp,cursor:"pointer"}} value={form.status}
+                  onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
+                  {["DRAFT","FINAL","APPROVED"].map(t=><option key={t} value={t}>{mt("mst_" + t)}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+              <div>
+                <label style={lbl}>{mt("locationLbl")}</label>
+                <input style={inp} value={form.location}
+                  onChange={e=>setForm(f=>({...f,location:e.target.value}))}
+                  placeholder={mt("phLocation")} />
+              </div>
+              <div>
+                <label style={lbl}>{mt("Facilitator")}</label>
+                <input style={inp} value={form.facilitator}
+                  onChange={e=>setForm(f=>({...f,facilitator:e.target.value}))} />
               </div>
             </div>
             <div style={{ marginBottom:10 }}>
@@ -373,19 +401,24 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                           </select>
                         </label>
                       </div>
-                      {([["facilitator",mt("Facilitator")],["attendees",mt("Attendees")]] as const).map(([k,lb])=>(
+                      {([["location",mt("locationLbl")],["facilitator",mt("Facilitator")],["attendees",mt("Attendees")]] as const).map(([k,lb])=>(
                         <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>{lb}
                           <input value={editF[k]} onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
                             style={inp} />
                         </label>
                       ))}
-                      {([["agenda",mt("Agenda")],["discussion",mt("Discussion")],["decisions",mt("Decisions")]] as const).map(([k,lb])=>(
+                      {([["agenda",mt("Agenda")],["discussion",mt("Discussion")],["decisions",mt("Decisions")],["actionItems",mt("Action Items (who / what / by when)")]] as const).map(([k,lb])=>(
                         <label key={k} style={{ fontSize:11, color:"var(--text-3)" }}>{lb}
                           <textarea rows={3} value={editF[k]}
                             onChange={e=>setEditF((f:any)=>({...f,[k]:e.target.value}))}
                             style={{...inp, resize:"vertical"}} />
                         </label>
                       ))}
+                      <label style={{ fontSize:11, color:"var(--text-3)" }}>{mt("Next meeting date")}
+                        <input type="date" value={editF.nextMeeting || ""}
+                          onChange={e=>setEditF((f:any)=>({...f,nextMeeting:e.target.value}))}
+                          style={{...inp, width:"auto", display:"block"}} />
+                      </label>
                       <div style={{ display:"flex", gap:8 }}>
                         <button onClick={()=>saveEdit(m.id)}
                           style={{ flex:1, padding:"8px 0", background:"var(--steel)", color:"#fff",

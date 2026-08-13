@@ -1335,7 +1335,9 @@
     "docStatus": "Estatus de la minuta",
     "mst_DRAFT": "Borrador",
     "mst_FINAL": "Final",
-    "mst_APPROVED": "Aprobada"
+    "mst_APPROVED": "Aprobada",
+    "locationLbl": "Lugar",
+    "phLocation": "ej. Teams / Sala de conferencias / Sitio Aibonito"
   },
   "myTasks": {
     "Active": "Activas",
