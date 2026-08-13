@@ -107,7 +107,12 @@ export default async function MinutesPrintPage({ params, searchParams }: {
   const lang: "es" | "en" = searchParams?.lang === "en" ? "en" : "es"
   const t = STRINGS[lang]
 
+  // Attendees often arrive as one comma-separated string — split on commas
+  // too (agenda/discussion/decisions keep newline-only splitting, since prose
+  // and decision sentences legitimately contain commas).
   const attendees = toList(m.attendees)
+    .flatMap(a => a.split(",").map(x => x.trim()))
+    .filter(Boolean)
   const decisions = toList(m.decisions)
   const actions   = actionRows(m.actionItems)
 

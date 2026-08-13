@@ -1331,7 +1331,11 @@
     "recordCount": "{n, plural, one {# minuta registrada} other {# minutas registradas}}",
     "saveFailed": "No se pudieron guardar las minutas.",
     "to the meeting record": "al registro de reuniones",
-    "pdfBtn": "PDF"
+    "pdfBtn": "PDF",
+    "docStatus": "Estatus de la minuta",
+    "mst_DRAFT": "Borrador",
+    "mst_FINAL": "Final",
+    "mst_APPROVED": "Aprobada"
   },
   "myTasks": {
     "Active": "Activas",

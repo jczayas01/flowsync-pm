@@ -93,6 +93,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
       agenda:      toText(m2.agenda) || "",
       discussion:  toText(m2.discussion) || "",
       decisions:   toText(m2.decisions) || "",
+      status:      m2.status || "DRAFT",
     })
     setEditId(m2.id)
   }
@@ -109,6 +110,7 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
         agenda:      editF.agenda || null,
         discussion:  editF.discussion || null,
         decisions:   editF.decisions || [],
+        status:      editF.status || "DRAFT",
       }),
     }).catch(() => null)
     if (res?.ok) { setEditId(null); router.refresh() }
@@ -360,6 +362,14 @@ export function MeetingsTab({ projectId, workspaceId, minutes, members }: {
                             {["KICKOFF","STATUS","PHASE_GATE","RISK_REVIEW","STEERING",
                               "SPRINT_PLANNING","RETROSPECTIVE","AD_HOC","OTHER"]
                               .map(t2=><option key={t2} value={t2}>{enumLabel(t2, locale)}</option>)}
+                          </select>
+                        </label>
+                        <label style={{ flex:1, fontSize:11, color:"var(--text-3)" }}>{mt("docStatus")}
+                          <select value={editF.status}
+                            onChange={e=>setEditF((f:any)=>({...f,status:e.target.value}))}
+                            style={{...inp, cursor:"pointer"}}>
+                            {["DRAFT","FINAL","APPROVED"]
+                              .map(t2=><option key={t2} value={t2}>{mt("mst_" + t2)}</option>)}
                           </select>
                         </label>
                       </div>

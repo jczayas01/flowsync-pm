@@ -1331,7 +1331,11 @@
     "recordCount": "{n, plural, one {# meeting record} other {# meeting records}}",
     "saveFailed": "Could not save these minutes.",
     "to the meeting record": "to the meeting record",
-    "pdfBtn": "PDF"
+    "pdfBtn": "PDF",
+    "docStatus": "Minutes status",
+    "mst_DRAFT": "Draft",
+    "mst_FINAL": "Final",
+    "mst_APPROVED": "Approved"
   },
   "myTasks": {
     "Active": "Active",
