@@ -126,11 +126,20 @@ const updateSchema = z.object({
   name:         z.string().min(2).max(200).optional(),
   timezone:     z.string().optional(),
   currency:     z.string().length(3).optional(),
-  logoUrl:      z.string().url().nullable().optional(),
+  // The in-app logo uploader stores an app-relative path
+  // (/api/workspace/logo?ws=…), so absolute-URL-only validation rejected the
+  // product's own uploads. Accept https URLs or app-relative paths.
+  logoUrl:      z.string().max(500)
+                 .refine(v => v.startsWith("/") || /^https?:\/\//.test(v),
+                         "Must be an absolute URL or an app path starting with /")
+                 .nullable().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   accentColor:  z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   aiEnabled:    z.boolean().optional(),
+  brandName:    z.string().max(200).optional().nullable(),
+  supportEmail: z.string().email().optional().nullable().or(z.literal("")),
+  hideBranding: z.boolean().optional(),
 }).strict()
 
 export async function PATCH(req: NextRequest) {
@@ -167,6 +176,9 @@ export async function PATCH(req: NextRequest) {
   if (parsed.data.secondaryColor) updates.secondaryColor = parsed.data.secondaryColor
   if (parsed.data.accentColor)  updates.accentColor      = parsed.data.accentColor
   if (parsed.data.aiEnabled !== undefined) updates.aiEnabled = parsed.data.aiEnabled
+  if (parsed.data.brandName !== undefined)    updates.brandName    = parsed.data.brandName || null
+  if (parsed.data.supportEmail !== undefined) updates.supportEmail = parsed.data.supportEmail || null
+  if (parsed.data.hideBranding !== undefined) updates.hideBranding = parsed.data.hideBranding
 
   const workspace = await db.workspace.update({
     where: { id: member.workspaceId },

@@ -32,7 +32,16 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
     try {
       const res = await fetch("/api/workspace", {
         method:"PATCH", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(form)
+        // The schema is strict: send only supported fields. customDomain stays
+        // client-side until domain support is real.
+        body:JSON.stringify({
+          brandName:    form.brandName?.trim() || null,
+          supportEmail: form.supportEmail?.trim() || "",
+          logoUrl:      form.logoUrl?.trim() || null,
+          primaryColor: form.primaryColor,
+          accentColor:  form.accentColor,
+          hideBranding: !!form.hideFlowSyncBranding,
+        })
       })
       if(!res.ok) throw new Error((await res.json()).error||"Save failed")
       setSaved(true); setTimeout(()=>setSaved(false),3000)
