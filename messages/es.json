@@ -1330,7 +1330,8 @@
     "phMeetingTitle": "Ej.: Planificación del Sprint 4",
     "recordCount": "{n, plural, one {# minuta registrada} other {# minutas registradas}}",
     "saveFailed": "No se pudieron guardar las minutas.",
-    "to the meeting record": "al registro de reuniones"
+    "to the meeting record": "al registro de reuniones",
+    "pdfBtn": "PDF"
   },
   "myTasks": {
     "Active": "Activas",

@@ -1330,7 +1330,8 @@
     "phMeetingTitle": "e.g. Sprint 4 Planning Meeting",
     "recordCount": "{n, plural, one {# meeting record} other {# meeting records}}",
     "saveFailed": "Could not save these minutes.",
-    "to the meeting record": "to the meeting record"
+    "to the meeting record": "to the meeting record",
+    "pdfBtn": "PDF"
   },
   "myTasks": {
     "Active": "Active",
