@@ -176,6 +176,15 @@ export function ExecutiveDashboard({ projects, risks, milestones,
     router.refresh()
   }
 
+  async function crAct(projectId: string, crId: string, status: "APPROVED" | "REJECTED") {
+    const res = await fetch(`/api/projects/${projectId}/change-requests/${crId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", "x-workspace-id": workspaceId },
+      body: JSON.stringify({ status }),
+    })
+    if (!res.ok) { const d = await res.json().catch(()=>({})); alert(d?.error || tx("approvalFailed")); return }
+    router.refresh()
+  }
+
   async function approvalAct(projectId: string, action: "approve" | "reject") {
     let reason = ""
     if (action === "reject") reason = window.prompt("Reason for sending back to Draft (optional):") || ""
@@ -322,6 +331,51 @@ export function ExecutiveDashboard({ projects, risks, milestones,
                 </div>
               )
             })}
+          </div>
+        )
+      })()}
+
+      {/* ── Change requests awaiting approval ── */}
+      {(() => {
+        const crPending = (changeRequests || []).filter((cr: any) =>
+          cr.status === "SUBMITTED" || cr.status === "UNDER_REVIEW")
+        if (!crPending.length) return null
+        return (
+          <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
+            borderLeft:"4px solid #2563EB", borderRadius:"var(--radius)",
+            padding:"14px 18px", margin:"0 0 16px" }}>
+            <div style={{ fontSize:13, fontWeight:700, color:"#1E40AF", marginBottom:2 }}>
+              🔀 {tx("Change requests awaiting approval")} ({crPending.length})
+            </div>
+            <div style={{ fontSize:11, color:"#1D4ED8", marginBottom:10 }}>
+              {tx("crPanelIntro")}
+            </div>
+            {crPending.map((cr: any) => (
+              <div key={cr.id} className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:12,
+                padding:"9px 0", borderTop:"1px solid #BFDBFE" }}>
+                <a href={`/projects/${cr.project?.id}/changes`}
+                  style={{ flex:1, minWidth:0, textDecoration:"none" }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{cr.title}</span>
+                  <span style={{ fontSize:11, color:"var(--text-3)", marginLeft:8 }}>
+                    {cr.project?.code} · {cr.project?.name}
+                  </span>
+                  <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>
+                    {tx("Created")}{cr.requestedBy?.name ? ` ${tx("by")} ${cr.requestedBy.name}` : ""}
+                    {cr.budgetImpact ? ` · ${tx("crBudgetImpact")}: $${Number(cr.budgetImpact).toLocaleString("en-US")}` : ""}
+                    {cr.scheduleImpact ? ` · ${tx("crScheduleImpactLbl")}: ${cr.scheduleImpact}` : ""}
+                    <span style={{ color:"#2563EB", fontWeight:600, marginLeft:6 }}>· {tx("crReview")} →</span>
+                  </div>
+                </a>
+                <button onClick={() => crAct(cr.project.id, cr.id, "APPROVED")}
+                  style={{ padding:"6px 14px", background:"#ECFDF5", border:"1px solid #A7F3D0",
+                    borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#059669",
+                    cursor:"pointer", fontFamily:"var(--font)" }}>{tx("✓ Approve")}</button>
+                <button onClick={() => crAct(cr.project.id, cr.id, "REJECTED")}
+                  style={{ padding:"6px 14px", background:"#FEF2F2", border:"1px solid #FECACA",
+                    borderRadius:"var(--radius)", fontSize:12, fontWeight:600, color:"#DC2626",
+                    cursor:"pointer", fontFamily:"var(--font)" }}>{tx("✗ Reject")}</button>
+              </div>
+            ))}
           </div>
         )
       })()}

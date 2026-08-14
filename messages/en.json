@@ -927,7 +927,12 @@
     "risk": "risk",
     "⏳ Projects awaiting your approval": "⏳ Projects awaiting your approval",
     "✓ Approve": "✓ Approve",
-    "✗ Reject": "✗ Reject"
+    "✗ Reject": "✗ Reject",
+    "Change requests awaiting approval": "Change requests awaiting approval",
+    "crPanelIntro": "Approving applies the change to the plan of record and logs a governance decision. Click a request to review its full impact in the project first.",
+    "crBudgetImpact": "Budget impact",
+    "crReview": "Review change",
+    "crScheduleImpactLbl": "Schedule impact"
   },
   "ganttTab": {
     "(drag to reschedule)": "(drag to reschedule)",
