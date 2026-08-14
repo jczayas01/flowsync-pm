@@ -11,7 +11,7 @@ export default async function ProjectBaselinesPage({ params }: { params: { proje
     where: { userId: session.user.id }, select: { workspaceId:true }
   })
 
-  const [baselines, project, changeRequests, tasks] = await Promise.all([
+  const [baselines, project, changeRequests, tasks, budgetAgg] = await Promise.all([
     db.baseline.findMany({
       where:   { projectId: params.projectId },
       orderBy: { createdAt: "desc" },
@@ -37,6 +37,10 @@ export default async function ProjectBaselinesPage({ params }: { params: { proje
       select:  { id:true, code:true, title:true, status:true,
                  startDate:true, dueDate:true, percentComplete:true, phaseId:true },
     }),
+    db.budgetItem.aggregate({
+      where: { projectId: params.projectId },
+      _sum:  { plannedCost:true, actualCost:true, earnedValue:true },
+    }),
   ])
 
   return (
@@ -44,6 +48,11 @@ export default async function ProjectBaselinesPage({ params }: { params: { proje
       projectId={params.projectId}
       workspaceId={membership?.workspaceId || ""}
       baselines={baselines.map(b => ({ ...b, budgetTotal: Number(b.budgetTotal) })) as any}
+      budgetActuals={{
+        planned: Number(budgetAgg._sum.plannedCost || 0),
+        actual:  Number(budgetAgg._sum.actualCost  || 0),
+        earned:  Number(budgetAgg._sum.earnedValue || 0),
+      }}
       project={{ ...project, budgetTotal: project?.budgetTotal ? Number(project.budgetTotal) : 0 } as any}
       changeRequests={changeRequests as any}
       tasks={tasks as any}

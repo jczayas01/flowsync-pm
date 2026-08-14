@@ -368,7 +368,13 @@
     "phBaselineDesc": "Context for why this baseline was saved...",
     "phBaselineName": "e.g. Original Baseline — Approved Jun 30, 2026",
     "taskCount": "{n, plural, one {# task} other {# tasks}}",
-    "workingSection": "Working Baselines — Pending Approval"
+    "workingSection": "Working Baselines — Pending Approval",
+    "bcTitle": "Budget — baseline vs actual",
+    "bcBaseline": "Baseline budget (locked)",
+    "bcPlannedNow": "Current planned budget",
+    "bcActual": "Actual cost to date",
+    "bcVariance": "Variance vs baseline",
+    "bcDriftNote": "Current planned budget differs from the locked baseline — approved change requests or plan edits since approval."
   },
   "benefitsTab": {
     "+ Add benefit": "+ Add benefit",

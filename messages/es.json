@@ -368,7 +368,13 @@
     "phBaselineDesc": "Contexto de por qué se guardó esta línea base...",
     "phBaselineName": "Ej.: Línea base original — aprobada 30 jun 2026",
     "taskCount": "{n, plural, one {# tarea} other {# tareas}}",
-    "workingSection": "Líneas base en trabajo — pendientes de aprobación"
+    "workingSection": "Líneas base en trabajo — pendientes de aprobación",
+    "bcTitle": "Presupuesto — línea base vs real",
+    "bcBaseline": "Presupuesto de línea base (bloqueado)",
+    "bcPlannedNow": "Presupuesto planificado actual",
+    "bcActual": "Costo real a la fecha",
+    "bcVariance": "Varianza vs línea base",
+    "bcDriftNote": "El presupuesto planificado actual difiere de la línea base bloqueada — cambios aprobados o ediciones del plan desde la aprobación."
   },
   "benefitsTab": {
     "+ Add benefit": "+ Añadir beneficio",

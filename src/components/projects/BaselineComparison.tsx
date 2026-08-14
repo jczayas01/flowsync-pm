@@ -23,13 +23,21 @@ function band(v: number | null): { color: string; bg: string; label: string } {
   if (v <= 7)      return { color: "#B45309", bg: "#FEF3C7", label: "Minor slip" }
   return             { color: "#DC2626", bg: "#FEE2E2", label: "At risk" }
 }
+function money(n: number, cur: string): string {
+  return n.toLocaleString("en-US", { style: "currency", currency: cur, maximumFractionDigits: 0 })
+}
+
 function fmtVar(v: number | null): string {
   if (v === null) return "—"
   if (v === 0) return "0d"
   return (v > 0 ? "+" : "") + v + "d"
 }
 
-export function BaselineComparison({ baselines, tasks }: { baselines: any[]; tasks: any[] }) {
+export function BaselineComparison({ baselines, tasks, budgetActuals, currency = "USD" }: {
+  baselines: any[]; tasks: any[]
+  budgetActuals?: { planned: number; actual: number; earned: number }
+  currency?: string
+}) {
   const bl = useTranslations("baselines")
   const approved = useMemo(() =>
     (baselines || [])
@@ -119,6 +127,52 @@ export function BaselineComparison({ baselines, tasks }: { baselines: any[]; tas
           </select>
         </div>
       </div>
+
+      {/* Budget — Baseline vs Actual */}
+      {budgetActuals && baseline && (() => {
+        const base   = Number(baseline.budgetTotal || 0)
+        const actual = budgetActuals.actual
+        const varAmt = actual - base
+        const varPct = base > 0 ? (varAmt / base) * 100 : null
+        const vb = varAmt <= 0
+          ? { color: "#059669", bg: "#DCFCE7" }
+          : (varPct !== null && varPct <= 10)
+            ? { color: "#B45309", bg: "#FEF3C7" }
+            : { color: "#DC2626", bg: "#FEE2E2" }
+        const cells = [
+          { label: bl("bcBaseline"), value: money(base, currency), color: "var(--text-1)", bg: "#F1F5F9" },
+          { label: bl("bcPlannedNow"), value: money(budgetActuals.planned, currency),
+            color: "var(--text-2)", bg: "#F1F5F9" },
+          { label: bl("bcActual"), value: money(actual, currency), color: "var(--text-1)", bg: "#F1F5F9" },
+          { label: bl("bcVariance"),
+            value: (varAmt > 0 ? "+" : "") + money(varAmt, currency)
+                 + (varPct !== null ? ` (${varAmt > 0 ? "+" : ""}${varPct.toFixed(1)}%)` : ""),
+            color: vb.color, bg: vb.bg },
+        ]
+        return (
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)",
+              textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
+              {bl("bcTitle")}
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {cells.map(c2 => (
+                <div key={c2.label} style={{ flex: "1 1 150px", minWidth: 150, background: c2.bg,
+                  borderRadius: "var(--radius)", padding: "10px 12px" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: c2.color, lineHeight: 1.15,
+                    fontVariantNumeric: "tabular-nums" }}>{c2.value}</div>
+                  <div style={{ fontSize: 10, color: c2.color, opacity: .85, marginTop: 2 }}>{c2.label}</div>
+                </div>
+              ))}
+            </div>
+            {budgetActuals.planned !== Number(baseline.budgetTotal || 0) && (
+              <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 6 }}>
+                {bl("bcDriftNote")}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Summary strip */}
       <div style={{ display: "flex", gap: 10, padding: "12px 14px", flexWrap: "wrap",

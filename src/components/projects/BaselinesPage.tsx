@@ -28,8 +28,8 @@ function daysDiff(a: any, b: any): string {
   return (diff>0?"+":"")+diff+" days"
 }
 
-export function BaselinesPage({ projectId, workspaceId, baselines, project, changeRequests, tasks }: {
-  projectId:string; workspaceId:string; baselines:any[]; project:any; changeRequests?:any[]; tasks?:any[]
+export function BaselinesPage({ projectId, workspaceId, baselines, project, changeRequests, tasks, budgetActuals }: {
+  projectId:string; workspaceId:string; baselines:any[]; project:any; changeRequests?:any[]; tasks?:any[]; budgetActuals?: { planned:number; actual:number; earned:number }
 }) {
   const bl = useTranslations("baselines")
   const router = useRouter()
@@ -340,7 +340,8 @@ export function BaselinesPage({ projectId, workspaceId, baselines, project, chan
         {/* ── Baseline vs Actual (schedule variance) ── */}
         {showVsActual && (
           <div style={{ marginBottom:16 }}>
-            <BaselineComparison baselines={baselines} tasks={tasks || []} />
+            <BaselineComparison baselines={baselines} tasks={tasks || []}
+              budgetActuals={budgetActuals} currency={project?.currency || "USD"} />
           </div>
         )}
 
