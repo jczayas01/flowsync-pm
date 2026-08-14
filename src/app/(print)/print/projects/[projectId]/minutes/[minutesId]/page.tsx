@@ -97,7 +97,8 @@ export default async function MinutesPrintPage({ params, searchParams }: {
   const m = await db.meetingMinutes.findFirst({
     where: { id: params.minutesId, projectId: params.projectId },
     include: {
-      project:    { select: { name: true, code: true } },
+      project:    { select: { name: true, code: true,
+        workspace: { select: { name: true, brandName: true, logoUrl: true } } as any } },
       createdBy:  { select: { name: true, email: true } },
       approvedBy: { select: { name: true, email: true } },
     },
@@ -157,16 +158,26 @@ export default async function MinutesPrintPage({ params, searchParams }: {
           </div>
         )}
 
-        {/* Header */}
+        {/* Header — the customer's white-label brand when configured; the
+            minute is THEIR document, not a FlowSync deliverable. */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <LogoMark size={40} />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 17, letterSpacing: "-.01em" }}>
-                FlowSync <span style={{ color: "#F59E0B" }}>PM</span>
-              </div>
-              <div style={{ fontSize: 11, color: faint }}>flowsyncpm.com</div>
-            </div>
+            {m.project?.workspace?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={m.project.workspace.logoUrl}
+                alt={m.project.workspace.brandName || m.project.workspace.name || ""}
+                style={{ height: 46, maxWidth: 240, objectFit: "contain" }} />
+            ) : (
+              <>
+                <LogoMark size={40} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 17, letterSpacing: "-.01em" }}>
+                    FlowSync <span style={{ color: "#F59E0B" }}>PM</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: faint }}>flowsyncpm.com</div>
+                </div>
+              </>
+            )}
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: ".04em" }}>{t.doc}</div>
