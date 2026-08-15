@@ -83,12 +83,15 @@ async function act(ctx: ApiContext, params?: Record<string, string>) {
     const p = await tx.project.create({
       data: {
         workspaceId: ctx.workspaceId,
+        createdById: ctx.userId,
         code:        `PRJ-${String(count + 1).padStart(3, "0")}`,
         name:        item.title,
+        methodology: "WATERFALL",
         objective:   [item.goal, item.summary].filter(Boolean).join("\n\n") || null,
         description: item.problem || null,
         status:      "DRAFT",
         budgetTotal: item.estCost ?? undefined,
+        endDate:     item.targetDate ?? undefined,
         members: { create: { userId: ctx.userId, projectRole: "PM" } },
       } as any,
     })
