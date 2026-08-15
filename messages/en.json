@@ -686,7 +686,9 @@
     "onbFreeChip": "{h} h free (onboarding): −{d}",
     "svcDiscChip": "Service −{pct}%: −{d}",
     "billSubscription": "+ Subscription invoice (PDF)",
-    "billSubscriptionTitle": "Generate a subscription invoice from the contract pricing — seats, bundles, OCR packs and service retainer, without onboarding. For renewals."
+    "billSubscriptionTitle": "Generate a subscription invoice from the contract pricing — seats, bundles, OCR packs and service retainer, without onboarding. For renewals.",
+    "printAgreement": "📄 Print agreement",
+    "printAgreementTitle": "Printable Enterprise Agreement — MSA terms + Exhibit A commercial terms from this record. Draft for legal review."
   },
   "contracts": {
     "+ Invoice": "+ Invoice",

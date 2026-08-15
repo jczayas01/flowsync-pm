@@ -686,7 +686,9 @@
     "onbFreeChip": "{h} h gratis (onboarding): −{d}",
     "svcDiscChip": "Servicio −{pct}%: −{d}",
     "billSubscription": "+ Factura de suscripción (PDF)",
-    "billSubscriptionTitle": "Genera una factura de suscripción con el precio del contrato — sillas, paquetes, OCR y retainer de servicio, sin onboarding. Para renovaciones."
+    "billSubscriptionTitle": "Genera una factura de suscripción con el precio del contrato — sillas, paquetes, OCR y retainer de servicio, sin onboarding. Para renovaciones.",
+    "printAgreement": "📄 Imprimir contrato",
+    "printAgreementTitle": "Acuerdo Empresarial imprimible — términos del MSA + Anexo A comercial de este registro. Borrador para revisión legal."
   },
   "contracts": {
     "+ Invoice": "+ Factura",

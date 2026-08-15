@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
-import { contractMath } from "@/components/admin/ContractsPanel"
+import { contractMath } from "@/lib/contract-math"
 
 const NAVY = "#0F2942", STEEL = "#1B6CA8", GREEN = "#059669", AMBER = "#D97706", RED = "#DC2626"
 
@@ -546,7 +546,14 @@ function ContractRecord({ contract, onBack, onEdit, onChanged }: {
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: NAVY }}>{money(c.acv, c.currency)}</div>
             <div style={{ fontSize: 11, color: "var(--text-3,#64748B)" }}>{cl("f_acv")}</div>
-            <button style={{ ...miniBtn, marginTop: 8 }} onClick={onEdit}>{cl("Edit contract")}</button>
+            <div style={{ display: "flex", gap: 6, marginTop: 8, justifyContent: "flex-end" }}>
+              <button style={miniBtn}
+                onClick={() => window.open(`/print/contracts/${c.id}/agreement`, "_blank")}
+                title={cl("printAgreementTitle")}>
+                {cl("printAgreement")}
+              </button>
+              <button style={miniBtn} onClick={onEdit}>{cl("Edit contract")}</button>
+            </div>
           </div>
         </div>
       </div>
