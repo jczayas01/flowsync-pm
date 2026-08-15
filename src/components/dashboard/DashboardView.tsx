@@ -33,7 +33,7 @@ function fmtCurrency(n: number, currency = 'USD') {
 }
 
 // ── Main component ───────────────────────────
-export function DashboardView({ projects, milestones, risks, activity,
+export function DashboardView({ projects: projectsIn, milestones, risks, activity,
   healthCounts, workspaceId, userRole = 'MEMBER' }: {
   projects:     any[]
   milestones:   any[]
@@ -56,6 +56,15 @@ export function DashboardView({ projects, milestones, risks, activity,
     { href:'/intake',    label:t('submitIdea'), icon:'💡', show:lvl > 5 },
     { href:'/executive', label:t('executiveView'), icon:'👔', show:can('projects:view_all') },
   ].filter(a => a.show)
+
+  // Status filter drives every card and the table. Default = Active (the
+  // classic dashboard); Executive stays the place for the whole portfolio.
+  const [statusFilter, setStatusFilter] = useState<string>('ACTIVE')
+  const STATUS_OPTS = ['ACTIVE','ON_HOLD','DRAFT','PENDING_APPROVAL','COMPLETED','CANCELLED','ALL']
+  const allProjects = projectsIn
+  const statusCounts = allProjects.reduce((acc:any, p:any) => { acc[p.status] = (acc[p.status]||0)+1; return acc }, {})
+  const projects = statusFilter === 'ALL' ? allProjects
+    : allProjects.filter((p:any) => p.status === statusFilter)
 
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
   const methodCounts = projects.reduce((acc:any, p:any) => { acc[p.methodology] = (acc[p.methodology]||0)+1; return acc }, {})
@@ -119,7 +128,8 @@ export function DashboardView({ projects, milestones, risks, activity,
       {/* ── KPI row ── */}
       <div className="fs-cols-4" style={{ marginBottom:16 }}>
         {[
-          { label:t('Active projects'), value:projects.length, sub:`${healthCounts.RED} ${t('at risk')}`,
+          { label: statusFilter === 'ACTIVE' ? t('Active projects') : t('ps_' + statusFilter) + ' · ' + t('projectsWord'),
+            value:projects.length, sub:`${healthCounts.RED} ${t('at risk')}`,
             subColor: healthCounts.RED > 0 ? 'var(--red)' : 'var(--text-3)', icon:'📁' },
           { label:t('Overall completion'), value:`${avgComplete}%`,
             sub: projects.length===1 ? t('project progress') : t('across all projects'),
@@ -188,10 +198,25 @@ export function DashboardView({ projects, milestones, risks, activity,
         <div style={card}>
           <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--border)',
             display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{t('activeProjectsSection')}</span>
-            <Link href="/projects" style={{ fontSize:12, color:'var(--steel)', textDecoration:'none' }}>
-              {t('View all')} →
-            </Link>
+            <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
+              {statusFilter === 'ACTIVE' ? t('activeProjectsSection') : t('projectsSection')}
+              <span style={{ fontSize:11, fontWeight:500, color:'var(--text-3)', marginLeft:6 }}>({projects.length})</span>
+            </span>
+            <span style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                aria-label={t('statusFilter')}
+                style={{ fontSize:11.5, padding:'4px 8px', borderRadius:6, border:'1px solid var(--border)',
+                  background:'#fff', color:'var(--text-2)', fontFamily:'var(--font)', cursor:'pointer' }}>
+                {STATUS_OPTS.map(st => (
+                  <option key={st} value={st}>
+                    {t('ps_' + st)}{st !== 'ALL' && statusCounts[st] ? ` (${statusCounts[st]})` : ''}
+                  </option>
+                ))}
+              </select>
+              <Link href="/projects" style={{ fontSize:12, color:'var(--steel)', textDecoration:'none' }}>
+                {t('View all')} →
+              </Link>
+            </span>
           </div>
           {methodChips.length > 2 && (
             <div style={{ display:'flex', gap:6, padding:'8px 16px', borderBottom:'1px solid var(--border)', flexWrap:'wrap' }}>

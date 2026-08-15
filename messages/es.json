@@ -864,7 +864,17 @@
     "recentActivity": "Actividad reciente",
     "score ≥ 9": "puntuación ≥ 9",
     "spent": "gastado",
-    "submitIdea": "Enviar una idea"
+    "submitIdea": "Enviar una idea",
+    "projectsSection": "Proyectos",
+    "statusFilter": "Filtrar por estatus",
+    "projectsWord": "proyectos",
+    "ps_ACTIVE": "Activos",
+    "ps_ON_HOLD": "En pausa",
+    "ps_DRAFT": "Borrador",
+    "ps_PENDING_APPROVAL": "Pendientes de aprobación",
+    "ps_COMPLETED": "Completados",
+    "ps_CANCELLED": "Cancelados",
+    "ps_ALL": "Todos los estatus"
   },
   "deleteRoles": {
     "Always allowed": "Siempre permitido",

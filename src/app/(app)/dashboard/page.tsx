@@ -30,7 +30,8 @@ export default async function DashboardPage() {
   // Parallel data fetching
   const [projects, upcomingMilestones, openRisks, recentActivity] = await Promise.all([
     db.project.findMany({
-      where:   { workspaceId, status: { in: ['ACTIVE','ON_HOLD'] }, AND: [vis] },
+      // All statuses except archived — the dashboard filters client-side.
+      where:   { workspaceId, status: { notIn: ['ARCHIVED'] }, AND: [vis] },
       include: {
         _count: { select: { tasks: true, risks: true } },
         members: {
