@@ -69,6 +69,18 @@ async function patch(ctx: ApiContext, params?: Record<string, string>) {
 }
 
 async function act(ctx: ApiContext, params?: Record<string, string>) {
+  try {
+    return await actInner(ctx, params)
+  } catch (e: any) {
+    if (e?.message === "DUP_CODE")
+      return err("Project code already exists — retry / El código de proyecto ya existe — reintenta", 409)
+    if (e?.code === "P2003" || e?.code === "P2025")
+      return err("Related record missing — refresh and retry / Falta un registro relacionado — recarga e intenta", 409)
+    return err(`Promote failed: ${String(e?.message || e).slice(0, 200)}`, 500)
+  }
+}
+
+async function actInner(ctx: ApiContext, params?: Record<string, string>) {
   const url = new URL(ctx.req.url)
   if (url.searchParams.get("action") !== "promote") return err("Unknown action")
   const item = await (db as any).initiative.findFirst({
@@ -78,13 +90,22 @@ async function act(ctx: ApiContext, params?: Record<string, string>) {
   if (item.status === "PROMOTED" && item.promotedProjectId) {
     return ok({ projectId: item.promotedProjectId, already: true })
   }
-  const count = await db.project.count({ where: { workspaceId: ctx.workspaceId } })
+  // Codes are unique per workspace and projects get deleted, so count+1
+  // collides with survivors (PRJ-009 alive with 6 projects). Take the highest
+  // existing numeric suffix + 1 instead.
+  const codes = await db.project.findMany({
+    where: { workspaceId: ctx.workspaceId }, select: { code: true },
+  })
+  const maxN = codes.reduce((m, c) => {
+    const n = parseInt(String(c.code || "").replace(/\D/g, ""), 10)
+    return Number.isFinite(n) && n > m ? n : m
+  }, 0)
   const project = await db.$transaction(async tx => {
     const p = await tx.project.create({
       data: {
         workspaceId: ctx.workspaceId,
         createdById: ctx.userId,
-        code:        `PRJ-${String(count + 1).padStart(3, "0")}`,
+        code:        `PRJ-${String(maxN + 1).padStart(3, "0")}`,
         name:        item.title,
         methodology: "WATERFALL",
         objective:   [item.goal, item.summary].filter(Boolean).join("\n\n") || null,
@@ -100,6 +121,10 @@ async function act(ctx: ApiContext, params?: Record<string, string>) {
       data:  { status: "PROMOTED", promotedProjectId: p.id },
     })
     return p
+  }).catch((e: any) => {
+    // Surface the real reason — a silent generic error cost a debugging round.
+    if (e?.code === "P2002") throw new Error("DUP_CODE")
+    throw e
   })
   return ok({ projectId: project.id })
 }
