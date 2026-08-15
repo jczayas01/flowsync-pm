@@ -48,6 +48,61 @@ export function IdeasWorkspace({ workspaceId }: { workspaceId: string }) {
   }, [workspaceId])
   useEffect(() => { if (selId) loadOne(selId); else setItem(null) }, [selId, loadOne])
 
+  const [scanning, setScanning] = useState<"" | "idea" | "option">("")
+
+  /** Upload a document to /api/ideas/scan and apply the AI prefill.
+   *  mode "idea": fills ONLY fields the user hasn't typed yet — a scan must
+   *  never silently overwrite human input. mode "option": appends extracted
+   *  options to the comparison matrix. */
+  async function scanDoc(mode: "idea" | "option", file: File) {
+    if (!file || scanning) return
+    if (file.size > 4 * 1024 * 1024) { setErr(t("scanTooBig")); return }
+    setScanning(mode); setErr("")
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("mode", mode)
+      const res = await fetch("/api/ideas/scan", {
+        method: "POST", headers: { "x-workspace-id": workspaceId }, body: fd,
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setErr(d?.error || t("scanFailed")); return }
+      const r = d?.data?.result || {}
+      if (mode === "idea") {
+        const upd: any = {}
+        const fill = (k: string, v: any) => {
+          if (v != null && v !== "" && !(item as any)[k]) upd[k] = v
+        }
+        fill("summary", r.summary); fill("problem", r.problem)
+        fill("goal", r.goal); fill("sponsor", r.sponsor)
+        fill("estCost", r.estCost); fill("estBenefit", r.estBenefit)
+        fill("targetDate", r.targetDate)
+        if (r.title && (!item.title || /^(Nueva idea|New idea)/i.test(item.title))) upd.title = r.title
+        if (!Object.keys(upd).length) { setErr(t("scanNothingNew")); return }
+        setItem({ ...item, ...upd })
+        await patch(upd, true)
+      } else {
+        const opts = Array.isArray(r.options) ? r.options : []
+        if (!opts.length) { setErr(t("scanNoOptions")); return }
+        const cmp = item.comparison || { criteria: [], options: [] }
+        const added = opts.slice(0, 4).map((o: any) => ({
+          id: Math.random().toString(36).slice(2, 10),
+          name: String(o.name || "Option").slice(0, 120),
+          vendor: o.vendor ? String(o.vendor).slice(0, 120) : undefined,
+          cost: Number(o.cost) > 0 ? Number(o.cost) : undefined,
+          costNote: o.costNote ? String(o.costNote).slice(0, 60) : undefined,
+          pros: o.pros ? String(o.pros).slice(0, 600) : undefined,
+          cons: o.cons ? String(o.cons).slice(0, 600) : undefined,
+          specs: (o.specs && typeof o.specs === "object") ? o.specs : {},
+          scores: {},
+        }))
+        const next = { ...cmp, options: [...cmp.options, ...added] }
+        setItem({ ...item, comparison: next })
+        await patch({ comparison: next })
+      }
+    } finally { setScanning("") }
+  }
+
   async function patch(body: any, refreshList = false) {
     if (!item) return
     setSaving(true); setErr("")
@@ -206,6 +261,14 @@ export function IdeasWorkspace({ workspaceId }: { workspaceId: string }) {
                   {t("openProject")} →
                 </a>
               )}
+              <label style={{ ...miniBtn, cursor: scanning ? "wait" : "pointer",
+                display: "inline-flex", alignItems: "center", gap: 5 }}
+                title={t("scanIdeaTitle")}>
+                {scanning === "idea" ? "…" : <>🤖 {t("scanIdea")}</>}
+                <input type="file" accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.png,.jpg,.jpeg"
+                  style={{ display: "none" }} disabled={!!scanning}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) scanDoc("idea", f); e.target.value = "" }} />
+              </label>
               <button onClick={removeIdea} style={{ ...miniBtn, color: "#DC2626" }}>✕</button>
             </div>
 
@@ -266,7 +329,7 @@ export function IdeasWorkspace({ workspaceId }: { workspaceId: string }) {
             </div>
 
             <ComparisonMatrix item={item} setItem={setItem} patch={patch}
-              t={t} inp={inp} lbl={lbl} card={card} secTitle={secTitle} miniBtn={miniBtn} />
+              t={t} inp={inp} lbl={lbl} card={card} secTitle={secTitle} miniBtn={miniBtn}  scanDoc={scanDoc} scanning={scanning} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="fs-cols-1-m">
               <MeetingLog item={item} setItem={setItem} patch={patch}
@@ -292,7 +355,7 @@ export function IdeasWorkspace({ workspaceId }: { workspaceId: string }) {
 }
 
 // ── Weighted comparison matrix ─────────────────────────────────────────────
-function ComparisonMatrix({ item, setItem, patch, t, inp, lbl, card, secTitle, miniBtn }: any) {
+function ComparisonMatrix({ item, setItem, patch, t, inp, lbl, card, secTitle, miniBtn, scanDoc, scanning }: any) {
   const cmp = item.comparison || { criteria: [], options: [] }
   const set = (next: any) => { setItem({ ...item, comparison: next }); }
   const save = (next: any) => patch({ comparison: next })
@@ -331,6 +394,16 @@ function ComparisonMatrix({ item, setItem, patch, t, inp, lbl, card, secTitle, m
               { id: uid(), name: t("newCriterion"), weight: 10 }] }
             set(next); save(next)
           }}>＋ {t("criterion")}</button>
+          {scanDoc && (
+            <label style={{ ...miniBtn, cursor: scanning ? "wait" : "pointer",
+              display: "inline-flex", alignItems: "center", gap: 5 }}
+              title={t("scanOptionTitle")}>
+              {scanning === "option" ? "…" : <>🤖 {t("scanOption")}</>}
+              <input type="file" accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.png,.jpg,.jpeg"
+                style={{ display: "none" }} disabled={!!scanning}
+                onChange={e => { const f = e.target.files?.[0]; if (f) scanDoc("option", f); e.target.value = "" }} />
+            </label>
+          )}
         </span>
       </div>
       {totalWeight !== 100 && cmp.criteria.length > 0 && (

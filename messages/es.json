@@ -2924,6 +2924,14 @@
     "linksEmpty": "Cotizaciones, folletos, carpetas — toda referencia vive aquí",
     "linkNamePh": "Nombre (ej. Cotización proveedor)",
     "decisionTitle": "Decisión y justificación",
-    "decisionPh": "Qué se decidió y por qué — esto es lo que sobrevive cuando la idea se promueve o archiva"
+    "decisionPh": "Qué se decidió y por qué — esto es lo que sobrevive cuando la idea se promueve o archiva",
+    "scanIdea": "Escanear documento",
+    "scanIdeaTitle": "Sube una propuesta, brief o correo — la IA llena los campos vacíos (nunca sobrescribe lo que escribiste)",
+    "scanOption": "Opción desde documento",
+    "scanOptionTitle": "Sube una cotización o hoja de especificaciones — la IA extrae opciones con specs a la matriz",
+    "scanTooBig": "El archivo excede el límite de 4 MB — comprímelo o divídelo",
+    "scanFailed": "El escaneo falló — intenta de nuevo",
+    "scanNothingNew": "Nada nuevo que llenar — todos los campos ya tienen contenido",
+    "scanNoOptions": "No se encontraron opciones en ese documento"
   }
 }

@@ -2924,6 +2924,14 @@
     "linksEmpty": "Quotes, brochures, folders — keep every reference here",
     "linkNamePh": "Name (e.g. Vendor quote)",
     "decisionTitle": "Decision & rationale",
-    "decisionPh": "What was decided and why — this is what survives when the idea is promoted or archived"
+    "decisionPh": "What was decided and why — this is what survives when the idea is promoted or archived",
+    "scanIdea": "Scan document",
+    "scanIdeaTitle": "Upload a proposal, brief or email — AI prefills the empty fields (never overwrites what you typed)",
+    "scanOption": "Option from document",
+    "scanOptionTitle": "Upload a vendor quote or spec sheet — AI extracts options with specs into the matrix",
+    "scanTooBig": "File exceeds the 4 MB limit — compress or split it",
+    "scanFailed": "Scan failed — try again",
+    "scanNothingNew": "Nothing new to fill — all fields already have content",
+    "scanNoOptions": "No options found in that document"
   }
 }
