@@ -10,11 +10,11 @@ const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
 // What each scope actually buys the user, in their words — not Microsoft's.
 const CAPABILITIES = [
-  { scope:"Mail.Read",           icon:"ðŸ“§", label:"capMailLabel",
+  { scope:"Mail.Read",           icon:"📧", label:"capMailLabel",
     desc:"capMailDesc" },
-  { scope:"Calendars.Read",      icon:"ðŸ“…", label:"capMeetingsLabel",
+  { scope:"Calendars.Read",      icon:"📅", label:"capMeetingsLabel",
     desc:"capMeetingsDesc" },
-  { scope:"OnlineMeetings.Read", icon:"ðŸ’¬", label:"capTeamsLabel",
+  { scope:"OnlineMeetings.Read", icon:"💬", label:"capTeamsLabel",
     desc:"capTeamsDesc" },
   { scope:"Tasks.ReadWrite",     icon:"✅", label:"capPlannerLabel",
     desc:"capPlannerDesc" },
@@ -67,7 +67,7 @@ export function IntegrationsView({
         <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", gap:13 }}>
           <div style={{ width:40, height:40, borderRadius:9, background:"#EFF6FF",
-            display:"grid", placeItems:"center", fontSize:20, flexShrink:0 }}>ðŸªŸ</div>
+            display:"grid", placeItems:"center", fontSize:20, flexShrink:0 }}>🪟</div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:15, fontWeight:700, color:NAVY }}>{iv("Microsoft 365")}</div>
             <div style={{ fontSize:12, color:SLATE, marginTop:2 }}>

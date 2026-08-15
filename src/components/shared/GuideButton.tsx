@@ -7,8 +7,8 @@
 //
 //   <GuideButton topic="gantt" />
 //
-// `topic` must match a walkthrough id in HelpCenter: import Â· tasks Â· gantt Â· budget
-// Â· risks Â· governance Â· templates Â· reports Â· m365 Â· resources Â· roles
+// `topic` must match a walkthrough id in HelpCenter: import · tasks · gantt · budget
+// · risks · governance · templates · reports · m365 · resources · roles
 import { useState } from "react"
 import { HelpCenter } from "@/components/help/HelpCenter"
 

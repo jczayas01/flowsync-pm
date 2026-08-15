@@ -75,7 +75,7 @@ export default function RolesPage() {
       {/* ── How roles work: the two layers ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }} className="fs-cols-2">
         <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:8, padding:"14px 16px" }}>
-          <div style={{ fontSize:13, fontWeight:700, color:"#1B6CA8", marginBottom:6 }}>ðŸ¢ Workspace roles (this page)</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1B6CA8", marginBottom:6 }}>🏢 Workspace roles (this page)</div>
           <div style={{ fontSize:12, color:"#334155", lineHeight:1.55 }}>
             One per person, set in <strong>Settings → Team</strong>. Controls platform access — what
             someone can see and do across the whole workspace. The matrix below is the full permission
@@ -83,7 +83,7 @@ export default function RolesPage() {
           </div>
         </div>
         <div style={{ background:"#F0FDF4", border:"1px solid #BBF7D0", borderRadius:8, padding:"14px 16px" }}>
-          <div style={{ fontSize:13, fontWeight:700, color:"#059669", marginBottom:6 }}>ðŸ“ Project roles (per project)</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#059669", marginBottom:6 }}>📁 Project roles (per project)</div>
           <div style={{ fontSize:12, color:"#334155", lineHeight:1.55 }}>
             Assigned in each project's <strong>Team tab</strong> and can differ per project — a workspace
             Team Member can be the PM of one project and an Auditor on another. Project approvals accept
@@ -174,7 +174,7 @@ export default function RolesPage() {
 
       {/* ── Project roles reference ── */}
       <div style={{ marginTop: 28 }}>
-        <div style={{ fontSize:16, fontWeight:700, color:"#0D1B2A", marginBottom:4 }}>ðŸ“ Project roles</div>
+        <div style={{ fontSize:16, fontWeight:700, color:"#0D1B2A", marginBottom:4 }}>📁 Project roles</div>
         <div style={{ fontSize:12, color:"#64748B", marginBottom:12 }}>
           Assigned per project in the project's <strong>Team</strong> tab — independent of the workspace role above.
         </div>

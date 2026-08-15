@@ -51,7 +51,7 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
       {/* ── Intro ── */}
       <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12, padding:"16px 18px", marginBottom:14 }}>
         <div style={{ fontSize:15, fontWeight:700, color:NAVY, marginBottom:5 }}>
-          ðŸ“„ {es ? "Plantillas de documentos" : "Document templates"}
+          📄 {es ? "Plantillas de documentos" : "Document templates"}
         </div>
         <div style={{ fontSize:12.5, color:"var(--text-2)", lineHeight:1.6, maxWidth:760 }}>
           {es
@@ -60,7 +60,7 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
         </div>
         <div style={{ marginTop:10, padding:"9px 12px", background:"#EFF6FF", borderLeft:`3px solid ${STEEL}`,
           borderRadius:"0 6px 6px 0", fontSize:12, color:"#1E40AF", lineHeight:1.55 }}>
-          <strong>ðŸ¤– {es ? `${aiCount} de estas son legibles por IA.` : `${aiCount} of these are AI-readable.`}</strong>{" "}
+          <strong>🤖 {es ? `${aiCount} de estas son legibles por IA.` : `${aiCount} of these are AI-readable.`}</strong>{" "}
           {es
             ? "Complétalas y súbelas en la pestaña Gobernanza del proyecto — FlowSync las lee y llena tu proyecto automáticamente."
             : "Fill one in and upload it under a project's Governance tab — FlowSync reads it and populates your project automatically."}
@@ -78,7 +78,7 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
           </Chip>
         ))}
         <Chip active={aiOnly} onClick={() => setAiOnly(v => !v)} accent>
-          ðŸ¤– {es ? "Legibles por IA" : "AI-readable"} <span style={{ opacity:.55 }}>{aiCount}</span>
+          🤖 {es ? "Legibles por IA" : "AI-readable"} <span style={{ opacity:.55 }}>{aiCount}</span>
         </Chip>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder={es ? "Buscar…" : "Search…"}
           style={{ marginLeft:"auto", padding:"6px 11px", border:"1px solid var(--border)",
@@ -112,7 +112,7 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
                       <Tag color={t.format === "xlsx" ? GREEN : STEEL}>
                         {t.format === "xlsx" ? "Excel" : "Word"}
                       </Tag>
-                      {t.ingestType && <Tag color="#7C3AED">ðŸ¤– {es ? "IA" : "AI"}</Tag>}
+                      {t.ingestType && <Tag color="#7C3AED">🤖 {es ? "IA" : "AI"}</Tag>}
                     </div>
                   </div>
                 </div>

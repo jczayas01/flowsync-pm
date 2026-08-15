@@ -56,7 +56,7 @@ export function DeleteRolesPanel({ workspaceId = "" }: { workspaceId?: string })
     <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:10, marginTop:18 }}>
       <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
         <div style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>
-          ðŸ—‘ {dr("Deletion permissions")} {saving && <span style={{ fontSize:11, color:"var(--text-3)", fontWeight:400 }}>· {dr("saving…")}</span>}
+          🗑 {dr("Deletion permissions")} {saving && <span style={{ fontSize:11, color:"var(--text-3)", fontWeight:400 }}>· {dr("saving…")}</span>}
         </div>
         <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:2 }}>
           {dr("hint")}

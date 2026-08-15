@@ -44,7 +44,7 @@ function mapPayload(d: any): Item[] {
   for (const m of d?.meetings ?? []) {
     items.push({
       kind: "meeting", id: m.meetingId, title: m.subject || "(meeting)",
-      meta: `ðŸ“… ${m.organizer} · ${new Date(m.startTime).toLocaleString()} · ${m.durationMinutes} min`,
+      meta: `📅 ${m.organizer} · ${new Date(m.startTime).toLocaleString()} · ${m.durationMinutes} min`,
       snippet: m.suggestedMinutes || (m.actionItems?.length ? `Action items: ${m.actionItems.join("; ")}` : undefined),
       projectId: m.projectId, projectLabel: m.projectCode,
       action: "log_minutes", actionLabel: "logMinutes",
@@ -59,7 +59,7 @@ function mapPayload(d: any): Item[] {
   for (const c of d?.chats ?? []) {
     items.push({
       kind: "chat", id: c.messageId, title: `${c.teamName} / ${c.channelName}`,
-      meta: `ðŸ’¬ ${c.sender} · ${new Date(c.sentAt).toLocaleString()}`,
+      meta: `💬 ${c.sender} · ${new Date(c.sentAt).toLocaleString()}`,
       snippet: c.content,
       projectId: c.projectId, projectLabel: null,
       action: c.hasTaskMention ? "create_task" : "log_minutes",
