@@ -79,6 +79,7 @@ model User {
   commentReads    CommentRead[]
 
   @@map("users")
+  initiativesCreated  Initiative[] @relation("InitiativesCreated")
 }
 
 model DemoRequest {
@@ -177,6 +178,7 @@ model Workspace {
   // AI governance: workspace-level kill switch. Enforced server-side in every
   // AI route via aiGuard(); calls and blocks land in AuditLog as "ai.*".
   aiEnabled            Boolean               @default(true)
+  initiatives          Initiative[]
   // White-label branding shown in the customer's own instance
   brandName            String?
   supportEmail         String?
@@ -1751,6 +1753,47 @@ enum GoalStatus {
 }
 
 // ── Enterprise Contracts / CLM (vendor-side: FlowSync's customer agreements) ──
+
+enum InitiativeStatus {
+  IDEA
+  EXPLORING
+  COMPARING
+  READY
+  PROMOTED
+  ARCHIVED
+}
+
+/// Pre-project workspace: where an idea matures — notes, meeting log, links,
+/// and a weighted solution-comparison matrix — until it earns promotion to a
+/// real Project (or gets archived with the reasoning preserved). Meetings,
+/// links and the comparison live as JSON: working material, not governed
+/// records; promotion is the moment they graduate into real models.
+model Initiative {
+  id                 String           @id @default(cuid())
+  workspaceId        String
+  title              String
+  summary            String?
+  problem            String?
+  goal               String?
+  sponsor            String?
+  estCost            Decimal?         @db.Decimal(15, 2)
+  estBenefit         Decimal?         @db.Decimal(15, 2)
+  targetDate         DateTime?
+  status             InitiativeStatus @default(IDEA)
+  decision           String?
+  meetings           Json?
+  links              Json?
+  comparison         Json?
+  promotedProjectId  String?
+  createdById        String
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  workspace          Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy          User             @relation("InitiativesCreated", fields: [createdById], references: [id])
+
+  @@index([workspaceId, status])
+  @@map("initiatives")
+}
 
 enum ContractStatus {
   DRAFT
