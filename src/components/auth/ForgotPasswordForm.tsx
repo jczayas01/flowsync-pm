@@ -19,7 +19,7 @@ export function ForgotPasswordForm() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ email }),
       })
-    } catch { /* endpoint is intentionally silent â€” show the same result either way */ }
+    } catch { /* endpoint is intentionally silent — show the same result either way */ }
     setLoading(false)
     setSent(true)
   }
@@ -30,7 +30,7 @@ export function ForgotPasswordForm() {
         <div style={{ background:"rgba(5,150,105,.12)", border:"1px solid rgba(5,150,105,.4)",
           borderRadius:"var(--radius)", padding:"14px 16px", marginBottom:18 }}>
           <div style={{ fontSize:14, fontWeight:600, color:"#34D399", marginBottom:4 }}>
-            âœ‰ï¸ {t("checkYourEmail")}
+            ✉ï¸ {t("checkYourEmail")}
           </div>
           <div style={{ fontSize:13, color:"rgba(255,255,255,.7)", lineHeight:1.55 }}>
             {t("resetLinkSent")}

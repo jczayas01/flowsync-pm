@@ -48,26 +48,26 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
 
   return (
     <div style={{ marginTop: 8 }}>
-      {/* â”€â”€ Intro â”€â”€ */}
+      {/* ── Intro ── */}
       <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12, padding:"16px 18px", marginBottom:14 }}>
         <div style={{ fontSize:15, fontWeight:700, color:NAVY, marginBottom:5 }}>
           ðŸ“„ {es ? "Plantillas de documentos" : "Document templates"}
         </div>
         <div style={{ fontSize:12.5, color:"var(--text-2)", lineHeight:1.6, maxWidth:760 }}>
           {es
-            ? "Formatos en blanco listos para usar en cualquier tipo de proyecto â€” sin contenido especÃ­fico de industria. DescÃ¡rgalos en Word o Excel, complÃ©talos y trabaja como prefieras."
-            : "Blank, ready-to-use forms for any type of project â€” no industry-specific content. Download in Word or Excel, fill them in, and work however you like."}
+            ? "Formatos en blanco listos para usar en cualquier tipo de proyecto — sin contenido específico de industria. Descárgalos en Word o Excel, complétalos y trabaja como prefieras."
+            : "Blank, ready-to-use forms for any type of project — no industry-specific content. Download in Word or Excel, fill them in, and work however you like."}
         </div>
         <div style={{ marginTop:10, padding:"9px 12px", background:"#EFF6FF", borderLeft:`3px solid ${STEEL}`,
           borderRadius:"0 6px 6px 0", fontSize:12, color:"#1E40AF", lineHeight:1.55 }}>
           <strong>ðŸ¤– {es ? `${aiCount} de estas son legibles por IA.` : `${aiCount} of these are AI-readable.`}</strong>{" "}
           {es
-            ? "ComplÃ©talas y sÃºbelas en la pestaÃ±a Gobernanza del proyecto â€” FlowSync las lee y llena tu proyecto automÃ¡ticamente."
-            : "Fill one in and upload it under a project's Governance tab â€” FlowSync reads it and populates your project automatically."}
+            ? "Complétalas y súbelas en la pestaña Gobernanza del proyecto — FlowSync las lee y llena tu proyecto automáticamente."
+            : "Fill one in and upload it under a project's Governance tab — FlowSync reads it and populates your project automatically."}
         </div>
       </div>
 
-      {/* â”€â”€ Filters â”€â”€ */}
+      {/* ── Filters ── */}
       <div className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:7, marginBottom:14 }}>
         <Chip active={phase==="all"} onClick={() => setPhase("all")}>
           {es ? "Todas" : "All"} <span style={{ opacity:.55 }}>{DOC_TEMPLATES.length}</span>
@@ -80,12 +80,12 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
         <Chip active={aiOnly} onClick={() => setAiOnly(v => !v)} accent>
           ðŸ¤– {es ? "Legibles por IA" : "AI-readable"} <span style={{ opacity:.55 }}>{aiCount}</span>
         </Chip>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder={es ? "Buscarâ€¦" : "Searchâ€¦"}
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={es ? "Buscar…" : "Search…"}
           style={{ marginLeft:"auto", padding:"6px 11px", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", fontSize:12.5, minWidth:170, outline:"none", fontFamily:"var(--font)" }} />
       </div>
 
-      {/* â”€â”€ Grouped cards â”€â”€ */}
+      {/* ── Grouped cards ── */}
       {!shown.length && (
         <div style={{ padding:"36px 20px", textAlign:"center", fontSize:13, color:"var(--text-3)" }}>
           {es ? "Ninguna plantilla coincide con ese filtro." : "No templates match that filter."}
@@ -123,7 +123,7 @@ export function DocTemplateLibrary({ locale = "en" }: { locale?: "en" | "es" }) 
                   style={{ padding:"7px 12px", background: busy === t.id ? "#CBD5E1" : NAVY, color:"#fff",
                     border:"none", borderRadius:6, fontSize:12, fontWeight:600,
                     cursor: busy === t.id ? "default" : "pointer", fontFamily:"var(--font)" }}>
-                  {busy === t.id ? (es ? "Generandoâ€¦" : "Generatingâ€¦") : (es ? "â†“ Descargar" : "â†“ Download")}
+                  {busy === t.id ? (es ? "Generando…" : "Generating…") : (es ? "↓ Descargar" : "↓ Download")}
                 </button>
               </div>
             ))}

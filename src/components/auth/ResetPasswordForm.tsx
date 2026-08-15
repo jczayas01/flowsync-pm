@@ -43,7 +43,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
       <div>
         <div style={errBox}>{t("resetLinkInvalid")}</div>
         <Link href="/auth/forgot-password" style={{ color:"var(--steel)", fontSize:13, fontWeight:600, textDecoration:"none" }}>
-          {t("requestNewLink")} â†’
+          {t("requestNewLink")} →
         </Link>
       </div>
     )
@@ -54,7 +54,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
       <div style={{ background:"rgba(5,150,105,.12)", border:"1px solid rgba(5,150,105,.4)",
         borderRadius:"var(--radius)", padding:"14px 16px" }}>
         <div style={{ fontSize:14, fontWeight:600, color:"#34D399", marginBottom:4 }}>
-          âœ“ {t("passwordUpdated")}
+          ✓ {t("passwordUpdated")}
         </div>
         <div style={{ fontSize:13, color:"rgba(255,255,255,.7)" }}>{t("redirectingToSignIn")}</div>
       </div>

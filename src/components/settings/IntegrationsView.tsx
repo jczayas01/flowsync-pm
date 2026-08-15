@@ -8,7 +8,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", GREEN = "#059669", SLATE = "#64748B", RED = "#DC2626"
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 
-// What each scope actually buys the user, in their words â€” not Microsoft's.
+// What each scope actually buys the user, in their words — not Microsoft's.
 const CAPABILITIES = [
   { scope:"Mail.Read",           icon:"ðŸ“§", label:"capMailLabel",
     desc:"capMailDesc" },
@@ -16,7 +16,7 @@ const CAPABILITIES = [
     desc:"capMeetingsDesc" },
   { scope:"OnlineMeetings.Read", icon:"ðŸ’¬", label:"capTeamsLabel",
     desc:"capTeamsDesc" },
-  { scope:"Tasks.ReadWrite",     icon:"âœ…", label:"capPlannerLabel",
+  { scope:"Tasks.ReadWrite",     icon:"✅", label:"capPlannerLabel",
     desc:"capPlannerDesc" },
 ]
 
@@ -62,7 +62,7 @@ export function IntegrationsView({
         </div>
       )}
 
-      {/* â”€â”€ Microsoft 365 â”€â”€ */}
+      {/* ── Microsoft 365 ── */}
       <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden" }}>
         <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", gap:13 }}>
@@ -83,7 +83,7 @@ export function IntegrationsView({
         </div>
 
         <div style={{ padding:"16px 20px" }}>
-          {/* Signed in with Microsoft but never granted M365 access â€” the common case,
+          {/* Signed in with Microsoft but never granted M365 access — the common case,
               and the one most likely to confuse someone. Name it explicitly. */}
           {!connected && signedInWithMicrosoft && (
             <div style={{ padding:"10px 13px", background:"#FFFBEB", border:"1px solid #FDE68A",
@@ -108,7 +108,7 @@ export function IntegrationsView({
                         background:"var(--surface-2,#F1F5F9)", padding:"1px 5px", borderRadius:3 }}>
                         {c.scope}
                       </span>
-                      {on && <span style={{ fontSize:11, color:GREEN, fontWeight:700 }}>âœ“</span>}
+                      {on && <span style={{ fontSize:11, color:GREEN, fontWeight:700 }}>✓</span>}
                     </div>
                     <div style={{ fontSize:12, color:SLATE, lineHeight:1.55, marginTop:3 }}>{iv(c.desc as any)}</div>
                   </div>
@@ -130,7 +130,7 @@ export function IntegrationsView({
                   ? iv("renewsAuto")
                   : iv("noRefreshToken")}
                 {expiresAt && (
-                  <> Â· {iv("tokenValidUntil")}{" "}
+                  <> · {iv("tokenValidUntil")}{" "}
                     <span style={{ fontFamily:MONO }}>
                       {new Date(expiresAt).toLocaleString("en-US",{ month:"short", day:"numeric", hour:"numeric", minute:"2-digit" })}
                     </span>

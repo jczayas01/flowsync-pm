@@ -1,12 +1,12 @@
 ﻿"use client"
 // src/app/(app)/settings/roles/page.tsx
-// Role & Permissions reference page â€” visual matrix
+// Role & Permissions reference page — visual matrix
 
 
 import { DeleteRolesPanel } from "@/components/settings/DeleteRolesPanel"
 import { PERMISSIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_LEVEL, type AnyRole, type Permission } from "@/lib/rbac/roles"
 
-// Derived from the RBAC module â€” any role added there shows up here automatically,
+// Derived from the RBAC module — any role added there shows up here automatically,
 // ordered highest-access first.
 const ROLES: AnyRole[] = (Object.keys(ROLE_LEVEL) as AnyRole[])
   .sort((a, b) => ROLE_LEVEL[b] - ROLE_LEVEL[a])
@@ -40,10 +40,10 @@ const ROLE_COLORS: Record<string, string> = {
   CLIENT:          "#94A3B8",
 }
 
-// Roles that can be granted from Settings â†’ Team. System roles are platform-managed.
+// Roles that can be granted from Settings → Team. System roles are platform-managed.
 const ASSIGNABLE: AnyRole[] = ["ADMIN","PMO_DIRECTOR","EXECUTIVE","PROGRAM_MANAGER","PROJECT_MANAGER","TEAM_MEMBER","READ_ONLY","CLIENT"]
 
-// Project-level roles â€” assigned per project in the project's Team tab.
+// Project-level roles — assigned per project in the project's Team tab.
 const PROJECT_ROLES: { role: string; label: string; desc: string }[] = [
   { role:"SPONSOR",            label:"Sponsor",             desc:"Owns the business case; approves the project and major changes" },
   { role:"EXECUTIVE_SPONSOR",  label:"Executive Sponsor",   desc:"Senior leadership champion; escalation point and approver" },
@@ -72,12 +72,12 @@ export default function RolesPage() {
 
   return (
     <div style={{ fontFamily: "Inter, sans-serif", padding: "20px 16px", maxWidth: 1200, margin: "0 auto" }}>
-      {/* â”€â”€ How roles work: the two layers â”€â”€ */}
+      {/* ── How roles work: the two layers ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }} className="fs-cols-2">
         <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE", borderRadius:8, padding:"14px 16px" }}>
           <div style={{ fontSize:13, fontWeight:700, color:"#1B6CA8", marginBottom:6 }}>ðŸ¢ Workspace roles (this page)</div>
           <div style={{ fontSize:12, color:"#334155", lineHeight:1.55 }}>
-            One per person, set in <strong>Settings â†’ Team</strong>. Controls platform access â€” what
+            One per person, set in <strong>Settings → Team</strong>. Controls platform access — what
             someone can see and do across the whole workspace. The matrix below is the full permission
             reference for these roles.
           </div>
@@ -85,7 +85,7 @@ export default function RolesPage() {
         <div style={{ background:"#F0FDF4", border:"1px solid #BBF7D0", borderRadius:8, padding:"14px 16px" }}>
           <div style={{ fontSize:13, fontWeight:700, color:"#059669", marginBottom:6 }}>ðŸ“ Project roles (per project)</div>
           <div style={{ fontSize:12, color:"#334155", lineHeight:1.55 }}>
-            Assigned in each project's <strong>Team tab</strong> and can differ per project â€” a workspace
+            Assigned in each project's <strong>Team tab</strong> and can differ per project — a workspace
             Team Member can be the PM of one project and an Auditor on another. Project approvals accept
             either layer: the project's Sponsor / Executive Sponsor / PMO, <em>or</em> a workspace
             Owner / Admin / PMO Director.
@@ -103,7 +103,7 @@ export default function RolesPage() {
         </h1>
         <p style={{ fontSize: 13, color: "#64748B" }}>
           Complete permission matrix for all roles in FlowSync PM.
-          Role assignment is hierarchical â€” you can only assign roles below your own level.
+          Role assignment is hierarchical — you can only assign roles below your own level.
         </p>
       </div>
 
@@ -158,8 +158,8 @@ export default function RolesPage() {
                         return (
                           <td key={role} style={{ textAlign: "center", borderBottom: "1px solid #F1F5F9", width: colW }}>
                             {allowed
-                              ? <span style={{ color: "#059669", fontSize: 15 }}>âœ“</span>
-                              : <span style={{ color: "#E2E8F0", fontSize: 13 }}>â€”</span>}
+                              ? <span style={{ color: "#059669", fontSize: 15 }}>✓</span>
+                              : <span style={{ color: "#E2E8F0", fontSize: 13 }}>—</span>}
                           </td>
                         )
                       })}
@@ -172,11 +172,11 @@ export default function RolesPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Project roles reference â”€â”€ */}
+      {/* ── Project roles reference ── */}
       <div style={{ marginTop: 28 }}>
         <div style={{ fontSize:16, fontWeight:700, color:"#0D1B2A", marginBottom:4 }}>ðŸ“ Project roles</div>
         <div style={{ fontSize:12, color:"#64748B", marginBottom:12 }}>
-          Assigned per project in the project's <strong>Team</strong> tab â€” independent of the workspace role above.
+          Assigned per project in the project's <strong>Team</strong> tab — independent of the workspace role above.
         </div>
         <div className="fs-cols-2" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
           {PROJECT_ROLES.map(r => (
@@ -193,7 +193,7 @@ export default function RolesPage() {
       </div>
 
       <div style={{ marginTop: 16, fontSize: 11, color: "#94A3B8" }}>
-        âœ“ = Permitted  Â· â€” = Denied  Â· CLIENT permissions can be extended per project by the Project Manager
+        ✓ = Permitted  · — = Denied  · CLIENT permissions can be extended per project by the Project Manager
       </div>
     </div>
   )
