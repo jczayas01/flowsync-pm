@@ -26,8 +26,16 @@ async function update(ctx: ApiContext, params?: Record<string,string>) {
   if (!access.ok) return notFound("Project")
   const parsed = await parseBody(ctx.req, schema)
   if ("error" in parsed) return parsed.error
+  const data: any = { ...parsed.data }
+  if (parsed.data.status === "VERIFIED") {
+    data.verifiedAt = new Date(); data.verifiedById = ctx.userId
+  } else if (parsed.data.status) {
+    // any other explicit status change clears prior verification evidence
+    data.verifiedAt = null; data.verifiedById = null
+  }
   const req = await db.requirement.update({
-    where:{ id:params!.reqId }, data:parsed.data
+    where:{ id:params!.reqId }, data,
+    include: { verifiedBy: { select: { id:true, name:true } } } as any,
   })
   return ok(req)
 }

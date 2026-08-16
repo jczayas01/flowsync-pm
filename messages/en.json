@@ -2795,7 +2795,14 @@
     "pEditVendorNote": "Changes apply to every agreement with this vendor.",
     "pVendorSaveFailed": "Some agreements could not be updated — refresh and try again",
     "pScanForVendor": "Scan a document — new items go to this vendor",
-    "uploadTooBig": "over the 4 MB limit — compress the PDF (Acrobat > Reduce File Size) or split it"
+    "uploadTooBig": "over the 4 MB limit — compress the PDF (Acrobat > Reduce File Size) or split it",
+    "reqVerVerified": "Verified",
+    "reqVerRejected": "Rejected",
+    "reqVerReady": "Ready to verify — linked task is done",
+    "reqVerPending": "Pending verification",
+    "reqVerMark": "Mark verified",
+    "reqVerMarkTitle": "Record acceptance — stamps who and when",
+    "reqVerUndoTitle": "Undo verification"
   },
   "webhooks": {
     "+ New webhook": "+ New webhook",

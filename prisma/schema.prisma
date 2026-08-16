@@ -64,6 +64,7 @@ model User {
   qmpCreated           QualityManagementPlan[] @relation("QMPCreator")
   reportTemplates      ReportTemplate[]        @relation("ReportTemplateCreator")
   requirementsCreated  Requirement[]           @relation("RequirementCreator")
+  requirementsVerified  Requirement[]           @relation("RequirementVerifier")
   requirementsOwned    Requirement[]           @relation("RequirementOwner")
   ownedRisks           Risk[]
   sessions             Session[]
@@ -697,6 +698,10 @@ model Requirement {
   // Traceability: the task that implements this requirement. Nulls on task
   // delete so a removed task never takes its requirement with it.
   linkedTaskId       String?
+  // Verification evidence — who accepted it and when. Set when status moves
+  // to VERIFIED, cleared if it moves away.
+  verifiedAt         DateTime?
+  verifiedById       String?
   ownerId            String?
   createdById        String
   createdAt          DateTime @default(now())
@@ -705,6 +710,7 @@ model Requirement {
   owner              User?    @relation("RequirementOwner", fields: [ownerId], references: [id])
   project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   linkedTask         Task?    @relation("RequirementTask", fields: [linkedTaskId], references: [id], onDelete: SetNull)
+  verifiedBy         User?    @relation("RequirementVerifier", fields: [verifiedById], references: [id])
 
   @@index([linkedTaskId])
   @@map("requirements")

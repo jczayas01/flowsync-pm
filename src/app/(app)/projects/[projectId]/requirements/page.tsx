@@ -12,7 +12,8 @@ export default async function RequirementsPage({ params }: { params: { projectId
   const [requirements, tasks] = await Promise.all([
     db.requirement.findMany({
       where:{ projectId:params.projectId }, orderBy:{ code:"asc" },
-      include:{ createdBy:{ select:{ id:true, name:true } } }
+      include:{ createdBy:{ select:{ id:true, name:true } },
+                verifiedBy:{ select:{ id:true, name:true } } } as any
     }),
     db.task.findMany({
       where:{ projectId:params.projectId },

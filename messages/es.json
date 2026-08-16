@@ -2795,7 +2795,14 @@
     "pEditVendorNote": "Los cambios aplican a todos los acuerdos con este proveedor.",
     "pVendorSaveFailed": "Algunos acuerdos no se pudieron actualizar — recarga e intenta de nuevo",
     "pScanForVendor": "Escanear un documento — lo nuevo entra a este proveedor",
-    "uploadTooBig": "excede el límite de 4 MB — comprime el PDF (Acrobat > Reducir tamaño) o divídelo"
+    "uploadTooBig": "excede el límite de 4 MB — comprime el PDF (Acrobat > Reducir tamaño) o divídelo",
+    "reqVerVerified": "Verificado",
+    "reqVerRejected": "Rechazado",
+    "reqVerReady": "Listo para verificar — la tarea enlazada está terminada",
+    "reqVerPending": "Pendiente de verificación",
+    "reqVerMark": "Marcar verificado",
+    "reqVerMarkTitle": "Registra la aceptación — guarda quién y cuándo",
+    "reqVerUndoTitle": "Deshacer verificación"
   },
   "webhooks": {
     "+ New webhook": "+ Nuevo webhook",

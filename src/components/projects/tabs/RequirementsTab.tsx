@@ -507,8 +507,49 @@ export function RequirementsTab({ projectId, workspaceId, requirements, tasks }:
                               </span>
                             ) : "—"}
                           </td>
-                          <td style={{ padding:"9px 12px", textAlign:"center", fontSize:14 }}>
-                            {r.status==="VERIFIED" ? "✅" : r.status==="REJECTED" ? "❌" : "⏳"}
+                          <td style={{ padding:"9px 12px", textAlign:"center", whiteSpace:"nowrap" }}>
+                            {(() => {
+                              // Verification state derived from requirement + task:
+                              // ✅ verified · ❌ rejected · 🔍 ready (task DONE, not yet
+                              // verified) · ⏳ pending. Ready is the actionable one.
+                              const taskDone = linkedTask?.status === "DONE"
+                              const state = r.status === "VERIFIED" ? "verified"
+                                : r.status === "REJECTED" ? "rejected"
+                                : (taskDone || r.status === "IMPLEMENTED") ? "ready" : "pending"
+                              const icon = { verified:"✅", rejected:"❌", ready:"🔍", pending:"⏳" }[state]
+                              const label = { verified:tip("reqVerVerified"), rejected:tip("reqVerRejected"),
+                                              ready:tip("reqVerReady"), pending:tip("reqVerPending") }[state]
+                              const when = r.verifiedAt
+                                ? new Date(r.verifiedAt).toLocaleDateString(locale === "es" ? "es-PR" : "en-US",
+                                    { month:"short", day:"numeric", year:"numeric" })
+                                : null
+                              return (
+                                <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"center" }}>
+                                  <span title={label} style={{ fontSize:14 }}>{icon}</span>
+                                  {state === "verified" && (
+                                    <span style={{ fontSize:9.5, color:"var(--text-3)", lineHeight:1.2, textAlign:"left" }}>
+                                      {r.verifiedBy?.name || ""}{when ? <><br/>{when}</> : null}
+                                    </span>
+                                  )}
+                                  {state === "ready" && can("projects:edit") && (
+                                    <button onClick={() => updateStatus(r.id, "VERIFIED")}
+                                      title={tip("reqVerMarkTitle")}
+                                      style={{ fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:6,
+                                        border:"1px solid #059669", background:"#ECFDF5", color:"#059669",
+                                        cursor:"pointer", fontFamily:"var(--font)" }}>
+                                      {tip("reqVerMark")}
+                                    </button>
+                                  )}
+                                  {state === "verified" && can("projects:edit") && (
+                                    <button onClick={() => updateStatus(r.id, "IMPLEMENTED")}
+                                      title={tip("reqVerUndoTitle")}
+                                      style={{ fontSize:10, padding:"2px 6px", borderRadius:6,
+                                        border:"1px solid var(--border)", background:"#fff", color:"var(--text-3)",
+                                        cursor:"pointer", fontFamily:"var(--font)" }}>↺</button>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </td>
                         </tr>
                       )
