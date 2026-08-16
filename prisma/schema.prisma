@@ -436,6 +436,7 @@ model Task {
 
   @@unique([projectId, code])
   @@map("tasks")
+  requirements    Requirement[]  @relation("RequirementTask")
 }
 
 model TaskAssignee {
@@ -693,6 +694,9 @@ model Requirement {
   source             String?
   acceptanceCriteria String?
   traceability       String?
+  // Traceability: the task that implements this requirement. Nulls on task
+  // delete so a removed task never takes its requirement with it.
+  linkedTaskId       String?
   ownerId            String?
   createdById        String
   createdAt          DateTime @default(now())
@@ -700,7 +704,9 @@ model Requirement {
   createdBy          User     @relation("RequirementCreator", fields: [createdById], references: [id])
   owner              User?    @relation("RequirementOwner", fields: [ownerId], references: [id])
   project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  linkedTask         Task?    @relation("RequirementTask", fields: [linkedTaskId], references: [id], onDelete: SetNull)
 
+  @@index([linkedTaskId])
   @@map("requirements")
 }
 
