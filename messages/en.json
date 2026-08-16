@@ -2249,7 +2249,17 @@
     "✏ Edit task": "✏ Edit task",
     "✓ Mark complete": "✓ Mark complete",
     "⤷ Add child task": "⤷ Add child task",
-    "🗑 Delete": "🗑 Delete"
+    "🗑 Delete": "🗑 Delete",
+    "dueAll": "Any due date",
+    "dueAny": "Due soon or overdue",
+    "dueSoon": "Due in ≤ 7 days",
+    "dueOverdue": "Overdue",
+    "dueOverdueChip": "{n, plural, =1 {Overdue 1 day} other {Overdue # days}}",
+    "dueTodayChip": "Due today",
+    "dueTomorrowChip": "Due tomorrow",
+    "dueSoonChip": "{n, plural, =1 {1 day left} other {# days left}}",
+    "phaseOverdue": "{n, plural, =1 {1 overdue} other {# overdue}}",
+    "phaseDueSoon": "{n, plural, =1 {1 due soon} other {# due soon}}"
   },
   "teamSettings": {
     "Copied": "Copied",

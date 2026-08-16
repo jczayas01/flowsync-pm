@@ -2249,7 +2249,17 @@
     "✏ Edit task": "✏ Editar tarea",
     "✓ Mark complete": "✓ Marcar completada",
     "⤷ Add child task": "⤷ Añadir subtarea",
-    "🗑 Delete": "🗑 Eliminar"
+    "🗑 Delete": "🗑 Eliminar",
+    "dueAll": "Cualquier vencimiento",
+    "dueAny": "Por vencer o vencidas",
+    "dueSoon": "Vencen en ≤ 7 días",
+    "dueOverdue": "Vencidas",
+    "dueOverdueChip": "{n, plural, =1 {Vencida hace 1 día} other {Vencida hace # días}}",
+    "dueTodayChip": "Vence hoy",
+    "dueTomorrowChip": "Vence mañana",
+    "dueSoonChip": "{n, plural, =1 {Falta 1 día} other {Faltan # días}}",
+    "phaseOverdue": "{n, plural, =1 {1 vencida} other {# vencidas}}",
+    "phaseDueSoon": "{n, plural, =1 {1 por vencer} other {# por vencer}}"
   },
   "teamSettings": {
     "Copied": "Copiado",

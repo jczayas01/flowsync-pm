@@ -45,6 +45,17 @@ function fmtDate(d?: string|null) {
 function isOverdue(t: any) {
   return t.dueDate && new Date(t.dueDate) < new Date() && !["DONE","CANCELLED"].includes(t.status)
 }
+/** Deadline pressure for an open task, in whole days (UTC dates).
+ *  overdue: due < today · soon: due within 7 days · null: nothing to flag. */
+function dueState(t: any): { kind: "overdue" | "soon"; days: number } | null {
+  if (!t.dueDate || ["DONE","CANCELLED"].includes(t.status)) return null
+  const today = new Date(); today.setUTCHours(0,0,0,0)
+  const due = new Date(t.dueDate); due.setUTCHours(0,0,0,0)
+  const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+  if (days < 0) return { kind: "overdue", days: -days }
+  if (days <= 7) return { kind: "soon", days }
+  return null
+}
 
 // ── Column sorting helpers ─────────────────────────────────────────────────
 const SORT_STATUS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"]
@@ -233,6 +244,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
   const [search, setSearch]         = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [priorityFilter, setPriorityFilter] = useState("")
+  const [dueFilter, setDueFilter] = useState<"" | "soon" | "overdue" | "any">("")
   const [creating, setCreating]     = useState<{phaseId?:string;parentId?:string;insertAfter?:string}|null>(null)
   const [newTitle, setNewTitle]     = useState("")
   const [newPriority, setNewPriority] = useState("MEDIUM")
@@ -621,6 +633,11 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
     if (statusFilter   && t.status   !== statusFilter)   return false
     if (priorityFilter && t.priority !== priorityFilter) return false
+    if (dueFilter) {
+      const ds = dueState(t)
+      if (!ds) return false
+      if (dueFilter !== "any" && ds.kind !== dueFilter) return false
+    }
     return true
   }
 
@@ -783,6 +800,14 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
           {STATUS_OPTS.map(s => <option key={s} value={s}>{tt(STATUS_COLOR[s]?.label as any)}</option>)}
         </select>
 
+        <select style={{ ...sel, borderColor: dueFilter ? "#F59E0B" : undefined,
+            fontWeight: dueFilter ? 600 : 400 }}
+          value={dueFilter} onChange={e => setDueFilter(e.target.value as any)}>
+          <option value="">{tt("dueAll")}</option>
+          <option value="any">{tt("dueAny")}</option>
+          <option value="soon">{tt("dueSoon")}</option>
+          <option value="overdue">{tt("dueOverdue")}</option>
+        </select>
         <select style={sel} value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
           <option value="">{tt("All priorities")}</option>
           {PRIORITY_OPTS.map(p => <option key={p} value={p}>{tt(PRIORITY_COLOR[p]?.label as any)}</option>)}
@@ -1027,6 +1052,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
             {groupBy !== "phase" && groupedBlocks.map(g => (
               <Phase key={g.key} phase={{ id:g.key, name:g.label }}
                 isCollapsed={collapsed.has("grp-"+g.key)} rowCount={g.rows.length} pct={g.pct}
+                tasks={g.rows.map((r:any) => r.task)}
                 onToggle={() => setCollapsed(s => { const n=new Set(s); n.has("grp-"+g.key)?n.delete("grp-"+g.key):n.add("grp-"+g.key); return n })}
                 onAddTask={() => {}}>
                 {!collapsed.has("grp-"+g.key) && g.rows.map(renderRow)}
@@ -1044,7 +1070,7 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
 
               return (
                 <Phase key={phase.id} phase={phase} isCollapsed={isCollapsed}
-                  rowCount={phaseRows.length} pct={phasePct}
+                  rowCount={phaseRows.length} pct={phasePct} tasks={phaseTasks}
                   onToggle={() => setCollapsed(s => {
                     const n = new Set(s)
                     n.has("phase-"+phase.id) ? n.delete("phase-"+phase.id) : n.add("phase-"+phase.id)
@@ -1160,8 +1186,8 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
 
 // ── Phase header row ───────────────────────────────────────────────────────
 
-function Phase({ phase, isCollapsed, rowCount, pct = 0, onToggle, onAddTask, children }: {
-  phase:any; isCollapsed:boolean; rowCount:number; pct?:number;
+function Phase({ phase, isCollapsed, rowCount, pct = 0, tasks = [], onToggle, onAddTask, children }: {
+  phase:any; isCollapsed:boolean; rowCount:number; pct?:number; tasks?:any[];
   onToggle:()=>void; onAddTask:()=>void; children?:React.ReactNode
 }) {
   const tt = useTranslations("tasksTab")
@@ -1190,6 +1216,16 @@ function Phase({ phase, isCollapsed, rowCount, pct = 0, onToggle, onAddTask, chi
               padding:"1px 7px", borderRadius:10, fontWeight:600 }}>
               {tt("taskCount", { n: rowCount })}
             </span>
+            {(() => {
+              const od = tasks.filter((x:any) => dueState(x)?.kind === "overdue").length
+              const sn = tasks.filter((x:any) => dueState(x)?.kind === "soon").length
+              return (<>
+                {od > 0 && <span style={{ fontSize:10, color:"#DC2626", background:"#FEE2E2",
+                  padding:"1px 7px", borderRadius:10, fontWeight:700 }}>{tt("phaseOverdue", { n: od })}</span>}
+                {sn > 0 && <span style={{ fontSize:10, color:"#B45309", background:"#FEF3C7",
+                  padding:"1px 7px", borderRadius:10, fontWeight:700 }}>{tt("phaseDueSoon", { n: sn })}</span>}
+              </>)
+            })()}
             {/* Phase completion */}
             <div style={{ display:"flex", alignItems:"center", gap:6 }}>
               <div style={{ width:70, height:6, background:"#DBEAFE", borderRadius:3, overflow:"hidden" }}>
@@ -1325,6 +1361,14 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
 
   const isDone       = t.status === "DONE"
   const overdue      = isOverdue(t)
+  const due          = dueState(t)
+  const dueTint      = due?.kind === "overdue" ? "#FEF2F2" : due?.kind === "soon" ? "#FFFBEB" : null
+  const dueColor     = due?.kind === "overdue" ? "#DC2626" : "#B45309"
+  const dueLabel     = !due ? null
+    : due.kind === "overdue" ? tt("dueOverdueChip", { n: due.days })
+    : due.days === 0 ? tt("dueTodayChip")
+    : due.days === 1 ? tt("dueTomorrowChip")
+    : tt("dueSoonChip", { n: due.days })
   const sc           = STATUS_COLOR[t.status]  || STATUS_COLOR.TODO
   const pc           = PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.MEDIUM
   const assignee     = t.assignees?.[0]
@@ -1412,7 +1456,7 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
   return (
     <tr
       data-taskid={t.id}
-      style={{ background: selected ? "#EFF6FF" : isCritical ? "#FFF9F9" : hover ? "#F8FAFC" : "#fff",
+      style={{ background: selected ? "#EFF6FF" : hover ? "#F8FAFC" : dueTint || (isCritical ? "#FFF9F9" : "#fff"),
         borderBottom:"1px solid #F1F5F9",
         transition:"background .1s" }}
       onMouseEnter={() => { setHover(true); taskCtx?.selectTask(t.id) }}
@@ -1478,9 +1522,15 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
                 whiteSpace:"nowrap", maxWidth:260 }}>
               {t.title}
             </div>
-            {depLabel && (
-              <div style={{ fontSize:9, color:"#94A3B8", marginTop:1 }}>
-                🔗 {depLabel}
+            {(depLabel || dueLabel) && (
+              <div style={{ fontSize:9, color:"#94A3B8", marginTop:1, display:"flex", gap:8, alignItems:"center" }}>
+                {dueLabel && (
+                  <span style={{ color: dueColor, fontWeight:700, background: dueTint || undefined,
+                    border:`1px solid ${dueColor}33`, borderRadius:8, padding:"0 6px", lineHeight:"14px" }}>
+                    {due?.kind === "overdue" ? "🔴 " : "⏱ "}{dueLabel}
+                  </span>
+                )}
+                {depLabel && <span>🔗 {depLabel}</span>}
               </div>
             )}
           </div>
@@ -1659,8 +1709,8 @@ function TaskRow({ task:t, depth, selected, isCritical, members, projectId,
           <span onClick={() => !editingCell && startEdit("finishDate", toDateInput(t.dueDate))}
             title={tt("Click to edit")}
             style={{ fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
-              color: overdue ? "var(--red)" : "var(--text-3)",
-              fontWeight: overdue ? 600 : 400 }}>
+              color: overdue ? "var(--red)" : due?.kind === "soon" ? "#B45309" : "var(--text-3)",
+              fontWeight: due ? 600 : 400 }}>
             {overdue && "⚠ "}{fmtDate(t.dueDate)||"—"}
           </span>
         )}
