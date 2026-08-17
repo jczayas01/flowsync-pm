@@ -97,9 +97,14 @@ export function generateOTPAuthURL(
   return `otpauth://totp/${label}?${params}`
 }
 
-// QR code URL via Google Charts API (no dependency)
-export function generateQRCodeURL(otpauthUrl: string): string {
-  return `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(otpauthUrl)}&chld=M|0`
+// QR rendered locally as an SVG data URL. Never send the otpauth secret to a
+// third-party service — the old Google Charts endpoint is gone (404) and it
+// leaked the TOTP secret in a URL.
+export async function generateQRCodeURL(otpauthUrl: string): Promise<string> {
+  const QRCode = (await import("qrcode")).default
+  const svg = await QRCode.toString(otpauthUrl, { type: "svg", margin: 1, width: 220,
+    errorCorrectionLevel: "M" })
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg)
 }
 
 // ─────────────────────────────────────────────
@@ -143,109 +148,88 @@ export interface TwoFactorSetup {
 export async function initiate2FASetup(userId: string, email: string): Promise<TwoFactorSetup> {
   const secret      = generateSecret()
   const otpauthUrl  = generateOTPAuthURL(secret, email)
-  const qrCodeUrl   = generateQRCodeURL(otpauthUrl)
+  const qrCodeUrl   = await generateQRCodeURL(otpauthUrl)
   const backupCodes = generateBackupCodes()
 
-  // Store pending secret (not yet confirmed)
+  // Pending secret is persisted (not confirmed yet). Backup codes are hashed
+  // and stored now; the plaintext is returned ONCE to the user on confirm.
+  const hashed = await Promise.all(backupCodes.map(hashBackupCode))
   await db.user.update({
     where: { id: userId },
     data: {
-      // Store in a temp field — confirmed after user verifies first token
-      // In production add twoFactorPendingSecret to schema
-    },
-  }).catch(() => {})
-
-  // Store in session-like cache (in production: Redis with 10 min TTL)
-  pendingSetups.set(userId, { secret, backupCodes, initiatedAt: Date.now() })
-
+      twoFactorPendingSecret: secret,
+      twoFactorPendingAt: new Date(),
+      // stash hashed codes with the pending secret; promoted on confirm
+      twoFactorBackupCodes: hashed,
+    } as any,
+  })
   return { secret, otpauthUrl, qrCodeUrl, backupCodes }
 }
-
-// Temp in-memory store for pending 2FA setups (use Redis in production)
-const pendingSetups = new Map<string, {
-  secret:      string
-  backupCodes: string[]
-  initiatedAt: number
-}>()
 
 export async function confirm2FASetup(
   userId: string,
   token:  string
 ): Promise<{ success: boolean; backupCodes?: string[] }> {
-  const pending = pendingSetups.get(userId)
-  if (!pending) return { success: false }
-
-  // Check setup hasn't expired (10 min)
-  if (Date.now() - pending.initiatedAt > 10 * 60 * 1000) {
-    pendingSetups.delete(userId)
+  const u = await db.user.findUnique({
+    where: { id: userId },
+    select: { twoFactorPendingSecret: true, twoFactorPendingAt: true } as any,
+  }) as any
+  const secret = u?.twoFactorPendingSecret as string | null
+  if (!secret) return { success: false }
+  // 10-minute setup window
+  if (!u.twoFactorPendingAt || Date.now() - new Date(u.twoFactorPendingAt).getTime() > 10 * 60 * 1000) {
+    await db.user.update({ where: { id: userId },
+      data: { twoFactorPendingSecret: null, twoFactorPendingAt: null } as any })
     return { success: false }
   }
+  if (!verifyTOTP(secret, token)) return { success: false }
 
-  if (!verifyTOTP(pending.secret, token)) return { success: false }
-
-  // Hash backup codes for storage
-  const hashedCodes = await Promise.all(pending.backupCodes.map(hashBackupCode))
-
-  // Save to database (add these fields to User model in schema.prisma)
-  // twoFactorEnabled: Boolean @default(false)
-  // twoFactorSecret:  String?
-  // twoFactorBackupCodes: String[] (hashed)
-  // twoFactorConfirmedAt: DateTime?
-  await db.$executeRaw`
-    UPDATE users SET
-      two_factor_enabled = true,
-      two_factor_secret  = ${pending.secret},
-      two_factor_confirmed_at = NOW()
-    WHERE id = ${userId}
-  `.catch(() => {
-    // Fallback: store in account metadata
-    console.log("[2FA] Schema not yet updated — storing in memory only")
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      twoFactorEnabled: true,
+      twoFactorSecret: secret,
+      twoFactorConfirmedAt: new Date(),
+      twoFactorPendingSecret: null,
+      twoFactorPendingAt: null,
+    } as any,
   })
-
-  pendingSetups.delete(userId)
-  return { success: true, backupCodes: pending.backupCodes }
+  return { success: true }
 }
 
-export async function verify2FAToken(
-  userId: string,
-  token:  string
-): Promise<boolean> {
-  const user = await db.$queryRaw<any[]>`
-    SELECT two_factor_secret, two_factor_backup_codes
-    FROM users WHERE id = ${userId}
-  `.catch(() => [])
+export async function verify2FAToken(userId: string, token: string): Promise<boolean> {
+  const u = await db.user.findUnique({
+    where: { id: userId },
+    select: { twoFactorSecret: true, twoFactorBackupCodes: true } as any,
+  }) as any
+  if (!u?.twoFactorSecret) return false
+  if (verifyTOTP(u.twoFactorSecret, token)) return true
 
-  if (!user?.[0]?.two_factor_secret) return false
-
-  // Check TOTP
-  if (verifyTOTP(user[0].two_factor_secret, token)) return true
-
-  // Check backup codes
-  const backupIdx = await verifyBackupCode(token, user[0].two_factor_backup_codes || [])
-  if (backupIdx !== null) {
-    // Invalidate used backup code
-    const codes = [...(user[0].two_factor_backup_codes || [])]
-    codes.splice(backupIdx, 1)
-    await db.$executeRaw`
-      UPDATE users SET two_factor_backup_codes = ${codes} WHERE id = ${userId}
-    `.catch(() => {})
+  const codes: string[] = u.twoFactorBackupCodes || []
+  const idx = await verifyBackupCode(token, codes)
+  if (idx !== null) {
+    const next = [...codes]; next.splice(idx, 1)   // single-use
+    await db.user.update({ where: { id: userId }, data: { twoFactorBackupCodes: next } as any })
     return true
   }
-
   return false
 }
 
 export async function disable2FA(userId: string, token: string): Promise<boolean> {
   const valid = await verify2FAToken(userId, token)
   if (!valid) return false
-
-  await db.$executeRaw`
-    UPDATE users SET
-      two_factor_enabled = false,
-      two_factor_secret  = NULL,
-      two_factor_backup_codes = '{}'
-    WHERE id = ${userId}
-  `.catch(() => {})
-
+  await db.user.update({
+    where: { id: userId },
+    data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorBackupCodes: [],
+            twoFactorConfirmedAt: null, twoFactorPendingSecret: null, twoFactorPendingAt: null } as any,
+  })
   return true
+}
+
+export async function get2FAStatus(userId: string): Promise<{ enabled: boolean; backupCodesLeft: number }> {
+  const u = await db.user.findUnique({
+    where: { id: userId },
+    select: { twoFactorEnabled: true, twoFactorBackupCodes: true } as any,
+  }) as any
+  return { enabled: !!u?.twoFactorEnabled, backupCodesLeft: (u?.twoFactorBackupCodes || []).length }
 }

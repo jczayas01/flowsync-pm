@@ -28,17 +28,57 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
       if (res.ok) setAi(a => a ? { ...a, aiEnabled: next } : a)
     } finally { setAiSaving(false) }
   }
-  const [twoFAStatus, setTwoFAStatus] = useState<{enabled:boolean}|null>(null)
+  const [twoFAStatus, setTwoFAStatus] = useState<{enabled:boolean; backupCodesRemaining?:number}|null>(null)
   const [loading2FA, setLoading2FA] = useState(false)
+  // Setup wizard: qr → confirm code → show backup codes once
+  const [setup, setSetup] = useState<null | { qrCodeUrl:string; secret:string; backupCodes:string[] }>(null)
+  const [code, setCode] = useState("")
+  const [twoFAErr, setTwoFAErr] = useState("")
+  const [showBackup, setShowBackup] = useState<string[]|null>(null)
+  const [disableCode, setDisableCode] = useState("")
+  const [disabling, setDisabling] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/auth/2fa").then(r => r.json())
+      .then(d => setTwoFAStatus({ enabled: !!d?.enabled, backupCodesRemaining: d?.backupCodesRemaining }))
+      .catch(() => setTwoFAStatus({ enabled: false }))
+  }, [])
 
   async function setup2FA() {
-    setLoading2FA(true)
-    const res = await fetch("/api/auth/2fa?action=setup", { method:"POST" })
-    const d   = await res.json()
-    setLoading2FA(false)
-    if (d.qrCodeUrl) {
-      window.open(d.qrCodeUrl, "_blank")
-    }
+    setLoading2FA(true); setTwoFAErr("")
+    try {
+      const res = await fetch("/api/auth/2fa?action=setup", { method:"POST" })
+      const d   = await res.json()
+      if (!res.ok || !d.qrCodeUrl) { setTwoFAErr(d?.error || ss("twoFaSetupFailed")); return }
+      setSetup({ qrCodeUrl: d.qrCodeUrl, secret: d.secret, backupCodes: d.backupCodes || [] })
+      setCode("")
+    } finally { setLoading2FA(false) }
+  }
+
+  async function confirm2FA() {
+    if (!setup || code.replace(/\s/g, "").length < 6) return
+    setLoading2FA(true); setTwoFAErr("")
+    try {
+      const res = await fetch("/api/auth/2fa?action=confirm", { method:"POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: code }) })
+      const d = await res.json()
+      if (!res.ok || !d.success) { setTwoFAErr(d?.error || ss("twoFaBadCode")); return }
+      setShowBackup(setup.backupCodes)
+      setSetup(null); setCode("")
+      setTwoFAStatus({ enabled: true, backupCodesRemaining: setup.backupCodes.length })
+    } finally { setLoading2FA(false) }
+  }
+
+  async function disable2FA() {
+    if (disableCode.replace(/\s/g, "").length < 6) return
+    setDisabling(true); setTwoFAErr("")
+    try {
+      const res = await fetch("/api/auth/2fa?action=disable", { method:"POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: disableCode }) })
+      const d = await res.json()
+      if (!res.ok || d?.success === false) { setTwoFAErr(d?.error || ss("twoFaBadCode")); return }
+      setTwoFAStatus({ enabled: false, backupCodesRemaining: 0 }); setDisableCode("")
+    } finally { setDisabling(false) }
   }
 
   const ACTION_ICONS: Record<string,string> = {
@@ -83,31 +123,113 @@ export function SecuritySettingsView({ userId, workspaceId, role, auditLogs }: {
             Add a second layer of security using an authenticator app like Google Authenticator or Authy.
             When enabled, you'll need to enter a 6-digit code in addition to your password.
           </p>
+          {twoFAErr && <div style={{ fontSize:12, color:"var(--red,#DC2626)", marginBottom:10 }}>{twoFAErr}</div>}
+
+          {/* Status row */}
           <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
             borderRadius:"var(--radius)", padding:"14px 16px", marginBottom:20,
-            display:"flex", alignItems:"center", gap:12 }}>
-            <span style={{ fontSize:24 }}>🔒</span>
-            <div>
+            display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+            <span style={{ fontSize:24 }}>{twoFAStatus?.enabled ? "🔐" : "🔒"}</span>
+            <div style={{ flex:1, minWidth:180 }}>
               <div style={{ fontSize:13, fontWeight:500, color:"var(--text)", marginBottom:2 }}>
-                2FA is not enabled
+                {twoFAStatus == null ? "…" : twoFAStatus.enabled ? ss("twoFaOn") : ss("twoFaOff")}
               </div>
               <div style={{ fontSize:12, color:"var(--text-3)" }}>
-                Your account is protected by password only.
+                {twoFAStatus?.enabled
+                  ? ss("twoFaBackupLeft", { n: twoFAStatus.backupCodesRemaining ?? 0 })
+                  : ss("twoFaPasswordOnly")}
               </div>
             </div>
-            <button onClick={setup2FA} disabled={loading2FA}
-              style={{ marginLeft:"auto", padding:"8px 16px", background:"var(--steel)",
-                color:"#fff", border:"none", borderRadius:"var(--radius)", fontSize:12,
-                fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
-              {loading2FA ? "Loading…" : "Enable 2FA"}
-            </button>
+            {twoFAStatus && !twoFAStatus.enabled && !setup && (
+              <button onClick={setup2FA} disabled={loading2FA}
+                style={{ padding:"8px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                  borderRadius:"var(--radius)", fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
+                {loading2FA ? "…" : ss("twoFaEnable")}
+              </button>
+            )}
+            {twoFAStatus?.enabled && (
+              <span style={{ display:"flex", gap:6, alignItems:"center" }}>
+                <input value={disableCode} onChange={e => setDisableCode(e.target.value)} placeholder="000000"
+                  inputMode="numeric" maxLength={8}
+                  style={{ width:96, padding:"7px 10px", border:"1px solid var(--border)", borderRadius:6,
+                    fontSize:13, fontFamily:"var(--mono, monospace)", letterSpacing:".12em", textAlign:"center" }} />
+                <button onClick={disable2FA} disabled={disabling || disableCode.replace(/\s/g,"").length < 6}
+                  style={{ padding:"7px 12px", background:"#fff", color:"var(--red,#DC2626)",
+                    border:"1px solid var(--red,#DC2626)", borderRadius:"var(--radius)", fontSize:12,
+                    fontWeight:600, cursor:"pointer", fontFamily:"var(--font)" }}>
+                  {disabling ? "…" : ss("twoFaDisable")}
+                </button>
+              </span>
+            )}
           </div>
+
+          {/* Setup wizard */}
+          {setup && (
+            <div style={{ border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:16,
+              marginBottom:20, display:"grid", gridTemplateColumns:"auto 1fr", gap:18, alignItems:"start" }}>
+              <img src={setup.qrCodeUrl} alt="QR" width={200} height={200}
+                style={{ border:"1px solid var(--border)", borderRadius:8, background:"#fff" }} />
+              <div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:6 }}>{ss("twoFaStep1")}</div>
+                <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:10, lineHeight:1.6 }}>{ss("twoFaStep1Help")}</div>
+                <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:12 }}>
+                  {ss("twoFaManual")}: <code style={{ fontSize:12, background:"var(--surface)", padding:"2px 6px",
+                    borderRadius:4, letterSpacing:".08em" }}>{setup.secret}</code>
+                </div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:6 }}>{ss("twoFaStep2")}</div>
+                <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                  <input value={code} onChange={e => setCode(e.target.value)} placeholder="000000" autoFocus
+                    inputMode="numeric" maxLength={8}
+                    onKeyDown={e => { if (e.key === "Enter") confirm2FA() }}
+                    style={{ width:130, padding:"9px 12px", border:"1px solid var(--border)", borderRadius:6,
+                      fontSize:16, fontFamily:"var(--mono, monospace)", letterSpacing:".2em", textAlign:"center" }} />
+                  <button onClick={confirm2FA} disabled={loading2FA || code.replace(/\s/g,"").length < 6}
+                    style={{ padding:"9px 16px", background:"var(--steel)", color:"#fff", border:"none",
+                      borderRadius:"var(--radius)", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"var(--font)" }}>
+                    {loading2FA ? "…" : ss("twoFaConfirm")}
+                  </button>
+                  <button onClick={() => { setSetup(null); setCode("") }}
+                    style={{ padding:"9px 12px", background:"#fff", border:"1px solid var(--border)",
+                      borderRadius:"var(--radius)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)", color:"var(--text-2)" }}>
+                    {ss("twoFaCancel")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Backup codes — shown ONCE after confirm */}
+          {showBackup && (
+            <div style={{ border:"1px solid #F59E0B", background:"#FFFBEB", borderRadius:"var(--radius)",
+              padding:16, marginBottom:20 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"#92400E", marginBottom:6 }}>{ss("twoFaBackupTitle")}</div>
+              <div style={{ fontSize:12, color:"#92400E", marginBottom:10, lineHeight:1.6 }}>{ss("twoFaBackupHelp")}</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, marginBottom:10 }}>
+                {showBackup.map(c => (
+                  <code key={c} style={{ fontSize:13, background:"#fff", border:"1px solid #FCD34D", borderRadius:6,
+                    padding:"6px 8px", textAlign:"center", letterSpacing:".08em" }}>{c}</code>
+                ))}
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={() => navigator.clipboard?.writeText(showBackup.join("\n"))}
+                  style={{ padding:"6px 12px", background:"#fff", border:"1px solid #F59E0B", borderRadius:6,
+                    fontSize:12, cursor:"pointer", fontFamily:"var(--font)", color:"#92400E", fontWeight:600 }}>
+                  {ss("twoFaCopy")}
+                </button>
+                <button onClick={() => setShowBackup(null)}
+                  style={{ padding:"6px 12px", background:"#F59E0B", border:"none", borderRadius:6,
+                    fontSize:12, cursor:"pointer", fontFamily:"var(--font)", color:"#fff", fontWeight:600 }}>
+                  {ss("twoFaSaved")}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", marginBottom:10 }}>
-            Backup codes
+            {ss("twoFaBackupSection")}
           </div>
           <p style={{ fontSize:12, color:"var(--text-3)", lineHeight:1.6 }}>
-            Backup codes are generated when you set up 2FA. Store them in a safe place.
-            Each code can be used once if you lose access to your authenticator app.
+            {ss("twoFaBackupSectionHelp")}
           </p>
         </div>
       )}

@@ -13,6 +13,14 @@ model User {
   email                String                  @unique
   emailVerified        DateTime?
   verifyReminderAt DateTime?
+  // Two-factor auth (TOTP). Pending secret lives here until the first valid
+  // code confirms it — survives serverless instances, unlike an in-memory map.
+  twoFactorEnabled     Boolean                 @default(false)
+  twoFactorSecret      String?
+  twoFactorPendingSecret String?
+  twoFactorPendingAt   DateTime?
+  twoFactorBackupCodes String[]                @default([])
+  twoFactorConfirmedAt DateTime?
   name                 String
   image                String?
   avatarUrl            String?

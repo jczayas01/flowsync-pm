@@ -29,24 +29,14 @@ export async function GET(req: NextRequest) {
   const { db } = await import("@/lib/db")
   const user = await db.user.findUnique({
     where:  { id: session.user.id },
-    select: { id: true, email: true },
-  })
-
-  // Check 2FA status from raw SQL (fields not yet in Prisma schema)
-  const result = await db.$queryRaw<any[]>`
-    SELECT
-      two_factor_enabled,
-      two_factor_confirmed_at,
-      array_length(COALESCE(two_factor_backup_codes, ARRAY[]::text[]), 1) as backup_codes_remaining
-    FROM users WHERE id = ${session.user.id}
-  `.catch(() => [{}])
-
-  const row = result[0] || {}
+    select: { id: true, email: true, twoFactorEnabled: true, twoFactorConfirmedAt: true,
+              twoFactorBackupCodes: true } as any,
+  }) as any
 
   return NextResponse.json({
-    enabled:              row.two_factor_enabled || false,
-    confirmedAt:          row.two_factor_confirmed_at || null,
-    backupCodesRemaining: row.backup_codes_remaining || 0,
+    enabled:              !!user?.twoFactorEnabled,
+    confirmedAt:          user?.twoFactorConfirmedAt || null,
+    backupCodesRemaining: (user?.twoFactorBackupCodes || []).length,
     email:                user?.email,
   })
 }
