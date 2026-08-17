@@ -15,6 +15,7 @@ const patchSchema = z.object({
   paidDate:  z.string().optional().nullable(),
   status:    z.enum(["DRAFT","SENT","PAID","OVERDUE","VOID"]).optional(),
   notes:     z.string().max(2000).optional().nullable(),
+  poNumber:  z.string().max(100).optional().nullable(),
 })
 
 export async function PATCH(req: NextRequest,

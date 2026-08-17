@@ -1089,6 +1089,7 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           number:    editInv.number.trim(),
+          poNumber:  editInv.poNumber?.trim() || null,
           amount:    Number(editInv.amount) || 0,
           issueDate: editInv.issueDate,
           dueDate:   editInv.dueDate,
@@ -1112,11 +1113,12 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
     kind: "first" | "increment" | "renewal"
     add: { seats: string; bundles: string; ocrPacks: string; serviceBlocks: string }
     asOf: string
+    poNumber: string
   }>(null)
 
   function openComposer(kind: "first" | "increment" | "renewal") {
     setComposer({ kind, add: { seats: "", bundles: "", ocrPacks: "", serviceBlocks: "" },
-      asOf: new Date().toISOString().slice(0, 10) })
+      asOf: new Date().toISOString().slice(0, 10), poNumber: "" })
   }
 
   function composerLines() {
@@ -1169,6 +1171,7 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
         body: JSON.stringify({ number, amount,
           issueDate: composer.asOf, dueDate: new Date(new Date(composer.asOf).getTime() + 30*864e5).toISOString().slice(0,10),
           status: "DRAFT", notes: kindLabel,
+          poNumber: composer.poNumber?.trim() || null,
           lines: L.map(l => ({ label: lineLabel(l), qty: l.qty, unit: l.unit,
             unitLabel: l.unitLabel, period: l.period, amount: l.amount })) }),
       })
@@ -1413,6 +1416,7 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                         {iv.status !== "VOID" && iv.status !== "PAID" && (
                           <button style={miniBtn} onClick={() => setEditInv({
                             id: iv.id, number: iv.number, amount: String(Number(iv.amount)),
+                            poNumber: iv.poNumber || "",
                             issueDate: String(iv.issueDate).slice(0, 10),
                             dueDate: String(iv.dueDate).slice(0, 10),
                             notes: iv.notes || "",
@@ -1470,10 +1474,18 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                 <div style={{ fontSize: 12, fontWeight: 700, color: NAVY }}>
                   {cl(`inv_${composer.kind}`)} — {cl("composerTitle")}
                 </div>
-                <div style={{ marginLeft: "auto" }}>
-                  <label style={{ ...lbl, display: "inline", marginRight: 6 }}>{cl("inv_issue")}</label>
-                  <input style={{ ...inp, width: 150, display: "inline-block" }} type="date" value={composer.asOf}
-                    onChange={e => setComposer({ ...composer, asOf: e.target.value })} />
+                <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
+                  <span>
+                    <label style={{ ...lbl, display: "inline", marginRight: 6 }}>{cl("poNumber")}</label>
+                    <input style={{ ...inp, width: 160, display: "inline-block" }} value={composer.poNumber}
+                      placeholder={cl("poPlaceholder")}
+                      onChange={e => setComposer({ ...composer, poNumber: e.target.value })} />
+                  </span>
+                  <span>
+                    <label style={{ ...lbl, display: "inline", marginRight: 6 }}>{cl("inv_issue")}</label>
+                    <input style={{ ...inp, width: 150, display: "inline-block" }} type="date" value={composer.asOf}
+                      onChange={e => setComposer({ ...composer, asOf: e.target.value })} />
+                  </span>
                 </div>
               </div>
               {composer.kind === "increment" && (
@@ -1556,6 +1568,9 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
               <div><label style={lbl}>{cl("inv_number")}</label>
                 <input style={inp} value={editInv.number}
                   onChange={e => setEditInv({ ...editInv, number: e.target.value })} /></div>
+              <div><label style={lbl}>{cl("poNumber")}</label>
+                <input style={inp} value={editInv.poNumber} placeholder={cl("poPlaceholder")}
+                  onChange={e => setEditInv({ ...editInv, poNumber: e.target.value })} /></div>
               <div><label style={lbl}>{cl("i_amount")}</label>
                 <input style={inp} type="number" min="0" step="0.01" value={editInv.amount}
                   onChange={e => setEditInv({ ...editInv, amount: e.target.value })} /></div>

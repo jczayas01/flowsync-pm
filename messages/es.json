@@ -723,7 +723,9 @@
     "poolCoveredChip": "{h} h cubiertas por el bloque prepagado ({left} h restantes después)",
     "poolOverChip": "{h} h sobre el bloque → {n, plural, =1 {1 bloque} other {# bloques}} × {bh} h = {d}",
     "deleteInvConfirm": "¿Eliminar la factura {number} permanentemente? Solo se eliminan facturas anuladas/borrador; las enviadas o pagadas se anulan.",
-    "deleteInvTitle": "Eliminar (solo anuladas/borrador)"
+    "deleteInvTitle": "Eliminar (solo anuladas/borrador)",
+    "poNumber": "Núm. de PO",
+    "poPlaceholder": "PO del cliente (opcional)"
   },
   "contracts": {
     "+ Invoice": "+ Factura",

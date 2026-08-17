@@ -1901,6 +1901,9 @@ model ContractInvoice {
   // Structured line items (composer). When present the PDF renders these as
   // the table; notes stay free text.
   lines      Json?
+  // Customer's purchase order reference — many AP departments won't register
+  // an invoice without it. Printed on the PDF header.
+  poNumber   String?
   createdAt  DateTime              @default(now())
   contract   CustomerContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
   serviceEntries ContractServiceEntry[]

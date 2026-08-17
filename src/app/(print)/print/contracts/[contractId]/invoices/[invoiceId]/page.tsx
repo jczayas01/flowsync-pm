@@ -24,7 +24,7 @@ function platformAdmins(): string[] {
 const STRINGS = {
   es: {
     invoice: "FACTURA", from: "De", billTo: "Facturar a",
-    number: "Núm. de factura", issued: "Fecha", terms: "Términos", due: "Vencimiento",
+    number: "Núm. de factura", issued: "Fecha", terms: "Términos", due: "Vencimiento", po: "Núm. de PO",
     description: "Descripción", qty: "Cant.", unit: "Precio unitario", amount: "Importe",
     service: "Servicio", onboarding: "Hito de implementación", otherCharges: "Otros cargos",
     discount: "Descuento",
@@ -42,7 +42,7 @@ const STRINGS = {
   },
   en: {
     invoice: "INVOICE", from: "From", billTo: "Bill to",
-    number: "Invoice no.", issued: "Issue date", terms: "Terms", due: "Due date",
+    number: "Invoice no.", issued: "Issue date", terms: "Terms", due: "Due date", po: "PO number",
     description: "Description", qty: "Qty", unit: "Unit price", amount: "Amount",
     service: "Service", onboarding: "Onboarding milestone", otherCharges: "Other charges",
     discount: "Discount",
@@ -229,10 +229,11 @@ export default async function InvoicePrintPage({ params, searchParams }: {
         </div>
 
         {/* Meta strip */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0,
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${inv.poNumber ? 5 : 4}, 1fr)`, gap: 0,
           marginTop: 26, border: `1px solid ${border}`, borderRadius: 6, overflow: "hidden" }}>
           {[[t.number, inv.number], [t.issued, fmtDate(inv.issueDate, lang)],
-            [t.terms, "NET-30"], [t.due, fmtDate(inv.dueDate, lang)]].map(([k, v], i) => (
+            [t.terms, "NET-30"], [t.due, fmtDate(inv.dueDate, lang)],
+            ...(inv.poNumber ? [[t.po, inv.poNumber]] : [])].map(([k, v], i) => (
             <div key={k} style={{ padding: "8px 12px",
               borderLeft: i ? `1px solid ${border}` : "none", background: "#F8FAFC" }}>
               <div style={{ fontSize: 9.5, fontWeight: 700, color: faint,

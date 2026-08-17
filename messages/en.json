@@ -723,7 +723,9 @@
     "poolCoveredChip": "{h} h covered by prepaid pool ({left} h left after)",
     "poolOverChip": "{h} h over pool → {n, plural, =1 {1 block} other {# blocks}} × {bh} h = {d}",
     "deleteInvConfirm": "Delete invoice {number} permanently? Only void/draft invoices can be deleted; sent or paid ones must be voided.",
-    "deleteInvTitle": "Delete (void/draft only)"
+    "deleteInvTitle": "Delete (void/draft only)",
+    "poNumber": "PO number",
+    "poPlaceholder": "customer PO (optional)"
   },
   "contracts": {
     "+ Invoice": "+ Invoice",
