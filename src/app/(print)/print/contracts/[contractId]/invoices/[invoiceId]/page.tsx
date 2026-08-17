@@ -115,6 +115,23 @@ export default async function InvoicePrintPage({ params, searchParams }: {
       amount: Number(m.amount),
     })
   }
+  // Composer invoices carry structured lines — those win over everything.
+  const structured: any[] = Array.isArray(inv.lines) ? (inv.lines as any[]) : []
+  if (structured.length) {
+    lines.length = 0
+    for (const l of structured) {
+      const per = l.period === "annual" ? (lang === "es" ? "anual" : "annual")
+        : l.period === "monthly" ? (lang === "es" ? "mensual" : "monthly")
+        : l.period === "one-time" ? (lang === "es" ? "único" : "one-time")
+        : String(l.period || "")
+      lines.push({
+        desc: String(l.label), sub: per || undefined,
+        qty: String(l.qty ?? 1),
+        unit: l.unit ? fmtMoney(Number(l.unit), currency) + String(l.unitLabel || "") : "—",
+        amount: Number(l.amount) || 0,
+      })
+    }
+  }
   const linesSum = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100
   // A hand-entered invoice has no linked work; the amount itself is the line.
   // A linked invoice whose amount drifted from its lines gets the difference
@@ -123,7 +140,7 @@ export default async function InvoicePrintPage({ params, searchParams }: {
   if (lines.length === 0) {
     lines.push({ desc: inv.contract.name, sub: inv.notes || undefined, qty: "1",
       unit: fmtMoney(amount, currency), amount })
-  } else if (diff !== 0) {
+  } else if (diff !== 0 && !structured.length) {
     lines.push({ desc: diff < 0 ? t.discount : t.otherCharges, qty: "1",
       unit: fmtMoney(diff, currency), amount: diff })
   }
@@ -276,7 +293,7 @@ export default async function InvoicePrintPage({ params, searchParams }: {
           <div style={{ fontSize: 10.5, color: faint, marginTop: 12 }}>{t.netTerms}</div>
         </div>
 
-        {inv.notes && lines[0]?.sub !== inv.notes && (
+        {inv.notes && !structured.length && lines[0]?.sub !== inv.notes && (
           <div style={{ marginTop: 14, fontSize: 11.5, color: faint,
             whiteSpace: "pre-wrap" }}>{inv.notes}</div>
         )}

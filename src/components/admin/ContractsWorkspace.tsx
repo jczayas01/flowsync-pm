@@ -1168,7 +1168,9 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ number, amount,
           issueDate: composer.asOf, dueDate: new Date(new Date(composer.asOf).getTime() + 30*864e5).toISOString().slice(0,10),
-          status: "DRAFT", notes: notes.join("\n") }),
+          status: "DRAFT", notes: kindLabel,
+          lines: L.map(l => ({ label: lineLabel(l), qty: l.qty, unit: l.unit,
+            unitLabel: l.unitLabel, period: l.period, amount: l.amount })) }),
       })
       const di = await res.json().catch(() => ({}))
       if (!res.ok) { setErr(di?.error || cl("errBill")); return }

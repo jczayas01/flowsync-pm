@@ -15,6 +15,9 @@ const createSchema = z.object({
   paidDate:  z.string().optional().nullable(),
   status:    z.enum(["DRAFT","SENT","PAID","OVERDUE","VOID"]).default("DRAFT"),
   notes:     z.string().max(2000).optional().nullable(),
+  lines:     z.array(z.object({ label: z.string().max(200), qty: z.number(), unit: z.number(),
+               unitLabel: z.string().max(20).optional(), period: z.string().max(40).optional(),
+               amount: z.number() })).max(50).optional(),
 })
 
 /** List invoices with the work each one billed, so the record can show provenance. */

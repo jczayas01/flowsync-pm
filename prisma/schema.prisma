@@ -1898,6 +1898,9 @@ model ContractInvoice {
   paidDate   DateTime?
   status     ContractInvoiceStatus @default(DRAFT)
   notes      String?
+  // Structured line items (composer). When present the PDF renders these as
+  // the table; notes stay free text.
+  lines      Json?
   createdAt  DateTime              @default(now())
   contract   CustomerContract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
   serviceEntries ContractServiceEntry[]

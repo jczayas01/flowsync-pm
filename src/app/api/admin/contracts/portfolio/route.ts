@@ -89,6 +89,22 @@ export async function GET() {
       responseHours: c.responseHours,
       uptimePct: c.uptimePct == null ? null : Number(c.uptimePct),
       serviceHourlyRate: c.serviceHourlyRate == null ? null : Number(c.serviceHourlyRate),
+      // Full pricing surface — the invoice composer, Calculate breakdown and the
+      // printable agreement all read from this row. Anything omitted here
+      // silently disappears from invoices.
+      onboardingFee:           c.onboardingFee == null ? null : Number(c.onboardingFee),
+      serviceBundleHours:      c.serviceBundleHours ?? null,
+      serviceBundlePrice:      c.serviceBundlePrice == null ? null : Number(c.serviceBundlePrice),
+      serviceRetainerPackages: c.serviceRetainerPackages ?? null,
+      seatUnitPrice:           c.seatUnitPrice == null ? null : Number(c.seatUnitPrice),
+      contributorBundlePrice:  c.contributorBundlePrice == null ? null : Number(c.contributorBundlePrice),
+      ocrPackPrice:            c.ocrPackPrice == null ? null : Number(c.ocrPackPrice),
+      subscriptionDiscountPct: c.subscriptionDiscountPct == null ? null : Number(c.subscriptionDiscountPct),
+      onboardingDiscountPct:   c.onboardingDiscountPct == null ? null : Number(c.onboardingDiscountPct),
+      serviceDiscountPct:      c.serviceDiscountPct == null ? null : Number(c.serviceDiscountPct),
+      bundleInOnboarding:      !!c.bundleInOnboarding,
+      slaNotes: c.slaNotes ?? null,
+      notes: c.notes ?? null,
       documentCount: c._count.documents,
       invoiceCount: c.invoices.length,
       overdueCount: overdueInvoices.length,
