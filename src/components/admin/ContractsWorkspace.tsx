@@ -1179,6 +1179,15 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
     } finally { setSavingInv(false) }
   }
 
+  async function deleteInvoice(iv: any) {
+    // Only VOID/DRAFT are deletable — a SENT/PAID/OVERDUE invoice is a
+    // financial record and must be voided, never erased. The DELETE route
+    // releases any linked work back to billable.
+    if (!confirm(cl("deleteInvConfirm", { number: iv.number }))) return
+    const res = await fetch(`/api/admin/contracts/${c.id}/invoices/${iv.id}`, { method: "DELETE" })
+    if (res.ok) { await load(); onChanged() } else setErr(cl("errBill"))
+  }
+
   async function voidInvoice(iv: any) {
     if (!confirm(cl("voidConfirm"))) return
     const res = await fetch(`/api/admin/contracts/${c.id}/invoices/${iv.id}`, {
@@ -1415,6 +1424,10 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                           <button style={{ ...miniBtn, color: RED }} onClick={() => voidInvoice(iv)}>
                             {cl("invVoid")}
                           </button>
+                        )}
+                        {(iv.status === "VOID" || iv.status === "DRAFT") && (
+                          <button style={{ ...miniBtn, color: RED }} onClick={() => deleteInvoice(iv)}
+                            title={cl("deleteInvTitle")}>🗑</button>
                         )}
                         {iv.status === "DRAFT" && (
                           <button style={miniBtn} onClick={() => setStatus(iv.id, "SENT")}>
