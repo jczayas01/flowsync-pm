@@ -202,6 +202,8 @@ model Workspace {
   trialEndsAt          DateTime?
   planRenewsAt         DateTime?
   seats                Int                   @default(1)
+  // Self-serve contributor bundles (×10). Enterprise: the contract wins.
+  contributorBundles   Int                   @default(0)
   azureTenantId        String?
   azureClientId        String?
   ssoEnabled           Boolean               @default(false)
@@ -229,6 +231,7 @@ model Workspace {
   invitations          WorkspaceInvitation[]
   members              WorkspaceMember[]
 
+  entitlementRequests  EntitlementRequest[]
   @@map("workspaces")
   customerContracts    CustomerContract[]
 }
@@ -1260,6 +1263,42 @@ model CustomFieldValue {
 
   @@unique([customFieldId, entityId])
   @@map("custom_field_values")
+}
+
+enum EntitlementKind {
+  SEATS
+  BUNDLES
+  OCR_BLOCKS
+}
+
+enum EntitlementRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A customer's request to grow their entitlements — seats, contributor
+/// bundles or OCR blocks. One mechanism, three uses. Approving updates the
+/// workspace (self-serve) or the active contract (Enterprise) and can be
+/// billed as an increment invoice from the contract record.
+model EntitlementRequest {
+  id           String                   @id @default(cuid())
+  workspaceId  String
+  contractId   String?
+  kind         EntitlementKind
+  quantity     Int
+  unitPrice    Decimal?                 @db.Decimal(12, 2)
+  status       EntitlementRequestStatus @default(PENDING)
+  requestedById String
+  approvedById String?
+  note         String?
+  decisionNote String?
+  createdAt    DateTime                 @default(now())
+  decidedAt    DateTime?
+  workspace    Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@map("entitlement_requests")
 }
 
 model AuditLog {

@@ -3,6 +3,7 @@
 import { useTranslations, useLocale } from "next-intl"
 import { enumLabel } from "@/lib/enum-labels"
 import { useState } from "react"
+import { CapacityCard } from "@/components/settings/CapacityCard"
 import { dateLocale } from "@/lib/date-locale"
 import { isWorkspaceManager, ROLE_DESCRIPTIONS, mapDbRoleToRbac } from "@/lib/rbac/roles"
 import { useRouter } from "next/navigation"
@@ -104,6 +105,9 @@ export function TeamSettingsView({ members, invitations, currentUserId, workspac
           {members.length} member{members.length!==1?"s":""} in this workspace.
         </p>
       </div>
+
+      {/* Capacity — entitlements vs usage, with "add more" requests */}
+      <CapacityCard />
 
       {/* Invite form */}
       {canManage && (

@@ -5,10 +5,11 @@ import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { ContractsPanel } from "./ContractsPanel"
 import { ContractsWorkspace } from "./ContractsWorkspace"
+import { EntitlementRequestsPanel } from "./EntitlementRequestsPanel"
 
 const NAVY = "#0D1B2A", STEEL = "#1B6CA8", AMBER = "#F59E0B", GREEN = "#059669", RED = "#DC2626"
 
-type Tab = "workspaces" | "users" | "leads" | "contracts"
+type Tab = "workspaces" | "users" | "leads" | "contracts" | "requests"
 
 export function AdminView({ workspaces, users, demoRequests, metrics }: {
   workspaces: any[]; users: any[]; demoRequests: any[]
@@ -16,7 +17,11 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
              activeTrials:number; activeUsers7d:number; newLeads:number }
 }) {
   const ad = useTranslations("admin")
-  const [tab, setTab]   = useState<Tab>("workspaces")
+  const [tab, setTab]   = useState<Tab>(() => {
+    if (typeof window === "undefined") return "workspaces"
+    const q = new URLSearchParams(window.location.search).get("tab")
+    return (["workspaces","users","leads","contracts","requests"] as string[]).includes(q || "") ? (q as Tab) : "workspaces"
+  })
   // CLM: the workspace owns the portfolio/record views; ContractsPanel supplies
   // the single contract form, driven from here.
   const [clmEditId, setClmEditId] = useState<string | null>(null)
@@ -48,7 +53,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
   const lds = useMemo(() => !term ? demoRequests
     : demoRequests.filter(d => `${d.name} ${d.email} ${d.company}`.toLowerCase().includes(term)), [demoRequests, term])
 
-  const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length, contracts: -1 }
+  const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length, contracts: -1, requests: -1 }
 
   return (
     // AppShell's <main> is overflow:hidden — every page provides its own scroll
@@ -76,7 +81,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
 
       {/* ── Tabs + search ── */}
       <div className="fs-wrap" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-        {(["workspaces","users","leads","contracts"] as Tab[]).map(t => (
+        {(["workspaces","users","leads","contracts","requests"] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             style={{ padding:"7px 14px", borderRadius:8, fontSize:12.5, fontWeight:600, cursor:"pointer",
               border: tab===t ? "none" : "1px solid #E2E8F0",
@@ -118,6 +123,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
               onModalClose={() => { setClmEditId(null); setClmNew(false) }} />
           </>}
           {tab === "leads"      && <LeadTable rows={lds} onAction={run} busy={busy} />}
+          {tab === "requests"   && <EntitlementRequestsPanel />}
         </div>
       </div>
 
