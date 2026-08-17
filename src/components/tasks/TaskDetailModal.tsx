@@ -10,6 +10,7 @@ import { dateLocale } from "@/lib/date-locale"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
+import { CustomFieldsBlock, saveCustomFieldValues, type CFValues } from "@/components/shared/CustomFieldsBlock"
 
 const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"]
 const PRIORITY_OPTS = ["CRITICAL","HIGH","MEDIUM","LOW"]
@@ -163,6 +164,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   const [form,    setForm]    = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
+  const [cfValues, setCfValues] = useState<CFValues>({})
   const [error,   setError]   = useState("")
   const [depPickerOpen, setDepPickerOpen] = useState(false)
   const [depLag, setDepLag] = useState(0)  // lag days for the next added dependency (lead = negative)
@@ -238,6 +240,7 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
         setError(d.error || tk("saveFailed"))
         setSaving(false); return
       }
+      await saveCustomFieldValues("task", taskId, cfValues, projectId).catch(() => {})
       router.refresh()
       handleClose()
     } catch {
@@ -622,6 +625,9 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                       placeholder={tk("phDescription")}
                       style={{ ...inp, resize:"vertical", lineHeight:1.6 }} />
                   </div>
+
+                  <CustomFieldsBlock entity="task" entityId={taskId}
+                    values={cfValues} onChange={setCfValues} compact />
 
                   {/* Assignees */}
                   <div style={fieldRow}>

@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Avatar } from "@/components/ui"
 import { useRouter } from "next/navigation"
 import nextDynamic from "next/dynamic"
+import { CustomFieldsDisplay } from "@/components/shared/CustomFieldsBlock"
 
 const ProjectPerformanceCharts = nextDynamic(
   () => import("@/components/charts/ProjectCharts"),
@@ -517,6 +518,9 @@ export function ProjectDashboardTab({
           {fmtDate(project?.startDate)} → {fmtDate(project?.endDate)}
         </span>
       </div>
+
+      {/* ── Custom fields (workspace-defined) — read-only chips; edit in ⚙ settings ── */}
+      <CustomFieldsDisplay entity="project" entityId={projectId} />
 
       {/* ── Row 1: Description + Economic Impact ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:14 }}>

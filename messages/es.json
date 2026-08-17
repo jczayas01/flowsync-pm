@@ -876,7 +876,10 @@
     "phHelpText": "Texto de ayuda mostrado debajo del campo",
     "project": "proyecto",
     "projectAndTask": "proyecto y tarea",
-    "task": "tarea"
+    "task": "tarea",
+    "sectionTitle": "Campos personalizados",
+    "yes": "Sí",
+    "projectHelp": "Campos definidos por el workspace para este proyecto. Administra las definiciones en Configuración → Campos personalizados."
   },
   "dashboard": {
     "Active projects": "Proyectos activos",

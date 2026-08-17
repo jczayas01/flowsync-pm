@@ -876,7 +876,10 @@
     "phHelpText": "Help text shown below the field",
     "project": "project",
     "projectAndTask": "project and task",
-    "task": "task"
+    "task": "task",
+    "sectionTitle": "Custom fields",
+    "yes": "Yes",
+    "projectHelp": "Workspace-defined fields for this project. Manage the field definitions in Settings → Custom fields."
   },
   "dashboard": {
     "Active projects": "Active projects",

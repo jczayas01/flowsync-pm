@@ -7,6 +7,7 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
+import { CustomFieldsBlock, saveCustomFieldValues, type CFValues } from "@/components/shared/CustomFieldsBlock"
 
 const METHODOLOGIES = [
   { id:"WATERFALL", label:"methWaterfall", desc:"methWaterfallDesc", icon:"📊", color:"#1B6CA8" },
@@ -51,6 +52,7 @@ export function NewProjectForm({ workspaceId, members }:{
     setSelectedPhases(s => s.includes(name) ? s.filter(x=>x!==name) : [...s, name])
   }
   const [saving, setSaving] = useState(false)
+  const [cfValues, setCfValues] = useState<CFValues>({})
   const [error,  setError]  = useState("")
 
   function toggleMember(userId:string) {
@@ -109,6 +111,8 @@ export function NewProjectForm({ workspaceId, members }:{
         return
       }
       const { data } = await res.json()
+      // Custom fields need the id — save right after the project exists.
+      await saveCustomFieldValues("project", data.id, cfValues, data.id, workspaceId).catch(() => {})
       if (stagedDocs.length) {
         let done = 0
         for (const f of stagedDocs) {
@@ -433,8 +437,11 @@ export function NewProjectForm({ workspaceId, members }:{
             )}
           </div>
 
+          <CustomFieldsBlock entity="project" workspaceId={workspaceId}
+            values={cfValues} onChange={setCfValues} />
+
           {/* Actions */}
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:16 }}>
             <Link href="/projects"
               style={{ padding:"10px 20px", border:"1px solid var(--border)",
                 borderRadius:"var(--radius)", color:"var(--text-2)", textDecoration:"none",

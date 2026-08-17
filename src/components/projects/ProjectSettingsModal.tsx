@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
+import { CustomFieldsBlock, saveCustomFieldValues, type CFValues } from "@/components/shared/CustomFieldsBlock"
 
 const inp: React.CSSProperties = {
   padding: "8px 10px", border: "1px solid var(--border)", borderRadius: "var(--radius)",
@@ -19,6 +20,7 @@ export function ProjectSettingsModal({ projectId, onClose }: {
   onClose: () => void
 }) {
   const ps = useTranslations("projectSettings")
+  const cf = useTranslations("customFields")
   const router = useRouter()
   const [loading, setLoading]   = useState(true)
   const [canManage, setCanManage] = useState(false)
@@ -38,6 +40,14 @@ export function ProjectSettingsModal({ projectId, onClose }: {
   const [pCode, setPCode]   = useState("")
   const [idBusy, setIdBusy] = useState(false)
   const [idSaved, setIdSaved] = useState(false)
+  const [cfValues, setCfValues] = useState<CFValues>({})
+  const [cfBusy, setCfBusy] = useState(false)
+  const [cfSaved, setCfSaved] = useState(false)
+  async function saveCustomFields() {
+    setCfBusy(true); setCfSaved(false)
+    const ok = await saveCustomFieldValues("project", projectId, cfValues, projectId)
+    setCfBusy(false); if (ok) { setCfSaved(true); router.refresh() }
+  }
 
   async function saveIdentity() {
     if (!pName.trim()) return
@@ -211,6 +221,26 @@ export function ProjectSettingsModal({ projectId, onClose }: {
                     {idBusy ? ps("Saving…") : idSaved ? "✓ "+ps("Saved") : ps("Save")}
                   </button>
                 )}
+              </div>
+            </section>
+
+            {/* ── Custom fields (workspace-defined) ── */}
+            <section>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--steel)", marginBottom: 4 }}>
+                🧩 {cf("sectionTitle")}
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-3)", margin: "0 0 4px", lineHeight: 1.6 }}>
+                {cf("projectHelp")}
+              </p>
+              <CustomFieldsBlock entity="project" entityId={projectId}
+                values={cfValues} onChange={setCfValues} compact />
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button onClick={saveCustomFields} disabled={cfBusy}
+                  style={{ padding: "7px 14px", background: "var(--steel)", color: "#fff", border: "none",
+                    borderRadius: "var(--radius)", fontSize: 12, fontWeight: 600,
+                    fontFamily: "var(--font)", cursor: cfBusy ? "wait" : "pointer" }}>
+                  {cfBusy ? ps("Saving…") : cfSaved ? "✓ " + ps("Saved") : ps("Save")}
+                </button>
               </div>
             </section>
 

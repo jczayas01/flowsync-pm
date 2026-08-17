@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
   const access = await verifyProjectAccess(params.projectId, session.user.id, workspaceId)
   if (!access.ok) return new NextResponse("Forbidden", { status: 403 })
 
-  const [project, tasks, phases, members] = await Promise.all([
+  const [project, tasks, phases, members, taskFields] = await Promise.all([
     db.project.findUnique({
       where:  { id: params.projectId },
       select: { name:true, code:true },
@@ -52,9 +52,22 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       where:   { projectId: params.projectId },
       include: { user: { select:{ name:true } } },
     }),
+    // Workspace-defined task custom fields → extra columns, in field order
+    db.customField.findMany({
+      where: { workspaceId, entityType: "task", isActive: true },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true, fieldType: true },
+    }),
   ])
 
   if (!project) return new NextResponse("Project not found", { status: 404 })
+
+  const cfValues = taskFields.length ? await db.customFieldValue.findMany({
+    where: { customFieldId: { in: taskFields.map(f => f.id) }, entityId: { in: tasks.map(t => t.id) } },
+    select: { customFieldId: true, entityId: true, value: true },
+  }) : []
+  const cfMap = new Map<string, string>()
+  for (const v of cfValues) cfMap.set(v.entityId + "|" + v.customFieldId, v.value ?? "")
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = "FlowSync PM"
@@ -78,6 +91,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     { header: "% Complete",            key: "pct",      width: 12 },
     { header: "Est. Hours",            key: "est",      width: 12 },
     { header: "Assignee",              key: "assignee", width: 22 },
+    ...taskFields.map(f => ({ header: f.name, key: "cf_" + f.id, width: 18 })),
   ]
 
   // Style header row
@@ -106,6 +120,14 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       pct:      t.percentComplete,
       est:      t.estimatedHours ? Number(t.estimatedHours) : "",
       assignee: assigneeNames,
+      ...Object.fromEntries(taskFields.map(f => {
+        const raw = cfMap.get(t.id + "|" + f.id) ?? ""
+        const v = f.fieldType === "checkbox" ? (raw === "true" ? "Yes" : "")
+              : f.fieldType === "multiselect" ? raw.split("|").filter(Boolean).join(", ")
+              : (f.fieldType === "number" || f.fieldType === "currency") && raw !== "" ? Number(raw)
+              : raw
+        return ["cf_" + f.id, v]
+      })),
     })
   }
 
