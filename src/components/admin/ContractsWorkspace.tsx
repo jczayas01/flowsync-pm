@@ -1502,6 +1502,21 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
                   {!L.length && <tr><td colSpan={5} style={{ padding: 10, color: "var(--text-3,#64748B)", textAlign: "center" }}>{cl("composerEmpty")}</td></tr>}
                 </tbody>
               </table>
+              {composer.kind !== "increment" && (() => {
+                // Explain every concept that produced no line — configuration, not error.
+                const hints: string[] = []
+                const has = (k: string) => L.some(l => l.item === k)
+                if (!has("service")) hints.push(Number(c.serviceHourlyRate) > 0
+                  ? cl("hintNoSvcBlocks") : cl("hintNoSvcRate"))
+                if (!has("ocr")) hints.push(cl("hintOcrIncluded", { cap: c.ocrPageCap ?? 200 }))
+                if (composer.kind === "first" && !has("onboarding")) hints.push(cl("hintNoOnboarding"))
+                if (!has("seats")) hints.push(cl("hintNoSeats"))
+                return hints.length ? (
+                  <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-3,#64748B)", lineHeight: 1.6 }}>
+                    {hints.map((h, i) => <div key={i}>ⓘ {h}</div>)}
+                  </div>
+                ) : null
+              })()}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
                 <span style={{ fontSize: 14, fontWeight: 800, color: NAVY, fontVariantNumeric: "tabular-nums" }}>
                   {cl("billTotal", { amount: money2(total, cur) })}
