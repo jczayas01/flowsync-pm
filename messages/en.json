@@ -465,7 +465,9 @@
     "seatsOrBundles": "seats or bundles",
     "stripeProcessedHint": "Payments are processed by Stripe; cancel any time from Manage billing.",
     "trialEnds": "trial ends",
-    "trialHint": "Your trial includes everything — no feature limits, no card required. Subscribe below whenever you're ready: pay during the trial and your card isn't charged until the trial actually ends."
+    "trialHint": "Your trial includes everything — no feature limits, no card required. Subscribe below whenever you're ready: pay during the trial and your card isn't charged until the trial actually ends.",
+    "cmpUnlimited": "Unlimited",
+    "cmpRules": "{n, plural, =1 {1 rule} other {# rules}}"
   },
   "budget": {
     "Actual Cost (AC)": "Actual Cost (AC)",

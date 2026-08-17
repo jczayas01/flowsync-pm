@@ -34,7 +34,7 @@ const PLAN_LABEL: Record<string,string> = {
 // ── Compare plans — rows read straight from PLANS limits so the table can
 // never drift from what the gates actually enforce.
 const COMPARE_ROWS: { label:string; get:(l:any)=>string|boolean }[] = [
-  { label:"cmpProjectsUsers",            get:l => "Unlimited" },
+  { label:"cmpProjectsUsers",            get:l => "__UNLIMITED__" },
   { label:"cmpStorage",                     get:l => l.storage },
   { label:"cmpAiImport",    get:l => l.aiReports },
   { label:"cmpEvm", get:l => l.evm },
@@ -42,12 +42,12 @@ const COMPARE_ROWS: { label:string; get:(l:any)=>string|boolean }[] = [
   { label:"cmpOcr",    get:l => l.ocr },
   { label:"cmpPortfolio",   get:l => l.portfolio },
   { label:"cmpExecDash",         get:l => l.executiveDash },
-  { label:"cmpAutomations",                 get:l => l.automations === -1 ? "Unlimited" : `${l.automations} rules` },
+  { label:"cmpAutomations",                 get:l => l.automations === -1 ? "__UNLIMITED__" : `__RULES__${l.automations}` },
   { label:"cmpSso",    get:l => l.sso },
   { label:"cmpM365",   get:l => l.m365 },
   { label:"cmpApi",       get:l => l.apiAccess },
   { label:"cmpWhiteLabel",        get:l => l.whiteLabel },
-  { label:"cmpAuditLog",         get:l => l.auditLog === "unlimited" ? "Unlimited" : l.auditLog },
+  { label:"cmpAuditLog",         get:l => l.auditLog === "unlimited" ? "__UNLIMITED__" : l.auditLog },
   { label:"cmpSupport",                     get:l => l.support },
 ]
 
@@ -61,6 +61,9 @@ function ComparePlans() {
   const cell = (v: string|boolean) =>
     v === true  ? <span style={{ color:"#047857", fontWeight:700 }}>✓</span> :
     v === false ? <span style={{ color:"#CBD5E1" }}>—</span> :
+    v === "__UNLIMITED__" ? <span style={{ color:NAVY }}>{bv("cmpUnlimited")}</span> :
+    (typeof v === "string" && v.startsWith("__RULES__"))
+      ? <span style={{ color:NAVY }}>{bv("cmpRules", { n: Number(v.slice(9)) })}</span> :
     <span style={{ color:NAVY }}>{v}</span>
   return (
     <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
@@ -83,7 +86,7 @@ function ComparePlans() {
             {COMPARE_ROWS.map((r,i) => (
               <tr key={r.label} style={{ borderTop:"1px solid #F1F5F9",
                 background: i % 2 ? "#FAFBFC" : "#fff" }}>
-                <td style={{ padding:"7px 20px", color:SLATE }}>{r.label}</td>
+                <td style={{ padding:"7px 20px", color:SLATE }}>{bv(r.label as any)}</td>
                 {cols.map(c => (
                   <td key={c.name} style={{ padding:"7px 12px", textAlign:"center", whiteSpace:"nowrap" }}>
                     {cell(r.get(c.limits))}
