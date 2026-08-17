@@ -45,7 +45,7 @@ async function list(ctx: ApiContext, params?: Record<string,string>) {
   const items = await db.budgetItem.findMany({
     where: { projectId },
     select: { id: true, name: true, category: true, plannedCost: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
   })
   // Category comes along so pickers can group: a project with eighteen budget
   // lines is unusable as one flat list.

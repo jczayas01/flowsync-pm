@@ -23,7 +23,7 @@ export default async function ProjectBudgetPage({ params }: { params: { projectI
     }),
     db.budgetItem.findMany({
       where:   { projectId: params.projectId },
-      orderBy: { createdAt:'asc' },
+      orderBy: [{ sortOrder:'asc' }, { createdAt:'asc' }],
     }),
     db.timeEntry.findMany({
       where:   { projectId: params.projectId, billable: true },

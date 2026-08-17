@@ -292,6 +292,38 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   const { can } = usePermissions()
   const router = useRouter()
 
+  // ── Manual ordering (drag or arrows) ─────────────────────────────────
+  // Local mirror of budgetItems so a move is instant; the full id list is
+  // persisted in one call and the page refreshes from the server after.
+  const [order, setOrder] = useState<string[]>(() => budgetItems.map((b:any) => b.id))
+  useEffect(() => { setOrder(budgetItems.map((b:any) => b.id)) }, [budgetItems])
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState<string | null>(null)
+  const orderedItems = order.map(id => budgetItems.find((b:any) => b.id === id)).filter(Boolean) as any[]
+
+  async function persistOrder(ids: string[]) {
+    setOrder(ids)
+    await fetch(`/api/projects/${projectId}/budget/reorder`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-workspace-id": workspaceId || "" },
+      body: JSON.stringify({ ids }),
+    }).catch(() => {})
+    router.refresh()
+  }
+  function moveItem(id: string, dir: -1 | 1) {
+    const i = order.indexOf(id); const j = i + dir
+    if (i < 0 || j < 0 || j >= order.length) return
+    const next = [...order]; [next[i], next[j]] = [next[j], next[i]]
+    persistOrder(next)
+  }
+  function dropOn(targetId: string) {
+    if (!dragId || dragId === targetId) { setDragId(null); setDragOver(null); return }
+    const next = order.filter(x => x !== dragId)
+    const at = next.indexOf(targetId)
+    next.splice(at, 0, dragId)
+    setDragId(null); setDragOver(null)
+    persistOrder(next)
+  }
+
   // ── AI document scan → budget item candidates ──
   const [scanOpen, setScanOpen]       = useState(false)
   const [scanning, setScanning]       = useState(false)
@@ -555,7 +587,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           ].map((k,i) => (
             <div key={k.label} title={(k as any).tip || undefined}
               style={{ padding:"14px 16px", cursor:(k as any).tip ? "help" : "default",
-              borderRight:i<3?"1px solid var(--border)":"none" }}>
+              borderRight:i<2?"1px solid var(--border)":"none" }}>
               <div style={{ fontSize:10, fontWeight:600, color:"var(--text-3)",
                 textTransform:"uppercase", letterSpacing:".05em", marginBottom:4,
                 borderBottom:(k as any).tip ? "1px dotted var(--border)" : "none",
@@ -627,7 +659,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               tip:"VAC = BAC - EAC. Positive = projected savings" },
           ].map((k,i) => (
             <div key={k.label} style={{ padding:"14px 16px",
-              borderRight:i<2?"1px solid var(--border)":"none" }}>
+              borderRight:i<3?"1px solid var(--border)":"none" }}>
               <div style={{ fontSize:10, fontWeight:600, color:"var(--text-3)",
                 textTransform:"uppercase", letterSpacing:".05em", marginBottom:4 }}>
                 {k.label}
@@ -1060,7 +1092,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
               </tr>
             </thead>
             <tbody>
-              {budgetItems.map(item => {
+              {orderedItems.map(item => {
                 const planned  = Number(item.plannedCost||item.plannedAmount||0)
                 const actual   = Number(item.actualCost||item.actualAmount||0)
                 const earned   = Number(item.earnedValue||0)
@@ -1154,8 +1186,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 const variance = planned - actual
                 const isEditing = editId === item.id
                 return (<React.Fragment key={item.id}>
-                  <tr style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)",
-                    background: isEditing ? "#EFF6FF" : "transparent" }}>
+                  <tr draggable={!isEditing && can("projects:edit")}
+                    onDragStart={() => setDragId(item.id)}
+                    onDragOver={e => { e.preventDefault(); if (dragOver !== item.id) setDragOver(item.id) }}
+                    onDragLeave={() => { if (dragOver === item.id) setDragOver(null) }}
+                    onDrop={() => dropOn(item.id)}
+                    onDragEnd={() => { setDragId(null); setDragOver(null) }}
+                    style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)",
+                      background: isEditing ? "#EFF6FF" : dragOver === item.id ? "#FFFBEB" : "transparent",
+                      opacity: dragId === item.id ? .45 : 1,
+                      boxShadow: dragOver === item.id ? "inset 0 2px 0 var(--steel)" : "none" }}>
                     {isEditing ? (
                       <>
                         <td style={{ padding:"6px 10px" }}>
@@ -1210,6 +1250,21 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                     ) : (
                       <>
                         <td style={{ padding:"10px 14px", fontSize:13, color:"var(--text)", fontWeight:500 }}>
+                          {can("projects:edit") && (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:2, marginRight:8,
+                              verticalAlign:"middle" }} onClick={e => e.stopPropagation()}>
+                              <span title={t("dragToReorder")} style={{ cursor:"grab", color:"var(--text-4,#CBD5E1)",
+                                fontSize:14, lineHeight:1, userSelect:"none" }}>⋮⋮</span>
+                              <button onClick={() => moveItem(item.id, -1)} disabled={order.indexOf(item.id) === 0}
+                                title={t("moveUp")} style={{ border:"none", background:"none", cursor:"pointer",
+                                  color:"var(--text-3)", fontSize:10, padding:"0 2px", lineHeight:1,
+                                  opacity: order.indexOf(item.id) === 0 ? .3 : 1 }}>▲</button>
+                              <button onClick={() => moveItem(item.id, 1)} disabled={order.indexOf(item.id) === order.length-1}
+                                title={t("moveDown")} style={{ border:"none", background:"none", cursor:"pointer",
+                                  color:"var(--text-3)", fontSize:10, padding:"0 2px", lineHeight:1,
+                                  opacity: order.indexOf(item.id) === order.length-1 ? .3 : 1 }}>▼</button>
+                            </span>
+                          )}
                           {item.name||item.description}
                           {overCommitted && (
                             <span style={{ fontSize:10, fontWeight:800, color:"var(--red)",

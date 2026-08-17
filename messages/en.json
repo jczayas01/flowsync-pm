@@ -493,7 +493,10 @@
     "Spent to date": "Spent to date",
     "Total project budget": "Total project budget",
     "Variance at Completion (VAC)": "Variance at Completion (VAC)",
-    "work done": "work done"
+    "work done": "work done",
+    "dragToReorder": "Drag to reorder",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "clm": {
     "+ Add milestone": "+ Add milestone",

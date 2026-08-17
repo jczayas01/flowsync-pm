@@ -965,6 +965,8 @@ model BudgetItem {
   id          String         @id @default(cuid())
   projectId   String
   category    BudgetCategory
+  // Manual ordering within the project (drag/arrows). Ties fall back to createdAt.
+  sortOrder   Int            @default(0)
   name        String
   description String?
   plannedCost Decimal        @db.Decimal(15, 2)

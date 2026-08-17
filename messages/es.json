@@ -493,7 +493,10 @@
     "Spent to date": "Gastado a la fecha",
     "Total project budget": "Presupuesto total del proyecto",
     "Variance at Completion (VAC)": "Variación al término (VAC)",
-    "work done": "trabajo realizado"
+    "work done": "trabajo realizado",
+    "dragToReorder": "Arrastra para reordenar",
+    "moveUp": "Subir",
+    "moveDown": "Bajar"
   },
   "clm": {
     "+ Add milestone": "+ Agregar hito",
