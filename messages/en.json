@@ -3070,5 +3070,31 @@
     "accept": "Accept & send request",
     "reqSent": "Request sent — FlowSync will confirm by email",
     "reqFailed": "Could not send the request — try again"
+  },
+  "customDomain": {
+    "title": "Custom domain",
+    "domainLabel": "Domain name",
+    "save": "Save domain",
+    "verify": "Verify DNS",
+    "recheck": "Re-check",
+    "remove": "Remove",
+    "checking": "Checking DNS…",
+    "saved": "Domain saved — now add the CNAME record at your DNS provider, then click Verify DNS.",
+    "active": "✓ Verified and active — your team can sign in at this domain (SSL provisions automatically within minutes).",
+    "pending": "DNS not resolving yet — propagation can take up to 48h.",
+    "removed": "Domain removed.",
+    "removeConfirm": "Remove the custom domain? Users will keep working at the standard address.",
+    "errSave": "Could not save the domain",
+    "errVerify": "Verification failed",
+    "stActive": "Active",
+    "stPending": "Pending DNS",
+    "stError": "Error",
+    "since": "since {d}",
+    "stepsTitle": "Setup:",
+    "step1a": "At your DNS provider, add a",
+    "step2": "Wait for propagation (minutes to 48h), then click Verify DNS.",
+    "step3": "On success we register the domain and issue the SSL certificate automatically.",
+    "note": "Use a subdomain (pm.yourcompany.com). Root domains need ALIAS/ANAME support at your DNS provider.",
+    "planNote": "Custom domains are available on Business and Enterprise plans."
   }
 }

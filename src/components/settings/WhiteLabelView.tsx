@@ -1,6 +1,7 @@
 "use client"
 // src/components/settings/WhiteLabelView.tsx
 import { useTranslations } from "next-intl"
+import { CustomDomainCard } from "@/components/settings/CustomDomainCard"
 import { useState } from "react"
 import { isWorkspaceAdmin } from "@/lib/rbac/roles"
 import { LogoUploader } from "./LogoUploader"
@@ -24,8 +25,6 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
   const [error,  setError]  = useState("")
-  const [verifying, setVerifying] = useState(false)
-  const [dnsStatus, setDnsStatus] = useState<"unchecked"|"verified"|"pending"|"error">("unchecked")
 
   async function save() {
     setSaving(true); setError("")
@@ -47,14 +46,6 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
       setSaved(true); setTimeout(()=>setSaved(false),3000)
     } catch(e:any){ setError(e.message) }
     finally { setSaving(false) }
-  }
-
-  async function verifyDns() {
-    if(!form.customDomain.trim()) return
-    setVerifying(true)
-    await new Promise(r=>setTimeout(r,1500)) // Simulate DNS check
-    setDnsStatus(Math.random()>0.4?"verified":"pending")
-    setVerifying(false)
   }
 
   const inp: React.CSSProperties = {
@@ -106,43 +97,8 @@ export function WhiteLabelView({ workspace, role }:{ workspace:any; role:string 
         </div>
       )}
 
-      {/* Custom domain */}
-      <div style={card}>
-        <div style={secTitle}>{wl("Custom domain")}</div>
-        <div style={{marginBottom:12}}>
-          <label style={{display:"block",fontSize:12,color:"var(--text-2)",marginBottom:5}}>
-            {wl("Domain name")}
-          </label>
-          <div style={{display:"flex",gap:8}}>
-            <input value={form.customDomain} disabled={!canEdit||!isPro}
-              onChange={e=>setForm(f=>({...f,customDomain:e.target.value}))}
-              placeholder={wl("phDomain")}
-              style={{...inp,flex:1}} />
-            <button onClick={verifyDns} disabled={!form.customDomain.trim()||verifying||!isPro}
-              style={{padding:"9px 16px",background:"var(--surface)",border:"1px solid var(--border)",
-                borderRadius:"var(--radius)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)",
-                whiteSpace:"nowrap",opacity:!isPro?0.5:1}}>
-              {verifying?"Checking…":"Verify DNS"}
-            </button>
-          </div>
-          {dnsStatus!=="unchecked"&&(
-            <div style={{marginTop:8,fontSize:12,display:"flex",alignItems:"center",gap:6,
-              color:dnsStatus==="verified"?"var(--green)":dnsStatus==="pending"?"var(--amber)":"var(--red)"}}>
-              {dnsStatus==="verified"?"✓ DNS verified — domain is active":
-               dnsStatus==="pending"?"⏳ DNS propagation in progress (can take up to 48h)":
-               "✗ DNS verification failed"}
-            </div>
-          )}
-        </div>
-        <div style={{background:"var(--surface)",borderRadius:8,padding:"12px 14px",fontSize:12,
-          color:"var(--text-3)",lineHeight:1.7}}>
-          <strong style={{color:"var(--text-2)"}}>{wl("Setup instructions:")}</strong><br/>
-          1. Add a CNAME record: <code style={{background:"#fff",padding:"1px 5px",borderRadius:3,
-            fontFamily:"monospace",fontSize:11}}>pm.yourcompany.com → app.flowsyncpm.com</code><br/>
-          2. Click "Verify DNS" above<br/>
-          3. SSL certificate will be provisioned automatically within 15 minutes
-        </div>
-      </div>
+      {/* Custom domain — real: DNS check + Vercel registration + tenant routing */}
+      <CustomDomainCard canEdit={canEdit && isPro} />
 
       {/* Brand identity */}
       <div style={card}>

@@ -127,8 +127,12 @@ export async function withWorkspace(
     // 2. Resolve workspace ID
     //    Priority: X-Workspace-Id header → query param → session default
     const url = new URL(req.url)
+    // On a custom domain the middleware pins the tenant; an explicit
+    // x-workspace-id from the client still wins (it's how the workspace
+    // switcher works), then the tenant, then query/params/session.
     const workspaceId =
       req.headers.get('x-workspace-id') ||
+      req.headers.get('x-tenant-workspace') ||
       url.searchParams.get('workspaceId') ||
       params?.workspaceId ||
       (session.user as any).activeWorkspaceId

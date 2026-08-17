@@ -8,6 +8,31 @@ import type { NextRequest } from "next/server"
 import { checkRateLimit, RATE_LIMITS, rateLimitHeaders } from "@/lib/security/rate-limiter"
 import { isIPAllowed } from "@/lib/security/ip-allowlist"
 
+// ── Custom-domain tenant resolution ──────────────────────────────────────
+// Middleware runs on the Edge (no Prisma). For non-app hosts we ask a tiny
+// internal route which workspace owns the host, cache it in-process, and pass
+// the answer downstream as x-tenant-workspace. Pages/APIs prefer it over the
+// session's active workspace so pm.hospital.com always lands on that tenant.
+const APP_HOSTS = new Set([
+  (process.env.APP_HOST || "app.flowsyncpm.com").toLowerCase(),
+  "flowsyncpm.com", "www.flowsyncpm.com", "localhost:3000", "localhost",
+])
+const tenantCache = new Map<string, { id: string | null; at: number }>()
+async function tenantForHost(host: string, origin: string): Promise<string | null> {
+  const h = host.toLowerCase().replace(/:\d+$/, "")
+  if (APP_HOSTS.has(h) || h.endsWith(".vercel.app")) return null
+  const hit = tenantCache.get(h)
+  if (hit && Date.now() - hit.at < 5 * 60_000) return hit.id
+  try {
+    const r = await fetch(`${origin}/api/internal/tenant-by-host?host=${encodeURIComponent(h)}`,
+      { headers: { "x-internal-key": process.env.INTERNAL_API_KEY || "" } })
+    const d = r.ok ? await r.json() : null
+    const id = d?.workspaceId || null
+    tenantCache.set(h, { id, at: Date.now() })
+    return id
+  } catch { return null }
+}
+
 const PUBLIC_PREFIXES = [
   "/_next", "/favicon", "/icon", "/apple-icon", "/opengraph", "/images", "/fonts",
   "/api/auth", "/intake/", "/api/health", "/invite/",
@@ -33,6 +58,8 @@ const PUBLIC_PREFIXES = [
   // CRON_SECRET themselves, by query param or Bearer header.
   "/api/automation/execute",
   "/api/cron/",
+  // Called by the middleware itself to map custom domains → workspace.
+  "/api/internal/tenant-by-host",
 ]
 
 const PUBLIC_ROUTES = new Set([
@@ -92,7 +119,12 @@ export default auth(async (req: any) => {
   }
 
   const userId      = req.auth.user?.id
-  const workspaceId = req.auth.user?.activeWorkspaceId
+  // Custom domain → that tenant wins over the session's active workspace,
+  // but only if the user is actually a member there (else fall back).
+  const host = req.headers.get("host") || ""
+  const tenantId = await tenantForHost(host, req.nextUrl.origin)
+  const memberOfTenant = tenantId && (req.auth.user?.workspaces || []).some((w: any) => w.id === tenantId)
+  const workspaceId = (memberOfTenant ? tenantId : null) || req.auth.user?.activeWorkspaceId
   const userRole    = req.auth.user?.workspaces?.find(
     (w: any) => w.id === workspaceId
   )?.role || "TEAM_MEMBER"
@@ -108,6 +140,7 @@ export default auth(async (req: any) => {
   const res = NextResponse.next()
   if (userId)      res.headers.set("x-user-id",      userId)
   if (workspaceId) res.headers.set("x-workspace-id", workspaceId)
+  if (memberOfTenant && tenantId) res.headers.set("x-tenant-workspace", tenantId)
   if (userRole)    res.headers.set("x-user-role",    userRole)
   res.headers.set("x-client-ip", ip)
 

@@ -192,6 +192,12 @@ model Workspace {
   brandName            String?
   supportEmail         String?
   hideBranding         Boolean               @default(false)
+  // Custom domain (Enterprise). Verified by CNAME lookup, then registered on
+  // the Vercel project (SSL is automatic). Middleware maps host → workspace.
+  customDomain         String?               @unique
+  customDomainStatus   String?               // PENDING_DNS | VERIFYING | ACTIVE | ERROR
+  customDomainVerifiedAt DateTime?
+  customDomainError    String?
   logoUrl              String?
   primaryColor         String                @default("#1B6CA8")
   secondaryColor       String                @default("#F59E0B")

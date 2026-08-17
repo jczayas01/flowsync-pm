@@ -3070,5 +3070,31 @@
     "accept": "Aceptar y enviar solicitud",
     "reqSent": "Solicitud enviada — FlowSync confirmará por correo",
     "reqFailed": "No se pudo enviar la solicitud — intenta de nuevo"
+  },
+  "customDomain": {
+    "title": "Dominio personalizado",
+    "domainLabel": "Nombre de dominio",
+    "save": "Guardar dominio",
+    "verify": "Verificar DNS",
+    "recheck": "Re-verificar",
+    "remove": "Quitar",
+    "checking": "Verificando DNS…",
+    "saved": "Dominio guardado — ahora añade el registro CNAME en tu proveedor de DNS y pulsa Verificar DNS.",
+    "active": "✓ Verificado y activo — tu equipo puede iniciar sesión en este dominio (el SSL se emite automáticamente en minutos).",
+    "pending": "El DNS aún no resuelve — la propagación puede tardar hasta 48 h.",
+    "removed": "Dominio eliminado.",
+    "removeConfirm": "¿Quitar el dominio personalizado? Los usuarios seguirán trabajando en la dirección estándar.",
+    "errSave": "No se pudo guardar el dominio",
+    "errVerify": "La verificación falló",
+    "stActive": "Activo",
+    "stPending": "DNS pendiente",
+    "stError": "Error",
+    "since": "desde {d}",
+    "stepsTitle": "Configuración:",
+    "step1a": "En tu proveedor de DNS, añade un",
+    "step2": "Espera la propagación (minutos a 48 h) y pulsa Verificar DNS.",
+    "step3": "Al verificar, registramos el dominio y emitimos el certificado SSL automáticamente.",
+    "note": "Usa un subdominio (pm.tuempresa.com). Los dominios raíz requieren soporte ALIAS/ANAME en tu proveedor.",
+    "planNote": "Los dominios personalizados están disponibles en los planes Business y Enterprise."
   }
 }
