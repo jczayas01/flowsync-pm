@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
-import { contractMath } from "@/lib/contract-math"
+import { contractMath, firstInvoiceLines, incrementInvoiceLines, renewalInvoiceLines, sumLines } from "@/lib/contract-math"
 
 const NAVY = "#0F2942", STEEL = "#1B6CA8", GREEN = "#059669", AMBER = "#D97706", RED = "#DC2626"
 
@@ -698,8 +698,43 @@ function ServiceTab({ c, onChanged }: { c: any; onChanged: () => void }) {
   const unbilledAmt = unbilled.reduce((s, r) => s + r.amount, 0)
   const unbilledHrs = unbilled.reduce((s, r) => s + r.hours, 0)
 
+  // Prepaid hours balance: blocks × hours purchased vs hours consumed (approved
+  // or invoiced, billable). Overage is billed in whole blocks — show how many.
+  const m0 = contractMath(c)
+  const purchased = m0.svcBlocks * m0.pkgHours
+  const consumed = (rows || []).filter((r: any) => r.billable !== false && ["APPROVED","INVOICED"].includes(r.status))
+    .reduce((s2: number, r: any) => s2 + Number(r.hours || 0), 0)
+  const remaining = Math.max(0, purchased - consumed)
+  const overage = Math.max(0, consumed - purchased)
+  const overBlocks = m0.pkgHours > 0 ? Math.ceil(overage / m0.pkgHours) : 0
+  const pct = purchased > 0 ? Math.min(100, (consumed / purchased) * 100) : 0
+
   return (
     <div style={{ ...card, padding: 0 }}>
+      {purchased > 0 && (
+        <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border,#E2E8F0)",
+          background: overage > 0 ? "#FEF2F2" : remaining <= m0.pkgHours * 0.2 ? "#FFFBEB" : "#F0FDF4" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em",
+              color: "var(--text-3,#64748B)" }}>{cl("hoursBalance")}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: NAVY, fontVariantNumeric: "tabular-nums" }}>
+              {consumed.toLocaleString("en-US", { maximumFractionDigits: 1 })} / {purchased} h
+            </span>
+            <span style={{ fontSize: 12, color: overage > 0 ? RED : GREEN, fontWeight: 600 }}>
+              {overage > 0
+                ? cl("hoursOver", { h: overage.toLocaleString("en-US", { maximumFractionDigits: 1 }), n: overBlocks })
+                : cl("hoursLeft", { h: remaining.toLocaleString("en-US", { maximumFractionDigits: 1 }) })}
+            </span>
+            <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-3,#64748B)" }}>
+              {cl("hoursBlocks", { n: m0.svcBlocks, h: m0.pkgHours })}
+            </span>
+          </div>
+          <div style={{ height: 6, background: "#E2E8F0", borderRadius: 3, marginTop: 8, overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3,
+              background: overage > 0 ? RED : pct >= 80 ? "#F59E0B" : GREEN }} />
+          </div>
+        </div>
+      )}
       <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border,#E2E8F0)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 200, fontSize: 11.5, color: "var(--text-3,#64748B)" }}>
@@ -1066,37 +1101,79 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
   }
 
   // Subscription invoice for an existing contract — the renewal path. Same
-  // contractMath as the create flow, minus onboarding and the one-time free
-  // package: those belong to the first invoice only.
-  async function billSubscription() {
-    const m = contractMath(c)
-    const amount = Math.round((m.subAnnual + m.ocrAnnual + m.svcAnnual) * 100) / 100
-    if (amount <= 0 || savingInv) return
+  // ── Invoice composer ─────────────────────────────────────────────────
+  // Three invoice shapes from ONE math source (src/lib/contract-math):
+  //   first      full-term subscription + prepaid service block(s) + onboarding
+  //   increment  added quantities prorated by remaining months (request month
+  //              counts), service blocks one-time; also PATCHes the contract so
+  //              entitlements grow at the same time the paper is issued
+  //   renewal    new quantities ×cycle + a fresh service block; no onboarding
+  const [composer, setComposer] = useState<null | {
+    kind: "first" | "increment" | "renewal"
+    add: { seats: string; bundles: string; ocrPacks: string; serviceBlocks: string }
+    asOf: string
+  }>(null)
+
+  function openComposer(kind: "first" | "increment" | "renewal") {
+    setComposer({ kind, add: { seats: "", bundles: "", ocrPacks: "", serviceBlocks: "" },
+      asOf: new Date().toISOString().slice(0, 10) })
+  }
+
+  function composerLines() {
+    if (!composer) return []
+    if (composer.kind === "first")   return firstInvoiceLines(c)
+    if (composer.kind === "renewal") return renewalInvoiceLines(c)
+    const a = composer.add
+    return incrementInvoiceLines(c, {
+      seats: Number(a.seats) || 0, bundles: Number(a.bundles) || 0,
+      ocrPacks: Number(a.ocrPacks) || 0, serviceBlocks: Number(a.serviceBlocks) || 0,
+    }, new Date(composer.asOf + "T00:00:00Z"))
+  }
+
+  const lineLabel = (l: any) => ({
+    seats: cl("li_seats"), bundles: cl("li_bundles"), ocr: cl("li_ocr"),
+    service: cl("li_service", { h: contractMath(c).pkgHours }),
+    onboarding: cl("li_onboarding"), subDisc: cl("li_subDisc"), firstFree: cl("li_firstFree"),
+  } as any)[l.item] || l.item
+
+  async function issueComposer() {
+    if (!composer || savingInv) return
+    const L = composerLines()
+    const amount = sumLines(L)
+    if (amount <= 0) { setErr(cl("composerEmpty")); return }
     setSavingInv(true); setErr("")
     try {
       const fm = (x: number) => x.toLocaleString("en-US")
-      const noteLines: string[] = []
-      if (m.perMoSeats > 0) noteLines.push(`Sillas / Seats: ${c.paidSeats} × $${fm(m.seatPrice)}/mo`)
-      if (m.perMoBund > 0) noteLines.push(`Paquetes colaboradores / Contributor bundles: ${c.contributorBundles} × $${fm(m.bundlePrice)}/mo`)
-      if (m.subDisc > 0) noteLines.push(`Descuento suscripción / Subscription discount: −${m.subDisc}%`)
-      if (m.ocrPacks > 0) noteLines.push(`OCR: +${m.ocrPacks} × $${fm(m.ocrPrice)}/mo (primeras 200 pág. incluidas / first 200 pages included)`)
-      if (m.retainer > 0) noteLines.push(`Servicio / Service: ${m.retainer} × ${m.pkgHours} h/mo @ $${fm(m.pkgPrice)}${m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""}`)
+      const kindLabel = { first: cl("inv_first"), increment: cl("inv_increment"), renewal: cl("inv_renewal") }[composer.kind]
+      const notes = [kindLabel, ...L.map(l =>
+        `${lineLabel(l)}: ${l.qty} × $${fm(l.unit)}${l.unitLabel} · ${l.period} = ${l.amount < 0 ? "−" : ""}$${fm(Math.abs(l.amount))}`)]
       const now = new Date()
-      const number = `FSPM-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`
+      const number = `FSPM-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}`
+
+      // Increment: grow the contract entitlements in the same action.
+      if (composer.kind === "increment") {
+        const a = composer.add
+        const patch: any = {}
+        if (Number(a.seats) > 0)   patch.paidSeats = Number(c.paidSeats || 0) + Number(a.seats)
+        if (Number(a.bundles) > 0) patch.contributorBundles = Number(c.contributorBundles || 0) + Number(a.bundles)
+        if (Number(a.ocrPacks) > 0) patch.ocrPageCap = (Number(c.ocrPageCap || 200)) + Number(a.ocrPacks) * 200
+        if (Number(a.serviceBlocks) > 0) patch.serviceRetainerPackages = Number(c.serviceRetainerPackages || 0) + Number(a.serviceBlocks)
+        if (Object.keys(patch).length) {
+          const rp = await fetch(`/api/admin/contracts/${c.id}`, { method: "PATCH",
+            headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) })
+          if (!rp.ok) { setErr(cl("errBill")); return }
+        }
+      }
       const res = await fetch(`/api/admin/contracts/${c.id}/invoices`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          number, amount,
-          issueDate: new Date().toISOString().slice(0, 10),
-          dueDate: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
-          status: "DRAFT",
-          notes: noteLines.join("\n"),
-        }),
+        body: JSON.stringify({ number, amount,
+          issueDate: composer.asOf, dueDate: new Date(new Date(composer.asOf).getTime() + 30*864e5).toISOString().slice(0,10),
+          status: "DRAFT", notes: notes.join("\n") }),
       })
       const di = await res.json().catch(() => ({}))
       if (!res.ok) { setErr(di?.error || cl("errBill")); return }
       if (di?.data?.id) window.open(`/print/contracts/${c.id}/invoices/${di.data.id}`, "_blank")
-      await load(); onChanged()
+      setComposer(null); await load(); onChanged()
     } finally { setSavingInv(false) }
   }
 
@@ -1206,69 +1283,55 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
             {(() => {
               // Mirror of the server's bundle math, for preview only — the
               // amount that lands on the invoice is computed server-side.
-              const bH = Number(billable?.serviceBundleHours) || 0
-              const bP = billable?.serviceBundlePrice
+              // Mirror of the server's prepaid-pool model (from-work route):
+              // hours inside the pool bill $0; overage bills whole blocks.
+              const bH = Number(billable?.serviceBundleHours) || 10
               const sel = rows.filter(r => r.kind === "entry" && picked.has(r.id))
               const selIds = new Set(sel.map(r => r.id))
               const ent = (billable?.entries || []).filter((e: any) => selIds.has(e.id))
               const svcHours  = ent.reduce((s2: number, e: any) => s2 + (Number(e.hours) || 0), 0)
               const svcAmount = ent.reduce((s2: number, e: any) => s2 + (Number(e.amount) || 0), 0)
-              const avgRate = svcHours > 0 ? svcAmount / svcHours : 0
-              // (1) free onboarding hours (one-time allowance)
-              const freeHours = (billable?.bundleInOnboarding && bH > 0)
-                ? Math.min(svcHours, Math.max(0, bH - (Number(billable?.hoursAlreadyInvoiced) || 0)))
-                : 0
-              const freeDisc = Math.round(freeHours * avgRate * 100) / 100
-              // (2) prepaid bundle on chargeable hours
-              const chHours = svcHours - freeHours
-              const bundles = bH > 0 ? Math.floor(chHours / bH) : 0
-              const bundleDisc = (form.applyBundle && bundles > 0 && bP != null && chHours > 0)
-                ? Math.max(0, Math.round(bundles * (bH * avgRate - Number(bP)) * 100) / 100)
-                : 0
-              // (3) negotiated service %
+              const msAmount  = total - svcAmount
               const pct = Number(billable?.serviceDiscountPct) || 0
-              const pctDisc = pct > 0
-                ? Math.round(Math.max(0, svcAmount - freeDisc - bundleDisc) * pct) / 100
-                : 0
-              const disc = Math.round((freeDisc + bundleDisc + pctDisc) * 100) / 100
-              const canBundle = bH > 0 && bP != null
+              const rate = Number(billable?.serviceHourlyRate) || (svcHours > 0 ? svcAmount / svcHours : 0)
+              const blockPrice = Math.round(bH * rate * (1 - pct / 100) * 100) / 100
+              const poolHours = Number(billable?.poolHours) || 0
+              const poolLeft = Math.max(0, poolHours - (Number(billable?.hoursAlreadyInvoiced) || 0))
+              const coveredHours = poolHours > 0 ? Math.min(svcHours, poolLeft) : 0
+              const overHours = svcHours - coveredHours
+              const overBlocks = (poolHours > 0 && overHours > 0) ? Math.ceil(overHours / bH) : 0
+              const serviceCharge = poolHours > 0
+                ? Math.round(overBlocks * blockPrice * 100) / 100
+                : Math.round(svcAmount * (1 - pct / 100) * 100) / 100
+              const previewTotal = Math.round((serviceCharge + msAmount) * 100) / 100
+              const cur = billable?.currency || c.currency
               return (
-                <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
-                  {canBundle && (
-                    <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12,
-                      color: bundles > 0 ? NAVY : "var(--text-3,#64748B)", cursor: "pointer" }}>
-                      <input type="checkbox" checked={!!form.applyBundle} disabled={bundles === 0}
-                        onChange={e => setForm({ ...form, applyBundle: e.target.checked })} />
-                      {cl("applyBundle", { n: bundles, h: bH,
-                        d: money2(disc, billable?.currency || c.currency) })}
-                    </label>
-                  )}
+                <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
                   <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12,
                     color: NAVY, cursor: "pointer" }}>
                     <input type="checkbox" checked={!!form.courtesy}
                       onChange={e => setForm({ ...form, courtesy: e.target.checked })} />
                     {cl("courtesyToggle")}
                   </label>
-                  {freeDisc > 0 && (
+                  {poolHours > 0 && coveredHours > 0 && (
                     <span style={{ fontSize: 11.5, color: GREEN }}>
-                      {cl("onbFreeChip", { h: freeHours,
-                        d: money2(freeDisc, billable?.currency || c.currency) })}
+                      {cl("poolCoveredChip", { h: coveredHours, left: Math.max(0, poolLeft - coveredHours) })}
                     </span>
                   )}
-                  {pctDisc > 0 && (
+                  {overBlocks > 0 && (
+                    <span style={{ fontSize: 11.5, color: RED, fontWeight: 600 }}>
+                      {cl("poolOverChip", { h: overHours, n: overBlocks, bh: bH, d: money2(serviceCharge, cur) })}
+                    </span>
+                  )}
+                  {poolHours === 0 && pct > 0 && svcHours > 0 && (
                     <span style={{ fontSize: 11.5, color: GREEN }}>
-                      {cl("svcDiscChip", { pct,
-                        d: money2(pctDisc, billable?.currency || c.currency) })}
+                      {cl("svcDiscChip", { pct, d: money2(svcAmount * pct / 100, cur) })}
                     </span>
                   )}
-                  {(disc > 0 || form.courtesy) && (
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, marginLeft: "auto",
-                      fontVariantNumeric: "tabular-nums" }}>
-                      {cl("billTotal", { amount: money2(
-                        form.courtesy ? 0 : Math.max(0, total - disc),
-                        billable?.currency || c.currency) })}
-                    </span>
-                  )}
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: NAVY, marginLeft: "auto",
+                    fontVariantNumeric: "tabular-nums" }}>
+                    {cl("billTotal", { amount: money2(form.courtesy ? 0 : previewTotal, cur) })}
+                  </span>
                 </div>
               )
             })()}
@@ -1288,12 +1351,13 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
           fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase",
           color: "var(--text-3,#64748B)", display: "flex", alignItems: "center" }}>
           {cl("invoicesCount", { n: invoices?.length || 0 })}
-          <button style={{ ...miniBtn, marginLeft: "auto", textTransform: "none",
-              letterSpacing: "normal", fontWeight: 600 }}
-            disabled={savingInv} onClick={billSubscription}
-            title={cl("billSubscriptionTitle")}>
-            {savingInv ? cl("Saving…") : cl("billSubscription")}
-          </button>
+          <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+            {(["first","increment","renewal"] as const).map(k => (
+              <button key={k} style={{ ...miniBtn, textTransform: "none", letterSpacing: "normal", fontWeight: 600 }}
+                disabled={savingInv} onClick={() => openComposer(k)}
+                title={cl(`inv_${k}Title`)}>{cl(`inv_${k}`)}</button>
+            ))}
+          </span>
         </div>
         {!invoices ? (
           <div style={{ padding: 18, fontSize: 12.5, color: "var(--text-3,#64748B)" }}>{cl("Loading…")}</div>
@@ -1368,6 +1432,90 @@ function InvoicesTab({ c, onChanged }: { c: any; onChanged: () => void }) {
             </table>
           </div>
         )}
+
+        {composer && (() => {
+          const L = composerLines(); const total = sumLines(L)
+          const m = contractMath(c)
+          const cur = c.currency || "USD"
+          const months = composer.kind === "increment" && c.endDate
+            ? (() => { const a = new Date(composer.asOf + "T00:00:00Z"), e = new Date(c.endDate)
+                return Math.max(1, (e.getUTCFullYear()-a.getUTCFullYear())*12 + (e.getUTCMonth()-a.getUTCMonth()) + 1) })()
+            : null
+          const numIn = (k: "seats"|"bundles"|"ocrPacks"|"serviceBlocks", label: string, hint?: string) => (
+            <div key={k}>
+              <label style={lbl}>{label}</label>
+              <input style={inp} type="number" min="0" step="1" value={composer.add[k]}
+                onChange={e => setComposer({ ...composer, add: { ...composer.add, [k]: e.target.value } })} />
+              {hint && <div style={{ fontSize: 10, color: "var(--text-3,#64748B)", marginTop: 2 }}>{hint}</div>}
+            </div>
+          )
+          return (
+            <div style={{ padding: 14, borderTop: "1px solid var(--border,#E2E8F0)", background: "#F8FAFC" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: NAVY }}>
+                  {cl(`inv_${composer.kind}`)} — {cl("composerTitle")}
+                </div>
+                <div style={{ marginLeft: "auto" }}>
+                  <label style={{ ...lbl, display: "inline", marginRight: 6 }}>{cl("inv_issue")}</label>
+                  <input style={{ ...inp, width: 150, display: "inline-block" }} type="date" value={composer.asOf}
+                    onChange={e => setComposer({ ...composer, asOf: e.target.value })} />
+                </div>
+              </div>
+              {composer.kind === "increment" && (
+                <>
+                  <div style={{ fontSize: 11, color: "var(--text-3,#64748B)", marginBottom: 8 }}>
+                    {cl("composerIncNote", { n: months ?? 0 })}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 10 }}>
+                    {numIn("seats", cl("compAddSeats"), cl("compCurrent", { n: c.paidSeats ?? 0 }))}
+                    {numIn("bundles", cl("compAddBundles"), cl("compCurrent", { n: c.contributorBundles ?? 0 }))}
+                    {numIn("ocrPacks", cl("compAddOcr"), cl("compCurrentOcr", { n: c.ocrPageCap ?? 200 }))}
+                    {numIn("serviceBlocks", cl("compAddSvc", { h: m.pkgHours }), cl("compCurrent", { n: c.serviceRetainerPackages ?? 0 }))}
+                  </div>
+                </>
+              )}
+              {composer.kind === "renewal" && (
+                <div style={{ fontSize: 11, color: "var(--text-3,#64748B)", marginBottom: 8 }}>{cl("composerRenNote")}</div>
+              )}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead><tr>
+                  {[cl("i_item"), cl("i_qty"), cl("i_unit"), cl("i_period"), cl("i_amount")].map((h, i) => (
+                    <th key={h} style={{ textAlign: i >= 1 && i !== 3 ? "right" : "left", padding: "6px 8px",
+                      fontSize: 10, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-3,#64748B)",
+                      borderBottom: "1.5px solid " + NAVY }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {L.map((l, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: "6px 8px", borderBottom: "1px solid var(--border,#E2E8F0)",
+                        color: l.amount < 0 ? GREEN : NAVY }}>{lineLabel(l)}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right", borderBottom: "1px solid var(--border,#E2E8F0)" }}>{l.qty}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right", borderBottom: "1px solid var(--border,#E2E8F0)", whiteSpace: "nowrap" }}>
+                        {l.unit ? money2(l.unit, cur) + l.unitLabel : "—"}</td>
+                      <td style={{ padding: "6px 8px", borderBottom: "1px solid var(--border,#E2E8F0)" }}>{l.period}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, borderBottom: "1px solid var(--border,#E2E8F0)",
+                        color: l.amount < 0 ? GREEN : NAVY, fontVariantNumeric: "tabular-nums" }}>
+                        {l.amount < 0 ? "−" : ""}{money2(Math.abs(l.amount), cur)}</td>
+                    </tr>
+                  ))}
+                  {!L.length && <tr><td colSpan={5} style={{ padding: 10, color: "var(--text-3,#64748B)", textAlign: "center" }}>{cl("composerEmpty")}</td></tr>}
+                </tbody>
+              </table>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: NAVY, fontVariantNumeric: "tabular-nums" }}>
+                  {cl("billTotal", { amount: money2(total, cur) })}
+                </span>
+                <span style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                  <button style={btn()} onClick={() => setComposer(null)}>{cl("Cancel")}</button>
+                  <button style={btn(true)} disabled={savingInv || total <= 0} onClick={issueComposer}>
+                    {savingInv ? cl("Saving…") : cl("composerIssue")}
+                  </button>
+                </span>
+              </div>
+            </div>
+          )
+        })()}
 
         {editInv && (
           <div style={{ padding: 14, borderTop: "1px solid var(--border,#E2E8F0)" }}>

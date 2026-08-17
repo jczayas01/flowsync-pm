@@ -36,7 +36,7 @@ const T = {
     autoRenew: "Renovación automática", yes: "Sí", no: "No",
     s: [
       ["1. Objeto", "El Proveedor concede al Cliente una licencia no exclusiva e intransferible para acceder y usar la plataforma FlowSync PM (\u201Cel Servicio\u201D) durante la Vigencia, conforme a este Acuerdo y sus Anexos."],
-      ["2. Derechos contratados", "Las sillas, paquetes de colaboradores, tope de OCR, servicio profesional y demás derechos se detallan en el Anexo A. Con este Acuerdo activo, el Anexo A prevalece sobre cualquier plan de autoservicio."],
+      ["2. Derechos contratados", "Las sillas, paquetes de colaboradores, tope de OCR, servicio profesional y demás derechos se detallan en el Anexo A. Con este Acuerdo activo, el Anexo A prevalece sobre cualquier plan de autoservicio. Los aumentos a mitad de vigencia se facturan prorrateados por los meses restantes (incluido el mes de solicitud); las reducciones requieren solicitud escrita y aplican al siguiente período."],
       ["3. Precio y facturación", "El Cliente pagará las cantidades del Anexo A según el ciclo de facturación indicado. Las facturas se emiten por adelantado al inicio de cada período y son pagaderas NET-30 desde su fecha, en USD, mediante ACH o transferencia. Los cargos por servicio profesional se facturan por trabajo registrado y aprobado, con los descuentos del Anexo A. Los cargos vencidos devengan 1.5% mensual o el máximo legal, lo que sea menor."],
       ["4. Uso aceptable", "El Cliente usará el Servicio conforme a la ley aplicable y las Políticas de Servicio del Proveedor, y es responsable de las credenciales y actividad de sus usuarios. El Cliente no realizará ingeniería inversa, reventa ni acceso automatizado no autorizado."],
       ["5. Datos del Cliente", "El Cliente conserva todo derecho sobre sus datos. El Proveedor los trata únicamente para prestar el Servicio, según el Anexo de Procesamiento de Datos (DPA) cuando esté suscrito, con cifrado en tránsito y en reposo, control de acceso por roles y registros de auditoría."],
@@ -54,7 +54,7 @@ const T = {
     exC: "ANEXO C — Hitos de implementación", sign: "FIRMAS",
     item: "Concepto", qty: "Cant.", unit: "Precio unitario", period: "Período", amount: "Importe",
     seats: "Sillas pagadas", bundles: "Paquetes de colaboradores (×10)", ocr: "Paquetes OCR adicionales (+200 pág./mes; primer paquete incluido)",
-    retainer: (h: number) => `Retainer de servicio (${h} h/mes)`, svcRate: "Tarifa de servicio profesional",
+    retainer: (h: number) => `Bloque de servicio prepagado (${h} h, consumible durante la vigencia; excedente en bloques de ${h} h)`, svcRate: "Tarifa de servicio profesional",
     subDisc: "Descuento de suscripción", onbDisc: "Descuento de onboarding", svcDisc: "Descuento de servicio",
     firstFree: "Primer paquete de servicio incluido en onboarding", onboarding: "Onboarding (cargo único)",
     perMo: "/mes", perYr: "anual", oneTime: "único", perHr: "/hora",
@@ -79,7 +79,7 @@ const T = {
     autoRenew: "Auto-renewal", yes: "Yes", no: "No",
     s: [
       ["1. Subject", "Provider grants Customer a non-exclusive, non-transferable license to access and use the FlowSync PM platform (the \u201CService\u201D) during the Term, under this Agreement and its Exhibits."],
-      ["2. Entitlements", "Seats, contributor bundles, OCR cap, professional services and all other entitlements are detailed in Exhibit A. While this Agreement is active, Exhibit A prevails over any self-service plan."],
+      ["2. Entitlements", "Seats, contributor bundles, OCR cap, professional services and all other entitlements are detailed in Exhibit A. While this Agreement is active, Exhibit A prevails over any self-service plan. Mid-term increases are billed prorated over the remaining months (request month included); reductions require written request and take effect at the next period."],
       ["3. Fees and billing", "Customer will pay the amounts in Exhibit A per the stated billing cycle. Invoices are issued in advance at the start of each period and are due NET-30 from invoice date, in USD, by ACH or wire. Professional-service charges are invoiced from recorded, approved work with the discounts in Exhibit A. Overdue amounts accrue 1.5% per month or the legal maximum, whichever is lower."],
       ["4. Acceptable use", "Customer will use the Service in compliance with applicable law and Provider's Service Policies, and is responsible for its users' credentials and activity. Customer will not reverse-engineer, resell, or perform unauthorized automated access."],
       ["5. Customer Data", "Customer retains all rights in its data. Provider processes it solely to deliver the Service, under the Data Processing Addendum (DPA) when executed, with encryption in transit and at rest, role-based access control, and audit logs."],
@@ -97,7 +97,7 @@ const T = {
     exC: "EXHIBIT C — Onboarding Milestones", sign: "SIGNATURES",
     item: "Item", qty: "Qty", unit: "Unit price", period: "Period", amount: "Amount",
     seats: "Paid seats", bundles: "Contributor bundles (×10)", ocr: "Additional OCR packs (+200 pages/mo; first pack included)",
-    retainer: (h: number) => `Service retainer (${h} h/mo)`, svcRate: "Professional service rate",
+    retainer: (h: number) => `Prepaid service block (${h} h, usable across the term; overage billed in ${h}-h blocks)`, svcRate: "Professional service rate",
     subDisc: "Subscription discount", onbDisc: "Onboarding discount", svcDisc: "Service discount",
     firstFree: "First service package included in onboarding", onboarding: "Onboarding (one-time)",
     perMo: "/mo", perYr: "annual", oneTime: "one-time", perHr: "/hour",
@@ -173,14 +173,15 @@ export default async function AgreementPrintPage({ params, searchParams }: {
     amount: -Math.round((m.perMoSeats + m.perMoBund) * cyc * m.subDisc / 100 * 100) / 100, neg: true })
   if (m.ocrPacks > 0) rows.push({ item: t.ocr, qty: String(m.ocrPacks),
     unit: money(m.ocrPrice, cur) + t.perMo, period: cyc === 12 ? t.perYr : t.perMo, amount: m.ocrAnnual })
-  if (m.retainer > 0) rows.push({ item: t.retainer(m.pkgHours), qty: String(m.retainer),
-    unit: money(m.pkgPrice, cur) + t.perMo + (m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""),
-    period: cyc === 12 ? t.perYr : t.perMo, amount: m.svcAnnual })
+  if (m.svcBlocks > 0) rows.push({ item: t.retainer(m.pkgHours), qty: String(m.svcBlocks),
+    unit: money(m.pkgPrice, cur) + (m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""),
+    period: t.oneTime, amount: m.svcOneTime })
   if (m.firstFree > 0) rows.push({ item: t.firstFree, qty: "1", unit: money(m.pkgPrice, cur), period: t.oneTime,
     amount: -m.firstFree, neg: true })
   if (m.onboarding > 0 || n(c.onboardingFee) > 0) rows.push({ item: t.onboarding + (m.onbDisc > 0 ? ` (−${m.onbDisc}%)` : ""),
     qty: "1", unit: money(n(c.onboardingFee), cur), period: t.oneTime, amount: m.onboarding })
-  const renewalTotal = Math.round((m.subAnnual + m.ocrAnnual + m.svcAnnual) * 100) / 100
+  // Renewal = subscription ×cycle + one fresh service block (unused hours don't roll over)
+  const renewalTotal = Math.round((m.subAnnual + m.ocrAnnual + (m.svcBlocks > 0 || Number(c.serviceHourlyRate) > 0 ? m.pkgPrice : 0)) * 100) / 100
 
   return (
     <div style={{ background: "#F1F5F9", minHeight: "100vh", padding: "24px 0",

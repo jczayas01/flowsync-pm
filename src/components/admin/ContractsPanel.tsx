@@ -194,7 +194,7 @@ export function ContractsPanel({ workspaces, driveEditId, driveNew, onModalClose
           if (m.ocrPacks > 0) noteLines.push(
             `OCR: +${m.ocrPacks} × $${fm(m.ocrPrice)}/mo (primeras 200 pág. incluidas / first 200 pages included)`)
           if (m.retainer > 0) noteLines.push(
-            `Servicio / Service: ${m.retainer} × ${m.pkgHours} h/mo @ $${fm(m.pkgPrice)}${m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""}`)
+            `Bloque de servicio prepagado / Prepaid service block: ${m.svcBlocks} × ${m.pkgHours} h @ $${fm(m.pkgPrice)} (one-time)${m.svcDisc > 0 ? ` (−${m.svcDisc}%)` : ""}`)
           if (m.firstFree > 0) noteLines.push(
             `Primer paquete incluido en onboarding / First package included: −$${fm(m.firstFree)}`)
           if (m.onboarding > 0) noteLines.push(

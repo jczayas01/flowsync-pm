@@ -50,7 +50,8 @@ export async function GET(_req: NextRequest, { params }: { params: { contractId:
       where: { id: params.contractId },
       select: { currency: true, serviceHourlyRate: true,
                 serviceBundleHours: true, serviceBundlePrice: true,
-                serviceDiscountPct: true, bundleInOnboarding: true } as any,
+                serviceDiscountPct: true, bundleInOnboarding: true,
+                serviceRetainerPackages: true } as any,
     }) as any,
     db.contractServiceEntry.aggregate({
       where: { contractId: params.contractId, status: "INVOICED", billable: true },
@@ -66,6 +67,7 @@ export async function GET(_req: NextRequest, { params }: { params: { contractId:
       serviceBundlePrice: contract?.serviceBundlePrice == null ? null : n(contract.serviceBundlePrice),
       serviceDiscountPct: contract?.serviceDiscountPct == null ? null : n(contract.serviceDiscountPct),
       bundleInOnboarding: !!contract?.bundleInOnboarding,
+      poolHours: (n(contract?.serviceRetainerPackages) + (contract?.bundleInOnboarding ? 1 : 0)) * n(contract?.serviceBundleHours),
       hoursAlreadyInvoiced: n(invoicedAgg?._sum?.hours),
       entries: entries.map(e => ({
         id: e.id, entryDate: e.entryDate, category: e.category, description: e.description,
@@ -99,7 +101,8 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
     where: { id: params.contractId },
     select: { id: true, currency: true, serviceBundleHours: true,
               serviceBundlePrice: true, serviceDiscountPct: true,
-              bundleInOnboarding: true } as any,
+              bundleInOnboarding: true, serviceRetainerPackages: true,
+              serviceHourlyRate: true } as any,
   }) as any
   if (!contract) return NextResponse.json({ error: "Contract not found" }, { status: 404 })
 
@@ -139,47 +142,56 @@ export async function POST(req: NextRequest, { params }: { params: { contractId:
       const bH = n(contract.serviceBundleHours)
       const bP = contract.serviceBundlePrice == null ? null : n(contract.serviceBundlePrice)
 
-      // (1) Onboarding includes the first bH service hours free — a one-time
-      // allowance measured against hours already INVOICED on this contract,
-      // re-read inside the transaction so two simultaneous invoices can't
-      // both claim it.
-      let freeHours = 0, freeDisc = 0
-      if (contract.bundleInOnboarding && bH > 0 && svcHours > 0) {
+      // ── Prepaid service model ──────────────────────────────────────────
+      // The contract prepaid N blocks of bH hours (+1 free block if onboarding
+      // includes it). Hours are consumed across the term. Anything within the
+      // prepaid pool bills $0 here (already paid up front). Overage is billed in
+      // WHOLE additional blocks at the block price (hours × rate × (1 − disc)),
+      // never hour by hour. Pool usage is re-read inside the transaction so two
+      // simultaneous invoices can't both draw the same hours.
+      const blocksPurchased = n(contract.serviceRetainerPackages) + (contract.bundleInOnboarding ? 1 : 0)
+      const poolHours = bH > 0 ? blocksPurchased * bH : 0
+      const svcPct = contract.serviceDiscountPct == null ? 0 : n(contract.serviceDiscountPct)
+      const blockPrice = r2(bH * n(contract.serviceHourlyRate) * (1 - svcPct / 100))
+
+      let coveredHours = 0, coveredDisc = 0, overHours = 0, overBlocks = 0, overCharge = 0
+      let legacyPctDisc = 0
+      if (poolHours > 0 && svcHours > 0) {
         const used = await tx.contractServiceEntry.aggregate({
           where: { contractId: params.contractId, status: "INVOICED", billable: true },
           _sum: { hours: true },
         })
-        freeHours = Math.min(svcHours, Math.max(0, bH - n(used?._sum?.hours)))
-        freeDisc  = r2(freeHours * avgRate)
-      }
-
-      // (2) Prepaid bundle on the hours that remain chargeable: pay the
-      // bundle price instead of hours × rate. Never negative.
-      let bundleDisc = 0, bundleCount = 0
-      const chargeableHours = svcHours - freeHours
-      if (d.applyBundle && bH > 0 && bP != null && chargeableHours > 0) {
-        bundleCount = Math.floor(chargeableHours / bH)
-        if (bundleCount > 0) {
-          bundleDisc = Math.max(0, r2(bundleCount * (bH * avgRate - bP)))
+        const alreadyUsed = n(used?._sum?.hours)
+        const poolLeft = Math.max(0, poolHours - alreadyUsed)
+        coveredHours = Math.min(svcHours, poolLeft)
+        coveredDisc  = r2(coveredHours * avgRate)          // waive: prepaid already
+        overHours    = svcHours - coveredHours
+        if (overHours > 0) {
+          // Bill whole blocks; the block covers overHours plus any remainder up
+          // to the block boundary (which then sits in the pool for next time).
+          overBlocks = Math.ceil(overHours / bH)
+          overCharge = r2(overBlocks * blockPrice)
         }
+      } else if (svcHours > 0 && svcPct > 0) {
+        // No prepaid pool on this contract: plain hourly billing with the
+        // negotiated service discount.
+        legacyPctDisc = r2(svcAmount * svcPct / 100)
       }
 
-      // (3) Negotiated service % on the service value still being charged.
-      const pct = contract.serviceDiscountPct == null ? 0 : n(contract.serviceDiscountPct)
-      const svcCharged = Math.max(0, svcAmount - freeDisc - bundleDisc)
-      const pctDisc = pct > 0 ? r2(svcCharged * pct / 100) : 0
-
-      const discount = r2(freeDisc + bundleDisc + pctDisc)
-      const amount = d.courtesy ? 0 : Math.max(0, r2(grossAmount - discount))
+      // Service portion of the invoice = overage blocks (or hourly if no pool);
+      // milestones bill as before.
+      const msAmount = milestones.reduce((s: number, m: any) => s + n(m.amount), 0)
+      const serviceCharge = poolHours > 0 ? overCharge : r2(svcAmount - legacyPctDisc)
+      const amount = d.courtesy ? 0 : Math.max(0, r2(serviceCharge + msAmount))
 
       const noteLines: string[] = []
       if (d.notes) noteLines.push(d.notes)
-      if (freeDisc > 0) noteLines.push(
-        `Onboarding: ${freeHours} h incluidas / included → −${freeDisc.toFixed(2)}`)
-      if (bundleDisc > 0) noteLines.push(
-        `Bundle: ${bundleCount} × ${bH} h @ ${bP} → −${bundleDisc.toFixed(2)}`)
-      if (pctDisc > 0) noteLines.push(
-        `Descuento servicio / Service discount ${pct}% → −${pctDisc.toFixed(2)}`)
+      if (coveredHours > 0) noteLines.push(
+        `Horas prepagadas / Prepaid hours: ${coveredHours} h covered by contract pool (${poolHours} h)`)
+      if (overBlocks > 0) noteLines.push(
+        `Exceso / Overage: ${overHours} h → ${overBlocks} × ${bH} h block @ ${blockPrice.toFixed(2)}${svcPct > 0 ? ` (−${svcPct}%)` : ""} = ${overCharge.toFixed(2)}`)
+      if (legacyPctDisc > 0) noteLines.push(
+        `Descuento servicio / Service discount ${svcPct}% → −${legacyPctDisc.toFixed(2)}`)
       if (d.courtesy) noteLines.push(`Cortesía / Courtesy — ${grossAmount.toFixed(2)} waived`)
 
       const invoice = await tx.contractInvoice.create({
