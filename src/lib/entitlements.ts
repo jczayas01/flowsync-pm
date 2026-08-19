@@ -65,10 +65,12 @@ export async function resolveEntitlements(workspaceId: string): Promise<Entitlem
 
 /** Seats currently consumed = members whose role counts as a paid seat.
  *  Contributors (TEAM_MEMBER-level and below via bundles) don't consume seats. */
-// Paid-seat roles = the roles that drive the work (admin, PM, PMO, program,
-// executive). MEMBER, VIEWER and CLIENT are contributors and consume bundle
-// capacity (10 per bundle), not seats — matches the pricing page.
-export const SEAT_ROLES = ["SUPER_ADMIN", "OWNER", "ADMIN", "PMO_DIRECTOR", "PROGRAM_MANAGER", "PM", "EXECUTIVE"]
+// Paid-seat roles = the roles that DRIVE the work (admin, PMO, program, PM).
+// EXECUTIVE, MEMBER, VIEWER and CLIENT are contributors and consume bundle
+// capacity (10 per bundle), not seats. The landing page promises exactly this
+// to executives ("No seat cost — you're in the bundle"), so the gate must
+// agree with it.
+export const SEAT_ROLES = ["SUPER_ADMIN", "OWNER", "ADMIN", "PMO_DIRECTOR", "PROGRAM_MANAGER", "PM"]
 export async function countSeatUsage(workspaceId: string): Promise<{ seatsUsed: number; contributorsUsed: number }> {
   const members = await db.workspaceMember.findMany({
     where: { workspaceId }, select: { role: true },

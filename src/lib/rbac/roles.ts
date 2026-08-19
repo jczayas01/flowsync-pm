@@ -55,7 +55,7 @@ export const ROLE_DESCRIPTIONS: Record<AnyRole, string> = {
   ADMIN:           "Create and manage users. Assign roles. Configure workspace appearance (colors, logo).",
   SUPER_USER:      "Create/remove users. Approve project requests. View and edit all data. Define confidential project visibility.",
   PMO_DIRECTOR:    "Oversight of all portfolios, programs, and projects. Sets standards, reviews intake, monitors performance across the workspace. View all; edit governance.",
-  EXECUTIVE:       "C-level read-only visibility across the entire workspace — strategic performance, investment, and benefits. No editing.",
+  EXECUTIVE:       "C-level visibility across the entire workspace — every project, program, budget, risk, report, setting and audit entry. Complete read access, no editing.",
   PROGRAM_MANAGER: "Manage projects within assigned programs. View and edit project information. Upload and download data.",
   PROJECT_MANAGER: "Manage assigned projects. View and edit project details. Upload and download related data.",
   TEAM_MEMBER:     "View assigned projects. Access and track assigned tasks. Receive notifications for due dates and updates.",
@@ -467,8 +467,11 @@ export const PERMISSIONS: Record<AnyRole, Partial<Record<Permission, boolean>>> 
   // ────────────────────────────────────────
   EXECUTIVE: {
     "system:access":             YES,
-    "workspace:view_settings":   DENY,
-    "workspace:view_audit_log":  DENY,
+    // Complete read-only visibility: an executive should see everything the
+    // organization has, including settings and the audit trail — but change
+    // nothing. Read is total; write stays denied throughout.
+    "workspace:view_settings":   YES,
+    "workspace:view_audit_log":  YES,
     "users:view":                YES,
     "intake:submit":             YES,
     "intake:view_all":           YES,
@@ -484,6 +487,9 @@ export const PERMISSIONS: Record<AnyRole, Partial<Record<Permission, boolean>>> 
     "budget:export":             YES,
     "risks:view":                YES,
     "changes:view":              YES,
+    "tasks:view_assigned":       YES,
+    "files:download_sensitive":  YES,
+    "intake:review_pm":          DENY,
     "reports:view":              YES,
     "reports:manage_templates": DENY,
     "reports:export":            YES,
