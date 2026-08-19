@@ -16,6 +16,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { withWorkspace, ok, err, ApiContext } from "@/lib/api"
 import { extractTextFromBuffer } from "@/lib/extract"
 import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
+import { db } from "@/lib/db"
+import { reserveVisionPages } from "@/lib/ocr"
 
 const MAX_BYTES = 4 * 1024 * 1024   // Vercel serverless body cap is 4.5 MB
 const MAX_CHARS = 60_000
@@ -43,7 +45,19 @@ async function scan(ctx: ApiContext) {
 
   const buf = Buffer.from(await file.arrayBuffer())
   const full = await extractTextFromBuffer(file.name, buf)
-  if (!full?.trim()) return err("Could not extract text from this file", 422)
+  if (!full?.trim()) {
+    // No text layer (scan or photo). Reading it costs OCR budget — charge it
+    // before telling the user we can't parse plain text.
+    const ws = await db.workspace.findUnique({ where: { id: ctx.workspaceId }, select: { plan: true } })
+    const res = await reserveVisionPages({ workspaceId: ctx.workspaceId, userId: ctx.userId,
+      plan: String(ws?.plan || "FREE"), docName: file.name })
+    if (!res.ok) {
+      return err(res.reason === "plan"
+        ? "AI reading of scanned documents is included in the Business plan"
+        : `Monthly AI page limit reached (${res.used}/${res.cap}) — add a pack in Settings → Team`, 402)
+    }
+    return err("Could not extract text from this file", 422)
+  }
   const text = full.length <= MAX_CHARS ? full
     : full.slice(0, Math.floor(MAX_CHARS * 0.7))
       + "\n\n[… middle of document truncated …]\n\n"

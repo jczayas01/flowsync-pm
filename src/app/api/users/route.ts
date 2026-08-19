@@ -102,6 +102,35 @@ async function inviteUser(ctx: ApiContext) {
     return err("This user is already a member of this workspace", 409)
   }
 
+  // ── Capacity gate ────────────────────────────────────────────────────────
+  // Seats and contributor bundles are what the customer pays for; without a
+  // check here the counters in Settings → Team were decoration. Pending
+  // invitations count against capacity too, or five invites sent at once all
+  // pass and land the workspace over its contract.
+  {
+    const { resolveEntitlements, countSeatUsage, SEAT_ROLES } = await import("@/lib/entitlements")
+    const [ent, usage, pendingInvites] = await Promise.all([
+      resolveEntitlements(ctx.workspaceId),
+      countSeatUsage(ctx.workspaceId),
+      db.workspaceInvitation.findMany({
+        where: { workspaceId: ctx.workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } },
+        select: { role: true },
+      }),
+    ])
+    const takesSeat = SEAT_ROLES.includes(String(role))
+    const pendingSeats = pendingInvites.filter(i => SEAT_ROLES.includes(String(i.role))).length
+    const pendingContrib = pendingInvites.length - pendingSeats
+    if (takesSeat) {
+      if (usage.seatsUsed + pendingSeats + 1 > ent.seats) {
+        return err(`No paid seats left — ${usage.seatsUsed} in use${pendingSeats ? ` + ${pendingSeats} pending` : ""} of ${ent.seats} contracted. Request more seats in Settings → Team, or invite this person as a Viewer/Client (uses contributor capacity).`, 402)
+      }
+    } else if (ent.contributorsCap > 0 || usage.contributorsUsed > 0) {
+      if (usage.contributorsUsed + pendingContrib + 1 > ent.contributorsCap) {
+        return err(`No contributor capacity left — ${usage.contributorsUsed} in use${pendingContrib ? ` + ${pendingContrib} pending` : ""} of ${ent.contributorsCap}. Add a contributor bundle (10 users) in Settings → Team.`, 402)
+      }
+    }
+  }
+
   // Get workspace for email
   const workspace = await db.workspace.findUnique({
     where:  { id: ctx.workspaceId },

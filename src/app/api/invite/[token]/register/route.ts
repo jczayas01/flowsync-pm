@@ -58,6 +58,23 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       { status: 409 })
   }
 
+  // Capacity is re-checked at acceptance: an invitation issued weeks ago must
+  // not push the workspace over a contract that changed since.
+  {
+    const { resolveEntitlements, countSeatUsage, SEAT_ROLES } = await import("@/lib/entitlements")
+    const [ent, usage] = await Promise.all([
+      resolveEntitlements(invitation.workspaceId),
+      countSeatUsage(invitation.workspaceId),
+    ])
+    const takesSeat = SEAT_ROLES.includes(String(invitation.role))
+    if (takesSeat && usage.seatsUsed + 1 > ent.seats) {
+      return NextResponse.json({ error: "This workspace has no paid seats available. Ask an administrator to add a seat before accepting." }, { status: 402 })
+    }
+    if (!takesSeat && ent.contributorsCap > 0 && usage.contributorsUsed + 1 > ent.contributorsCap) {
+      return NextResponse.json({ error: "This workspace has no contributor capacity available. Ask an administrator to add a bundle before accepting." }, { status: 402 })
+    }
+  }
+
   const hashed = await hash(password, 12)
 
   try {

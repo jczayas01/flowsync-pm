@@ -12,6 +12,7 @@ import { verifyProjectAccess } from "@/lib/api"
 import { downloadBuffer } from "@/lib/storage"
 import { extractTextFromBuffer } from "@/lib/extract"
 import { aiGuard, AI_DISABLED_ERROR } from "@/lib/ai-guard"
+import { reserveVisionPages } from "@/lib/ocr"
 
 // A one-hour meeting transcript runs ~45,000 characters; the old 6,000 cap
 // silently fed Claude only the first few minutes and the minutes came out
@@ -101,6 +102,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     new URL(req.url).searchParams.get("workspaceId") ||
     (session.user as any).activeWorkspaceId
   if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
+  const _ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+  const plan = String(_ws?.plan || "FREE")
   if (!(await aiGuard(workspaceId, "document-scan", session.user.id, params.projectId)))
     return NextResponse.json({ error: AI_DISABLED_ERROR }, { status: 403 })
 
@@ -148,7 +151,16 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         scanned.push(d.name)
         total += t.length
       } else if (d.name.toLowerCase().endsWith(".pdf") && buf.length <= 3_500_000 && pdfBlocks.length < 2) {
-        // No text layer — a scanned/image PDF. Send it to the AI as a visual document.
+        // No text layer — a scanned/image PDF read visually by the model. That
+        // consumes OCR budget just like ocrScannedPdf, so charge and cap it.
+        const res = await reserveVisionPages({ workspaceId, userId: session.user.id,
+          plan: String(plan), docName: d.name })
+        if (!res.ok) {
+          skipped.push({ name: d.name, reason: res.reason === "plan"
+            ? "scanned PDF — AI reading of scans is included in the Business plan"
+            : `monthly AI page limit reached (${res.used}/${res.cap}) — add a pack in Settings → Team` })
+          continue
+        }
         pdfBlocks.push({ name: d.name, data: buf.toString("base64") })
         scanned.push(`${d.name} (read visually)`)
       } else {

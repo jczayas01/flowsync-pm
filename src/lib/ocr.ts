@@ -160,3 +160,22 @@ export async function ocrScannedPdf(opts: {
     return { ok: false, reason: "failed" }
   }
 }
+
+/** Guard for routes that hand a scanned PDF/image straight to the model as a
+ *  visual document (no text layer). Those bypass ocrScannedPdf, so without
+ *  this they read pages for free and the monthly counter under-reports.
+ *  Returns whether the read may proceed, and records the pages when it does.
+ *  `pages` is an estimate (a scanned PDF costs roughly its page count). */
+export async function reserveVisionPages(opts: {
+  workspaceId: string; userId: string; plan: string; docName: string; pages?: number
+}): Promise<{ ok: true; charged: number } | { ok: false; reason: "plan" | "cap"; used: number; cap: number }> {
+  if (!ocrAllowed(opts.plan)) return { ok: false, reason: "plan", used: 0, cap: 0 }
+  const [used, cap] = await Promise.all([
+    monthlyOcrPagesUsed(opts.workspaceId),
+    resolveOcrCap(opts.workspaceId, opts.plan),
+  ])
+  if (used >= cap) return { ok: false, reason: "cap", used, cap }
+  const want = Math.max(1, Math.min(opts.pages ?? PAGES_PER_CALL, cap - used))
+  await recordOcrPages(opts.workspaceId, opts.userId, want, opts.docName)
+  return { ok: true, charged: want }
+}
