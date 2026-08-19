@@ -45,6 +45,35 @@ async function updateUser(ctx: ApiContext, params?: Record<string, string>) {
       const escalationGuard = requireCanAssignRole(mapDbRoleToRbac(ctx.userRole as any), mapDbRoleToRbac(targetRole as any) as WorkspaceRole)
       if (escalationGuard) return err("Cannot modify a user with equal or higher access level", 403)
     }
+
+    // ── Capacity gate ──────────────────────────────────────────────────────
+    // Promoting a contributor to a seat role consumes a paid seat. Without
+    // this, invite/accept could be capped and the workspace would still end up
+    // over contract by editing the dropdown afterwards. Only charged when the
+    // move actually crosses the seat/contributor line.
+    {
+      const { resolveEntitlements, countSeatUsage, SEAT_ROLES } = await import("@/lib/entitlements")
+      const wasSeat = SEAT_ROLES.includes(String(member.role))
+      const willSeat = SEAT_ROLES.includes(String(parsed.data.role))
+      if (!wasSeat && willSeat) {
+        const [ent, usage] = await Promise.all([
+          resolveEntitlements(ctx.workspaceId), countSeatUsage(ctx.workspaceId),
+        ])
+        if (usage.seatsUsed + 1 > ent.seats) {
+          return err(`No paid seats left — ${usage.seatsUsed} in use of ${ent.seats} contracted. Add a seat in Settings → Team before promoting this member.`, 402)
+        }
+      }
+      if (wasSeat && !willSeat) {
+        const [ent, usage] = await Promise.all([
+          resolveEntitlements(ctx.workspaceId), countSeatUsage(ctx.workspaceId),
+        ])
+        if (ent.contributorsCap > 0 || usage.contributorsUsed > 0) {
+          if (usage.contributorsUsed + 1 > ent.contributorsCap) {
+            return err(`No contributor capacity left — ${usage.contributorsUsed} in use of ${ent.contributorsCap}. Add a contributor bundle (10 users) in Settings → Team before moving this member.`, 402)
+          }
+        }
+      }
+    }
   }
 
   const before = { role: member.role }
