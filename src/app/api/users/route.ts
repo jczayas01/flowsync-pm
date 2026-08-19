@@ -124,10 +124,13 @@ async function inviteUser(ctx: ApiContext) {
       if (usage.seatsUsed + pendingSeats + 1 > ent.seats) {
         return err(`No paid seats left — ${usage.seatsUsed} in use${pendingSeats ? ` + ${pendingSeats} pending` : ""} of ${ent.seats} contracted. Request more seats in Settings → Team, or invite this person as a Viewer/Client (uses contributor capacity).`, 402)
       }
-    } else if (ent.contributorsCap > 0 || usage.contributorsUsed > 0) {
-      if (usage.contributorsUsed + pendingContrib + 1 > ent.contributorsCap) {
-        return err(`No contributor capacity left — ${usage.contributorsUsed} in use${pendingContrib ? ` + ${pendingContrib} pending` : ""} of ${ent.contributorsCap}. Add a contributor bundle (10 users) in Settings → Team.`, 402)
-      }
+    } else if (usage.contributorsUsed + pendingContrib + 1 > ent.contributorsCap) {
+      // Zero bundles means zero contributor capacity — the previous guard
+      // skipped the check entirely when cap and usage were both 0, so the
+      // first contributor always slipped through.
+      return err(ent.contributorsCap === 0
+        ? `This workspace has no contributor bundles. Add a bundle (10 users) in Settings → Team, or invite this person in a role that uses a paid seat.`
+        : `No contributor capacity left — ${usage.contributorsUsed} in use${pendingContrib ? ` + ${pendingContrib} pending` : ""} of ${ent.contributorsCap}. Add a contributor bundle (10 users) in Settings → Team.`, 402)
     }
   }
 

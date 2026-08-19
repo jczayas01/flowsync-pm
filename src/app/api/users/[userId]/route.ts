@@ -67,10 +67,10 @@ async function updateUser(ctx: ApiContext, params?: Record<string, string>) {
         const [ent, usage] = await Promise.all([
           resolveEntitlements(ctx.workspaceId), countSeatUsage(ctx.workspaceId),
         ])
-        if (ent.contributorsCap > 0 || usage.contributorsUsed > 0) {
-          if (usage.contributorsUsed + 1 > ent.contributorsCap) {
-            return err(`No contributor capacity left — ${usage.contributorsUsed} in use of ${ent.contributorsCap}. Add a contributor bundle (10 users) in Settings → Team before moving this member.`, 402)
-          }
+        if (usage.contributorsUsed + 1 > ent.contributorsCap) {
+          return err(ent.contributorsCap === 0
+            ? `This workspace has no contributor bundles. Add a bundle (10 users) in Settings → Team before moving this member out of a paid seat.`
+            : `No contributor capacity left — ${usage.contributorsUsed} in use of ${ent.contributorsCap}. Add a contributor bundle (10 users) in Settings → Team before moving this member.`, 402)
         }
       }
     }

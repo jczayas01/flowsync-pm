@@ -70,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     if (takesSeat && usage.seatsUsed + 1 > ent.seats) {
       return NextResponse.json({ error: "This workspace has no paid seats available. Ask an administrator to add a seat before accepting." }, { status: 402 })
     }
-    if (!takesSeat && ent.contributorsCap > 0 && usage.contributorsUsed + 1 > ent.contributorsCap) {
+    if (!takesSeat && usage.contributorsUsed + 1 > ent.contributorsCap) {
       return NextResponse.json({ error: "This workspace has no contributor capacity available. Ask an administrator to add a bundle before accepting." }, { status: 402 })
     }
   }
