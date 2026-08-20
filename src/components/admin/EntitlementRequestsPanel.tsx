@@ -18,13 +18,20 @@ export function EntitlementRequestsPanel() {
     .then(d => setRows(d?.data || [])).catch(() => setRows([]))
   useEffect(() => { load() }, [])
 
+  const [flash, setFlash] = useState("")
   async function decide(id: string, action: "approve" | "reject") {
     setBusy(id)
     try {
-      await fetch(`/api/admin/entitlement-requests/${id}`, { method: "PATCH",
+      const res = await fetch(`/api/admin/entitlement-requests/${id}`, { method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, note: note[id] || null }) })
+      const d = await res.json().catch(() => ({}))
+      const inv = d?.data?.invoice
+      setFlash(inv
+        ? ad("er_invoiceMade", { number: inv.number, amount: Number(inv.amount).toLocaleString("en-US") })
+        : action === "approve" ? ad("er_applied") : "")
       await load()
+      setTimeout(() => setFlash(""), 8000)
     } finally { setBusy("") }
   }
 
@@ -91,6 +98,10 @@ export function EntitlementRequestsPanel() {
           color: "#64748B", borderTop: "1px solid #E2E8F0", borderBottom: "1px solid #E2E8F0" }}>{ad("er_recent")}</div>
         {decided.map(r => row(r, false))}
       </>)}
+      {flash && (
+        <div style={{ padding: "10px 14px", fontSize: 12.5, fontWeight: 600, color: GREEN,
+          background: "#ECFDF5", borderTop: "1px solid #A7F3D0" }}>✓ {flash}</div>
+      )}
       <div style={{ padding: "10px 14px", fontSize: 11, color: "#64748B", borderTop: "1px solid #E2E8F0" }}>{ad("er_hint")}</div>
     </div>
   )

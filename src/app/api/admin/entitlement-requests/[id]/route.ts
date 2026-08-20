@@ -11,6 +11,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { requirePlatformAdmin } from "@/lib/admin-gate"
 import { sendEmail } from "@/lib/emails/templates"
+import { incrementInvoiceLines, sumLines } from "@/lib/contract-math"
 
 const schema = z.object({ action: z.enum(["approve", "reject"]), note: z.string().max(500).optional().nullable() })
 
@@ -27,16 +28,55 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!r) return NextResponse.json({ error: "Not found" }, { status: 404 })
   if (r.status !== "PENDING") return NextResponse.json({ error: "Already decided" }, { status: 409 })
 
+  let invoice: { id: string; number: string; amount: number } | null = null
+
   if (parsed.data.action === "approve") {
     if (r.contractId) {
-      const c = await db.customerContract.findUnique({ where: { id: r.contractId },
-        select: { paidSeats: true, contributorBundles: true, ocrPageCap: true } })
+      const c = await db.customerContract.findUnique({ where: { id: r.contractId } }) as any
       if (c) {
         const data: any = {}
         if (r.kind === "SEATS")      data.paidSeats = (c.paidSeats || 0) + r.quantity
         if (r.kind === "BUNDLES")    data.contributorBundles = (c.contributorBundles || 0) + r.quantity
         if (r.kind === "OCR_BLOCKS") data.ocrPageCap = (c.ocrPageCap || 200) + 200 * r.quantity
         await db.customerContract.update({ where: { id: r.contractId }, data })
+
+        // Draft the increment invoice right here — prorated over the months
+        // remaining (request month included), same math the composer uses.
+        // Approving without billing was the gap: the entitlement grew and the
+        // invoice waited on somebody remembering to issue it.
+        try {
+          const add = {
+            seats:         r.kind === "SEATS"      ? r.quantity : 0,
+            bundles:       r.kind === "BUNDLES"    ? r.quantity : 0,
+            ocrPacks:      r.kind === "OCR_BLOCKS" ? r.quantity : 0,
+            serviceBlocks: 0,
+          }
+          const asOf = new Date(r.createdAt)   // bill from the request date
+          const lines = incrementInvoiceLines(c, add, asOf)
+          const amount = sumLines(lines)
+          if (amount > 0) {
+            const labels: Record<string, string> = {
+              seats: "Paid seats", bundles: "Contributor bundles (×10)",
+              ocr: "Extra OCR packs (+200 pg/mo)", service: "Prepaid service block",
+            }
+            const n = new Date()
+            const number = `FSPM-${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}${String(n.getDate()).padStart(2,"0")}-${String(n.getHours()).padStart(2,"0")}${String(n.getMinutes()).padStart(2,"0")}`
+            const inv = await db.contractInvoice.create({
+              data: {
+                contractId: r.contractId,
+                number, amount,
+                currency: c.currency || "USD",
+                issueDate: asOf,
+                dueDate: new Date(asOf.getTime() + 30 * 864e5),
+                status: "DRAFT",
+                notes: `Increment — approved entitlement request (+${r.quantity} ${String(r.kind).toLowerCase()})`,
+                lines: lines.map(l => ({ label: labels[l.item] || l.item, qty: l.qty, unit: l.unit,
+                  unitLabel: l.unitLabel, period: l.period, amount: l.amount })),
+              } as any,
+            })
+            invoice = { id: inv.id, number: inv.number, amount }
+          }
+        } catch { /* entitlement already applied — the invoice can be issued from the record */ }
       }
     } else {
       const w = await db.workspace.findUnique({ where: { id: r.workspaceId },
@@ -69,9 +109,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         <p>Your request for <b>+${r.quantity} ${label}</b> on <b>${r.workspace?.name}</b> was
            <b>${ok ? "approved and is now active" : "not approved"}</b>.</p>
         ${parsed.data.note ? `<p style="color:#64748B">${parsed.data.note}</p>` : ""}
-        ${ok && r.contractId ? "<p>The increment will appear on your next invoice, prorated for the remaining term.</p>" : ""}
+        ${ok && invoice ? `<p>A draft invoice <b>${invoice.number}</b> for $${invoice.amount.toLocaleString("en-US")} has been prepared, prorated for the remaining term. You'll receive it shortly.</p>` : ok && r.contractId ? "<p>The increment will appear on your next invoice, prorated for the remaining term.</p>" : ""}
         <p>— FlowSync PM</p></div>`,
     }).catch(() => {})
   }
-  return NextResponse.json({ data: { id: upd.id, status: upd.status } })
+  return NextResponse.json({ data: { id: upd.id, status: upd.status, invoice } })
 }

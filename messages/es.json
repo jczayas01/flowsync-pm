@@ -135,7 +135,9 @@
     "er_notePh": "Nota al cliente (opcional)",
     "er_approve": "Aprobar",
     "er_reject": "Rechazar",
-    "er_hint": "Aprobar aplica el cambio de inmediato (contrato o workspace) y envía correo al cliente. Para Enterprise, emite después la factura de Incremento desde el expediente."
+    "er_hint": "Aprobar aplica el cambio de inmediato (contrato o workspace), envía correo al cliente y —en contratos Enterprise— genera la factura de incremento prorrateada en el expediente.",
+    "er_invoiceMade": "Aplicado. Se creó la factura borrador {number} por ${amount}, prorrateada por el término restante — revísala en el expediente del contrato.",
+    "er_applied": "Aplicado y el cliente fue notificado."
   },
   "apiDocs": {
     "API & integrations": "API e integraciones",

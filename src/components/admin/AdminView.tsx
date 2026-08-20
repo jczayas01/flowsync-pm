@@ -1,6 +1,6 @@
 // src/components/admin/AdminView.tsx
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { dateLocale } from "@/lib/date-locale"
 import { ContractsPanel } from "./ContractsPanel"
@@ -53,6 +53,19 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
   const lds = useMemo(() => !term ? demoRequests
     : demoRequests.filter(d => `${d.name} ${d.email} ${d.company}`.toLowerCase().includes(term)), [demoRequests, term])
 
+  // Pending entitlement requests drive an amber badge on the Requests tab —
+  // without it the queue is invisible until someone remembers to look.
+  const [pendingReqs, setPendingReqs] = useState(0)
+  useEffect(() => {
+    let alive = true
+    const load = () => fetch("/api/admin/entitlement-requests").then(r => r.json())
+      .then(d => { if (alive) setPendingReqs((d?.data || []).filter((r: any) => r.status === "PENDING").length) })
+      .catch(() => {})
+    load()
+    const id = setInterval(load, 60_000)   // keep it fresh while the tab is open
+    return () => { alive = false; clearInterval(id) }
+  }, [tab])
+
   const counts: Record<Tab, number> = { workspaces: ws.length, users: us.length, leads: lds.length, contracts: -1, requests: -1 }
 
   return (
@@ -77,6 +90,7 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
         <Metric label={ad("Active trials")} value={metrics.activeTrials} color={AMBER} />
         <Metric label={ad("Active (7d)")}   value={metrics.activeUsers7d} color={GREEN} />
         <Metric label={ad("New leads")}     value={metrics.newLeads} color={metrics.newLeads > 0 ? RED : undefined} />
+        <Metric label={ad("tab_requests")}  value={pendingReqs} color={pendingReqs > 0 ? RED : undefined} />
       </div>
 
       {/* ── Tabs + search ── */}
@@ -89,6 +103,10 @@ export function AdminView({ workspaces, users, demoRequests, metrics }: {
               fontFamily:"inherit" }}>
             {ad(("tab_" + t) as any)}
             {counts[t] >= 0 && <span style={{ opacity:.6, marginLeft:6 }}>{counts[t]}</span>}
+            {t === "requests" && pendingReqs > 0 && (
+              <span style={{ marginLeft:7, background:"#DC2626", color:"#fff", borderRadius:10,
+                padding:"1px 7px", fontSize:11, fontWeight:800 }}>{pendingReqs}</span>
+            )}
           </button>
         ))}
         <input value={q} onChange={e => setQ(e.target.value)} placeholder={ad("Search…")}

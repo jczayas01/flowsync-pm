@@ -135,7 +135,9 @@
     "er_notePh": "Note to customer (optional)",
     "er_approve": "Approve",
     "er_reject": "Reject",
-    "er_hint": "Approve applies the change immediately (contract or workspace) and emails the customer. For Enterprise, issue the Increment invoice from the contract record afterwards."
+    "er_hint": "Approving applies the change immediately (contract or workspace), emails the customer, and — for Enterprise contracts — drafts the prorated increment invoice in the contract record.",
+    "er_invoiceMade": "Applied. Draft invoice {number} created for ${amount}, prorated over the remaining term — review it in the contract record.",
+    "er_applied": "Applied and the customer was notified."
   },
   "apiDocs": {
     "API & integrations": "API & integrations",
