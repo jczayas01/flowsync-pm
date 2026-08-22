@@ -266,7 +266,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                 transition: 'color .3s',
                 flex:1, textAlign: i===0?'left':i===STEPS.length-1?'right':'center',
               }}>
-                {ob(('step.' + s) as any)}
+                {ob(('step_' + s) as any)}
               </div>
             ))}
           </div>
@@ -350,7 +350,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       style={s.select}
                     >
                       {CURRENCIES.map(c => (
-                        <option key={c} value={c} style={{ background:'#1a2d40' }}>{ob(('cur.' + c) as any)}</option>
+                        <option key={c} value={c} style={{ background:'#1a2d40' }}>{ob(('cur_' + c) as any)}</option>
                       ))}
                     </select>
                     <span style={{ position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',
@@ -408,7 +408,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
                             <span style={{ fontSize:15,fontWeight:600,color:selected ? '#fff':'rgba(255,255,255,.85)' }}>
-                              {ob(('m.' + m.id) as any)}
+                              {ob(('m_' + m.id) as any)}
                             </span>
                             {selected && (
                               <span style={{ fontSize:10,fontWeight:700,padding:'1px 7px',borderRadius:4,
@@ -417,17 +417,17 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                           </div>
                           <div style={{ fontSize:12,color:selected?`${m.color.replace('#','rgba(')},.9)`:
                             'rgba(255,255,255,.4)',fontWeight:500,marginBottom:6 }}>
-                            {ob(('m.' + m.id + '_tagline') as any)}
+                            {ob(('m_' + m.id + '_tagline') as any)}
                           </div>
                           <p style={{ fontSize:12,color:'rgba(255,255,255,.4)',lineHeight:1.6,marginBottom:8 }}>
-                            {ob(('m.' + m.id + '_desc') as any)}
+                            {ob(('m_' + m.id + '_desc') as any)}
                           </p>
                           {selected && (
                             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
                               {['f1','f2','f3','f4'].map(f => (
                                 <span key={f} style={{ fontSize:10,fontWeight:600,padding:'2px 8px',
                                   borderRadius:4,background:`${m.color}25`,color:m.color }}>
-                                  ✓ {ob(('m.' + m.id + '.' + f) as any)}
+                                  ✓ {ob(('m_' + m.id + '_' + f) as any)}
                                 </span>
                               ))}
                             </div>
@@ -487,7 +487,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                       >
                         {ROLES.map(rv => (
                           <option key={rv} value={rv} style={{ background:'#1a2d40' }}>
-                            {ob(('role.' + rv) as any)}
+                            {ob(('role_' + rv) as any)}
                           </option>
                         ))}
                       </select>
@@ -531,7 +531,7 @@ export function OnboardingWizard({ userId, userName, userEmail = '' }: {
                 </div>
                 {[
                   [ob('sum_workspace'),   form.workspaceName],
-                  [ob('sum_methodology'), form.methodology ? ob(('m.' + form.methodology) as any) : '—'],
+                  [ob('sum_methodology'), form.methodology ? ob(('m_' + form.methodology) as any) : '—'],
                   [ob('sum_project'),     form.projectName || (form.templateId ? ob('From template') : ob('noneAddLater'))],
                   [ob('sum_timezone'),    form.timezone],
                   [ob('sum_currency'),    form.currency],
