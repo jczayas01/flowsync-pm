@@ -27,20 +27,16 @@ export const OCR_PACK_PAGES       = 200   // pages added per purchased add-on pa
  *  - Enterprise: the CLM contract's custom ocrPageCap when set, else the base.
  *  - Everyone else: base + 200 per purchased add-on pack (Workspace.ocrPageAddons).
  */
-export async function resolveOcrCap(workspaceId: string, plan: string): Promise<number> {
-  if (plan === "ENTERPRISE") {
-    const contract = await db.customerContract.findFirst({
-      where:   { workspaceId, status: "ACTIVE", ocrPageCap: { not: null } },
-      orderBy: { endDate: "desc" },
-      select:  { ocrPageCap: true },
-    }).catch(() => null)
-    if (contract?.ocrPageCap) return contract.ocrPageCap
-    return OCR_MONTHLY_PAGE_CAP
-  }
-  const ws = await db.workspace.findUnique({
-    where: { id: workspaceId }, select: { ocrPageAddons: true },
-  }).catch(() => null)
-  return OCR_MONTHLY_PAGE_CAP + OCR_PACK_PAGES * (ws?.ocrPageAddons || 0)
+/** Monthly OCR page cap. Delegates to resolveEntitlements so the number that
+ *  is ENFORCED is the same one Settings → Team and Billing display.
+ *
+ *  The old version had a real hole: an ENTERPRISE workspace with no ACTIVE
+ *  contract fell through to the flat 200 and ignored purchased packs, so an
+ *  approved pack was billed but never honored. */
+export async function resolveOcrCap(workspaceId: string, _plan?: string): Promise<number> {
+  const { resolveEntitlements } = await import("@/lib/entitlements")
+  const ent = await resolveEntitlements(workspaceId).catch(() => null)
+  return ent?.ocrPages || OCR_MONTHLY_PAGE_CAP
 }
 const PAGES_PER_CALL = 4                  // vision images per Claude request
 

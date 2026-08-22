@@ -482,7 +482,8 @@
     "trialEnds": "la prueba termina",
     "trialHint": "Tu prueba incluye todo — sin límites de funciones, sin tarjeta requerida. Suscríbete cuando estés listo: si pagas durante la prueba, tu tarjeta no se cobra hasta que la prueba realmente termine.",
     "cmpUnlimited": "Ilimitado",
-    "cmpRules": "{n, plural, =1 {1 regla} other {# reglas}}"
+    "cmpRules": "{n, plural, =1 {1 regla} other {# reglas}}",
+    "seatsInUse": "{used} de {total} sillas pagadas en uso"
   },
   "budget": {
     "Actual Cost (AC)": "Costo real (AC)",

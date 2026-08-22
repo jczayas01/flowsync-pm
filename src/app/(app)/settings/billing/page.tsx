@@ -8,6 +8,7 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { BillingView } from "@/components/settings/BillingView"
+import { resolveEntitlements, countSeatUsage } from "@/lib/entitlements"
 
 export const metadata: Metadata = { title: "Billing" }
 export const dynamic = "force-dynamic"
@@ -30,10 +31,20 @@ export default async function BillingPage() {
   if (!m) redirect("/onboarding")
 
   const w = m.workspace
+  // Seats and usage come from resolveEntitlements — the same source Settings →
+  // Team and the OCR cap enforcement use. Reading workspace.seats directly here
+  // made Billing disagree with the capacity card the moment a contract or an
+  // approved request changed the real entitlement.
+  const [ent, usage] = await Promise.all([
+    resolveEntitlements(w.id),
+    countSeatUsage(w.id),
+  ])
+
   return (
     <BillingView
       plan={w.plan}
-      seats={w.seats}
+      seats={ent.seats}
+      seatsUsed={usage.seatsUsed}
       memberCount={w._count.members}
       trialEndsAt={w.trialEndsAt ? w.trialEndsAt.toISOString() : null}
       planRenewsAt={w.planRenewsAt ? w.planRenewsAt.toISOString() : null}

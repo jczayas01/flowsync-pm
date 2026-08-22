@@ -106,10 +106,10 @@ function ComparePlans() {
 }
 
 export function BillingView({
-  plan, seats, memberCount, trialEndsAt, planRenewsAt,
+  plan, seats, seatsUsed, memberCount, trialEndsAt, planRenewsAt,
   hasStripeCustomer, stripeConfigured, canManage,
 }: {
-  plan:string; seats:number; memberCount:number
+  plan:string; seats:number; seatsUsed?:number; memberCount:number
   trialEndsAt:string|null; planRenewsAt:string|null
   hasStripeCustomer:boolean; stripeConfigured:boolean; canManage:boolean
 }) {
@@ -162,7 +162,9 @@ export function BillingView({
               )}
             </div>
             <div style={{ fontSize:12.5, color:SLATE, marginTop:6, lineHeight:1.6 }}>
-              {bv("memberCount",{n:memberCount})} · {bv("seatCount",{n:seats})}
+              {bv("memberCount",{n:memberCount})} · {seatsUsed != null
+                ? bv("seatsInUse",{ used:seatsUsed, total:seats })
+                : bv("seatCount",{n:seats})}
               {onTrial && <> · {bv("trialEnds")} <strong style={{ color:NAVY }}>{fmt(trialEndsAt!)}</strong></>}
               {!onTrial && planRenewsAt && <> · {bv("renews")} {fmt(planRenewsAt)}</>}
             </div>
