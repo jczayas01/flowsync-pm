@@ -72,7 +72,9 @@ export async function postRecurringBudgetItems(now = new Date()): Promise<number
 // ── #4 Labor actuals ─────────────────────────────────────────────────────
 export async function postLaborActuals(): Promise<number> {
   const entries = await db.timeEntry.findMany({
-    where: { costPostedAt: null },
+    // Approval gate: an unapproved entry must never move project cost. Entries
+    // sit in DRAFT/SUBMITTED until a PM approves them.
+    where: { costPostedAt: null, status: "APPROVED" as any },
     select: { id: true, projectId: true, hours: true, hourlyRate: true, userId: true,
               project: { select: { workspaceId: true } },
               // Control account: hours worked on a task charge that task's budget

@@ -2908,7 +2908,9 @@
     "tePending": "Pending",
     "teDelete": "Delete entry",
     "teDeleteConfirm": "Delete this time entry? Only entries not yet posted to the budget can be removed.",
-    "teDeleteFailed": "Could not delete this entry"
+    "teDeleteFailed": "Could not delete this entry",
+    "teWeekGrid": "Week grid",
+    "teSingleEntry": "Single entry"
   },
   "webhooks": {
     "+ New webhook": "+ New webhook",
@@ -3176,5 +3178,29 @@
     "costPlanned": "Planned",
     "costEarned": "Earned",
     "costActual": "Actual"
+  },
+  "timesheet": {
+    "task": "Task",
+    "total": "Total",
+    "dayTotal": "Day total",
+    "weekTotal": "Week total",
+    "thisWeek": "This week",
+    "save": "Save",
+    "submitWeek": "Submit for approval",
+    "noTasks": "No tasks assigned in this period.",
+    "noBudgetLine": "no budget line",
+    "nothingToSave": "Nothing changed",
+    "saved": "{n} entries saved as draft",
+    "submitted": "{n} entries submitted for approval",
+    "savedPartial": "{n} saved, {f} failed",
+    "unsaved": "{n} unsaved cells",
+    "allSaved": "All changes saved",
+    "state_DRAFT": "Draft — not submitted",
+    "state_SUBMITTED": "Submitted — awaiting approval",
+    "state_APPROVED": "Approved — will post to the budget",
+    "state_REJECTED": "Rejected — edit and resubmit",
+    "state_POSTED": "Posted to the budget — locked",
+    "legend": "White = draft · Blue = submitted · Green = approved · Grey = posted to budget (locked) · Red = rejected",
+    "footnote": "Only approved hours post to the budget. Hours land on the budget line of the task they were logged against."
   }
 }

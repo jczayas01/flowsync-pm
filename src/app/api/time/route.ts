@@ -18,6 +18,8 @@ const timeEntrySchema = z.object({
   billable:  z.boolean().default(true),
   hourlyRate:  z.number().min(0).optional(),  // override rate
   userId:      z.string().min(1).optional(),  // log on behalf of a member (PM+)
+  billRate:    z.number().min(0).optional(),  // override bill rate
+  status:      z.enum(["DRAFT","SUBMITTED"]).optional(),
 })
 
 async function listTimeEntries(ctx: ApiContext) {
@@ -94,19 +96,20 @@ async function logTimeEntry(ctx: ApiContext) {
     targetUserId = data.userId
   }
 
-  // Resolve hourly rate: entry override → the member's cost rate. The previous
-  // version fell straight to 0, so every entry recorded hours with no cost and
-  // the labour never reached the budget.
-  let rate = data.hourlyRate
-  if (rate == null) {
-    const member = await db.workspaceMember.findFirst({
-      where: { workspaceId: ctx.workspaceId, userId: targetUserId },
-      select: { costRate: true },
-    })
-    rate = member?.costRate != null ? Number(member.costRate) : 0
-  }
+  // Two rates, resolved independently:
+  //   cost rate  → what the hour costs the organization (hits the budget)
+  //   bill rate  → what the client is charged (drives revenue and margin)
+  // Keeping one rate is why margin was invisible.
+  const member = await db.workspaceMember.findFirst({
+    where: { workspaceId: ctx.workspaceId, userId: targetUserId },
+    select: { costRate: true, billRate: true },
+  })
+  const rate = data.hourlyRate != null ? data.hourlyRate
+    : member?.costRate != null ? Number(member.costRate) : 0
+  const billRate = data.billRate != null ? data.billRate
+    : member?.billRate != null ? Number(member.billRate) : null
 
-  const amount = data.billable ? data.hours * rate : 0
+  const amount = data.billable && billRate ? data.hours * billRate : 0
 
   const entry = await db.timeEntry.create({
     data: {
@@ -118,7 +121,10 @@ async function logTimeEntry(ctx: ApiContext) {
       description:  data.description,
       billable:   data.billable,
       hourlyRate:   rate,
-    },
+      billRate:     billRate,
+      status:       (data.status || "DRAFT") as any,
+      submittedAt:  data.status === "SUBMITTED" ? new Date() : null,
+    } as any,
     include: {
       project: { select: { id:true, code:true, name:true } },
       task:    { select: { id:true, code:true, title:true } },

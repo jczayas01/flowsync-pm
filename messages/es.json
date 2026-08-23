@@ -2908,7 +2908,9 @@
     "tePending": "Pendiente",
     "teDelete": "Eliminar entrada",
     "teDeleteConfirm": "¿Eliminar esta entrada de horas? Solo se pueden eliminar las que aún no se han posteado al presupuesto.",
-    "teDeleteFailed": "No se pudo eliminar esta entrada"
+    "teDeleteFailed": "No se pudo eliminar esta entrada",
+    "teWeekGrid": "Rejilla semanal",
+    "teSingleEntry": "Entrada individual"
   },
   "webhooks": {
     "+ New webhook": "+ Nuevo webhook",
@@ -3176,5 +3178,29 @@
     "costPlanned": "Planificado",
     "costEarned": "Ganado",
     "costActual": "Real"
+  },
+  "timesheet": {
+    "task": "Tarea",
+    "total": "Total",
+    "dayTotal": "Total del día",
+    "weekTotal": "Total de la semana",
+    "thisWeek": "Esta semana",
+    "save": "Guardar",
+    "submitWeek": "Enviar a aprobación",
+    "noTasks": "No hay tareas asignadas en este período.",
+    "noBudgetLine": "sin línea de presupuesto",
+    "nothingToSave": "No hubo cambios",
+    "saved": "{n} entradas guardadas como borrador",
+    "submitted": "{n} entradas enviadas a aprobación",
+    "savedPartial": "{n} guardadas, {f} fallaron",
+    "unsaved": "{n} celdas sin guardar",
+    "allSaved": "Todos los cambios guardados",
+    "state_DRAFT": "Borrador — sin enviar",
+    "state_SUBMITTED": "Enviada — esperando aprobación",
+    "state_APPROVED": "Aprobada — se posteará al presupuesto",
+    "state_REJECTED": "Rechazada — corrige y reenvía",
+    "state_POSTED": "Posteada al presupuesto — bloqueada",
+    "legend": "Blanco = borrador · Azul = enviada · Verde = aprobada · Gris = posteada al presupuesto (bloqueada) · Rojo = rechazada",
+    "footnote": "Solo las horas aprobadas postean al presupuesto. Las horas caen en la línea de presupuesto de la tarea contra la que se registraron."
   }
 }

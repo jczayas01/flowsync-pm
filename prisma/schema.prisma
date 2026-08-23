@@ -247,7 +247,10 @@ model WorkspaceMember {
   workspaceId String
   userId      String
   role        UserRole  @default(MEMBER)
-  costRate  Decimal? @db.Decimal(10, 2)   // default hourly cost for labor actuals
+  costRate  Decimal? @db.Decimal(10, 2)   // what this person COSTS the org per hour
+  // What the org BILLS a client per hour for this person. Cost and bill are
+  // different numbers in every services business; keeping one rate hides margin.
+  billRate  Decimal? @db.Decimal(10, 2)
   joinedAt    DateTime  @default(now())
   invitedBy   String?
   skills      String[]  @default([])
@@ -1200,6 +1203,13 @@ model Comment {
   @@map("comments")
 }
 
+enum TimeEntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
 model TimeEntry {
   id          String   @id @default(cuid())
   projectId   String
@@ -1209,7 +1219,16 @@ model TimeEntry {
   hours       Decimal  @db.Decimal(6, 2)
   date        DateTime
   billable    Boolean  @default(true)
+  // hourlyRate is the COST rate (column name kept for compatibility).
   hourlyRate  Decimal? @db.Decimal(10, 2)
+  billRate    Decimal? @db.Decimal(10, 2)
+  // Approval gate: only APPROVED entries post to the budget, so a typo can no
+  // longer move project cost on its own.
+  status      TimeEntryStatus @default(DRAFT)
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  approvedById String?
+  rejectionNote String?
   costPostedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
