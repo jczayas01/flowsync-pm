@@ -118,7 +118,14 @@ export function LabourAllocationPanel({ projectId, workspaceId, canEdit, onChang
   const hasTotalTarget = rows.some(r => dest[r.tk.id] === "TOTAL")
   const totalLineExists = lines.some(b => b.name === TOTAL_LINE)
 
+  // Two different totals, and the difference matters. Charged labour becomes
+  // budget (part of BAC, drives EVM). Tracked-only labour is real cost the
+  // organization absorbs elsewhere — salaried staff whose time never hits the
+  // project's approved budget. Hiding it would understate what delivery
+  // actually costs; folding it into the budget would overstate BAC. So it is
+  // reported beside the budget, never inside it.
   const selectedTotal = rows.reduce((s, r) => s + (dest[r.tk.id] ? r.cost : 0), 0)
+  const trackedOnly   = rows.reduce((s, r) => s + (dest[r.tk.id] ? 0 : r.cost), 0)
   const grandTotal = rows.reduce((s, r) => s + r.cost, 0)
   const unassigned = rows.filter(r => r.cost > 0 && !dest[r.tk.id]).length
   const noRate = rows.filter(r => r.missing > 0).length
@@ -237,7 +244,7 @@ export function LabourAllocationPanel({ projectId, workspaceId, canEdit, onChang
           <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{t("intro")}</div>
         </div>
         <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          {unassigned > 0 && <span style={{ fontSize: 11.5, color: "#B45309" }}>{t("unassigned", { n: unassigned })}</span>}
+          {unassigned > 0 && <span style={{ fontSize: 11.5, color: "var(--text-3)" }}>{t("trackedCount", { n: unassigned })}</span>}
           {noRate > 0 && <span style={{ fontSize: 11.5, color: "#B45309" }}>{t("noRate", { n: noRate })}</span>}
           <button onClick={sync} disabled={!canEdit || busy}
             style={{ padding: "8px 16px", fontSize: 12.5, fontWeight: 700, borderRadius: 6,
@@ -311,7 +318,7 @@ export function LabourAllocationPanel({ projectId, workspaceId, canEdit, onChang
                       style={{ width: "100%", padding: "5px 8px", fontSize: 12,
                         border: "1px solid var(--border)", borderRadius: 5, background: "#fff",
                         fontFamily: "var(--font)", cursor: canEdit ? "pointer" : "default" }}>
-                      <option value="">{t("destSkip")}</option>
+                      <option value="">{t("destTrackOnly")}</option>
                       <option value="TOTAL">{t("destTotal")}</option>
                       <option value="OWN">{t("destOwn")}</option>
                       {lines.filter(b => b.name !== TOTAL_LINE && !b.name.startsWith("Labour — ")).map(b => (
@@ -332,17 +339,40 @@ export function LabourAllocationPanel({ projectId, workspaceId, canEdit, onChang
           </tbody>
           <tfoot>
             <tr style={{ background: "var(--surface,#F8FAFC)" }}>
-              <td style={{ ...td, fontWeight: 700, borderBottom: "none" }}>{t("totalRow")}</td>
+              <td style={{ ...td, fontWeight: 700, borderBottom: "none" }}>{t("chargedRow")}</td>
               <td style={{ ...num, borderBottom: "none" }} />
               <td style={{ ...num, fontWeight: 800, fontSize: 14, borderBottom: "none" }}>
                 ${selectedTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })}
               </td>
               <td colSpan={2} style={{ ...td, fontSize: 11, color: "var(--text-3)", borderBottom: "none" }}>
-                {selectedTotal < grandTotal
-                  ? t("ofTotal", { total: grandTotal.toLocaleString("en-US", { maximumFractionDigits: 0 }) })
-                  : t("allAllocated")}
+                {t("chargedHint")}
               </td>
             </tr>
+            {trackedOnly > 0 && (
+              <tr style={{ background: "#FFFBEB" }}>
+                <td style={{ ...td, fontWeight: 700, color: "#92400E", borderBottom: "none" }}>
+                  {t("trackedRow")}</td>
+                <td style={{ ...num, borderBottom: "none" }} />
+                <td style={{ ...num, fontWeight: 800, fontSize: 14, color: "#B45309", borderBottom: "none" }}>
+                  ${trackedOnly.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </td>
+                <td colSpan={2} style={{ ...td, fontSize: 11, color: "#92400E", borderBottom: "none" }}>
+                  {t("trackedHint")}
+                </td>
+              </tr>
+            )}
+            {trackedOnly > 0 && (
+              <tr style={{ background: "var(--surface,#F8FAFC)", borderTop: "2px solid var(--border)" }}>
+                <td style={{ ...td, fontWeight: 700, borderBottom: "none" }}>{t("trueCostRow")}</td>
+                <td style={{ ...num, borderBottom: "none" }} />
+                <td style={{ ...num, fontWeight: 800, fontSize: 14, borderBottom: "none" }}>
+                  ${grandTotal.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </td>
+                <td colSpan={2} style={{ ...td, fontSize: 11, color: "var(--text-3)", borderBottom: "none" }}>
+                  {t("trueCostHint")}
+                </td>
+              </tr>
+            )}
           </tfoot>
         </table>
       </div>
