@@ -3177,7 +3177,19 @@
     "laborCost": "Labour cost",
     "costPlanned": "Planned",
     "costEarned": "Earned",
-    "costActual": "Actual"
+    "costActual": "Actual",
+    "noRateShort": "without a rate",
+    "labourLinePrefix": "Labour",
+    "labourLineNote": "Planned labour from the task estimate x assignee cost rates. Update the estimate and press the button again to refresh this figure.",
+    "createLabourLine": "+ Create labour line",
+    "createLabourLineTitle": "Create (or update) a budget line dedicated to this task's planned labour, and charge future hours to it. Safe to press twice - it sets the value, never adds.",
+    "addToLine": "Add to selected line",
+    "addToLineTitle": "Add this planned labour to the budget line selected below. This increases that line - it is not idempotent.",
+    "labourLineCreated": "Labour budget line created and linked to this task.",
+    "labourLineUpdated": "Labour budget line updated with the current estimate.",
+    "postedToLine": "Planned labour added to “{line}”.",
+    "errPost": "Could not update the budget",
+    "confirmAddToLine": "Add ${add} of planned labour to “{line}”?\n\nCurrent planned: ${current}\nNew planned: ${total}\n\nThis adds to the line every time you press it."
   },
   "timesheet": {
     "task": "Task",

@@ -3177,7 +3177,19 @@
     "laborCost": "Costo de mano de obra",
     "costPlanned": "Planificado",
     "costEarned": "Ganado",
-    "costActual": "Real"
+    "costActual": "Real",
+    "noRateShort": "sin tarifa",
+    "labourLinePrefix": "Mano de obra",
+    "labourLineNote": "Mano de obra planificada del estimado de la tarea x tarifas de costo de los asignados. Actualiza el estimado y vuelve a pulsar el boton para refrescar esta cifra.",
+    "createLabourLine": "+ Crear linea de labor",
+    "createLabourLineTitle": "Crea (o actualiza) una linea de presupuesto dedicada a la mano de obra planificada de esta tarea, y carga ahi las horas futuras. Se puede pulsar dos veces sin riesgo - asigna el valor, no suma.",
+    "addToLine": "Sumar a la linea seleccionada",
+    "addToLineTitle": "Suma esta mano de obra planificada a la linea seleccionada abajo. Incrementa esa linea - no es idempotente.",
+    "labourLineCreated": "Linea de presupuesto de labor creada y enlazada a esta tarea.",
+    "labourLineUpdated": "Linea de presupuesto de labor actualizada con el estimado actual.",
+    "postedToLine": "Mano de obra planificada sumada a “{line}”.",
+    "errPost": "No se pudo actualizar el presupuesto",
+    "confirmAddToLine": "Sumar ${add} de mano de obra planificada a “{line}”?\n\nPlanificado actual: ${current}\nNuevo planificado: ${total}\n\nEsto suma cada vez que lo pulsas."
   },
   "timesheet": {
     "task": "Tarea",

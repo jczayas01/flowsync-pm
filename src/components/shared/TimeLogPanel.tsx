@@ -7,7 +7,7 @@
 // Rate resolution (server-side, in that order): the rate typed here → the
 // member's costRate from Settings → Team → nothing (hours recorded, no cost).
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 
 type Entry = {
@@ -45,7 +45,9 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
   const [budgetItemId, setBudgetItemId] = useState<string>("")
   const [savingLine, setSavingLine] = useState(false)
 
-  const H = () => ({ "Content-Type": "application/json", ...(workspaceId ? { "x-workspace-id": workspaceId } : {}) })
+  const H = (): Record<string, string> => ({ "Content-Type": "application/json",
+    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}) })
+  const hdrOnly = (): Record<string, string> => (workspaceId ? { "x-workspace-id": workspaceId } : {})
 
   async function load() {
     const q = new URLSearchParams({ projectId, perPage: "100" })
@@ -148,6 +150,82 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
   const previewCost = effectiveRate != null && Number(hours) > 0
     ? Number(hours) * effectiveRate : null
 
+  // Planned labour across ALL assignees: each one carries their own rate, so a
+  // task shared by a $25/h analyst and a $90/h architect costs what it really
+  // costs instead of one rate applied to everybody.
+  const { plannedLabour, labourBreakdown } = useMemo(() => {
+    const est = Number(task?.estimatedHours || 0)
+    const ass = (task?.assignees || []) as any[]
+    if (!est || !members.length) return { plannedLabour: null as number | null, labourBreakdown: "" }
+    const withRates = ass
+      .map(a => members.find(m => m.userId === a.userId))
+      .filter(m => m && m.costRate != null) as any[]
+    if (!withRates.length) return { plannedLabour: null as number | null, labourBreakdown: "" }
+    const share = est / ass.length          // equal split — per-assignment units is a later phase
+    const totalCost = withRates.reduce((s, m) => s + share * m.costRate, 0)
+    const parts = withRates.map(m => `${share.toFixed(1)} h × $${m.costRate}`)
+    const missing = ass.length - withRates.length
+    return {
+      plannedLabour: totalCost,
+      labourBreakdown: parts.join(" + ") + (missing > 0 ? ` · ${missing} ${t("noRateShort")}` : ""),
+    }
+  }, [task, members, t])
+
+  const [posting, setPosting] = useState(false)
+
+  /** Push the planned labour cost into the budget.
+   *  mode "own"      → a labour line dedicated to this task, created or updated.
+   *                    Idempotent: pressing it twice sets the same number.
+   *  mode "selected" → increments the currently selected line. Not idempotent,
+   *                    so it asks first and shows the resulting total. */
+  async function postLabourToBudget(mode: "own" | "selected") {
+    if (plannedLabour == null || !task) return
+    const lineName = `${t("labourLinePrefix")} — ${task.code || taskId?.slice(0, 6)} ${task.title || ""}`.trim()
+    if (mode === "selected") {
+      const line = budgetLines.find((b: any) => b.id === budgetItemId)
+      if (!line) return
+      const next = Number(line.plannedCost || 0) + plannedLabour
+      if (!confirm(t("confirmAddToLine", { line: line.name,
+        current: Number(line.plannedCost || 0).toLocaleString("en-US"),
+        add: plannedLabour.toLocaleString("en-US", { maximumFractionDigits: 0 }),
+        total: next.toLocaleString("en-US", { maximumFractionDigits: 0 }) }))) return
+      setPosting(true)
+      try {
+        const r = await fetch(`/api/projects/${projectId}/budget/${line.id}`, {
+          method: "PATCH", headers: H(), body: JSON.stringify({ plannedAmount: next }) })
+        setMsg(r.ok ? { ok: true, text: t("postedToLine", { line: line.name }) }
+                    : { ok: false, text: t("errPost") })
+        if (r.ok) { await refreshBudget(); onLogged?.() }
+      } finally { setPosting(false) }
+      return
+    }
+    setPosting(true)
+    try {
+      const existing = budgetLines.find((b: any) => b.name === lineName)
+      const res = existing
+        ? await fetch(`/api/projects/${projectId}/budget/${existing.id}`, {
+            method: "PATCH", headers: H(),
+            body: JSON.stringify({ plannedAmount: plannedLabour }) })
+        : await fetch(`/api/projects/${projectId}/budget`, {
+            method: "POST", headers: H(),
+            body: JSON.stringify({ description: lineName, category: "LABOR",
+              plannedAmount: plannedLabour, notes: t("labourLineNote") }) })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setMsg({ ok: false, text: d?.error || t("errPost") }); return }
+      const newId = d?.data?.id || existing?.id
+      if (newId) await assignLine(newId)          // charge future hours here too
+      await refreshBudget()
+      setMsg({ ok: true, text: existing ? t("labourLineUpdated") : t("labourLineCreated") })
+      onLogged?.()
+    } finally { setPosting(false) }
+  }
+
+  async function refreshBudget() {
+    const r = await fetch(`/api/projects/${projectId}/budget`, { headers: hdrOnly(), cache: "no-store" })
+    const d = await r.json().catch(() => ({}))
+    setBudgetLines(d?.data?.items || d?.data || d?.items || [])
+  }
+
   const total = (entries || []).reduce((s, e) => s + Number(e.hours || 0), 0)
   const posted = (entries || []).filter(e => e.costPostedAt).reduce((s, e) => s + Number(e.hours || 0), 0)
 
@@ -197,13 +275,14 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
 
       {/* Labour cost projected from the assignee's rate — the budget carries a
           cost for this task before anyone logs a single hour. */}
-      {taskId && task && selectedMember?.costRate != null && Number(task.estimatedHours || 0) > 0 && (() => {
+      {taskId && task && plannedLabour != null && (() => {
         const est = Number(task.estimatedHours || 0)
-        const r = selectedMember.costRate
         const pct = Math.min(100, Math.max(0, Number(task.percentComplete || 0)))
-        const planned = est * r
-        const earned  = est * (pct / 100) * r
-        const actual  = total * r
+        const planned = plannedLabour
+        const earned  = planned * (pct / 100)
+        // Actual uses each logged entry's own rate, not one blended number.
+        const actual  = (entries || []).reduce((s, e) =>
+          s + Number(e.hours || 0) * Number(e.hourlyRate || 0), 0)
         return (
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center",
             background: "#F0FDF4", border: "1px solid #A7F3D0", borderRadius: 8,
@@ -212,7 +291,7 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
               textTransform: "uppercase", letterSpacing: ".05em" }}>{t("laborCost")}</span>
             <span><span style={{ color: "var(--text-3)" }}>{t("costPlanned")}: </span>
               <b>${planned.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
-              <span style={{ color: "var(--text-3)" }}> ({est} h × ${r})</span></span>
+              <span style={{ color: "var(--text-3)" }}> ({labourBreakdown})</span></span>
             <span><span style={{ color: "var(--text-3)" }}>{t("costEarned")}: </span>
               <b style={{ color: "#059669" }}>${earned.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
               <span style={{ color: "var(--text-3)" }}> ({pct}%)</span></span>
@@ -220,6 +299,26 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
               <b style={{ color: actual > planned ? "var(--red,#DC2626)" : "var(--steel)" }}>
                 ${actual.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
               <span style={{ color: "var(--text-3)" }}> ({total.toFixed(1)} h)</span></span>
+
+            {/* Push the planned figure into the budget instead of retyping it */}
+            <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+              <button onClick={() => postLabourToBudget("own")} disabled={posting}
+                title={t("createLabourLineTitle")}
+                style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6,
+                  border: "1px solid #059669", background: "#fff", color: "#059669",
+                  cursor: posting ? "wait" : "pointer", fontFamily: "var(--font)", whiteSpace: "nowrap" }}>
+                {posting ? "…" : t("createLabourLine")}
+              </button>
+              {budgetItemId && (
+                <button onClick={() => postLabourToBudget("selected")} disabled={posting}
+                  title={t("addToLineTitle")}
+                  style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 6,
+                    border: "1px solid var(--border)", background: "#fff", color: "var(--text-2)",
+                    cursor: posting ? "wait" : "pointer", fontFamily: "var(--font)", whiteSpace: "nowrap" }}>
+                  {t("addToLine")}
+                </button>
+              )}
+            </span>
           </div>
         )
       })()}
