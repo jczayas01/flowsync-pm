@@ -3142,6 +3142,19 @@
     "pendingTitle": "Waiting for the next cost posting run",
     "nonBillable": "non-billable",
     "empty": "No time logged yet. Hours logged here become labour actuals on the budget.",
-    "footnote": "Cost = hours × rate. The rate comes from this entry if set, otherwise from the member's cost rate in Settings → Team. Hours logged against a task post to that task's budget line."
+    "footnote": "Cost = hours × rate. The rate comes from this entry if set, otherwise from the member's cost rate in Settings → Team. Hours logged against a task post to that task's budget line.",
+    "errMin": "Minimum 0.25 hours (15 minutes) per entry.",
+    "errMax": "Maximum 24 hours per entry — one entry covers one day. Split longer work across dates.",
+    "errNoLine": "Choose the budget line these hours charge to, so the cost reaches the budget.",
+    "hoursHint": "0.25 to 24 hours — one entry is one day of work",
+    "taskEstimate": "Estimated",
+    "taskLogged": "Logged",
+    "taskRemaining": "Remaining",
+    "taskProgress": "Progress",
+    "overEstimate": "{h} h over estimate",
+    "budgetLine": "Charge to budget line",
+    "noLine": "— not assigned —",
+    "lineSaved": "saved on the task",
+    "noLineWarn": "Without a line the hours are recorded but no cost reaches the budget."
   }
 }

@@ -3142,6 +3142,19 @@
     "pendingTitle": "Esperando la próxima corrida de costos",
     "nonBillable": "no facturable",
     "empty": "Aún no hay horas registradas. Las horas que registres aquí se convierten en costo real de mano de obra.",
-    "footnote": "Costo = horas × tarifa. La tarifa sale de esta entrada si la defines; si no, de la tarifa del miembro en Configuración → Team. Las horas registradas contra una tarea postean a la línea de presupuesto de esa tarea."
+    "footnote": "Costo = horas × tarifa. La tarifa sale de esta entrada si la defines; si no, de la tarifa del miembro en Configuración → Team. Las horas registradas contra una tarea postean a la línea de presupuesto de esa tarea.",
+    "errMin": "Mínimo 0.25 horas (15 minutos) por entrada.",
+    "errMax": "Máximo 24 horas por entrada — una entrada cubre un día. Divide el trabajo más largo en varias fechas.",
+    "errNoLine": "Elige la línea de presupuesto a la que cargan estas horas, para que el costo llegue al presupuesto.",
+    "hoursHint": "0.25 a 24 horas — una entrada es un día de trabajo",
+    "taskEstimate": "Estimado",
+    "taskLogged": "Trabajado",
+    "taskRemaining": "Restante",
+    "taskProgress": "Avance",
+    "overEstimate": "{h} h sobre el estimado",
+    "budgetLine": "Cargar a línea de presupuesto",
+    "noLine": "— sin asignar —",
+    "lineSaved": "guardada en la tarea",
+    "noLineWarn": "Sin línea, las horas quedan registradas pero ningún costo llega al presupuesto."
   }
 }

@@ -34,6 +34,12 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
   const [rate, setRate] = useState("")
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  // Task context: the estimate to work against, and the budget line the cost
+  // lands on. Without a line, postLaborActuals has nowhere to charge the hours.
+  const [task, setTask] = useState<any>(null)
+  const [budgetLines, setBudgetLines] = useState<any[]>([])
+  const [budgetItemId, setBudgetItemId] = useState<string>("")
+  const [savingLine, setSavingLine] = useState(false)
 
   const H = () => ({ "Content-Type": "application/json", ...(workspaceId ? { "x-workspace-id": workspaceId } : {}) })
 
@@ -46,9 +52,44 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
   }
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [projectId, taskId])
 
+  useEffect(() => {
+    // Budget lines are needed in both modes so the user can see (task) or pick
+    // (project-level entry) where the cost goes.
+    fetch(`/api/projects/${projectId}/budget`, {
+      headers: workspaceId ? { "x-workspace-id": workspaceId } : {}, cache: "no-store" })
+      .then(r => r.json()).then(d => setBudgetLines(d?.data?.items || d?.data || d?.items || []))
+      .catch(() => {})
+    if (!taskId) return
+    fetch(`/api/tasks/${taskId}`, { headers: workspaceId ? { "x-workspace-id": workspaceId } : {}, cache: "no-store" })
+      .then(r => r.json()).then(d => {
+        const tk = d?.data || d
+        setTask(tk)
+        if (tk?.budgetItemId) setBudgetItemId(tk.budgetItemId)
+      }).catch(() => {})
+  }, [projectId, taskId, workspaceId])
+
+  /** Assign the budget line on the task — that is the control account
+   *  postLaborActuals reads, so setting it here makes the cost flow. */
+  async function assignLine(id: string) {
+    setBudgetItemId(id)
+    if (!taskId) return
+    setSavingLine(true)
+    try {
+      await fetch(`/api/tasks/${taskId}`, { method: "PATCH", headers: H(),
+        body: JSON.stringify({ budgetItemId: id || null }) })
+    } finally { setSavingLine(false) }
+  }
+
   async function submit() {
     const h = Number(hours)
-    if (!h || h < 0.25) { setMsg({ ok: false, text: t("errHours") }); return }
+    // Client-side guard so the user sees WHY, instead of a bare "Validation
+    // failed" from the server schema (min 0.25, max 24 — one entry is one day).
+    if (!h || Number.isNaN(h)) { setMsg({ ok: false, text: t("errHours") }); return }
+    if (h < 0.25) { setMsg({ ok: false, text: t("errMin") }); return }
+    if (h > 24)   { setMsg({ ok: false, text: t("errMax") }); return }
+    if (taskId && !budgetItemId && budgetLines.length > 0) {
+      setMsg({ ok: false, text: t("errNoLine") }); return
+    }
     setBusy(true); setMsg(null)
     try {
       const res = await fetch("/api/time", {
@@ -61,7 +102,11 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
         }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok) { setMsg({ ok: false, text: d?.error || t("errSave") }); return }
+      if (!res.ok) {
+        const detail = d?.details && typeof d.details === "object"
+          ? Object.entries(d.details).map(([k, v]) => `${k}: ${v}`).join(" · ") : ""
+        setMsg({ ok: false, text: detail || d?.error || t("errSave") }); return
+      }
       setHours(""); setDesc(""); setRate("")
       setMsg({ ok: true, text: t("logged", { h }) })
       await load(); onLogged?.()
@@ -97,12 +142,62 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
         </span>
       </div>
 
+      {/* Task context — what was estimated vs what has been logged */}
+      {taskId && task && (() => {
+        const est = Number(task.estimatedHours || 0)
+        const pct = Math.min(100, Math.max(0, Number(task.percentComplete || 0)))
+        const rem = task.remainingHours != null ? Number(task.remainingHours) : est * (1 - pct / 100)
+        const over = est > 0 && total > est
+        return (
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center",
+            background: "var(--surface,#F8FAFC)", border: "1px solid var(--border)", borderRadius: 8,
+            padding: "9px 12px", marginBottom: 10, fontSize: 12 }}>
+            <span><span style={{ color: "var(--text-3)" }}>{t("taskEstimate")}: </span>
+              <b style={{ fontVariantNumeric: "tabular-nums" }}>{est ? `${est} h` : "—"}</b></span>
+            <span><span style={{ color: "var(--text-3)" }}>{t("taskLogged")}: </span>
+              <b style={{ color: over ? "var(--red,#DC2626)" : "var(--steel)", fontVariantNumeric: "tabular-nums" }}>
+                {total.toFixed(2)} h</b></span>
+            <span><span style={{ color: "var(--text-3)" }}>{t("taskRemaining")}: </span>
+              <b style={{ color: "#B45309", fontVariantNumeric: "tabular-nums" }}>{rem.toFixed(2)} h</b></span>
+            <span><span style={{ color: "var(--text-3)" }}>{t("taskProgress")}: </span>
+              <b>{pct}%</b></span>
+            {over && <span style={{ color: "var(--red,#DC2626)", fontWeight: 700 }}>
+              {t("overEstimate", { h: (total - est).toFixed(2) })}</span>}
+          </div>
+        )
+      })()}
+
+      {/* Budget line — the control account the hours charge to */}
+      {budgetLines.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <label style={lbl}>{t("budgetLine")}</label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <select value={budgetItemId} onChange={e => assignLine(e.target.value)} disabled={savingLine}
+              style={{ ...inp, minWidth: 280, cursor: "pointer" }}>
+              <option value="">{t("noLine")}</option>
+              {budgetLines.map((b: any) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}{b.plannedCost ? ` — $${Number(b.plannedCost).toLocaleString("en-US")}` : ""}
+                </option>
+              ))}
+            </select>
+            {savingLine && <span style={{ fontSize: 11, color: "var(--text-3)" }}>…</span>}
+            {taskId && budgetItemId && !savingLine &&
+              <span style={{ fontSize: 11, color: "var(--green,#059669)", fontWeight: 600 }}>✓ {t("lineSaved")}</span>}
+            {!budgetItemId &&
+              <span style={{ fontSize: 11, color: "#B45309" }}>{t("noLineWarn")}</span>}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: compact
         ? "80px 130px 1fr auto" : "90px 140px 1fr 110px auto", gap: 8, alignItems: "end", marginBottom: 8 }}>
         <div>
           <label style={lbl}>{t("hours")}</label>
-          <input style={inp} type="number" step="0.25" min="0.25" max="24" value={hours}
+          <input style={{ ...inp, borderColor: Number(hours) > 24 ? "var(--red,#DC2626)" : undefined }}
+            type="number" step="0.25" min="0.25" max="24" value={hours}
             onChange={e => setHours(e.target.value)} placeholder="0.00"
+            title={t("hoursHint")}
             onKeyDown={e => { if (e.key === "Enter") submit() }} />
         </div>
         <div>
