@@ -1,6 +1,6 @@
 "use client"
 // src/components/resources/ResourcesView.tsx
-import { computeWorkload } from "@/lib/workload"
+import { computeWorkload, remainingEffort } from "@/lib/workload"
 import { dateLocale } from "@/lib/date-locale"
 import { useTranslations } from "next-intl"
 import { useState, useMemo } from "react"
@@ -19,13 +19,57 @@ function heatClass(pct:number, isOff=false):{bg:string;text:string;label:string}
   return {bg:"#FEE2E2",text:"#991B1B",label:`${pct}%`}
 }
 
-export function ResourcesView({ members, projectAssignments, timeEntries, tasks = [], workspaceId }:{
-  members:any[]; projectAssignments:any[]; timeEntries:any[]; tasks?:any[]; workspaceId:string
+export function ResourcesView({ members, projectAssignments, timeEntries, tasks = [],
+  doneTasks = [], loggedByUser = [], workspaceId }:{
+  members:any[]; projectAssignments:any[]; timeEntries:any[]; tasks?:any[]
+  doneTasks?:any[]; loggedByUser?:{userId:string;hours:number;entries:number}[]; workspaceId:string
 }) {
   const t = useTranslations("resources")
-  const [subTab, setSubTab]   = useState<"heatmap"|"capacity"|"availability">("heatmap")
+  const [subTab, setSubTab]   = useState<"heatmap"|"capacity"|"availability"|"execution">("heatmap")
   const [weeks,  setWeeks]    = useState(8)
   const [overOnly,setOverOnly]= useState(false)
+
+  // ── Execution scorecard ────────────────────────────────────────────────
+  // Per person: what was estimated, what has actually been logged, what is
+  // still pending, and how delivery went. Estimate variance says as much about
+  // estimation quality as about the person — read it as a conversation starter,
+  // not a verdict.
+  const exec = useMemo(() => {
+    const loggedMap = new Map(loggedByUser.map(l => [l.userId, l]))
+    const rows = members.map((m:any) => {
+      const uid = m.userId || m.user?.id || m.id
+      const open = tasks.filter((t:any) => (t.assignees||[]).some((a:any)=>a.userId===uid))
+      const done = doneTasks.filter((t:any) => (t.assignees||[]).some((a:any)=>a.userId===uid))
+      const share = (t:any) => Math.max(1, (t.assignees||[]).length)
+      const estOpen  = open.reduce((s:number,t:any)=> s + Number(t.estimatedHours||0)/share(t), 0)
+      const estDone  = done.reduce((s:number,t:any)=> s + Number(t.estimatedHours||0)/share(t), 0)
+      const pending  = open.reduce((s:number,t:any)=> s + remainingEffort(t)/share(t), 0)
+      const logged   = loggedMap.get(uid)?.hours || 0
+      const entries  = loggedMap.get(uid)?.entries || 0
+      const estTotal = estOpen + estDone
+      // On-time = finished on or before the due date
+      const withDue  = done.filter((t:any)=>t.dueDate)
+      const onTime   = withDue.filter((t:any)=>{
+        const fin = t.completedAt || t.updatedAt
+        return fin && new Date(fin) <= new Date(new Date(t.dueDate).getTime()+86399000)
+      }).length
+      const overdue  = open.filter((t:any)=> t.dueDate && new Date(t.dueDate) < new Date()).length
+      // Estimate variance on completed work only — open work isn't comparable yet
+      const varPct = estDone > 0 && logged > 0 ? ((logged - estDone) / estDone) * 100 : null
+      return { uid, name: m.user?.name || m.name || "—", role: m.role,
+        openCount: open.length, doneCount: done.length, overdue,
+        estTotal, estDone, pending, logged, entries,
+        onTimePct: withDue.length ? Math.round((onTime/withDue.length)*100) : null,
+        varPct }
+    }).filter((r:any) => r.estTotal > 0 || r.logged > 0 || r.openCount > 0)
+    rows.sort((a:any,b:any)=> b.pending - a.pending)
+    return rows
+  }, [members, tasks, doneTasks, loggedByUser])
+
+  const execTotals = useMemo(() => exec.reduce((a:any,r:any)=>({
+    estTotal:a.estTotal+r.estTotal, pending:a.pending+r.pending, logged:a.logged+r.logged,
+    openCount:a.openCount+r.openCount, doneCount:a.doneCount+r.doneCount, overdue:a.overdue+r.overdue,
+  }), { estTotal:0, pending:0, logged:0, openCount:0, doneCount:0, overdue:0 }), [exec])
 
   // Week date labels starting from last Monday
   const wl = useMemo(()=>computeWorkload(tasks, WEEKS),[tasks])
@@ -80,7 +124,8 @@ export function ResourcesView({ members, projectAssignments, timeEntries, tasks 
 
       {/* Sub-tabs */}
       <div className="fs-tabbar" style={{background:"#fff",borderBottom:"1px solid var(--border)",padding:"0 20px",flexShrink:0,display:"flex",gap:0}}>
-        {[["heatmap","📊 Workload heatmap"],["capacity","👤 Capacity"],["availability","🗓 Availability"]].map(([id,label])=>(
+        {[["heatmap","📊 "+t("tabHeatmap")],["capacity","👤 "+t("tabCapacity")],
+          ["availability","🗓 "+t("tabAvailability")],["execution","🎯 "+t("tabExecution")]].map(([id,label])=>(
           <button key={id} onClick={()=>setSubTab(id as any)}
             style={{padding:"10px 14px",border:"none",background:"none",cursor:"pointer",
               fontFamily:"var(--font)",fontSize:12,fontWeight:500,whiteSpace:"nowrap",
@@ -356,6 +401,105 @@ export function ResourcesView({ members, projectAssignments, timeEntries, tasks 
             </div>
           </div>
         )}
+
+        {subTab==="execution"&&(
+          <div style={{ padding:"14px 16px" }}>
+            {/* Portfolio totals */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",
+              gap:10, marginBottom:14 }}>
+              {[
+                { l:t("exEstimated"), v:`${Math.round(execTotals.estTotal)} h`, c:"var(--text)" },
+                { l:t("exLogged"),    v:`${Math.round(execTotals.logged)} h`,   c:"var(--steel)" },
+                { l:t("exPending"),   v:`${Math.round(execTotals.pending)} h`,  c:"#B45309" },
+                { l:t("exTasksDone"), v:`${execTotals.doneCount} / ${execTotals.doneCount+execTotals.openCount}`, c:"var(--green,#059669)" },
+                { l:t("exOverdue"),   v:String(execTotals.overdue), c: execTotals.overdue>0 ? "var(--red,#DC2626)" : "var(--text-3)" },
+              ].map(k=>(
+                <div key={k.l} style={{ background:"#fff", border:"1px solid var(--border)",
+                  borderRadius:10, padding:"11px 13px" }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:"var(--text-3)",
+                    textTransform:"uppercase", letterSpacing:".06em" }}>{k.l}</div>
+                  <div style={{ fontSize:20, fontWeight:800, color:k.c, marginTop:3,
+                    fontVariantNumeric:"tabular-nums" }}>{k.v}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12, overflow:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12.5 }}>
+                <thead>
+                  <tr style={{ background:"var(--surface,#F8FAFC)" }}>
+                    {[t("exMember"), t("exEstimated"), t("exLogged"), t("exPending"),
+                      t("exProgress"), t("exTasks"), t("exOnTime"), t("exVariance")].map((h,i)=>(
+                      <th key={h} style={{ padding:"9px 12px", textAlign:i===0?"left":"right",
+                        fontSize:10, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase",
+                        letterSpacing:".05em", borderBottom:"1.5px solid var(--border)", whiteSpace:"nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {exec.map((r:any)=>{
+                    const pct = r.estTotal>0 ? Math.min(100, Math.round(((r.estTotal-r.pending)/r.estTotal)*100)) : 0
+                    const num:React.CSSProperties = { padding:"9px 12px", textAlign:"right",
+                      borderBottom:"1px solid var(--surface-1,#F1F5F9)", fontVariantNumeric:"tabular-nums", whiteSpace:"nowrap" }
+                    return (
+                      <tr key={r.uid}>
+                        <td style={{ padding:"9px 12px", borderBottom:"1px solid var(--surface-1,#F1F5F9)" }}>
+                          <div style={{ fontWeight:600, color:"var(--text)" }}>{r.name}</div>
+                          <div style={{ fontSize:10.5, color:"var(--text-3)" }}>
+                            {r.role}{r.entries>0 ? ` · ${t("exEntries",{n:r.entries})}` : ""}
+                          </div>
+                        </td>
+                        <td style={num}>{Math.round(r.estTotal)} h</td>
+                        <td style={{...num, color:"var(--steel)", fontWeight:600}}>
+                          {r.logged>0 ? `${Math.round(r.logged)} h` : "—"}
+                        </td>
+                        <td style={{...num, color: r.pending>0 ? "#B45309" : "var(--text-3)", fontWeight:600}}>
+                          {Math.round(r.pending)} h
+                        </td>
+                        <td style={num}>
+                          <div style={{ display:"flex", alignItems:"center", gap:7, justifyContent:"flex-end" }}>
+                            <div style={{ width:64, height:5, background:"#E2E8F0", borderRadius:3, overflow:"hidden" }}>
+                              <div style={{ width:`${pct}%`, height:"100%",
+                                background: pct>=80?"var(--green,#059669)":pct>=40?"var(--steel)":"#94A3B8" }} />
+                            </div>
+                            <span style={{ minWidth:30 }}>{pct}%</span>
+                          </div>
+                        </td>
+                        <td style={num}>
+                          <span style={{ color:"var(--green,#059669)", fontWeight:600 }}>{r.doneCount}</span>
+                          <span style={{ color:"var(--text-3)" }}> / {r.doneCount + r.openCount}</span>
+                          {r.overdue>0 && <span style={{ color:"var(--red,#DC2626)", fontWeight:700, marginLeft:6 }}>
+                            ⚠ {r.overdue}</span>}
+                        </td>
+                        <td style={num}>
+                          {r.onTimePct==null ? <span style={{ color:"var(--text-3)" }}>—</span>
+                            : <span style={{ fontWeight:600,
+                                color: r.onTimePct>=90?"var(--green,#059669)":r.onTimePct>=70?"#B45309":"var(--red,#DC2626)" }}>
+                                {r.onTimePct}%</span>}
+                        </td>
+                        <td style={num}>
+                          {r.varPct==null ? <span style={{ color:"var(--text-3)" }}>—</span>
+                            : <span style={{ fontWeight:600,
+                                color: Math.abs(r.varPct)<=10 ? "var(--green,#059669)"
+                                     : Math.abs(r.varPct)<=25 ? "#B45309" : "var(--red,#DC2626)" }}>
+                                {r.varPct>0?"+":""}{Math.round(r.varPct)}%</span>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {!exec.length && (
+                    <tr><td colSpan={8} style={{ padding:20, textAlign:"center", color:"var(--text-3)" }}>
+                      {t("exEmpty")}</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ fontSize:11, color:"var(--text-3)", marginTop:10, lineHeight:1.7 }}>
+              {t("exNote1")}<br/>{t("exNote2")}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )

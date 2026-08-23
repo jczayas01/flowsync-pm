@@ -23,7 +23,7 @@ export default async function ResourcesPage() {
   // (e.g. Project Managers) only see workload for projects they belong to.
   const vis = projectVisibilityWhere(session.user.id, membership.role)
 
-  const [members, projects, tasks, timeEntries] = await Promise.all([
+  const [members, projects, tasks, timeEntries, doneTasks, loggedByUser] = await Promise.all([
     db.workspaceMember.findMany({
       where:   { workspaceId: membership.workspaceId },
       include: { user: { select:{ id:true, name:true, email:true, avatarUrl:true } } },
@@ -47,6 +47,20 @@ export default async function ResourcesPage() {
         assignees:{ select:{ userId:true } },
       },
     }),
+    // Execution view needs finished work too — the open-tasks query above
+    // deliberately excludes it, so completed tasks come separately rather than
+    // widening the workload query and changing the heatmap's meaning.
+    db.task.findMany({
+      where: {
+        project: { workspaceId: membership.workspaceId, status: 'ACTIVE', AND:[vis] },
+        status: 'DONE' as any,
+      },
+      select: {
+        id:true, status:true, estimatedHours:true, actualHours:true,
+        dueDate:true, completedAt:true, updatedAt:true,
+        assignees:{ select:{ userId:true } },
+      },
+    }),
     db.timeEntry.findMany({
       where: {
         project: { workspaceId: membership.workspaceId, AND:[vis] },
@@ -54,6 +68,14 @@ export default async function ResourcesPage() {
       },
       select: { userId:true, projectId:true, hours:true, date:true, billable:true },
     }),
+    // All logged hours per user — the execution view reports lifetime totals,
+    // not the 8-week window the heatmap uses.
+    db.timeEntry.groupBy({
+      by: ['userId'],
+      where: { project: { workspaceId: membership.workspaceId, AND:[vis] } },
+      _sum: { hours: true },
+      _count: { _all: true },
+    }).catch(() => [] as any[]),
   ])
 
   const serializedTimeEntries = timeEntries.map(t => ({
@@ -67,6 +89,12 @@ export default async function ResourcesPage() {
       projectAssignments={projects as any}
       tasks={JSON.parse(JSON.stringify(tasks)) as any}
       timeEntries={serializedTimeEntries as any}
+      doneTasks={JSON.parse(JSON.stringify(doneTasks)) as any}
+      loggedByUser={loggedByUser.map((g: any) => ({
+        userId: g.userId,
+        hours: g._sum?.hours ? Number(g._sum.hours) : 0,
+        entries: g._count?._all ?? 0,
+      })) as any}
       workspaceId={membership.workspaceId}
     />
   )
