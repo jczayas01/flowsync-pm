@@ -3240,6 +3240,15 @@
     "totalLineNote": "Consolidated planned labour. Maintained by Sync in the Budget tab — edit the task estimates or rates, not this figure.",
     "ownLineNote": "Planned labour for one task. Maintained by Sync in the Budget tab.",
     "note1": "Planned labour = the task estimate split across its assignees, each at their own cost rate from Settings -> Team.",
-    "note2": "Sync sets each labour line to the sum of the tasks pointing at it, so running it twice changes nothing. Lines you created yourself keep their planned figure - pointing a task at one only sets where its hours will be charged."
+    "note2": "Sync sets each labour line to the sum of the tasks pointing at it, so running it twice changes nothing. Lines you created yourself keep their planned figure - pointing a task at one only sets where its hours will be charged.",
+    "dupTitle": "Labour may be counted twice",
+    "dupBody": "These budget lines are already categorised as labour but are not maintained by Sync. If you also sync a consolidated Labour Total, the same work is budgeted twice.",
+    "dupHint": "Adopting renames the line to \"Labour - Total\" and hands it to Sync. Its approved figure stays until the first Sync writes the calculated total, and the baseline keeps the original for variance. If the line covers work that is genuinely not in the task plan, leave it and skip the Labour Total destination instead.",
+    "adopt": "Adopt this line",
+    "adoptTitle": "Rename to the canonical Labour - Total line so Sync maintains it, instead of budgeting the same labour twice.",
+    "adoptConfirm": "Adopt \"{name}\" as the project's Labour Total line?\n\nCurrent planned: ${planned}\nCalculated from tasks: ${calculated}\n\nThe line is renamed and Sync will maintain it from now on. Your approved figure stays until the next Sync.",
+    "adopted": "\"{name}\" adopted - Sync now maintains it. Press Sync to write the calculated total.",
+    "adoptFailed": "Could not adopt that line",
+    "syncAnywayConfirm": "There {n, plural, =1 {is 1 labour line} other {are # labour lines}} not maintained by Sync. Syncing a Labour Total on top of them budgets the same work twice.\n\nSync anyway?"
   }
 }

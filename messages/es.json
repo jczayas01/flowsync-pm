@@ -3240,6 +3240,15 @@
     "totalLineNote": "Mano de obra planificada consolidada. La mantiene Sync en la pestana Presupuesto — edita los estimados o las tarifas, no esta cifra.",
     "ownLineNote": "Mano de obra planificada de una tarea. La mantiene Sync en la pestana Presupuesto.",
     "note1": "Labor planificada = el estimado de la tarea repartido entre sus asignados, cada uno con su tarifa de costo de Configuracion -> Team.",
-    "note2": "Sync asigna a cada linea de labor la suma de las tareas que apuntan a ella, asi que ejecutarlo dos veces no cambia nada. Las lineas que creaste tu conservan su cifra planificada — apuntar una tarea a una de ellas solo define donde se cargaran sus horas."
+    "note2": "Sync asigna a cada linea de labor la suma de las tareas que apuntan a ella, asi que ejecutarlo dos veces no cambia nada. Las lineas que creaste tu conservan su cifra planificada — apuntar una tarea a una de ellas solo define donde se cargaran sus horas.",
+    "dupTitle": "La labor podria contarse dos veces",
+    "dupBody": "Estas lineas de presupuesto ya estan categorizadas como labor pero no las mantiene Sync. Si ademas sincronizas un Labor Total consolidado, el mismo trabajo queda presupuestado dos veces.",
+    "dupHint": "Adoptar renombra la linea a \"Labour - Total\" y se la entrega a Sync. Su cifra aprobada se mantiene hasta que el primer Sync escriba el total calculado, y la linea base conserva la original para la varianza. Si la linea cubre trabajo que realmente no esta en el plan de tareas, dejala y omite el destino Labor Total.",
+    "adopt": "Adoptar esta linea",
+    "adoptTitle": "Renombrar a la linea canonica Labour - Total para que Sync la mantenga, en vez de presupuestar la misma labor dos veces.",
+    "adoptConfirm": "Adoptar \"{name}\" como la linea de Labor Total del proyecto?\n\nPlanificado actual: ${planned}\nCalculado desde las tareas: ${calculated}\n\nLa linea se renombra y Sync la mantendra de aqui en adelante. Tu cifra aprobada se mantiene hasta el proximo Sync.",
+    "adopted": "\"{name}\" adoptada - Sync ya la mantiene. Pulsa Sync para escribir el total calculado.",
+    "adoptFailed": "No se pudo adoptar esa linea",
+    "syncAnywayConfirm": "{n, plural, =1 {Hay 1 linea de labor} other {Hay # lineas de labor}} que Sync no mantiene. Sincronizar un Labor Total encima presupuesta el mismo trabajo dos veces.\n\nSincronizar de todos modos?"
   }
 }

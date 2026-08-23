@@ -105,15 +105,54 @@ export function LabourAllocationPanel({ projectId, workspaceId, canEdit, onChang
     .filter(r => r.hours > 0)
     .sort((a, b) => b.cost - a.cost), [tasks, members])
 
+  // Manual LABOR lines that Sync does not own would sit alongside the synced
+  // figure and count the same work twice. The classic case: a hand-entered
+  // "Internal project labour" line plus a synced Labour Total. Adopting the
+  // manual line (renaming it to the canonical name) keeps the approved number
+  // and the detailed calculation in the same place, so baseline variance still
+  // tells you whether the detail broke the approved budget.
+  const managedName = (n: string) => n === TOTAL_LINE || n.startsWith("Labour — ")
+  const orphanLabourLines = useMemo(() =>
+    lines.filter(b => String(b.category || "").toUpperCase() === "LABOR" && !managedName(b.name)),
+    [lines])
+  const hasTotalTarget = rows.some(r => dest[r.tk.id] === "TOTAL")
+  const totalLineExists = lines.some(b => b.name === TOTAL_LINE)
+
   const selectedTotal = rows.reduce((s, r) => s + (dest[r.tk.id] ? r.cost : 0), 0)
   const grandTotal = rows.reduce((s, r) => s + r.cost, 0)
   const unassigned = rows.filter(r => r.cost > 0 && !dest[r.tk.id]).length
   const noRate = rows.filter(r => r.missing > 0).length
 
+  /** Adopt a manual labour line: rename it to the canonical name so Sync
+   *  maintains it from here on. Its approved planned figure stays until the
+   *  first Sync overwrites it with the calculated total — and the baseline
+   *  keeps the original for variance. */
+  async function adopt(line: Line) {
+    if (!confirm(t("adoptConfirm", { name: line.name,
+      planned: Number(line.plannedCost || 0).toLocaleString("en-US"),
+      calculated: selectedTotal.toLocaleString("en-US", { maximumFractionDigits: 0 }) }))) return
+    setBusy(true); setMsg(null)
+    try {
+      const r = await fetch(`/api/projects/${projectId}/budget/${line.id}`, {
+        method: "PATCH", headers: H(),
+        body: JSON.stringify({ description: TOTAL_LINE, category: "LABOR" }) })
+      if (!r.ok) { setMsg({ ok: false, text: t("adoptFailed") }); return }
+      // Point every unallocated task at the consolidated line — adopting is a
+      // statement that this line holds the project's labour.
+      const next = { ...dest }
+      for (const row of rows) if (!next[row.tk.id] && row.cost > 0) next[row.tk.id] = "TOTAL"
+      setDest(next)
+      await load()
+      setMsg({ ok: true, text: t("adopted", { name: line.name }) })
+    } finally { setBusy(false) }
+  }
+
   /** Sync: create any missing target lines, then SET each target's planned cost
    *  to the sum of the tasks pointing at it. Idempotent by construction. */
   async function sync() {
     if (!canEdit || busy) return
+    if (orphanLabourLines.length > 0 && hasTotalTarget &&
+        !confirm(t("syncAnywayConfirm", { n: orphanLabourLines.length }))) return
     setBusy(true); setMsg(null)
     try {
       let current = [...lines]
@@ -208,6 +247,37 @@ export function LabourAllocationPanel({ projectId, workspaceId, canEdit, onChang
           </button>
         </span>
       </div>
+
+      {orphanLabourLines.length > 0 && (hasTotalTarget || totalLineExists) && (
+        <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8,
+          padding: "11px 13px", marginBottom: 10 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#92400E", marginBottom: 4 }}>
+            ⚠ {t("dupTitle")}
+          </div>
+          <div style={{ fontSize: 12, color: "#92400E", lineHeight: 1.6, marginBottom: 8 }}>
+            {t("dupBody")}
+          </div>
+          {orphanLabourLines.map(b => (
+            <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10,
+              padding: "6px 0", flexWrap: "wrap" }}>
+              <span style={{ fontSize: 12.5, color: "#78350F", fontWeight: 600 }}>{b.name}</span>
+              <span style={{ fontSize: 12, color: "#92400E", fontVariantNumeric: "tabular-nums" }}>
+                ${Number(b.plannedCost || 0).toLocaleString("en-US")}
+              </span>
+              {canEdit && (
+                <button onClick={() => adopt(b)} disabled={busy}
+                  title={t("adoptTitle")}
+                  style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 700, padding: "4px 11px",
+                    borderRadius: 6, border: "1px solid #B45309", background: "#fff", color: "#B45309",
+                    cursor: busy ? "wait" : "pointer", fontFamily: "var(--font)" }}>
+                  {t("adopt")}
+                </button>
+              )}
+            </div>
+          ))}
+          <div style={{ fontSize: 11, color: "#92400E", marginTop: 6, lineHeight: 1.6 }}>{t("dupHint")}</div>
+        </div>
+      )}
 
       <div style={{ border: "1px solid var(--border)", borderRadius: 10, overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 780 }}>
