@@ -37,6 +37,10 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
   // Task context: the estimate to work against, and the budget line the cost
   // lands on. Without a line, postLaborActuals has nowhere to charge the hours.
   const [task, setTask] = useState<any>(null)
+  // Who the hours belong to. A PM logging for the team needs to pick the
+  // person, because the rate — and therefore the cost — follows them.
+  const [members, setMembers] = useState<any[]>([])
+  const [forUserId, setForUserId] = useState<string>("")
   const [budgetLines, setBudgetLines] = useState<any[]>([])
   const [budgetItemId, setBudgetItemId] = useState<string>("")
   const [savingLine, setSavingLine] = useState(false)
@@ -44,10 +48,12 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
   const H = () => ({ "Content-Type": "application/json", ...(workspaceId ? { "x-workspace-id": workspaceId } : {}) })
 
   async function load() {
-    const q = new URLSearchParams({ projectId, perPage: "50" })
+    const q = new URLSearchParams({ projectId, perPage: "100" })
     const r = await fetch(`/api/time?${q}`, { headers: workspaceId ? { "x-workspace-id": workspaceId } : {}, cache: "no-store" })
     const d = await r.json().catch(() => ({}))
-    const rows: Entry[] = d?.data?.entries || d?.entries || d?.data || []
+    const rows: Entry[] = d?.data?.entries || d?.entries || []
+    // In task mode show only that task's entries; at project level show all,
+    // including entries not tied to any task.
     setEntries(taskId ? rows.filter(e => e.task?.id === taskId) : rows)
   }
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [projectId, taskId])
@@ -59,12 +65,25 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
       headers: workspaceId ? { "x-workspace-id": workspaceId } : {}, cache: "no-store" })
       .then(r => r.json()).then(d => setBudgetLines(d?.data?.items || d?.data || d?.items || []))
       .catch(() => {})
+    fetch(`/api/users?perPage=100`, {
+      headers: workspaceId ? { "x-workspace-id": workspaceId } : {}, cache: "no-store" })
+      .then(r => r.json()).then(d => {
+        const rows = d?.data || d?.items || []
+        setMembers(rows.map((m: any) => ({
+          userId: m.userId || m.user?.id, name: m.user?.name || m.name,
+          role: m.role, costRate: m.costRate == null ? null : Number(m.costRate),
+        })).filter((m: any) => m.userId))
+      }).catch(() => {})
     if (!taskId) return
     fetch(`/api/tasks/${taskId}`, { headers: workspaceId ? { "x-workspace-id": workspaceId } : {}, cache: "no-store" })
       .then(r => r.json()).then(d => {
         const tk = d?.data || d
         setTask(tk)
         if (tk?.budgetItemId) setBudgetItemId(tk.budgetItemId)
+        // Default the person to the task's assignee — logging time for the
+        // person doing the work is the common case.
+        const first = (tk?.assignees || [])[0]
+        if (first?.userId) setForUserId(first.userId)
       }).catch(() => {})
   }, [projectId, taskId, workspaceId])
 
@@ -96,6 +115,7 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
         method: "POST", headers: H(),
         body: JSON.stringify({
           projectId, taskId: taskId || null,
+          ...(forUserId ? { userId: forUserId } : {}),
           date: new Date(date + "T12:00:00Z").toISOString(),
           hours: h, description: desc || undefined, billable,
           ...(rate ? { hourlyRate: Number(rate) } : {}),
@@ -119,6 +139,14 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
     const r = await fetch(`/api/time/${id}`, { method: "DELETE", headers: H() })
     if (r.ok) { await load(); onLogged?.() } else setMsg({ ok: false, text: t("errDelete") })
   }
+
+  // Rate resolution mirrors the server: this entry's override → the member's
+  // cost rate. Shown live so nobody logs hours that silently cost nothing.
+  const selectedMember = members.find(m => m.userId === forUserId)
+  const effectiveRate = rate !== "" ? Number(rate)
+    : selectedMember?.costRate != null ? selectedMember.costRate : null
+  const previewCost = effectiveRate != null && Number(hours) > 0
+    ? Number(hours) * effectiveRate : null
 
   const total = (entries || []).reduce((s, e) => s + Number(e.hours || 0), 0)
   const posted = (entries || []).filter(e => e.costPostedAt).reduce((s, e) => s + Number(e.hours || 0), 0)
@@ -167,6 +195,35 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
         )
       })()}
 
+      {/* Labour cost projected from the assignee's rate — the budget carries a
+          cost for this task before anyone logs a single hour. */}
+      {taskId && task && selectedMember?.costRate != null && Number(task.estimatedHours || 0) > 0 && (() => {
+        const est = Number(task.estimatedHours || 0)
+        const r = selectedMember.costRate
+        const pct = Math.min(100, Math.max(0, Number(task.percentComplete || 0)))
+        const planned = est * r
+        const earned  = est * (pct / 100) * r
+        const actual  = total * r
+        return (
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center",
+            background: "#F0FDF4", border: "1px solid #A7F3D0", borderRadius: 8,
+            padding: "9px 12px", marginBottom: 10, fontSize: 12 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: "#065F46",
+              textTransform: "uppercase", letterSpacing: ".05em" }}>{t("laborCost")}</span>
+            <span><span style={{ color: "var(--text-3)" }}>{t("costPlanned")}: </span>
+              <b>${planned.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
+              <span style={{ color: "var(--text-3)" }}> ({est} h × ${r})</span></span>
+            <span><span style={{ color: "var(--text-3)" }}>{t("costEarned")}: </span>
+              <b style={{ color: "#059669" }}>${earned.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
+              <span style={{ color: "var(--text-3)" }}> ({pct}%)</span></span>
+            <span><span style={{ color: "var(--text-3)" }}>{t("costActual")}: </span>
+              <b style={{ color: actual > planned ? "var(--red,#DC2626)" : "var(--steel)" }}>
+                ${actual.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
+              <span style={{ color: "var(--text-3)" }}> ({total.toFixed(1)} h)</span></span>
+          </div>
+        )
+      })()}
+
       {/* Budget line — the control account the hours charge to */}
       {budgetLines.length > 0 && (
         <div style={{ marginBottom: 10 }}>
@@ -186,6 +243,26 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
               <span style={{ fontSize: 11, color: "var(--green,#059669)", fontWeight: 600 }}>✓ {t("lineSaved")}</span>}
             {!budgetItemId &&
               <span style={{ fontSize: 11, color: "#B45309" }}>{t("noLineWarn")}</span>}
+          </div>
+        </div>
+      )}
+
+      {members.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <label style={lbl}>{t("person")}</label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <select value={forUserId} onChange={e => setForUserId(e.target.value)}
+              style={{ ...inp, minWidth: 240, cursor: "pointer" }}>
+              <option value="">{t("personMe")}</option>
+              {members.map(m => (
+                <option key={m.userId} value={m.userId}>
+                  {m.name}{m.costRate != null ? ` — $${m.costRate}/h` : ` — ${t("noRate")}`}
+                </option>
+              ))}
+            </select>
+            {selectedMember && selectedMember.costRate == null && (
+              <span style={{ fontSize: 11, color: "#B45309" }}>{t("noRateWarn")}</span>
+            )}
           </div>
         </div>
       )}
@@ -224,11 +301,22 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
         </button>
       </div>
 
-      <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11.5, color: "var(--text-2)",
-        cursor: "pointer", marginBottom: 10 }}>
-        <input type="checkbox" checked={billable} onChange={e => setBillable(e.target.checked)} />
-        {t("billable")}
-      </label>
+      <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+        <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 11.5,
+          color: "var(--text-2)", cursor: "pointer" }}>
+          <input type="checkbox" checked={billable} onChange={e => setBillable(e.target.checked)} />
+          {t("billable")}
+        </label>
+        {previewCost != null && (
+          <span style={{ fontSize: 12, color: "var(--text-2)" }}>
+            {t("willCost", { h: hours, rate: String(effectiveRate),
+              amount: previewCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
+          </span>
+        )}
+        {effectiveRate == null && Number(hours) > 0 && (
+          <span style={{ fontSize: 12, color: "#B45309" }}>{t("noCostWarn")}</span>
+        )}
+      </div>
 
       {msg && <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8,
         color: msg.ok ? "var(--green,#059669)" : "var(--red,#DC2626)" }}>{msg.ok ? "✓ " : "✗ "}{msg.text}</div>}
@@ -249,6 +337,12 @@ export function TimeLogPanel({ projectId, taskId, taskTitle, workspaceId, compac
                 {e.description || (e.task ? e.task.title : "—")}
               </span>
               {e.user?.name && <span style={{ color: "var(--text-3)", fontSize: 11 }}>{e.user.name}</span>}
+              {e.hourlyRate != null && Number(e.hourlyRate) > 0 && (
+                <span style={{ fontSize: 11.5, color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>
+                  ${Number(e.hourlyRate)}/h ·{" "}
+                  <b>${(Number(e.hours) * Number(e.hourlyRate)).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b>
+                </span>
+              )}
               {!e.billable && <span style={{ fontSize: 10, color: "var(--text-3)", border: "1px solid var(--border)",
                 borderRadius: 8, padding: "0 6px" }}>{t("nonBillable")}</span>}
               {e.costPostedAt

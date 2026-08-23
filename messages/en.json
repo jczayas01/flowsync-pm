@@ -3155,6 +3155,16 @@
     "budgetLine": "Charge to budget line",
     "noLine": "— not assigned —",
     "lineSaved": "saved on the task",
-    "noLineWarn": "Without a line the hours are recorded but no cost reaches the budget."
+    "noLineWarn": "Without a line the hours are recorded but no cost reaches the budget.",
+    "person": "Person",
+    "personMe": "— me —",
+    "noRate": "no rate set",
+    "noRateWarn": "This member has no cost rate — set it in Settings → Team, or type a rate override.",
+    "willCost": "{h} h × ${rate}/h = ${amount}",
+    "noCostWarn": "No rate resolved — these hours will record no cost.",
+    "laborCost": "Labour cost",
+    "costPlanned": "Planned",
+    "costEarned": "Earned",
+    "costActual": "Actual"
   }
 }

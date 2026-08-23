@@ -3155,6 +3155,16 @@
     "budgetLine": "Cargar a línea de presupuesto",
     "noLine": "— sin asignar —",
     "lineSaved": "guardada en la tarea",
-    "noLineWarn": "Sin línea, las horas quedan registradas pero ningún costo llega al presupuesto."
+    "noLineWarn": "Sin línea, las horas quedan registradas pero ningún costo llega al presupuesto.",
+    "person": "Persona",
+    "personMe": "— yo —",
+    "noRate": "sin tarifa",
+    "noRateWarn": "Este miembro no tiene tarifa de costo — defínela en Configuración → Team, o escribe una tarifa aquí.",
+    "willCost": "{h} h × ${rate}/h = ${amount}",
+    "noCostWarn": "Sin tarifa resuelta — estas horas no registrarán costo.",
+    "laborCost": "Costo de mano de obra",
+    "costPlanned": "Planificado",
+    "costEarned": "Ganado",
+    "costActual": "Real"
   }
 }

@@ -17,6 +17,7 @@ const timeEntrySchema = z.object({
   description: z.string().max(500).optional(),
   billable:  z.boolean().default(true),
   hourlyRate:  z.number().min(0).optional(),  // override rate
+  userId:      z.string().min(1).optional(),  // log on behalf of a member (PM+)
 })
 
 async function listTimeEntries(ctx: ApiContext) {
@@ -78,14 +79,38 @@ async function logTimeEntry(ctx: ApiContext) {
   if ("error" in parsed) return parsed.error
   const { data } = parsed
 
-  // Resolve hourly rate: entry override → user default → workspace default
-  const rate = data.hourlyRate || 0
+  // Who the hours belong to. Logging for someone else is a PM-level action —
+  // it moves cost onto their rate, so it is not open to every member.
+  const PRIVILEGED = ["OWNER","ADMIN","SUPER_ADMIN","PMO_DIRECTOR","PROGRAM_MANAGER","PM"]
+  let targetUserId = ctx.userId
+  if (data.userId && data.userId !== ctx.userId) {
+    if (!PRIVILEGED.includes(String(ctx.userRole))) {
+      return err("You can only log time for yourself", 403)
+    }
+    const target = await db.workspaceMember.findFirst({
+      where: { workspaceId: ctx.workspaceId, userId: data.userId }, select: { userId: true },
+    })
+    if (!target) return err("That person is not a member of this workspace", 400)
+    targetUserId = data.userId
+  }
+
+  // Resolve hourly rate: entry override → the member's cost rate. The previous
+  // version fell straight to 0, so every entry recorded hours with no cost and
+  // the labour never reached the budget.
+  let rate = data.hourlyRate
+  if (rate == null) {
+    const member = await db.workspaceMember.findFirst({
+      where: { workspaceId: ctx.workspaceId, userId: targetUserId },
+      select: { costRate: true },
+    })
+    rate = member?.costRate != null ? Number(member.costRate) : 0
+  }
 
   const amount = data.billable ? data.hours * rate : 0
 
   const entry = await db.timeEntry.create({
     data: {
-      userId:       ctx.userId,
+      userId:       targetUserId,
       projectId:    data.projectId,
       taskId:       data.taskId || undefined,
       date:         new Date(data.date),
