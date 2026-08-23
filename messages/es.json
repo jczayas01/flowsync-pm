@@ -2898,7 +2898,17 @@
     "reqVerPending": "Pendiente de verificación",
     "reqVerMark": "Marcar verificado",
     "reqVerMarkTitle": "Registra la aceptación — guarda quién y cuándo",
-    "reqVerUndoTitle": "Deshacer verificación"
+    "reqVerUndoTitle": "Deshacer verificación",
+    "teDate": "Fecha",
+    "tePerson": "Persona",
+    "teHours": "Horas",
+    "teRate": "Tarifa",
+    "teAmount": "Importe",
+    "tePosted": "Posteada",
+    "tePending": "Pendiente",
+    "teDelete": "Eliminar entrada",
+    "teDeleteConfirm": "¿Eliminar esta entrada de horas? Solo se pueden eliminar las que aún no se han posteado al presupuesto.",
+    "teDeleteFailed": "No se pudo eliminar esta entrada"
   },
   "webhooks": {
     "+ New webhook": "+ Nuevo webhook",

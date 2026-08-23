@@ -2898,7 +2898,17 @@
     "reqVerPending": "Pending verification",
     "reqVerMark": "Mark verified",
     "reqVerMarkTitle": "Record acceptance — stamps who and when",
-    "reqVerUndoTitle": "Undo verification"
+    "reqVerUndoTitle": "Undo verification",
+    "teDate": "Date",
+    "tePerson": "Person",
+    "teHours": "Hours",
+    "teRate": "Rate",
+    "teAmount": "Amount",
+    "tePosted": "Posted",
+    "tePending": "Pending",
+    "teDelete": "Delete entry",
+    "teDeleteConfirm": "Delete this time entry? Only entries not yet posted to the budget can be removed.",
+    "teDeleteFailed": "Could not delete this entry"
   },
   "webhooks": {
     "+ New webhook": "+ New webhook",

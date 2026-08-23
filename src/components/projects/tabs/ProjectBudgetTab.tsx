@@ -293,6 +293,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   const { can } = usePermissions()
   const router = useRouter()
 
+  async function deleteEntry(id: string) {
+    if (!confirm(tip("teDeleteConfirm"))) return
+    const res = await fetch(`/api/time/${id}`, { method: "DELETE",
+      headers: workspaceId ? { "x-workspace-id": workspaceId } : {} })
+    if (res.ok) router.refresh()
+    else { const d = await res.json().catch(() => ({})); alert(d?.error || tip("teDeleteFailed")) }
+  }
+
   // ── Manual ordering (drag or arrows) ─────────────────────────────────
   // Local mirror of budgetItems so a move is instant; the full id list is
   // persisted in one call and the page refreshes from the server after.
@@ -1569,8 +1577,8 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ background:"var(--surface)" }}>
-                {["Date","Person","Hours","Rate","Amount",""].map(h => (
-                  <th key={h} style={{ padding:"7px 14px", textAlign:"left", fontSize:10,
+                {[tip("teDate"),tip("tePerson"),tip("teHours"),tip("teRate"),tip("teAmount"),"",""].map((h,hi) => (
+                  <th key={hi} style={{ padding:"7px 14px", textAlign:"left", fontSize:10,
                     fontWeight:600, color:"var(--text-3)", letterSpacing:".05em",
                     textTransform:"uppercase", borderBottom:"1px solid var(--border)" }}>
                     {h}
@@ -1594,10 +1602,23 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                     {te.hourlyRate ? `$${Number(te.hourlyRate).toFixed(0)}/hr` : "—"}
                   </td>
                   <td style={{ padding:"8px 14px", fontSize:12, fontFamily:"monospace", fontWeight:500 }}>
-                    {te.amount ? fmt(Number(te.amount),currency) : "—"}
+                    {/* TimeEntry has no stored amount — it is hours × rate. */}
+                    {te.hourlyRate && Number(te.hourlyRate) > 0
+                      ? fmt(Number(te.hours) * Number(te.hourlyRate), currency) : "—"}
                   </td>
                   <td style={{ padding:"8px 14px" }}>
-                    <Badge variant="green">{tip("bgBillable")}</Badge>
+                    {te.costPostedAt
+                      ? <Badge variant="green">{tip("tePosted")}</Badge>
+                      : <Badge variant="amber">{tip("tePending")}</Badge>}
+                  </td>
+                  <td style={{ padding:"8px 14px", textAlign:"right" }}>
+                    {/* Posted entries are not deletable — removing one would
+                        silently overstate the remaining budget. */}
+                    {!te.costPostedAt && can("projects:edit") && (
+                      <button onClick={() => deleteEntry(te.id)} title={tip("teDelete")}
+                        style={{ border:"none", background:"none", cursor:"pointer",
+                          color:"var(--red,#DC2626)", fontSize:13, padding:"0 4px" }}>✕</button>
+                    )}
                   </td>
                 </tr>
               ))}
