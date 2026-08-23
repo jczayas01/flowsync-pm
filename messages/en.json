@@ -3099,5 +3099,31 @@
     "step3": "On success we register the domain and issue the SSL certificate automatically.",
     "note": "Use a subdomain (pm.yourcompany.com). Root domains need ALIAS/ANAME support at your DNS provider.",
     "planNote": "Custom domains are available on Business and Enterprise plans."
+  },
+  "time": {
+    "title": "Time log",
+    "hours": "Hours",
+    "date": "Date",
+    "description": "Description",
+    "descPh": "What was worked on",
+    "rateOverride": "Rate override",
+    "ratePh": "member rate",
+    "log": "Log time",
+    "billable": "Billable",
+    "totalHours": "{h} h logged",
+    "postedHours": "· {h} h posted to budget",
+    "logged": "{h} h logged — it will post to the budget on the next cost run",
+    "errHours": "Enter at least 0.25 hours",
+    "errSave": "Could not save the entry",
+    "errDelete": "Could not delete the entry",
+    "confirmDelete": "Delete this time entry?",
+    "delete": "Delete",
+    "posted": "POSTED",
+    "postedTitle": "Cost has been posted to the budget line",
+    "pending": "PENDING",
+    "pendingTitle": "Waiting for the next cost posting run",
+    "nonBillable": "non-billable",
+    "empty": "No time logged yet. Hours logged here become labour actuals on the budget.",
+    "footnote": "Cost = hours × rate. The rate comes from this entry if set, otherwise from the member's cost rate in Settings → Team. Hours logged against a task post to that task's budget line."
   }
 }

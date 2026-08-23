@@ -10,6 +10,7 @@ import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { DocScanPicker } from "@/components/shared/DocScanPicker"
 import { Badge } from "@/components/ui"
+import { TimeLogPanel } from "@/components/shared/TimeLogPanel"
 
 function fmt(n: number, currency = "USD") {
   if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(2)}M`
@@ -1551,6 +1552,14 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       </div>
 
       {/* Time entries */}
+      {/* Labour actuals start here: hours logged against a task post to that
+          task's budget line, so effort turns into cost where the work lives. */}
+      <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
+        padding:"14px 16px", marginBottom:14 }}>
+        <TimeLogPanel projectId={projectId} workspaceId={workspaceId}
+          onLogged={() => router.refresh()} />
+      </div>
+
       {timeEntries.length > 0 && (
         <div style={{ ...card, overflow:"hidden", padding:0 }}>
           <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)",

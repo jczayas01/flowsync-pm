@@ -3099,5 +3099,31 @@
     "step3": "Al verificar, registramos el dominio y emitimos el certificado SSL automáticamente.",
     "note": "Usa un subdominio (pm.tuempresa.com). Los dominios raíz requieren soporte ALIAS/ANAME en tu proveedor.",
     "planNote": "Los dominios personalizados están disponibles en los planes Business y Enterprise."
+  },
+  "time": {
+    "title": "Registro de horas",
+    "hours": "Horas",
+    "date": "Fecha",
+    "description": "Descripción",
+    "descPh": "En qué se trabajó",
+    "rateOverride": "Tarifa (opcional)",
+    "ratePh": "tarifa del miembro",
+    "log": "Registrar",
+    "billable": "Facturable",
+    "totalHours": "{h} h registradas",
+    "postedHours": "· {h} h posteadas al presupuesto",
+    "logged": "{h} h registradas — se postearán al presupuesto en la próxima corrida de costos",
+    "errHours": "Ingresa al menos 0.25 horas",
+    "errSave": "No se pudo guardar la entrada",
+    "errDelete": "No se pudo eliminar la entrada",
+    "confirmDelete": "¿Eliminar esta entrada de horas?",
+    "delete": "Eliminar",
+    "posted": "POSTEADA",
+    "postedTitle": "El costo ya se posteó a la línea de presupuesto",
+    "pending": "PENDIENTE",
+    "pendingTitle": "Esperando la próxima corrida de costos",
+    "nonBillable": "no facturable",
+    "empty": "Aún no hay horas registradas. Las horas que registres aquí se convierten en costo real de mano de obra.",
+    "footnote": "Costo = horas × tarifa. La tarifa sale de esta entrada si la defines; si no, de la tarifa del miembro en Configuración → Team. Las horas registradas contra una tarea postean a la línea de presupuesto de esa tarea."
   }
 }
