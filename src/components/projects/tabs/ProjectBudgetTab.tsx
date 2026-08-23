@@ -12,6 +12,7 @@ import { DocScanPicker } from "@/components/shared/DocScanPicker"
 import { Badge } from "@/components/ui"
 import { TimeLogPanel } from "@/components/shared/TimeLogPanel"
 import { TimesheetGrid } from "@/components/shared/TimesheetGrid"
+import { LabourAllocationPanel } from "@/components/projects/LabourAllocationPanel"
 
 function fmt(n: number, currency = "USD") {
   if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(2)}M`
@@ -294,7 +295,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   const { can } = usePermissions()
   const router = useRouter()
 
-  const [timeMode, setTimeMode] = useState<"grid"|"single">("grid")
+  const [timeMode, setTimeMode] = useState<"plan"|"grid"|"single">("plan")
 
   async function deleteEntry(id: string) {
     if (!confirm(tip("teDeleteConfirm"))) return
@@ -1568,7 +1569,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
       <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
         padding:"14px 16px", marginBottom:14 }}>
         <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-          {([["grid", tip("teWeekGrid")], ["single", tip("teSingleEntry")]] as const).map(([id, label]) => (
+          {([["plan", tip("teLabourPlan")], ["grid", tip("teWeekGrid")], ["single", tip("teSingleEntry")]] as const).map(([id, label]) => (
             <button key={id} onClick={() => setTimeMode(id as any)}
               style={{ padding:"5px 12px", fontSize:12, fontWeight:600, borderRadius:6,
                 cursor:"pointer", fontFamily:"var(--font)",
@@ -1577,11 +1578,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
                 border: timeMode===id ? "none" : "1px solid var(--border)" }}>{label}</button>
           ))}
         </div>
-        {timeMode === "grid"
-          ? <TimesheetGrid projectId={projectId} workspaceId={workspaceId}
-              onChanged={() => router.refresh()} />
-          : <TimeLogPanel projectId={projectId} workspaceId={workspaceId}
-              onLogged={() => router.refresh()} />}
+        {timeMode === "plan" ? (
+          <LabourAllocationPanel projectId={projectId} workspaceId={workspaceId}
+            canEdit={can("budget:edit")} onChanged={() => router.refresh()} />
+        ) : timeMode === "grid" ? (
+          <TimesheetGrid projectId={projectId} workspaceId={workspaceId}
+            onChanged={() => router.refresh()} />
+        ) : (
+          <TimeLogPanel projectId={projectId} workspaceId={workspaceId}
+            onLogged={() => router.refresh()} />
+        )}
       </div>
 
       {timeEntries.length > 0 && (

@@ -2910,7 +2910,8 @@
     "teDeleteConfirm": "¿Eliminar esta entrada de horas? Solo se pueden eliminar las que aún no se han posteado al presupuesto.",
     "teDeleteFailed": "No se pudo eliminar esta entrada",
     "teWeekGrid": "Rejilla semanal",
-    "teSingleEntry": "Entrada individual"
+    "teSingleEntry": "Entrada individual",
+    "teLabourPlan": "Plan de labor"
   },
   "webhooks": {
     "+ New webhook": "+ Nuevo webhook",
@@ -3214,5 +3215,31 @@
     "state_POSTED": "Posteada al presupuesto — bloqueada",
     "legend": "Blanco = borrador · Azul = enviada · Verde = aprobada · Gris = posteada al presupuesto (bloqueada) · Rojo = rechazada",
     "footnote": "Solo las horas aprobadas postean al presupuesto. Las horas caen en la línea de presupuesto de la tarea contra la que se registraron."
+  },
+  "labourAlloc": {
+    "title": "Asignacion de costo de labor",
+    "intro": "La mano de obra planificada de cada tarea y a que linea de presupuesto carga. Sync escribe las cifras en el presupuesto.",
+    "task": "Tarea",
+    "hours": "Horas est.",
+    "cost": "Labor planificada",
+    "chargeTo": "Cargar a",
+    "currentLine": "Enlazada ahora",
+    "none": "sin enlazar",
+    "destSkip": "— omitir —",
+    "destTotal": "Labor Total (una linea consolidada)",
+    "destOwn": "Su propia linea",
+    "sync": "Sync al presupuesto",
+    "synced": "Sincronizado — {n} linea(s) actualizada(s), ${amount} de labor planificada asignada.",
+    "totalRow": "Total asignado",
+    "ofTotal": "de ${total} disponible entre todas las tareas",
+    "allAllocated": "todas las tareas con costo estan asignadas",
+    "unassigned": "{n} sin asignar",
+    "noRate": "{n} sin tarifa",
+    "missingRate": "{n} asignado(s) sin tarifa de costo",
+    "empty": "Aun no hay tareas con estimado. Agrega horas estimadas a las tareas para planificar el costo de labor.",
+    "totalLineNote": "Mano de obra planificada consolidada. La mantiene Sync en la pestana Presupuesto — edita los estimados o las tarifas, no esta cifra.",
+    "ownLineNote": "Mano de obra planificada de una tarea. La mantiene Sync en la pestana Presupuesto.",
+    "note1": "Labor planificada = el estimado de la tarea repartido entre sus asignados, cada uno con su tarifa de costo de Configuracion -> Team.",
+    "note2": "Sync asigna a cada linea de labor la suma de las tareas que apuntan a ella, asi que ejecutarlo dos veces no cambia nada. Las lineas que creaste tu conservan su cifra planificada — apuntar una tarea a una de ellas solo define donde se cargaran sus horas."
   }
 }

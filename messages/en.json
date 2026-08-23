@@ -2910,7 +2910,8 @@
     "teDeleteConfirm": "Delete this time entry? Only entries not yet posted to the budget can be removed.",
     "teDeleteFailed": "Could not delete this entry",
     "teWeekGrid": "Week grid",
-    "teSingleEntry": "Single entry"
+    "teSingleEntry": "Single entry",
+    "teLabourPlan": "Labour plan"
   },
   "webhooks": {
     "+ New webhook": "+ New webhook",
@@ -3214,5 +3215,31 @@
     "state_POSTED": "Posted to the budget — locked",
     "legend": "White = draft · Blue = submitted · Green = approved · Grey = posted to budget (locked) · Red = rejected",
     "footnote": "Only approved hours post to the budget. Hours land on the budget line of the task they were logged against."
+  },
+  "labourAlloc": {
+    "title": "Labour cost allocation",
+    "intro": "Every task's planned labour, and which budget line it charges to. Sync writes the figures into the budget.",
+    "task": "Task",
+    "hours": "Est. hours",
+    "cost": "Planned labour",
+    "chargeTo": "Charge to",
+    "currentLine": "Currently linked",
+    "none": "not linked",
+    "destSkip": "— skip —",
+    "destTotal": "Labour Total (one consolidated line)",
+    "destOwn": "Its own line",
+    "sync": "Sync to budget",
+    "synced": "Synced — {n} budget line(s) updated, ${amount} of planned labour allocated.",
+    "totalRow": "Allocated total",
+    "ofTotal": "of ${total} available across all tasks",
+    "allAllocated": "every task with a cost is allocated",
+    "unassigned": "{n} not allocated",
+    "noRate": "{n} with a rate missing",
+    "missingRate": "{n} assignee(s) without a cost rate",
+    "empty": "No tasks with an estimate yet. Add estimated hours to tasks to plan labour cost.",
+    "totalLineNote": "Consolidated planned labour. Maintained by Sync in the Budget tab — edit the task estimates or rates, not this figure.",
+    "ownLineNote": "Planned labour for one task. Maintained by Sync in the Budget tab.",
+    "note1": "Planned labour = the task estimate split across its assignees, each at their own cost rate from Settings -> Team.",
+    "note2": "Sync sets each labour line to the sum of the tasks pointing at it, so running it twice changes nothing. Lines you created yourself keep their planned figure - pointing a task at one only sets where its hours will be charged."
   }
 }
