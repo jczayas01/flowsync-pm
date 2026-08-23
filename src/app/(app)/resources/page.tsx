@@ -23,7 +23,7 @@ export default async function ResourcesPage() {
   // (e.g. Project Managers) only see workload for projects they belong to.
   const vis = projectVisibilityWhere(session.user.id, membership.role)
 
-  const [members, projects, tasks, timeEntries, doneTasks, loggedByUser] = await Promise.all([
+    const [members, projects, tasks, doneTasks, timeEntries, loggedByUser] = await Promise.all([
     db.workspaceMember.findMany({
       where:   { workspaceId: membership.workspaceId },
       include: { user: { select:{ id:true, name:true, email:true, avatarUrl:true } } },
