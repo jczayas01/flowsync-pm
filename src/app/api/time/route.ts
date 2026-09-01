@@ -8,6 +8,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, okList, err, parseBody, getSearchParams, audit, ApiContext } from "@/lib/api"
+import { postEntryCost, workspaceRequiresApproval } from "@/lib/labor-posting"
 
 const timeEntrySchema = z.object({
   projectId:   z.string().min(1),
@@ -109,26 +110,43 @@ async function logTimeEntry(ctx: ApiContext) {
   const billRate = data.billRate != null ? data.billRate
     : member?.billRate != null ? Number(member.billRate) : null
 
-  const amount = data.billable && billRate ? data.hours * billRate : 0
+  // Direct mode (default): the cost lands on the budget the moment the entry is
+  // logged, in one transaction — no cron, no manual mapping, so logging hours
+  // actually moves the number. Approval mode leaves it DRAFT/SUBMITTED for a PM
+  // to decide (the cost then posts on approve).
+  const ws = await db.workspace.findUnique({
+    where: { id: ctx.workspaceId }, select: { settings: true },
+  })
+  const requireApproval = workspaceRequiresApproval(ws?.settings)
+  const status = requireApproval ? (data.status || "DRAFT") : "APPROVED"
 
-  const entry = await db.timeEntry.create({
-    data: {
-      userId:       targetUserId,
-      projectId:    data.projectId,
-      taskId:       data.taskId || undefined,
-      date:         new Date(data.date),
-      hours:        data.hours,
-      description:  data.description,
-      billable:   data.billable,
-      hourlyRate:   rate,
-      billRate:     billRate,
-      status:       (data.status || "DRAFT") as any,
-      submittedAt:  data.status === "SUBMITTED" ? new Date() : null,
-    } as any,
-    include: {
-      project: { select: { id:true, code:true, name:true } },
-      task:    { select: { id:true, code:true, title:true } },
-    },
+  const entry = await db.$transaction(async tx => {
+    const created = await tx.timeEntry.create({
+      data: {
+        userId:       targetUserId,
+        projectId:    data.projectId,
+        taskId:       data.taskId || undefined,
+        date:         new Date(data.date),
+        hours:        data.hours,
+        description:  data.description,
+        billable:     data.billable,
+        hourlyRate:   rate,
+        billRate:     billRate,
+        status:       status as any,
+        submittedAt:  status === "SUBMITTED" ? new Date() : null,
+      } as any,
+      include: {
+        project: { select: { id:true, code:true, name:true } },
+        task:    { select: { id:true, code:true, title:true } },
+      },
+    })
+    if (!requireApproval) {
+      await postEntryCost(tx, {
+        id: created.id, projectId: data.projectId, taskId: data.taskId || null,
+        hours: data.hours, hourlyRate: rate, billable: data.billable,
+      })
+    }
+    return created
   })
 
   await audit(ctx.workspaceId, ctx.userId, "time.logged" as any, "time_entry", entry.id,

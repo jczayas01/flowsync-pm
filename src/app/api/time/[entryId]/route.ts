@@ -5,11 +5,13 @@
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, ApiContext } from "@/lib/api"
+import { reverseEntryCost } from "@/lib/labor-posting"
 
 async function remove(ctx: ApiContext, params?: Record<string, string>) {
   const entry = await db.timeEntry.findUnique({
     where: { id: params!.entryId },
-    select: { id: true, userId: true, costPostedAt: true, projectId: true,
+    select: { id: true, userId: true, costPostedAt: true, projectId: true, taskId: true,
+              hours: true, hourlyRate: true,
               project: { select: { workspaceId: true } } },
   })
   if (!entry || entry.project.workspaceId !== ctx.workspaceId) return notFound("Time entry")
@@ -19,11 +21,20 @@ async function remove(ctx: ApiContext, params?: Record<string, string>) {
   if (entry.userId !== ctx.userId && !privileged) {
     return err("You can only delete your own time entries", 403)
   }
-  if (entry.costPostedAt) {
-    return err("This entry has already been posted to the budget and cannot be deleted. Log a correcting entry instead.", 409)
-  }
-  await db.timeEntry.delete({ where: { id: entry.id } })
-  return ok({ deleted: true })
+
+  // If the cost already reached the budget, reverse it with a correcting expense
+  // in the same transaction, then delete — so the budget always stays truthful
+  // and there is no "posted, can't touch it" dead end.
+  await db.$transaction(async tx => {
+    if (entry.costPostedAt) {
+      await reverseEntryCost(tx, {
+        id: entry.id, projectId: entry.projectId, taskId: entry.taskId,
+        hours: entry.hours, hourlyRate: entry.hourlyRate, costPostedAt: entry.costPostedAt,
+      })
+    }
+    await tx.timeEntry.delete({ where: { id: entry.id } })
+  })
+  return ok({ deleted: true, reversed: !!entry.costPostedAt })
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { entryId: string } }) {

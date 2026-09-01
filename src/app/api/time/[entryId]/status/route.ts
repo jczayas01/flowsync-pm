@@ -10,6 +10,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, parseBody, ApiContext } from "@/lib/api"
+import { postEntryCost } from "@/lib/labor-posting"
 
 const APPROVER_ROLES = ["OWNER", "ADMIN", "SUPER_ADMIN", "PMO_DIRECTOR", "PROGRAM_MANAGER", "PM"]
 const schema = z.object({
@@ -25,6 +26,7 @@ async function decide(ctx: ApiContext, params?: Record<string, string>) {
   const entry = await db.timeEntry.findUnique({
     where: { id: params!.entryId },
     select: { id: true, userId: true, status: true, costPostedAt: true,
+              projectId: true, taskId: true, hours: true, hourlyRate: true, billable: true,
               project: { select: { workspaceId: true } } } as any,
   }) as any
   if (!entry || entry.project.workspaceId !== ctx.workspaceId) return notFound("Time entry")
@@ -46,8 +48,11 @@ async function decide(ctx: ApiContext, params?: Record<string, string>) {
         data: { status: "SUBMITTED" as any } as any })
       return ok({ id: u.id, status: "SUBMITTED" })
     }
-    await db.timeEntry.update({ where: { id: entry.id },
-      data: { approvedAt: new Date(), approvedById: ctx.userId } as any })
+    await db.$transaction(async tx => {
+      await tx.timeEntry.update({ where: { id: entry.id },
+        data: { approvedAt: new Date(), approvedById: ctx.userId } as any })
+      await postEntryCost(tx, entry)   // approval mode: post the instant it's approved, no cron
+    })
     return ok({ id: u.id, status: "APPROVED", autoApproved: true })
   }
 
@@ -56,9 +61,13 @@ async function decide(ctx: ApiContext, params?: Record<string, string>) {
   if (action === "approve") {
     if (isOwner && !["OWNER", "ADMIN", "SUPER_ADMIN"].includes(String(ctx.userRole)))
       return err("You cannot approve your own time entries", 403)
-    const u = await db.timeEntry.update({ where: { id: entry.id },
-      data: { status: "APPROVED" as any, approvedAt: new Date(), approvedById: ctx.userId,
-              rejectionNote: null } as any })
+    const u = await db.$transaction(async tx => {
+      const up = await tx.timeEntry.update({ where: { id: entry.id },
+        data: { status: "APPROVED" as any, approvedAt: new Date(), approvedById: ctx.userId,
+                rejectionNote: null } as any })
+      await postEntryCost(tx, entry)   // post on approve, no cron dependency
+      return up
+    })
     return ok({ id: u.id, status: u.status })
   }
   if (action === "reject") {
