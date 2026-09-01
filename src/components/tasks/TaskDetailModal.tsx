@@ -11,7 +11,6 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar, Badge } from "@/components/ui"
 import { CustomFieldsBlock, saveCustomFieldValues, type CFValues } from "@/components/shared/CustomFieldsBlock"
-import { TimeLogPanel } from "@/components/shared/TimeLogPanel"
 
 const STATUS_OPTS   = ["BACKLOG","TODO","IN_PROGRESS","IN_REVIEW","BLOCKED","DONE","CANCELLED"]
 const PRIORITY_OPTS = ["CRITICAL","HIGH","MEDIUM","LOW"]
@@ -629,10 +628,6 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
 
                   <CustomFieldsBlock entity="task" entityId={taskId}
                     values={cfValues} onChange={setCfValues} compact />
-
-                  <TimeLogPanel projectId={projectId} taskId={taskId}
-                    taskTitle={form.title} compact
-                    onLogged={() => router.refresh()} />
 
                   {/* Assignees */}
                   <div style={fieldRow}>

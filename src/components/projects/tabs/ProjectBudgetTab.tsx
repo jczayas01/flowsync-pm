@@ -10,9 +10,7 @@ import { usePermissions } from "@/lib/rbac/usePermissions"
 import { useRouter } from "next/navigation"
 import { DocScanPicker } from "@/components/shared/DocScanPicker"
 import { Badge } from "@/components/ui"
-import { TimeLogPanel } from "@/components/shared/TimeLogPanel"
-import { TimesheetGrid } from "@/components/shared/TimesheetGrid"
-import { LabourAllocationPanel } from "@/components/projects/LabourAllocationPanel"
+import { LaborPanel } from "@/components/projects/LaborPanel"
 
 function fmt(n: number, currency = "USD") {
   if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(2)}M`
@@ -20,8 +18,8 @@ function fmt(n: number, currency = "USD") {
   return new Intl.NumberFormat("en-US",{style:"currency",currency,maximumFractionDigits:0}).format(n)
 }
 
-export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries, workspaceId }: {
-  projectId:string; project:any; budgetItems:any[]; timeEntries:any[]; workspaceId?:string
+export function ProjectBudgetTab({ projectId, project, budgetItems, workspaceId }: {
+  projectId:string; project:any; budgetItems:any[]; workspaceId?:string
 }) {
   const locale = useLocale()
   // Budget automation #1: Auto earned value toggle (Project.autoEv)
@@ -294,16 +292,6 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
   }
   const { can } = usePermissions()
   const router = useRouter()
-
-  const [timeMode, setTimeMode] = useState<"plan"|"grid"|"single">("plan")
-
-  async function deleteEntry(id: string) {
-    if (!confirm(tip("teDeleteConfirm"))) return
-    const res = await fetch(`/api/time/${id}`, { method: "DELETE",
-      headers: workspaceId ? { "x-workspace-id": workspaceId } : {} })
-    if (res.ok) router.refresh()
-    else { const d = await res.json().catch(() => ({})); alert(d?.error || tip("teDeleteFailed")) }
-  }
 
   // ── Manual ordering (drag or arrows) ─────────────────────────────────
   // Local mirror of budgetItems so a move is instant; the full id list is
@@ -1563,91 +1551,10 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, timeEntries,
         )}
       </div>
 
-      {/* Time entries */}
-      {/* Labour actuals start here: hours logged against a task post to that
-          task's budget line, so effort turns into cost where the work lives. */}
-      <div style={{ background:"#fff", border:"1px solid var(--border)", borderRadius:12,
-        padding:"14px 16px", marginBottom:14 }}>
-        <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-          {([["plan", tip("teLabourPlan")], ["grid", tip("teWeekGrid")], ["single", tip("teSingleEntry")]] as const).map(([id, label]) => (
-            <button key={id} onClick={() => setTimeMode(id as any)}
-              style={{ padding:"5px 12px", fontSize:12, fontWeight:600, borderRadius:6,
-                cursor:"pointer", fontFamily:"var(--font)",
-                background: timeMode===id ? "var(--steel)" : "#fff",
-                color: timeMode===id ? "#fff" : "var(--text-2)",
-                border: timeMode===id ? "none" : "1px solid var(--border)" }}>{label}</button>
-          ))}
-        </div>
-        {timeMode === "plan" ? (
-          <LabourAllocationPanel projectId={projectId} workspaceId={workspaceId}
-            canEdit={can("budget:edit")} onChanged={() => router.refresh()} />
-        ) : timeMode === "grid" ? (
-          <TimesheetGrid projectId={projectId} workspaceId={workspaceId}
-            onChanged={() => router.refresh()} />
-        ) : (
-          <TimeLogPanel projectId={projectId} workspaceId={workspaceId}
-            onLogged={() => router.refresh()} />
-        )}
-      </div>
-
-      {timeEntries.length > 0 && (
-        <div style={{ ...card, overflow:"hidden", padding:0 }}>
-          <div style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)",
-            fontSize:13, fontWeight:600, color:"var(--text)" }}>
-            Billable time entries ({timeEntries.length})
-          </div>
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
-            <thead>
-              <tr style={{ background:"var(--surface)" }}>
-                {[tip("teDate"),tip("tePerson"),tip("teHours"),tip("teRate"),tip("teAmount"),"",""].map((h,hi) => (
-                  <th key={hi} style={{ padding:"7px 14px", textAlign:"left", fontSize:10,
-                    fontWeight:600, color:"var(--text-3)", letterSpacing:".05em",
-                    textTransform:"uppercase", borderBottom:"1px solid var(--border)" }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {timeEntries.slice(0,10).map(te => (
-                <tr key={te.id} style={{ borderBottom:"1px solid var(--surface-1,#F1F5F9)" }}>
-                  <td style={{ padding:"8px 14px", fontSize:12, color:"var(--text-3)" }}>
-                    {new Date(te.date).toLocaleDateString(dateLocale(), {month:"short",day:"numeric", timeZone:"UTC" })}
-                  </td>
-                  <td style={{ padding:"8px 14px", fontSize:12, color:"var(--text-2)" }}>
-                    {te.user?.name || "—"}
-                  </td>
-                  <td style={{ padding:"8px 14px", fontSize:12, fontFamily:"monospace" }}>
-                    {Number(te.hours).toFixed(1)}h
-                  </td>
-                  <td style={{ padding:"8px 14px", fontSize:12, fontFamily:"monospace", color:"var(--text-3)" }}>
-                    {te.hourlyRate ? `$${Number(te.hourlyRate).toFixed(0)}/hr` : "—"}
-                  </td>
-                  <td style={{ padding:"8px 14px", fontSize:12, fontFamily:"monospace", fontWeight:500 }}>
-                    {/* TimeEntry has no stored amount — it is hours × rate. */}
-                    {te.hourlyRate && Number(te.hourlyRate) > 0
-                      ? fmt(Number(te.hours) * Number(te.hourlyRate), currency) : "—"}
-                  </td>
-                  <td style={{ padding:"8px 14px" }}>
-                    {te.costPostedAt
-                      ? <Badge variant="green">{tip("tePosted")}</Badge>
-                      : <Badge variant="amber">{tip("tePending")}</Badge>}
-                  </td>
-                  <td style={{ padding:"8px 14px", textAlign:"right" }}>
-                    {/* Posted entries are not deletable — removing one would
-                        silently overstate the remaining budget. */}
-                    {!te.costPostedAt && can("projects:edit") && (
-                      <button onClick={() => deleteEntry(te.id)} title={tip("teDelete")}
-                        style={{ border:"none", background:"none", cursor:"pointer",
-                          color:"var(--red,#DC2626)", fontSize:13, padding:"0 4px" }}>✕</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Labour — accrued from team allocation, no timesheets. */}
+      <LaborPanel projectId={projectId} workspaceId={workspaceId}
+        canEdit={can("budget:edit")} currency={currency}
+        onChanged={() => router.refresh()} />
     </div>
   )
 }
