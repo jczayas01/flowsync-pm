@@ -26,6 +26,8 @@ export function LaborPanel({ projectId, workspaceId, canEdit, currency = "USD", 
   const router = useRouter()
 
   const [rows, setRows]           = useState<Row[] | null>(null)
+  const [lines, setLines]         = useState<{id:string;name:string;category:string;plannedCost:number}[]>([])
+  const [target, setTarget]       = useState<string>("")
   const [totalCost, setTotalCost] = useState(0)
   const [totalHours, setTotalHours] = useState(0)
   const [hoursPerDay, setHoursPerDay] = useState(8)
@@ -47,6 +49,8 @@ export function LaborPanel({ projectId, workspaceId, canEdit, currency = "USD", 
     const d = await r.json().catch(() => null)
     const p = d?.data ?? d
     setRows(p?.rows ?? [])
+    setLines(p?.lines ?? [])
+    setTarget(String(p?.targetItemId ?? ""))
     setTotalCost(Number(p?.totalCost || 0))
     setTotalHours(Number(p?.totalHours || 0))
     setHoursPerDay(Number(p?.hoursPerDay || 8))
@@ -97,6 +101,26 @@ export function LaborPanel({ projectId, workspaceId, canEdit, currency = "USD", 
       </div>
       <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 12 }}>
         {t("labor_formula")}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+        marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid var(--surface-1,#F1F5F9)" }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-2)" }}>
+          {t("labor_target")}
+        </span>
+        <select value={target} disabled={!canEdit || busy}
+          onChange={e => { setTarget(e.target.value); save({ targetItemId: e.target.value }) }}
+          style={{ padding: "4px 8px", fontSize: 12, borderRadius: 4,
+            border: "1px solid var(--border)", fontFamily: "var(--font)", maxWidth: 380 }}>
+          <option value="">{t("labor_target_auto")}</option>
+          {lines.filter(l => l.category === "LABOR").map(l => (
+            <option key={l.id} value={l.id}>
+              {l.name}{l.plannedCost ? ` — ${money(l.plannedCost, currency)}` : ""}
+            </option>
+          ))}
+          <option value="off">{t("labor_target_off")}</option>
+        </select>
+        <span style={{ fontSize: 11, color: "var(--text-3)" }}>{t("labor_target_hint")}</span>
       </div>
 
       {error && (

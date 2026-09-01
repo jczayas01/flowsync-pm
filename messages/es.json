@@ -533,7 +533,13 @@
     "labor_load_failed": "No se pudo cargar el costo de labor.",
     "labor_save_failed": "No se pudo guardar el cambio.",
     "labor_since_default": "Por defecto es la fecha de inicio del proyecto. Cámbiala si esta persona entró después.",
-    "labor_since_override": "Fecha de inicio propia para la acumulación de labor de esta persona."
+    "labor_since_override": "Fecha de inicio propia para la acumulación de labor de esta persona.",
+    "Auto": "Auto",
+    "labor_target": "Cargar labor a",
+    "labor_target_auto": "Una línea llamada “Labor” (creada automáticamente)",
+    "labor_target_hint": "Escoge una línea de labor existente para que el costo acumulado se compare contra su presupuesto planificado en vez de crear una segunda línea.",
+    "labor_target_off": "No cargar al presupuesto (solo medir)",
+    "labor_line_auto_hint": "Esta línea se mantiene desde la asignación del equipo abajo — pon la asignación en 0% para dejarla en cero"
   },
   "clm": {
     "+ Add milestone": "+ Agregar hito",

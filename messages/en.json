@@ -533,7 +533,13 @@
     "labor_load_failed": "Could not load labour cost.",
     "labor_save_failed": "Could not save that change.",
     "labor_since_default": "Defaults to the project start date. Change it if this person joined later.",
-    "labor_since_override": "Custom start date for this person's labour accrual."
+    "labor_since_override": "Custom start date for this person's labour accrual.",
+    "Auto": "Auto",
+    "labor_target": "Post labour to",
+    "labor_target_auto": "A line named “Labor” (created automatically)",
+    "labor_target_hint": "Pick an existing labour line so the accrued cost lands against its planned budget instead of creating a second line.",
+    "labor_target_off": "Don't post to the budget (track only)",
+    "labor_line_auto_hint": "This line is maintained from the team allocation below — set allocation to 0% to zero it"
   },
   "clm": {
     "+ Add milestone": "+ Add milestone",

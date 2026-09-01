@@ -8,7 +8,7 @@ import { NextRequest } from "next/server"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import { withWorkspace, ok, err, notFound, parseBody, audit, ApiContext } from "@/lib/api"
-import { computeProjectLabor, syncProjectLabor, laborHoursPerDay } from "@/lib/labor-accrual"
+import { computeProjectLabor, syncProjectLabor, laborHoursPerDay, laborTarget } from "@/lib/labor-accrual"
 
 const EDIT_ROLES = ["OWNER", "ADMIN", "SUPER_ADMIN", "PMO_DIRECTOR", "PROGRAM_MANAGER", "PM"]
 
@@ -18,6 +18,8 @@ const patchSchema = z.object({
   // null clears the override and falls back to the project start date
   laborSince:   z.string().datetime().nullable().optional(),
   hoursPerDay:  z.number().min(1).max(24).optional(),
+  // budget line id, "off" to track only, or "" to fall back to the auto line
+  targetItemId: z.string().optional(),
 })
 
 async function ownsProject(ctx: ApiContext, projectId: string) {
@@ -34,7 +36,18 @@ async function read(ctx: ApiContext, params?: Record<string, string>) {
   const ws = await db.workspace.findUnique({
     where: { id: ctx.workspaceId }, select: { settings: true },
   })
+  const proj = await db.project.findUnique({
+    where: { id: projectId }, select: { settings: true },
+  })
+  const lines = await db.budgetItem.findMany({
+    where: { projectId }, select: { id: true, name: true, category: true, plannedCost: true },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  })
+
   return ok({
+    targetItemId: laborTarget(proj?.settings) ?? "",
+    lines: lines.map(l => ({ id: l.id, name: l.name, category: l.category,
+                             plannedCost: Number(l.plannedCost || 0) })),
     rows: summary.rows.map(r => ({
       userId: r.userId, name: r.name, allocation: r.allocation,
       costRate: r.costRate, since: r.since, through: r.through,
@@ -54,7 +67,7 @@ async function update(ctx: ApiContext, params?: Record<string, string>) {
 
   const parsed = await parseBody(ctx.req, patchSchema)
   if ("error" in parsed) return parsed.error
-  const { userId, allocation, laborSince, hoursPerDay } = parsed.data
+  const { userId, allocation, laborSince, hoursPerDay, targetItemId } = parsed.data
 
   if (hoursPerDay != null) {
     // settings is a Json blob — merge rather than replace so nothing else is lost.
@@ -65,6 +78,28 @@ async function update(ctx: ApiContext, params?: Record<string, string>) {
     await db.workspace.update({
       where: { id: ctx.workspaceId },
       data:  { settings: { ...base, laborHoursPerDay: hoursPerDay } },
+    })
+  }
+
+  if (targetItemId !== undefined) {
+    // Moving the target leaves the previous line holding a stale actual, so
+    // zero the auto line before repointing.
+    const prev = await db.project.findUnique({
+      where: { id: projectId }, select: { settings: true },
+    })
+    const prevTarget = laborTarget(prev?.settings)
+    const base = (prev?.settings && typeof prev.settings === "object") ? prev.settings as any : {}
+    if (prevTarget && prevTarget !== "off" && prevTarget !== targetItemId) {
+      await db.budgetItem.updateMany({
+        where: { id: prevTarget, projectId }, data: { actualCost: 0 } })
+    }
+    if (targetItemId !== "off") {
+      await db.budgetItem.updateMany({
+        where: { projectId, category: "LABOR", name: "Labor" }, data: { actualCost: 0 } })
+    }
+    await db.project.update({
+      where: { id: projectId },
+      data:  { settings: { ...base, laborBudgetItemId: targetItemId || null } },
     })
   }
 

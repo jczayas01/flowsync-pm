@@ -22,6 +22,22 @@ import { db } from "@/lib/db"
 export const LABOR_LINE_NAME = "Labor"
 const DEFAULT_HOURS_PER_DAY = 8
 
+/**
+ * Which budget line accrued labour charges. Read from project.settings so no
+ * column is needed:
+ *   undefined  → auto-manage a line named "Labor"
+ *   "<id>"     → charge that existing line (e.g. the planned "Internal project
+ *                labour" line, so actual lands against its planned figure
+ *                instead of opening a second, competing line)
+ *   "off"      → measure only, never touch the budget
+ */
+export function laborTarget(settings: unknown): string | null {
+  const v = settings && typeof settings === "object"
+    ? (settings as any).laborBudgetItemId : undefined
+  if (v === "off") return "off"
+  return typeof v === "string" && v ? v : null
+}
+
 /** Hours in a working day for this workspace. Stored in workspace.settings, no column needed. */
 export function laborHoursPerDay(settings: unknown): number {
   const raw = settings && typeof settings === "object"
@@ -139,6 +155,12 @@ export async function computeProjectLabor(
  * Returns the total posted.
  */
 export async function syncProjectLabor(projectId: string, asOf: Date = new Date()): Promise<number> {
+  const proj = await db.project.findUnique({
+    where: { id: projectId }, select: { settings: true },
+  })
+  const target = laborTarget(proj?.settings)
+  if (target === "off") return 0          // measure only — never touch the budget
+
   const summary = await computeProjectLabor(projectId, asOf)
   if (!summary.rows.length && summary.totalCost === 0) {
     // Nothing assigned — leave any existing line alone rather than zeroing a
@@ -146,10 +168,17 @@ export async function syncProjectLabor(projectId: string, asOf: Date = new Date(
     return 0
   }
 
-  const existing = await db.budgetItem.findFirst({
-    where:  { projectId, category: "LABOR", name: LABOR_LINE_NAME },
-    select: { id: true, actualCost: true },
-  })
+  // A chosen line wins; fall back to the auto-managed one. If the chosen line
+  // was deleted, drop back to auto rather than silently posting nothing.
+  const existing = target
+    ? await db.budgetItem.findFirst({
+        where: { id: target, projectId }, select: { id: true, actualCost: true } })
+      ?? await db.budgetItem.findFirst({
+        where: { projectId, category: "LABOR", name: LABOR_LINE_NAME },
+        select: { id: true, actualCost: true } })
+    : await db.budgetItem.findFirst({
+        where:  { projectId, category: "LABOR", name: LABOR_LINE_NAME },
+        select: { id: true, actualCost: true } })
 
   if (!existing) {
     if (summary.totalCost <= 0) return 0

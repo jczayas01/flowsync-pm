@@ -1421,7 +1421,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, workspaceId 
                                   if (f) scanReceipt(item.id, f); e.target.value = "" }} />
                             </label>
                             {item.category === "LABOR" && item.name === "Labor" ? (
-                              <span title={t("This line is maintained from the team allocation below. Set allocation to 0% to zero it.")}
+                              <span title={t("labor_line_auto_hint")}
                                 style={{ fontSize:10, color:"var(--text-3)", border:"1px solid var(--border)",
                                   borderRadius:4, padding:"3px 8px", fontFamily:"var(--font)" }}>
                                 {t("Auto")}
