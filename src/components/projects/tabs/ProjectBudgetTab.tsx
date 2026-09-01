@@ -1420,12 +1420,20 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, workspaceId 
                                 onChange={e => { const f = e.target.files?.[0]
                                   if (f) scanReceipt(item.id, f); e.target.value = "" }} />
                             </label>
-                            <button onClick={()=>deleteItem(item.id)}
-                              style={{ fontSize:11, color:"var(--red)", background:"none",
-                                border:"1px solid #FECACA", borderRadius:4,
-                                cursor:"pointer", fontFamily:"var(--font)", padding:"3px 8px" }}>
-                              ✕
-                            </button>
+                            {item.category === "LABOR" && item.name === "Labor" ? (
+                              <span title={t("This line is maintained from the team allocation below. Set allocation to 0% to zero it.")}
+                                style={{ fontSize:10, color:"var(--text-3)", border:"1px solid var(--border)",
+                                  borderRadius:4, padding:"3px 8px", fontFamily:"var(--font)" }}>
+                                {t("Auto")}
+                              </span>
+                            ) : (
+                              <button onClick={()=>deleteItem(item.id)}
+                                style={{ fontSize:11, color:"var(--red)", background:"none",
+                                  border:"1px solid #FECACA", borderRadius:4,
+                                  cursor:"pointer", fontFamily:"var(--font)", padding:"3px 8px" }}>
+                                ✕
+                              </button>
+                            )}
                             </>) : <span style={{ fontSize:11, color:"var(--text-4)" }}>—</span>}
                           </div>
                         </td>

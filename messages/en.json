@@ -531,7 +531,9 @@
     "labor_rate_hint": "Someone has no cost rate set — they accrue no cost. Set it in Settings → Team.",
     "labor_line_note": "This total is mirrored to the “Labor” budget line, so EVM actual cost includes it.",
     "labor_load_failed": "Could not load labour cost.",
-    "labor_save_failed": "Could not save that change."
+    "labor_save_failed": "Could not save that change.",
+    "labor_since_default": "Defaults to the project start date. Change it if this person joined later.",
+    "labor_since_override": "Custom start date for this person's labour accrual."
   },
   "clm": {
     "+ Add milestone": "+ Add milestone",

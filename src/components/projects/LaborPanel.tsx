@@ -12,7 +12,7 @@ import { dateLocale } from "@/lib/date-locale"
 type Row = {
   userId: string; name: string; allocation: number; costRate: number | null
   since: string; through: string; workingDays: number; hours: number
-  cost: number; missingRate: boolean
+  cost: number; missingRate: boolean; sinceIsOverride: boolean
 }
 
 const money = (n: number, currency = "USD") =>
@@ -143,8 +143,17 @@ export function LaborPanel({ projectId, workspaceId, canEdit, currency = "USD", 
                       border: "1px solid var(--border)", fontFamily: "monospace" }} /> %
                 </td>
                 <td style={{ ...td, color: "var(--text-3)" }}>
-                  {new Date(r.since).toLocaleDateString(dateLocale(),
-                    { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}
+                  <input type="date" defaultValue={String(r.since).slice(0, 10)}
+                    disabled={!canEdit || busy}
+                    title={r.sinceIsOverride ? t("labor_since_override") : t("labor_since_default")}
+                    onBlur={e => {
+                      const v = e.target.value
+                      if (v && v !== String(r.since).slice(0, 10))
+                        save({ userId: r.userId, laborSince: new Date(v + "T00:00:00.000Z").toISOString() })
+                    }}
+                    style={{ padding: "3px 6px", fontSize: 11, borderRadius: 4,
+                      border: `1px solid ${r.sinceIsOverride ? "var(--steel)" : "var(--border)"}`,
+                      fontFamily: "monospace", color: "var(--text-2)" }} />
                 </td>
                 <td style={mono}>{r.workingDays}</td>
                 <td style={mono}>{r.hours.toFixed(1)}h</td>

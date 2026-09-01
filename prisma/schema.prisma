@@ -369,6 +369,11 @@ model ProjectMember {
   role          UserRole       @default(MEMBER)
   allocation    Int            @default(100)
   joinedAt      DateTime       @default(now())
+  /// When this person starts accruing labour cost. Defaults to the project's
+  /// start date; set explicitly for someone who joined mid-flight. joinedAt is
+  /// a row-creation timestamp and is useless for this — importing a project
+  /// would make everyone start accruing today.
+  laborSince    DateTime?
   projectRole   ProjectRole?
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)

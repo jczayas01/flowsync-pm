@@ -53,6 +53,8 @@ export type LaborRow = {
   workingDays: number
   hours: number
   cost: number
+  /** since came from an explicit laborSince rather than the project start date */
+  sinceIsOverride: boolean
   /** No cost rate set on the workspace member — this person accrues nothing yet. */
   missingRate: boolean
 }
@@ -84,7 +86,7 @@ export async function computeProjectLabor(
 
   const members = await db.projectMember.findMany({
     where:  { projectId },
-    select: { userId: true, allocation: true, joinedAt: true,
+    select: { userId: true, allocation: true, joinedAt: true, laborSince: true,
               user: { select: { id: true, name: true } } },
   })
   if (!members.length) return { rows: [], totalHours: 0, totalCost: 0, hoursPerDay, asOf }
@@ -102,8 +104,11 @@ export async function computeProjectLabor(
   const through = hardEnd && hardEnd < asOf ? hardEnd : asOf
 
   const rows: LaborRow[] = members.map(m => {
-    // Someone added to the project after kickoff starts accruing when they joined.
-    const since = project.startDate && project.startDate > m.joinedAt ? project.startDate : m.joinedAt
+    // Accrual starts at the project's start date, not at joinedAt: joinedAt is
+    // just when the membership row was written, so a project set up today with
+    // a start date in March would otherwise accrue a single day. An explicit
+    // laborSince overrides it for someone who genuinely joined mid-flight.
+    const since = m.laborSince ?? project.startDate ?? m.joinedAt
     const allocation = Math.max(0, Math.min(100, Number(m.allocation ?? 100)))
     const costRate = rateOf.get(m.userId) ?? null
     const workingDays = workingDaysBetween(since, through)
@@ -114,6 +119,7 @@ export async function computeProjectLabor(
       name: m.user?.name || "—",
       allocation, costRate, since, through, workingDays, hours, cost,
       missingRate: costRate == null || costRate <= 0,
+      sinceIsOverride: m.laborSince != null,
     }
   })
 

@@ -531,7 +531,9 @@
     "labor_rate_hint": "Hay alguien sin tarifa de costo — no acumula costo. Configúrala en Configuración → Equipo.",
     "labor_line_note": "Este total se refleja en la línea de presupuesto “Labor”, para que el costo real del EVM lo incluya.",
     "labor_load_failed": "No se pudo cargar el costo de labor.",
-    "labor_save_failed": "No se pudo guardar el cambio."
+    "labor_save_failed": "No se pudo guardar el cambio.",
+    "labor_since_default": "Por defecto es la fecha de inicio del proyecto. Cámbiala si esta persona entró después.",
+    "labor_since_override": "Fecha de inicio propia para la acumulación de labor de esta persona."
   },
   "clm": {
     "+ Add milestone": "+ Agregar hito",

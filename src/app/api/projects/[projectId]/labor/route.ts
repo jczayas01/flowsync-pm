@@ -15,6 +15,8 @@ const EDIT_ROLES = ["OWNER", "ADMIN", "SUPER_ADMIN", "PMO_DIRECTOR", "PROGRAM_MA
 const patchSchema = z.object({
   userId:       z.string().min(1).optional(),
   allocation:   z.number().int().min(0).max(100).optional(),
+  // null clears the override and falls back to the project start date
+  laborSince:   z.string().datetime().nullable().optional(),
   hoursPerDay:  z.number().min(1).max(24).optional(),
 })
 
@@ -37,7 +39,7 @@ async function read(ctx: ApiContext, params?: Record<string, string>) {
       userId: r.userId, name: r.name, allocation: r.allocation,
       costRate: r.costRate, since: r.since, through: r.through,
       workingDays: r.workingDays, hours: r.hours, cost: r.cost,
-      missingRate: r.missingRate,
+      missingRate: r.missingRate, sinceIsOverride: r.sinceIsOverride,
     })),
     totalHours:  summary.totalHours,
     totalCost:   summary.totalCost,
@@ -52,7 +54,7 @@ async function update(ctx: ApiContext, params?: Record<string, string>) {
 
   const parsed = await parseBody(ctx.req, patchSchema)
   if ("error" in parsed) return parsed.error
-  const { userId, allocation, hoursPerDay } = parsed.data
+  const { userId, allocation, laborSince, hoursPerDay } = parsed.data
 
   if (hoursPerDay != null) {
     // settings is a Json blob — merge rather than replace so nothing else is lost.
@@ -66,14 +68,22 @@ async function update(ctx: ApiContext, params?: Record<string, string>) {
     })
   }
 
-  if (userId != null && allocation != null) {
+  if (userId != null && (allocation != null || laborSince !== undefined)) {
     const member = await db.projectMember.findFirst({
       where: { projectId, userId }, select: { id: true },
     })
     if (!member) return err("That person is not assigned to this project", 400)
-    await db.projectMember.update({ where: { id: member.id }, data: { allocation } })
+    await db.projectMember.update({
+      where: { id: member.id },
+      data: {
+        ...(allocation != null && { allocation }),
+        // undefined = untouched; null = clear the override
+        ...(laborSince !== undefined && {
+          laborSince: laborSince ? new Date(laborSince) : null }),
+      },
+    })
     await audit(ctx.workspaceId, ctx.userId, "project.member_allocation" as any,
-      "project_member", member.id, undefined, { projectId, userId, allocation })
+      "project_member", member.id, undefined, { projectId, userId, allocation, laborSince })
   }
 
   // Re-mirror onto the budget line so the number the user just changed is the
