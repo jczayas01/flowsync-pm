@@ -4,6 +4,7 @@
 // critical path, dependencies, phase filter, searchable assignee
 
 import { useTranslations } from "next-intl"
+import { TaskIntegrityPanel } from "@/components/projects/TaskIntegrityPanel"
 import { dateLocale } from "@/lib/date-locale"
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { DatePickerPopover } from "@/components/shared/DatePicker"
@@ -783,6 +784,10 @@ export function ProjectTasksTab({ projectId, tasks, phases, members, workspaceId
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%" }}
       onClick={() => { setCtxMenu(null); setExcelOpen(false) }}>
+
+      {/* Data integrity: names the rows distorting earned value. Renders
+          nothing when the schedule and progress fields are consistent. */}
+      <TaskIntegrityPanel tasks={localTasks} onOpenTask={id => setOpenTaskId(id)} />
 
       {/* ── Toolbar ── */}
       <div style={{ background:"#fff", borderBottom:"1px solid var(--border)",

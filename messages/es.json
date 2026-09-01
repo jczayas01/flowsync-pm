@@ -2380,7 +2380,17 @@
     "dueTomorrowChip": "Vence mañana",
     "dueSoonChip": "{n, plural, =1 {Falta 1 día} other {Faltan # días}}",
     "phaseOverdue": "{n, plural, =1 {1 vencida} other {# vencidas}}",
-    "phaseDueSoon": "{n, plural, =1 {1 por vencer} other {# por vencer}}"
+    "phaseDueSoon": "{n, plural, =1 {1 por vencer} other {# por vencer}}",
+    "integrity_title": "Integridad de datos",
+    "integrity_subtitle": "Campos que no cuadran",
+    "integrity_evm_warning": "Algunos distorsionan el valor ganado — SPI y CPI no son confiables hasta corregirlos",
+    "integrity_evm_tag": "EVM",
+    "integrity_finish_before_start": "El fin es antes del inicio",
+    "integrity_progress_before_start": "Avance en trabajo que no ha empezado",
+    "integrity_complete_not_done": "100% pero el estatus no es Completado",
+    "integrity_done_not_complete": "Completado pero bajo 100%",
+    "integrity_progress_no_dates": "Avance sin fechas",
+    "integrity_no_estimate": "Sin horas estimadas"
   },
   "teamSettings": {
     "Copied": "Copiado",

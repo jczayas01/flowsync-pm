@@ -2380,7 +2380,17 @@
     "dueTomorrowChip": "Due tomorrow",
     "dueSoonChip": "{n, plural, =1 {1 day left} other {# days left}}",
     "phaseOverdue": "{n, plural, =1 {1 overdue} other {# overdue}}",
-    "phaseDueSoon": "{n, plural, =1 {1 due soon} other {# due soon}}"
+    "phaseDueSoon": "{n, plural, =1 {1 due soon} other {# due soon}}",
+    "integrity_title": "Data integrity",
+    "integrity_subtitle": "Fields that don't add up",
+    "integrity_evm_warning": "Some of these distort earned value — SPI and CPI can't be trusted until they're fixed",
+    "integrity_evm_tag": "EVM",
+    "integrity_finish_before_start": "Finish is before start",
+    "integrity_progress_before_start": "Progress on work that hasn't started",
+    "integrity_complete_not_done": "100% but status isn't Done",
+    "integrity_done_not_complete": "Done but under 100%",
+    "integrity_progress_no_dates": "Progress with no dates",
+    "integrity_no_estimate": "No estimated hours"
   },
   "teamSettings": {
     "Copied": "Copied",
