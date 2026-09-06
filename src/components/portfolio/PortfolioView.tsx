@@ -39,6 +39,30 @@ function rollup(projects:any[]) {
   }
 }
 
+/**
+ * CPI / SPI / EAC for a rolled-up set. Renders nothing without a cost baseline,
+ * and suppresses an index the rollup could not compute — a suppressed number
+ * says "too early to tell", a 0.00 would say "catastrophic".
+ */
+function EvmStrip({ r, t }: { r: any; t: (k: string) => string }) {
+  if (!r.hasBaseline) {
+    return <span style={{color:"var(--text-4)"}} title={t("noBaselineHint")}>{t("noBaseline")}</span>
+  }
+  const tone = (v: number) => v < 0.95 ? "var(--red)" : v < 1 ? "var(--amber)" : "var(--text-3)"
+  return (
+    <>
+      {r.cpi != null && <span style={{color:tone(r.cpi)}}>CPI {r.cpi.toFixed(2)}</span>}
+      {r.spi != null && <span style={{color:tone(r.spi)}}>SPI {r.spi.toFixed(2)}</span>}
+      <span title={t("eacHint")}>
+        EAC {fmt(r.eac)}
+        <span style={{color: r.vac < 0 ? "var(--red)" : "var(--green)", marginLeft:4}}>
+          ({r.vac >= 0 ? "+" : ""}{fmt(r.vac)})
+        </span>
+      </span>
+    </>
+  )
+}
+
 export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:{
   portfolios:any[]; unassigned:any[]; workspaceId:string; userRole:string
 }) {
@@ -222,7 +246,7 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
             {label:pf("On track"),  value:global.counts.GREEN, icon:"🟢", color:"var(--green)"},
             {label:pf("At risk"),   value:global.counts.AMBER, icon:"🟡", color:"var(--amber)"},
             {label:pf("Off track"), value:global.counts.RED,   icon:"🔴", color:"var(--red)"},
-            {label:pf("Avg complete"), value:`${global.avgPct}%`, icon:"📊"},
+            {label:pf("completeWeighted"), value:`${global.avgPct}%`, icon:"📊"},
           ].map(k=>(
             <div key={k.label} style={{...card,padding:"12px 14px"}}>
               <div style={{fontSize:18,marginBottom:4}}>{k.icon}</div>
@@ -313,7 +337,8 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                       </div>
                       <div style={{display:"flex",gap:16,fontSize:12,color:"var(--text-3)"}}>
                         {pr.budget>0 && <span>{fmt(pr.spent)} / {fmt(pr.budget)} ({pr.pct}%)</span>}
-                        <span>{pr.avgPct}% avg complete</span>
+                        <span title={pf("weightedHint")}>{pr.avgPct}% {pf("completeWeighted")}</span>
+                        <EvmStrip r={pr} t={pf as any} />
                         <span style={{display:"flex",gap:8}}>
                           {["GREEN","AMBER","RED"].map(h=>pr.counts[h]>0&&(
                             <span key={h} style={{color:healthColor(h),fontWeight:600}}>
@@ -366,7 +391,13 @@ export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:
                                 <div style={{display:"flex",gap:12,fontSize:11,color:"var(--text-3)"}}>
                                   {prog.manager&&<span>{prog.manager.name}</span>}
                                   {progR.budget>0&&<span>{fmt(progR.spent)}/{fmt(progR.budget)}</span>}
-                                  <span>{progR.avgPct}% done</span>
+                                  <span title={pf("weightedHint")}>{progR.avgPct}% {pf("completeWeighted")}</span>
+                                  {progR.hasBaseline && progR.cpi != null && (
+                                    <span style={{color: progR.cpi < 0.95 ? "var(--red)"
+                                      : progR.cpi < 1 ? "var(--amber)" : "var(--text-3)"}}>
+                                      CPI {progR.cpi.toFixed(2)}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <Badge variant={healthBadgeVariant(progR.health)}>{healthLabel(progR.health)}</Badge>

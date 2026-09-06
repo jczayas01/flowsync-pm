@@ -1688,7 +1688,12 @@
     "spentOf": "{a} of {b} ({p}%)",
     "stillHasPrograms": "\"{n}\" still contains {c} program(s).\n\nDelete or move its programs first — nothing is removed implicitly.",
     "unassignedProjects": "Unassigned projects ({n})",
-    "updateFailed": "Update failed ({s})"
+    "updateFailed": "Update failed ({s})",
+    "completeWeighted": "complete (budget-weighted)",
+    "weightedHint": "Weighted by each project's budget at completion, not a plain average",
+    "eacHint": "Estimate at completion, with variance at completion",
+    "noBaseline": "no cost baseline",
+    "noBaselineHint": "No project here carries a budget, so CPI, SPI and EAC cannot be computed yet"
   },
   "present": {
     "Building deck…": "Building deck…",

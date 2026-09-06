@@ -1688,7 +1688,12 @@
     "spentOf": "{a} de {b} ({p}%)",
     "stillHasPrograms": "\"{n}\" todavía contiene {c} programa(s).\n\nElimina o mueve sus programas primero: nada se borra de forma implícita.",
     "unassignedProjects": "Proyectos sin asignar ({n})",
-    "updateFailed": "Error al actualizar ({s})"
+    "updateFailed": "Error al actualizar ({s})",
+    "completeWeighted": "completado (ponderado por presupuesto)",
+    "weightedHint": "Ponderado por el presupuesto a la conclusión de cada proyecto, no un promedio simple",
+    "eacHint": "Estimado a la conclusión, con la variación a la conclusión",
+    "noBaseline": "sin línea base de costo",
+    "noBaselineHint": "Ningún proyecto aquí tiene presupuesto, así que CPI, SPI y EAC aún no se pueden calcular"
   },
   "present": {
     "Building deck…": "Generando presentación…",
