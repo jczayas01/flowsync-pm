@@ -8,6 +8,8 @@ import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
+import { rollupEvm, rollupHealth } from "@/lib/program-rollup"
+
 
 const HEALTH: Record<string,{color:string;label:string;dot:string}> = {
   GREEN:  { color:"#059669", label:"On track",  dot:"🟢" },
@@ -269,13 +271,13 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             {programs.map(prog => {
               const isCollapsed = collapsed.has(prog.id)
-              const budget = prog.projects.reduce((s:number,p:any)=>s+p.budgetTotal,0)
-              const spent  = prog.projects.reduce((s:number,p:any)=>s+p.budgetSpent,0)
-              const avgPct = prog.projects.length
-                ? Math.round(prog.projects.reduce((s:number,p:any)=>s+(p.percentComplete||0),0)/prog.projects.length)
-                : 0
-              const health = prog.projects.some((p:any)=>p.health==="RED") ? "RED"
-                : prog.projects.some((p:any)=>p.health==="AMBER") ? "AMBER" : "GREEN"
+              // Budget-weighted completion and rolled-up EVM. The old unweighted
+              // mean let a $10K project move the program as much as a $2M one.
+              const evm    = rollupEvm(prog.projects as any)
+              const budget = evm.bac
+              const spent  = evm.ac
+              const avgPct = evm.percentComplete
+              const health = rollupHealth(prog.projects as any)
               const h = HEALTH[health] || HEALTH.GREEN
 
               return (
@@ -331,7 +333,27 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                       <div style={{ display:"flex", gap:16, fontSize:11, color:"var(--text-3)" }}>
                         <span>📁 {prog.projects.length} project{prog.projects.length!==1?"s":""}</span>
                         {budget>0 && <span>💰 {pg("budgetOf",{v:fmtCurrency(budget)})}</span>}
-                        <span>📊 {avgPct}% avg complete</span>
+                        <span title={pg("weightedHint")}>📊 {avgPct}% {pg("complete")}</span>
+                        {evm.cpi != null && (
+                          <span style={{ color: evm.cpi < 0.95 ? "#DC2626"
+                            : evm.cpi < 1 ? "#D97706" : "var(--text-3)" }}>
+                            CPI {evm.cpi.toFixed(2)}
+                          </span>
+                        )}
+                        {evm.spi != null && (
+                          <span style={{ color: evm.spi < 0.95 ? "#DC2626"
+                            : evm.spi < 1 ? "#D97706" : "var(--text-3)" }}>
+                            SPI {evm.spi.toFixed(2)}
+                          </span>
+                        )}
+                        {evm.bac > 0 && (
+                          <span title={pg("eacHint")}>
+                            EAC {fmtCurrency(evm.eac)}
+                            <span style={{ color: evm.vac < 0 ? "#DC2626" : "#059669", marginLeft:4 }}>
+                              ({evm.vac >= 0 ? "+" : ""}{fmtCurrency(evm.vac)})
+                            </span>
+                          </span>
+                        )}
                         {prog.manager && (
                           <span style={{ display:"flex", alignItems:"center", gap:4 }}>
                             <Avatar name={prog.manager.name} size={14} />

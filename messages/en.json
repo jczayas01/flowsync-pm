@@ -1737,7 +1737,10 @@
     "projectCount": "{n, plural, one {# project} other {# projects}}",
     "unassignedCount": "{n, plural, one {# project not assigned to any program} other {# projects not assigned to any program}}",
     "updateFailed": "Update failed ({s})",
-    "programHint_hierarchy": "Programs sit between Portfolio and individual Projects in the governance hierarchy (PM Standard — Portfolio Hierarchy)."
+    "programHint_hierarchy": "Programs sit between Portfolio and individual Projects in the governance hierarchy (PM Standard — Portfolio Hierarchy).",
+    "complete": "complete (budget-weighted)",
+    "weightedHint": "Weighted by each project's budget at completion, not a plain average",
+    "eacHint": "Estimate at completion for the whole program, with variance at completion"
   },
   "projectBrief": {
     "Click to change": "Click to change",

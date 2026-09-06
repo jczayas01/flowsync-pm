@@ -1737,7 +1737,10 @@
     "projectCount": "{n, plural, one {# proyecto} other {# proyectos}}",
     "unassignedCount": "{n, plural, one {# proyecto sin programa asignado} other {# proyectos sin programa asignado}}",
     "updateFailed": "Error al actualizar ({s})",
-    "programHint_hierarchy": "Los programas se ubican entre el Portafolio y los Proyectos individuales en la jerarquía de gobernanza (PM Standard — Portfolio Hierarchy)."
+    "programHint_hierarchy": "Los programas se ubican entre el Portafolio y los Proyectos individuales en la jerarquía de gobernanza (PM Standard — Portfolio Hierarchy).",
+    "complete": "completado (ponderado por presupuesto)",
+    "weightedHint": "Ponderado por el presupuesto a la conclusión de cada proyecto, no un promedio simple",
+    "eacHint": "Estimado a la conclusión de todo el programa, con la variación a la conclusión"
   },
   "projectBrief": {
     "Click to change": "Clic para cambiar",

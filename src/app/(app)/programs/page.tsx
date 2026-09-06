@@ -33,7 +33,14 @@ export default async function ProgramsPage() {
         select: {
           id:true, code:true, name:true, health:true, status:true,
           percentComplete:true, budgetTotal:true, budgetSpent:true,
-          endDate:true, methodology:true, priority:true,
+          startDate:true, endDate:true, methodology:true, priority:true,
+          // Lines carry earned value; tasks phase the planned value. Both are
+          // needed to roll EVM up with the same math the project page uses —
+          // an elapsed-time shortcut here would disagree with its own children.
+          budget: { select: { id:true, plannedCost:true, earnedValue:true, earnRule:true } },
+          tasks:  { select: { id:true, budgetItemId:true, startDate:true, dueDate:true,
+                              estimatedHours:true, status:true, completedAt:true },
+                    where: { parentId: null } },
         },
       },
     },
@@ -62,6 +69,15 @@ export default async function ProgramsPage() {
           ...proj,
           budgetTotal: proj.budgetTotal ? Number(proj.budgetTotal) : 0,
           budgetSpent: proj.budgetSpent ? Number(proj.budgetSpent) : 0,
+          budgetItems: (proj as any).budget?.map((b: any) => ({
+            id: b.id,
+            plannedCost:  b.plannedCost  ? Number(b.plannedCost)  : 0,
+            earnedValue:  b.earnedValue  ? Number(b.earnedValue)  : 0,
+            earnRule:     b.earnRule ?? null,
+          })) ?? [],
+          tasks: (proj as any).tasks?.map((t: any) => ({
+            ...t, estimatedHours: t.estimatedHours ? Number(t.estimatedHours) : 0,
+          })) ?? [],
         })),
       })) as any}
       portfolios={portfolios}
