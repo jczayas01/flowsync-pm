@@ -7,6 +7,7 @@ import { NextRequest } from "next/server"
 import { requirePermission } from "@/lib/rbac/guards"
 import { z } from "zod"
 import { db } from "@/lib/db"
+import { wouldCycle } from "@/lib/cross-project-deps"
 import {
   withWorkspace, ok, err, notFound, forbidden,
   parseBody, audit, verifyProjectAccess, ApiContext,
@@ -37,10 +38,32 @@ async function addDependency(ctx: ApiContext, params?: Record<string,string>) {
     return err("A task cannot depend on itself")
   }
 
-  // Verify preceding task is in the same project
-  const precedingTask = await db.task.findUnique({ where: { id: precedingTaskId } })
-  if (!precedingTask || precedingTask.projectId !== task.projectId) {
-    return err("Preceding task not found in this project", 404)
+  // Cross-project links are allowed — that is what makes a program a program.
+  // The boundary that still matters is the workspace, plus the caller's own
+  // access to the other project: a link must never become a way to learn that
+  // a task exists in a project you cannot see.
+  const precedingTask = await db.task.findUnique({
+    where:  { id: precedingTaskId },
+    select: { id: true, projectId: true, project: { select: { workspaceId: true } } },
+  })
+  if (!precedingTask || precedingTask.project.workspaceId !== ctx.workspaceId) {
+    return err("Preceding task not found", 404)
+  }
+  const crossProject = precedingTask.projectId !== task.projectId
+  if (crossProject) {
+    const predAccess = await verifyProjectAccess(precedingTask.projectId, ctx.userId, ctx.workspaceId)
+    if (!predAccess.ok) return forbidden()
+  }
+
+  // Cycle check. Inside one project a loop is visible in the Gantt; across
+  // projects nobody sees it, and the critical path quietly returns 0 for every
+  // task caught in it. Check the whole workspace graph before writing.
+  const existing = await db.taskDependency.findMany({
+    where:  { dependentTask: { project: { workspaceId: ctx.workspaceId } } },
+    select: { id: true, dependentTaskId: true, precedingTaskId: true },
+  })
+  if (wouldCycle(existing, taskId, precedingTaskId)) {
+    return err("That link would create a circular dependency", 409)
   }
 
   const dependency = await db.taskDependency.upsert({
@@ -60,7 +83,7 @@ async function addDependency(ctx: ApiContext, params?: Record<string,string>) {
   })
 
   await audit(ctx.workspaceId, ctx.userId, "task.dependency_added", "task", taskId,
-    undefined, { precedingTaskId, dependencyType })
+    undefined, { precedingTaskId, dependencyType, crossProject })
 
   return ok(dependency, 201)
 }

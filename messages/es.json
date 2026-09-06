@@ -1740,7 +1740,13 @@
     "programHint_hierarchy": "Los programas se ubican entre el Portafolio y los Proyectos individuales en la jerarquía de gobernanza (PM Standard — Portfolio Hierarchy).",
     "complete": "completado (ponderado por presupuesto)",
     "weightedHint": "Ponderado por el presupuesto a la conclusión de cada proyecto, no un promedio simple",
-    "eacHint": "Estimado a la conclusión de todo el programa, con la variación a la conclusión"
+    "eacHint": "Estimado a la conclusión de todo el programa, con la variación a la conclusión",
+    "crossLinks": "dependencias entre proyectos",
+    "overAllocated": "personas sobreasignadas",
+    "slipDays": "{n}d de atraso",
+    "predecessorDone": "predecesora terminada",
+    "acrossProjects": "{n} proyectos",
+    "daysOver": "{n} días sobre capacidad"
   },
   "projectBrief": {
     "Click to change": "Clic para cambiar",

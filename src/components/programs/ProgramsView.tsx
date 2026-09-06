@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui"
 import { rollupEvm, rollupHealth } from "@/lib/program-rollup"
+import { ProgramInsightsPanel } from "@/components/programs/ProgramInsightsPanel"
 
 
 const HEALTH: Record<string,{color:string;label:string;dot:string}> = {
@@ -269,6 +270,9 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
           </div>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            {/* Cross-project links and capacity contention — the two signals
+                that only exist above a single project. */}
+            <ProgramInsightsPanel workspaceId={workspaceId} />
             {programs.map(prog => {
               const isCollapsed = collapsed.has(prog.id)
               // Budget-weighted completion and rolled-up EVM. The old unweighted

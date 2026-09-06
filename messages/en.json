@@ -1740,7 +1740,13 @@
     "programHint_hierarchy": "Programs sit between Portfolio and individual Projects in the governance hierarchy (PM Standard — Portfolio Hierarchy).",
     "complete": "complete (budget-weighted)",
     "weightedHint": "Weighted by each project's budget at completion, not a plain average",
-    "eacHint": "Estimate at completion for the whole program, with variance at completion"
+    "eacHint": "Estimate at completion for the whole program, with variance at completion",
+    "crossLinks": "cross-project dependencies",
+    "overAllocated": "people over capacity",
+    "slipDays": "{n}d late",
+    "predecessorDone": "predecessor finished",
+    "acrossProjects": "{n} projects",
+    "daysOver": "{n} days over"
   },
   "projectBrief": {
     "Click to change": "Click to change",
