@@ -49,7 +49,11 @@ async function getTask(ctx: ApiContext, params?: Record<string,string>) {
       owner:        { select: { id:true, name:true, avatarUrl:true } },
       assignees:    { include: { projectMember: { include: { user: { select: { id:true, name:true, avatarUrl:true } } } } } },
       subtasks:     { orderBy: { createdAt: "asc" } },
-      dependencies: { include: { precedingTask: { select: { id:true, code:true, title:true, status:true } } } },
+      // projectId + project.code let the modal mark a predecessor that lives in
+      // another project; without them a cross-project link is indistinguishable
+      // from a local one.
+      dependencies: { include: { precedingTask: { select: { id:true, code:true, title:true, status:true,
+                       projectId:true, project: { select: { code:true, name:true } } } } } },
       comments:     { orderBy: { createdAt: "desc" }, take: 20, include: { author: { select: { id:true, name:true, avatarUrl:true } } } },
       timeEntries:  { orderBy: { date: "desc" }, take: 10 },
       phase:        true,

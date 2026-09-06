@@ -45,6 +45,8 @@ export type EvmTotals = {
   percentComplete: number
   /** Projects that contributed a BAC, i.e. the weighting basis. */
   weightedFrom: number
+  /** False when no project carries a budget — indices are not yet meaningful. */
+  hasBaseline: boolean
   projects: number
 }
 
@@ -123,8 +125,14 @@ export function rollupEvm(
       ? Math.round(projects.reduce((s, p) => s + num(p.percentComplete), 0) / projects.length)
       : 0
 
-  const cpi = ac > 0 ? ev / ac : null
-  const spi = pv > 0 ? ev / pv : null
+  // CPI is only meaningful once value has been earned. With EV = 0 and AC > 0 —
+  // a project that has started spending but not yet completed anything — the
+  // ratio is a true 0.00 that reads as catastrophic performance rather than
+  // "too early to tell". Suppress it, exactly as SPI is suppressed with no PV.
+  const cpi = ac > 0 && ev > 0 ? ev / ac : null
+  const spi = pv > 0 && ev > 0 ? ev / pv : null
+  // Nothing planned anywhere means no baseline to measure against.
+  const hasBaseline = bac > 0
   const eac = opts.eacMethod === "PLANNED"
     ? ac + Math.max(0, bac - ev)
     : (cpi && cpi > 0 ? bac / cpi : bac)
@@ -139,6 +147,7 @@ export function rollupEvm(
     vac: round(bac - eac),
     percentComplete,
     weightedFrom,
+    hasBaseline,
     projects: projects.length,
   }
 }

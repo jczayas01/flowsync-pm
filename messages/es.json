@@ -1746,7 +1746,9 @@
     "slipDays": "{n}d de atraso",
     "predecessorDone": "predecesora terminada",
     "acrossProjects": "{n} proyectos",
-    "daysOver": "{n} días sobre capacidad"
+    "daysOver": "{n} días sobre capacidad",
+    "noBaseline": "sin línea base de costo",
+    "noBaselineHint": "Ningún proyecto de este programa tiene presupuesto, así que CPI, SPI y EAC aún no se pueden calcular"
   },
   "projectBrief": {
     "Click to change": "Clic para cambiar",
@@ -2280,7 +2282,14 @@
     "phDescription": "Añade contexto, criterios de aceptación o notas…",
     "phHours": "Ej.: 8",
     "saveFailed": "No se pudo guardar — revisa los campos obligatorios",
-    "searchMemberPh": "Buscar por nombre o rol…"
+    "searchMemberPh": "Buscar por nombre o rol…",
+    "depProject": "Proyecto",
+    "depThisProject": "Este proyecto",
+    "depLoading": "Cargando tareas…",
+    "depLoadFailed": "No se pudieron cargar las tareas de ese proyecto.",
+    "depAddFailed": "No se pudo agregar esa dependencia.",
+    "depCross": "otro proyecto",
+    "depCrossTip": "Esta predecesora está en otro proyecto"
   },
   "tasksTab": {
     "% Done": "% Avance",

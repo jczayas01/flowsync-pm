@@ -1746,7 +1746,9 @@
     "slipDays": "{n}d late",
     "predecessorDone": "predecessor finished",
     "acrossProjects": "{n} projects",
-    "daysOver": "{n} days over"
+    "daysOver": "{n} days over",
+    "noBaseline": "no cost baseline",
+    "noBaselineHint": "No project in this program carries a budget, so CPI, SPI and EAC cannot be computed yet"
   },
   "projectBrief": {
     "Click to change": "Click to change",
@@ -2280,7 +2282,14 @@
     "phDescription": "Add context, acceptance criteria, or notes…",
     "phHours": "e.g. 8",
     "saveFailed": "Save failed — check required fields",
-    "searchMemberPh": "Search by name or role…"
+    "searchMemberPh": "Search by name or role…",
+    "depProject": "Project",
+    "depThisProject": "This project",
+    "depLoading": "Loading tasks…",
+    "depLoadFailed": "Could not load that project's tasks.",
+    "depAddFailed": "Could not add that dependency.",
+    "depCross": "other project",
+    "depCrossTip": "This predecessor lives in another project"
   },
   "tasksTab": {
     "% Done": "% Done",

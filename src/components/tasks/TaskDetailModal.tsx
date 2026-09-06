@@ -169,6 +169,13 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   const [depPickerOpen, setDepPickerOpen] = useState(false)
   const [depLag, setDepLag] = useState(0)  // lag days for the next added dependency (lead = negative)
   const [depSearch,     setDepSearch]     = useState("")
+  // Cross-project links: a program's projects depend on each other, so the
+  // picker can look outside this project. Defaults to this one.
+  const [depProjectId,  setDepProjectId]  = useState(projectId)
+  const [depProjects,   setDepProjects]   = useState<any[]>([])
+  const [depRemoteTasks, setDepRemoteTasks] = useState<any[]>([])
+  const [depLoading,    setDepLoading]    = useState(false)
+  const [depError,      setDepError]      = useState<string | null>(null)
   const [activeTab,     setActiveTab]     = useState<"details"|"deps"|"activity">("details")
   const [visible, setVisible] = useState(false)
   const [comments,   setComments]   = useState<any[]>([])
@@ -250,16 +257,26 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
   }
 
   async function addDependency(precedingTaskId: string) {
-    setSaving(true)
+    setSaving(true); setDepError(null)
     try {
-      await fetch(`/api/tasks/${taskId}/dependencies`, {
+      // The response was previously discarded, so a rejected link — a cycle
+      // (409) or a project the user cannot see (403) — looked like nothing
+      // happened at all.
+      const res = await fetch(`/api/tasks/${taskId}/dependencies`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ precedingTaskId, dependencyType:"FS", lagDays: depLag || 0 }),
       })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setDepError((d as any)?.error || tk("depAddFailed"))
+        return
+      }
       const r = await fetch(`/api/tasks/${taskId}`)
       const d = await r.json()
       setTask(d.data)
       setDepPickerOpen(false); setDepSearch(""); setDepLag(0); router.refresh()
+    } catch {
+      setDepError(tk("netError"))
     } finally { setSaving(false) }
   }
 
@@ -274,11 +291,33 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
     } finally { setSaving(false) }
   }
 
-  const availableForDeps = allTasks.filter(t =>
+  const depSourceTasks = depProjectId === projectId ? allTasks : depRemoteTasks
+  const availableForDeps = depSourceTasks.filter(t =>
     t.id !== taskId &&
     !(task?.dependencies||[]).some((d:any) => d.precedingTaskId === t.id) &&
-    (depSearch ? t.title.toLowerCase().includes(depSearch.toLowerCase()) : true)
+    (depSearch ? (t.title||"").toLowerCase().includes(depSearch.toLowerCase()) : true)
   )
+
+  // Sibling projects, loaded once the picker opens so the modal stays cheap.
+  useEffect(() => {
+    if (!depPickerOpen || depProjects.length) return
+    fetch("/api/projects?per=100")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setDepProjects((d?.data?.items ?? d?.data ?? d?.items ?? [])
+        .filter((p:any) => p?.id)))
+      .catch(() => {})
+  }, [depPickerOpen])
+
+  // Tasks of whichever project is selected, when it is not this one.
+  useEffect(() => {
+    if (!depPickerOpen || depProjectId === projectId) { setDepRemoteTasks([]); return }
+    setDepLoading(true); setDepError(null)
+    fetch(`/api/projects/${depProjectId}/tasks?per=200`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setDepRemoteTasks(d?.data?.items ?? d?.data ?? d?.items ?? []))
+      .catch(() => setDepError(tk("depLoadFailed")))
+      .finally(() => setDepLoading(false))
+  }, [depProjectId, depPickerOpen, projectId])
 
   useEffect(() => {
     if (!taskId) return
@@ -690,6 +729,14 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                             fontWeight:600, color:"#92400E" }}>{tk("blocked by")}</span>
                           <span style={{ fontSize:11, fontFamily:"monospace",
                             color:"var(--text-3)" }}>{dep.precedingTask?.code}</span>
+                          {dep.precedingTask?.projectId &&
+                           dep.precedingTask.projectId !== projectId && (
+                            <span title={tk("depCrossTip")}
+                              style={{ fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:3,
+                                background:"#EDE9FE", color:"#6D28D9", flexShrink:0 }}>
+                              {dep.precedingTask?.project?.code || tk("depCross")}
+                            </span>
+                          )}
                           {Number(dep.lagDays) !== 0 && (
                             <span title={Number(dep.lagDays) > 0 ? "Lag — mandatory wait after predecessor" : "Lead — overlap with predecessor"}
                               style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:4,
@@ -727,6 +774,28 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                   {depPickerOpen && (
                     <div style={{ border:"1px solid var(--border)", borderRadius:"var(--radius)",
                       overflow:"hidden", marginTop:4 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px",
+                        borderBottom:"1px solid var(--border)", background:"var(--surface)" }}>
+                        <span style={{ fontSize:11, color:"var(--text-3)", whiteSpace:"nowrap" }}>
+                          {tk("depProject")}
+                        </span>
+                        <select value={depProjectId}
+                          onChange={e => { setDepProjectId(e.target.value); setDepSearch("") }}
+                          style={{ ...inp, flex:1, padding:"4px 6px", fontSize:12 }}>
+                          <option value={projectId}>{tk("depThisProject")}</option>
+                          {depProjects.filter((p:any) => p.id !== projectId).map((p:any) => (
+                            <option key={p.id} value={p.id}>
+                              {p.code ? `${p.code} — ` : ""}{p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {depError && (
+                        <div style={{ padding:"8px 12px", fontSize:11, color:"var(--red,#DC2626)",
+                          borderBottom:"1px solid var(--border)" }}>{depError}</div>
+                      )}
+
                       <div style={{ display:"flex", alignItems:"center", gap:8,
                         borderBottom:"1px solid var(--border)" }}>
                         <input placeholder={tk("Search tasks…")} value={depSearch} autoFocus
@@ -743,7 +812,11 @@ export function TaskDetailModal({ taskId, projectId, allTasks, members, phases, 
                         </label>
                       </div>
                       <div style={{ maxHeight:200, overflowY:"auto" }}>
-                        {availableForDeps.length === 0 ? (
+                        {depLoading ? (
+                          <div style={{ padding:14, fontSize:12, color:"var(--text-3)", textAlign:"center" }}>
+                            {tk("depLoading")}
+                          </div>
+                        ) : availableForDeps.length === 0 ? (
                           <div style={{ padding:14, fontSize:12, color:"var(--text-3)", textAlign:"center" }}>
                             {tk("No tasks found")}
                           </div>

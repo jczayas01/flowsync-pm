@@ -35,7 +35,13 @@ export default async function PortfolioPage() {
             select: {
               id:true, code:true, name:true, health:true, status:true,
               percentComplete:true, budgetTotal:true, budgetSpent:true,
-              endDate:true, methodology:true,
+              startDate:true, endDate:true, methodology:true,
+              // Same inputs the Programs page feeds rollupEvm, so the two
+              // screens cannot report different completion for one project set.
+              budget: { select: { id:true, plannedCost:true, earnedValue:true, earnRule:true } },
+              tasks:  { select: { id:true, budgetItemId:true, startDate:true, dueDate:true,
+                                  estimatedHours:true, status:true, completedAt:true },
+                        where: { parentId: null } },
               members: {
                 where: { role:'PM' as any }, take:1,
                 include: { user: { select:{ name:true, avatarUrl:true } } },
@@ -57,7 +63,12 @@ export default async function PortfolioPage() {
     },
     select: {
       id:true, code:true, name:true, health:true, status:true,
-      percentComplete:true, budgetTotal:true, budgetSpent:true, endDate:true,
+      percentComplete:true, budgetTotal:true, budgetSpent:true,
+      startDate:true, endDate:true,
+      budget: { select: { id:true, plannedCost:true, earnedValue:true, earnRule:true } },
+      tasks:  { select: { id:true, budgetItemId:true, startDate:true, dueDate:true,
+                          estimatedHours:true, status:true, completedAt:true },
+                where: { parentId: null } },
     },
     orderBy: { createdAt:'desc' },
   })
@@ -67,6 +78,15 @@ export default async function PortfolioPage() {
       ...p,
       budgetTotal: p.budgetTotal ? Number(p.budgetTotal) : 0,
       budgetSpent: p.budgetSpent ? Number(p.budgetSpent) : 0,
+      budgetItems: (p.budget ?? []).map((b: any) => ({
+        id: b.id,
+        plannedCost: b.plannedCost ? Number(b.plannedCost) : 0,
+        earnedValue: b.earnedValue ? Number(b.earnedValue) : 0,
+        earnRule:    b.earnRule ?? null,
+      })),
+      tasks: (p.tasks ?? []).map((t: any) => ({
+        ...t, estimatedHours: t.estimatedHours ? Number(t.estimatedHours) : 0,
+      })),
     }))
   }
 

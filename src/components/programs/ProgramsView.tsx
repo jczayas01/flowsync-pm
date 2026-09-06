@@ -350,12 +350,16 @@ export function ProgramsView({ programs: programsProp, portfolios, unassignedPro
                             SPI {evm.spi.toFixed(2)}
                           </span>
                         )}
-                        {evm.bac > 0 && (
+                        {evm.hasBaseline ? (
                           <span title={pg("eacHint")}>
                             EAC {fmtCurrency(evm.eac)}
                             <span style={{ color: evm.vac < 0 ? "#DC2626" : "#059669", marginLeft:4 }}>
                               ({evm.vac >= 0 ? "+" : ""}{fmtCurrency(evm.vac)})
                             </span>
+                          </span>
+                        ) : (
+                          <span style={{ color:"var(--text-4)" }} title={pg("noBaselineHint")}>
+                            {pg("noBaseline")}
                           </span>
                         )}
                         {prog.manager && (

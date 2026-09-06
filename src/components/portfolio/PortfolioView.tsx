@@ -6,6 +6,7 @@ import { dateLocale } from "@/lib/date-locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Badge, Avatar, StatCard } from "@/components/ui"
+import { rollupEvm, rollupHealth } from "@/lib/program-rollup"
 
 function healthColor(h:string) {
   return h==="GREEN"?"var(--green)":h==="AMBER"?"var(--amber)":"var(--red)"
@@ -21,14 +22,21 @@ function fmt(n:number) {
   if(n>=1_000)     return `$${(n/1_000).toFixed(0)}K`
   return `$${n.toFixed(0)}`
 }
+// Portfolio and Programs were computing completion differently — a plain mean
+// here, budget-weighted there — so the same group of projects read 8% on one
+// screen and 22% on the other. Both now go through rollupEvm.
 function rollup(projects:any[]) {
-  const budget  = projects.reduce((s,p)=>s+Number(p.budgetTotal||0),0)
-  const spent   = projects.reduce((s,p)=>s+Number(p.budgetSpent||0),0)
-  const avgPct  = projects.length ? Math.round(projects.reduce((s,p)=>s+Number(p.percentComplete||0),0)/projects.length) : 0
+  const evm     = rollupEvm(projects as any)
   const counts  = {GREEN:0,AMBER:0,RED:0} as Record<string,number>
   projects.forEach(p=>{ if(p.health in counts) counts[p.health]++ })
-  const health  = counts.RED>0?"RED":counts.AMBER>0?"AMBER":"GREEN"
-  return { budget,spent,pct:budget>0?Math.round(spent/budget*100):0,avgPct,counts,health }
+  return {
+    budget: evm.bac, spent: evm.ac,
+    pct: evm.bac>0?Math.round(evm.ac/evm.bac*100):0,
+    avgPct: evm.percentComplete,
+    cpi: evm.cpi, spi: evm.spi, eac: evm.eac, vac: evm.vac,
+    hasBaseline: evm.hasBaseline,
+    counts, health: rollupHealth(projects as any),
+  }
 }
 
 export function PortfolioView({ portfolios, unassigned, workspaceId, userRole }:{
