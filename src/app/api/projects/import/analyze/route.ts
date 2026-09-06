@@ -1,6 +1,12 @@
 // POST /api/projects/import/analyze — read an uploaded project plan and extract a full project structure
 export const dynamic = "force-dynamic"
-export const maxDuration = 60
+// 60s was not enough: a long, low-signal document (a 35-page shop drawing set
+// extracts ~67k characters of dimensions) makes one non-streaming call that has
+// to read all of it and emit up to 8k tokens of JSON. Vercel killed it at 60s
+// and the browser only saw a bare 504. Raise the ceiling, and fail with a
+// readable message before the platform pulls the plug.
+export const maxDuration = 300
+const AI_TIMEOUT_MS = 240_000
 
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
@@ -91,6 +97,22 @@ export async function POST(req: NextRequest) {
   let text = ""
   try { text = (await extractTextFromBuffer(file.name, buf)).slice(0, 60000) } catch { /* fall through */ }
 
+  // Documents whose text is mostly dimensions and part codes rather than prose
+  // (shop drawings, spec sheets, cut lists) are not project plans. Sending 60k
+  // characters of that to the model burns the whole time budget and returns an
+  // invented project, which is worse than a clear refusal.
+  const words  = text.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]{3,}/g)?.length ?? 0
+  const tokens = text.match(/\S+/g)?.length ?? 0
+  const wordRatio = tokens > 0 ? words / tokens : 0
+  if (tokens > 2000 && wordRatio < 0.35) {
+    return NextResponse.json({
+      error: `"${file.name}" reads as a technical drawing or spec sheet, not a project plan — `
+        + `${Math.round(wordRatio * 100)}% of its text is prose, the rest is dimensions and part codes. `
+        + `Upload a charter, statement of work, scope document or schedule instead. `
+        + `You can still attach this file to the project's Docs tab.`,
+    }, { status: 422 })
+  }
+
   const usableText = text.trim().length > 60
   const isPdf = file.name.toLowerCase().endsWith(".pdf")
   if (!usableText && !(isPdf && buf.length <= 3_500_000)) {
@@ -114,19 +136,35 @@ export async function POST(req: NextRequest) {
   })
 
   try {
-    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 8000,
-        messages: [{ role: "user", content }],
-      }),
-    })
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), AI_TIMEOUT_MS)
+    let aiRes: Response
+    try {
+      aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": process.env.ANTHROPIC_API_KEY!,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8000,
+          messages: [{ role: "user", content }],
+        }),
+        signal: ctl.signal,
+      })
+    } catch (e: any) {
+      if (e?.name === "AbortError") {
+        return NextResponse.json({
+          error: `"${file.name}" took too long to analyze. It is probably too long or too dense. `
+            + `Try the section that describes scope, schedule or budget on its own.`,
+        }, { status: 504 })
+      }
+      throw e
+    } finally {
+      clearTimeout(timer)
+    }
     if (!aiRes.ok) {
       const t = await aiRes.text().catch(() => "")
       return NextResponse.json({ error: `AI service error (${aiRes.status})${t ? ": " + t.slice(0, 120) : ""}` }, { status: 502 })
