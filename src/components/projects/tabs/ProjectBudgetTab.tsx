@@ -531,6 +531,16 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, workspaceId 
   const TCPI = tcpiValid ? workLeft / budgetLeft : 1
 
   const currency = project?.currency || "USD"
+  // Which line the accrued labour actually charges. Naming a line "Labor" does
+  // not make it the managed one — only being the current target does, so a
+  // line left behind after the target moves becomes deletable again.
+  const laborTargetId: string | null = (() => {
+    const raw = (project?.settings as any)?.laborBudgetItemId
+    if (raw === "off") return null
+    if (typeof raw === "string" && raw) return raw
+    const auto = budgetItems.find((b: any) => b.category === "LABOR" && b.name === "Labor")
+    return auto?.id ?? null
+  })()
 
   const card: React.CSSProperties = {
     background:"#fff", border:"1px solid var(--border)",
@@ -1420,7 +1430,7 @@ export function ProjectBudgetTab({ projectId, project, budgetItems, workspaceId 
                                 onChange={e => { const f = e.target.files?.[0]
                                   if (f) scanReceipt(item.id, f); e.target.value = "" }} />
                             </label>
-                            {item.category === "LABOR" && item.name === "Labor" ? (
+                            {item.id === laborTargetId ? (
                               <span title={t("labor_line_auto_hint")}
                                 style={{ fontSize:10, color:"var(--text-3)", border:"1px solid var(--border)",
                                   borderRadius:4, padding:"3px 8px", fontFamily:"var(--font)" }}>

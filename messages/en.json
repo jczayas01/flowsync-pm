@@ -539,7 +539,9 @@
     "labor_target_auto": "A line named “Labor” (created automatically)",
     "labor_target_hint": "Pick an existing labour line so the accrued cost lands against its planned budget instead of creating a second line.",
     "labor_target_off": "Don't post to the budget (track only)",
-    "labor_line_auto_hint": "This line is maintained from the team allocation below — set allocation to 0% to zero it"
+    "labor_line_auto_hint": "This line is maintained from the team allocation below — set allocation to 0% to zero it",
+    "labor_note_target": "This total is mirrored to the “{line}” budget line, so EVM actual cost includes it.",
+    "labor_note_off": "Measured only — this total is not posted to the budget and EVM actual cost excludes it."
   },
   "clm": {
     "+ Add milestone": "+ Add milestone",

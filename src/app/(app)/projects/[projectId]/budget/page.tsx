@@ -24,6 +24,9 @@ export default async function ProjectBudgetPage({ params }: { params: { projectI
       select: {
         budgetTotal:true, budgetSpent:true, currency:true, startDate:true, endDate:true,
         percentComplete:true, autoEv:true, eacMethod:true, eacManualEtc:true,
+        // Carries laborBudgetItemId — which line the accrued labour charges.
+        // Without it the grid cannot tell the managed line from an ordinary one.
+        settings:true,
       },
     }),
     db.budgetItem.findMany({

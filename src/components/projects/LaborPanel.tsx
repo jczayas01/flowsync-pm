@@ -205,7 +205,11 @@ export function LaborPanel({ projectId, workspaceId, canEdit, currency = "USD", 
         </div>
       )}
       <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 8 }}>
-        {t("labor_line_note")}
+        {target === "off"
+          ? t("labor_note_off")
+          : t("labor_note_target", {
+              line: lines.find(l => l.id === target)?.name ?? "Labor",
+            })}
       </div>
     </div>
   )
